@@ -1,0 +1,32 @@
+Résumé d'analyse
+================
+
+Métadonnées
+-----------
+Label : scenario_base
+Date : 2026-03-24T17:37:57.268178
+alpha = 1.0
+lambda_creation = 0.5
+seed = 42
+
+Indicateurs finaux
+------------------
+Pas final : 4999
+Nombre d'entités : 243
+Actif total : 323568.2369
+Volume de prêts : 93935.2082
+Levier système : 0.642874
+Ratio de liquidité : 0.109773
+Concentration des prêts : 0.005983
+
+Faillites agrégées
+------------------
+Nombre total d'entités faillies : 2409
+Capital total détruit : 1236860.0056
+
+Cascades
+--------
+Nombre de cascades enregistrées : 1891
+Cascade maximale (joules) : 2651.0057
+Cascade médiane (joules) : 534.7213
+

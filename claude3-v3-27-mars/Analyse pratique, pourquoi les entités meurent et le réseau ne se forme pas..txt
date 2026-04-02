@@ -1,0 +1,136 @@
+La correction réduit la mortalité de 89% à 12% et fait passer le réseau de 1 prêt à 75. Le diagnostic est confirmé. Voici
+   l'analyse complète :                                                                   
+                                                                                                                           
+  ---                                                                                                                      
+  Analyse théorique : pourquoi les entités meurent et le réseau ne se forme pas                                            
+                                                                                                                           
+  I. Invariant fondamental du modèle                                                                                     
+                                                                                                                           
+  Pour toute entité à tout instant, la valeur nette est :                                                                  
+   
+  NW = L − B                                                                                                               
+                                                                                                                         
+  Cette identité est exacte car :                                                                                          
+  - K^endo = P^endo (auto-invest toujours symétrique)
+  - K^exo = P^exo (dépréciation symétrique)                                                                                
+  - K^prête = C (passif_credit_detenu — chaque prêt incrémente les deux de ±Q)                                           
+                                                                                                                           
+  Corollaire : la faillite se réduit à L < B. La condition actif_total < passif_bilan est strictement équivalente à L < B =
+   5.                                                                                                                      
+                                                                                                                           
+  ---                                                                                                                      
+  II. Le mécanisme de mort : l'égorgement du prêteur                                                                     
+                                                                                                                           
+  Expérience 6 (30 pas, 10+30 entités) :
+  Cause de mort "prêt" : 17/17 (100%)                                                                                      
+  Cause de mort "intérêts" : 0                                                                                           
+  Cause de mort "dépréciation" : 0                                                                                         
+                                                                                                                         
+  Le mécanisme :                                                                                                           
+                                                                                                                           
+  L'offre de prêt est offer = max(0, L − s·P). Après avoir prêté son offre entière, le prêteur dispose de L_restant = s·P. 
+                                                                                                                           
+  La condition de solvabilité est L > B. Or s·P < B ⟺ P < B/s = 5/0,05 = 100.                                              
+                                                                                                                         
+  Seuil critique P = B/s = 100.* Pour tout prêteur avec P < 100 :                                                          
+                                                                                                                         
+  s*P   | L_restant après prêt | mort?                                                                                     
+  0.25  (P=5)  → 0.25 < B=5    → OUI                                                                                       
+  0.50  (P=10) → 0.50 < B=5    → OUI                                                                                       
+  4.00  (P=80) → 4.00 < B=5    → OUI                                                                                       
+  5.00  (P=100)→ 5.00 = B=5    → limite                                                                                    
+  6.00  (P=120)→ 6.00 > B=5    → sain                                                                                      
+                                                            
+  Le marché du crédit sélectionne comme prêteur l'entité au r le plus faible* (r* = α/2√P), c'est-à-dire celle qui a la    
+  plus grande P. Ce sont précisément les entités qui ont accumulé le plus de capital endogène — les plus "productives" —
+  qui sont condamnées au rôle de prêteur et mourent.                                                                       
+                                                            
+  Syndrome de la grande perche : les entités les plus développées (fort P, faible r*) sont préférentiellement sélectionnées
+   comme prêteurs et se suicident.
+                                                                                                                           
+  ---                                                       
+  III. Dynamique du réseau
+                                                                                                                           
+  Après 200 pas (simulation originale) :
+  - 179/201 morts (89%)                                                                                                    
+  - P_max des survivants : 75.7 (jamais atteint le seuil de 100)                                                           
+  - 1 seul prêt actif                                           
+                                                                                                                           
+  Raison de la non-émergence des réseaux : toute entité susceptible d'être stable prêteuse (P en croissance) est tuée avant
+   d'atteindre P = 100. Le réseau ne peut pas s'auto-entretenir car aucune entité ne survit assez longtemps pour devenir   
+  prêteuse durable.                                         
+                                                                                                                           
+  Trajectoire théorique vers l'équilibre : sans crédit, une entité isolée converge vers P* ≈ 110 en ~30 pas (via           
+  auto-invest). Mais le marché du crédit s'engage à chaque pas et tue les entités avant qu'elles atteignent P = 100.
+                                                                                                                           
+  ---                                                       
+  IV. Attracteur et seuil critique
+                                  
+  L'équilibre de P^endo sans crédit (auto-invest = dépréciation) satisfait :
+                                                                                                                           
+  δ_endo · P^endo* = α√P*
+  P* = B + P^endo*                                                                                                         
+  → u² − 10αu − B = 0   (u = √P*)                           
+  → P* = (5α + √(25α² + B))² ≈ 110   (α=1, B=5)                                                                            
+                                                                                                                           
+  L'attracteur P* ≈ 110 est juste au-dessus du seuil létal P_critique = 100. La marge est de 10 unités, soit ~10%. Cette   
+  proximité rend la convergence très risquée dans un marché concurrentiel.                                                 
+                                                                                                                           
+  ---                                                       
+  V. Cause de la rareté des réseaux
+                                                                                                                           
+  1. Phase dangereuse : toute entité entre 0 < P < 100 peut être sélectionnée prêteuse et mourir
+  2. Durée de la phase : ~30 pas pour passer de P=5 à P=100                                                                
+  3. Probabilité d'être sélectionné : croît avec P (les plus avancées = plus faible r* = choisies en premier)              
+  4. Résultat : quasi aucune entité n'atteint P = 100, le réseau ne se forme jamais                                        
+                                                                                                                           
+  ---                                                                                                                      
+  VI. Correctif proposé                                                                                                    
+                                                            
+  Modifier _lender_offer() dans simulation.py :
+                                                                                                                           
+  # Actuel :
+  offer = max(0.0, L − s·P)                                                                                                
+                                                                                                                           
+  # Proposé :
+  reserve = max(s·P, entity.passif_inne)  # max(s·P, B)                                                                    
+  offer = max(0.0, L − reserve)                                                                                            
+   
+  Effet : pour P < 100, la réserve est B = 5 (et non s·P < 5). Après un prêt complet, L = max(s·P, B) ≥ B → le prêteur     
+  reste solvable.                                           
+                                                                                                                           
+  Résultats après correction (200 pas) :                                                                                   
+   
+  ┌──────────────────────┬──────────┬──────────┐                                                                           
+  │      Indicateur      │ Original │ Corrigé  │            
+  ├──────────────────────┼──────────┼──────────┤                                                                           
+  │ Taux de mortalité    │ 89%      │ 12%      │
+  ├──────────────────────┼──────────┼──────────┤                                                                           
+  │ Prêts actifs         │ 1        │ 75       │            
+  ├──────────────────────┼──────────┼──────────┤
+  │ Volume de crédit     │ 11.9     │ 1524     │
+  ├──────────────────────┼──────────┼──────────┤                                                                           
+  │ Prêteurs actifs      │ 1        │ 8        │
+  ├──────────────────────┼──────────┼──────────┤                                                                           
+  │ Emprunteurs actifs   │ 1        │ 60       │            
+  ├──────────────────────┼──────────┼──────────┤                                                                           
+  │ Entités avec P ≥ 100 │ 0        │ 49 (28%) │
+  └──────────────────────┴──────────┴──────────┘                                                                           
+                                                            
+  Le correctif transforme le modèle : les entités survivent, atteignent P > 100, deviennent prêteuses stables et forment un
+   réseau crédit-emprunteur à structure cœur-périphérie : une minorité d'entités établies (P > 100, r* faible) prête à une
+  majorité de jeunes entités (P < 100, r* élevé).                                                                          
+                                                            
+  ---
+  VII. Bilan : problème mal posé au départ
+                                                                                                                           
+  L'hypothèse initiale était que la mort vient du crédit (prêts défaillants, contagion). C'est l'inverse : les entités 
+  meurent en prêtant, pas en empruntant. Le mécanisme de contagion (redistribution des créances) n'est presque jamais      
+  déclenché — les prêteurs meurent avant d'avoir le temps d'accumuler un portefeuille. La question n'est pas "le crédit
+  tue-t-il les emprunteurs" mais "le marché du crédit tue-t-il les prêteurs en les forçant à vider leur trésorerie".       
+                                                            
+  La clé est l'inégalité s·P < B pour P < 100 : l'offre de prêt utilise comme réserve le seuil de liquidité (s·P) là où le 
+  seuil de solvabilité (B) est contraignant. La correction aligne les deux.
+                                                                                                                           
+  ---                                                       
+  Veux-tu que j'implémente le correctif dans le code (une ligne dans _lender_offer) et que je mette à jour le changelog ?

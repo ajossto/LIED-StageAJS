@@ -1,0 +1,443 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{geometry}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{xcolor}
+
+\geometry{margin=2.5cm}
+
+\newtheorem{critique}{Critique}
+\newtheorem{proposition}{Proposition}
+
+\title{\textbf{Critique exhaustive du modèle de simulation}\\
+\large Faiblesses conceptuelles, structurelles, calibration et interprétation}
+\author{Analyse critique — Blocs 1–8}
+\date{Avril 2026}
+
+\begin{document}
+
+\maketitle
+\tableofcontents
+\newpage
+
+% =========================================================================
+\section{Introduction}
+
+Ce document présente une critique exhaustive du modèle de simulation multi-agents.
+L'objectif n'est pas de disqualifier le modèle — ses simulations produisent des
+phénomènes intéressants — mais d'identifier précisément ses limites conceptuelles,
+ses hypothèses invérifiables, ses incohérences internes, et les risques d'artefact
+numérique. Cette analyse distingue quatre niveaux de critique : (1) conceptuelle,
+(2) structurelle/formelle, (3) de calibration, et (4) d'interprétation des résultats.
+
+% =========================================================================
+\section{Critiques conceptuelles}
+
+\subsection{La nature du numéraire est indéfinie}
+
+\begin{critique}[Absence d'un bien physique de référence]
+Le modèle opère avec une ressource unique, le « liquide » $L_i$, sans définir ce qu'il
+représente : énergie, monnaie, grain ? Cette ambiguïté n'est pas un détail : elle rend
+impossible toute interprétation des prix, des flux et des seuils de solvabilité.
+\end{critique}
+
+Le titre évoque une « société industrielle » et le module s'appelle « joules » dans l'affichage.
+Pourtant, les agents effectuent des prêts à intérêt en joules, des dépréciations d'actifs en
+joules, et font faillite faute de joules. Un système énergétique ne connaît pas de faillite
+au sens comptable : une turbine qui manque de carburant s'arrête, elle ne devient pas
+insolvable. Le modèle hybride des concepts énergétiques et financiers sans les réconcilier.
+
+\subsection{La fonction d'extraction est une hypothèse ad hoc}
+
+\begin{critique}[Justification de $\Pi = \alpha \sqrt{P}$]
+La loi d'extraction $\Pi_i = \alpha_i \sqrt{P_i}$ est une hypothèse de commodité
+mathématique, non dérivée d'un modèle de production microéconomique. Le choix de
+l'exposant $1/2$ est arbitraire.
+\end{critique}
+
+Une justification possible serait une technologie CES ou Cobb-Douglas du type
+$\Pi = \alpha K^\beta L^{1-\beta}$, mais le modèle confond capital investi ($K^{\text{exo}}$)
+et passif correspondant ($P^{\text{exo}} = K^{\text{exo}}$). Il n'y a pas de travail, pas
+d'énergie externe, pas d'input autre que la taille du bilan. L'exposant $1/2$ assure la
+concavité (rendements décroissants) mais toute autre valeur dans $]0,1[$ donnerait des
+propriétés qualitativement similaires.
+
+\subsection{L'invariant $\mathrm{NW} = L + R - B - C$ masque une asymétrie}
+
+\begin{critique}[Symétrie brisée lors des faillites]
+L'invariant bilanciel $K^{\text{endo}} = P^{\text{endo}}$ et $K^{\text{exo}} = P^{\text{exo}}$
+est maintenu en régime normal mais brisé lors des faillites (phase 2 : annulation asymétrique
+de $K^{\text{exo}}$ et $P^{\text{exo}}$ de l'emprunteur sans contrepartie au bilan du prêteur).
+\end{critique}
+
+Lors de la phase 2 du traitement de faillite, quand aucun créancier n'est éligible,
+le prêt est annulé et la contrepartie exo de l'emprunteur est réduite :
+$K_j^{\text{exo}} \leftarrow K_j^{\text{exo}} - \Delta$ et $P_j^{\text{exo}} \leftarrow P_j^{\text{exo}} - \Delta$.
+Mais le bilan du prêteur faillit $i$ n'est pas modifié (il est déjà mort).
+Cela crée une destruction nette de ressources dans le système : la somme
+$\sum_i (K_i^{\text{exo}} - P_i^{\text{exo}})$ n'est plus nulle après une cascade.
+
+\subsection{La création ex nihilo du passif inné n'a pas de contrepartie réelle}
+
+\begin{critique}[Passif inné non remboursé et non rémunéré]
+Chaque nouvelle entité est créée avec $L_0 = 200$ et $B_0 = 190$. D'où vient ce
+passif de 190 ? Qui est le créancier ? Ce n'est pas formalisé, et $B_i$ ne diminue jamais.
+\end{critique}
+
+Dans un modèle financier cohérent, $B_i$ représenterait une dette envers un acteur externe
+(un « banquier central », un « État »). Ce créancier devrait apparaître dans le modèle,
+recevoir des intérêts, et potentiellement déclencher des faillites si $B_i$ n'est pas
+couvert. Ici, $B_i$ est simplement un floor permanent qui rend la solvabilité structurellement
+fragile sans justification économique claire.
+
+% =========================================================================
+\section{Critiques structurelles}
+
+\subsection{Le passif miroir $C_i = R_i$ n'est pas maintenu correctement}
+
+\begin{critique}[Bris de symétrie lors des cessions de créances]
+Lors d'une cession de créance de $i$ vers $j$ pour paiement d'intérêts, le passif
+miroir $C_i$ et $C_j$ est mis à jour. Mais la symétrie $C_i = \sum_k q_{ik}$ (somme
+des prêts accordés) dépend de la cohérence des opérations sur les prêts. Toute
+opération asynchrone sur \texttt{loan.active} peut briser cette invariance.
+\end{critique}
+
+En particulier, lors de la réévaluation \texttt{\_revalue\_loan}, un nouveau prêt est créé
+mais l'ancien est désactivé sans ajustement immédiat de $R_{\text{prêteur}}$ et $C_{\text{prêteur}}$ :
+ces ajustements sont effectués via \texttt{delta} — mais uniquement si le prêt réévalué diffère
+du nominal. Il n'y a pas de test unitaire garantissant $C_i = \sum_k q_{ik}$ à chaque pas.
+
+\subsection{La dépréciation exo crée une dette fantôme}
+
+\begin{critique}[Divergence entre valeur nominale et valeur réelle des prêts]
+Le principal nominal d'un prêt reste constant (sauf amortissement ou faillite),
+mais l'actif sous-jacent ($K^{\text{exo}}$) déprécie à 10\% par pas. Après 10 pas,
+l'actif vaut $q \cdot 0.9^{10} \approx 0.35q$ mais le prêt est toujours enregistré à $q$.
+\end{critique}
+
+La réévaluation n'est déclenchée que lors d'une cession de créance (paiement d'intérêts,
+faillite). Entre deux cessions, le prêteur porte une créance surévaluée au bilan.
+La \textbf{fragilité cachée} ($\sum_i \text{dette fantôme}_i$) peut être très importante
+dans un régime à peu de cessions. L'outil \texttt{compute\_hidden\_fragility} existe mais
+n'est pas utilisé dans les décisions d'octroi de crédit.
+
+\subsection{L'arrêt du marché du crédit est arbitraire}
+
+\begin{critique}[Critère d'arrêt $\text{MAX\_IDLE} = k^2$ non justifié]
+La boucle de marché du crédit s'arrête après $\max(20, k^2) = 9$ tentatives infructueuses
+pour $k=3$. Ce critère est empirique et peut provoquer une sous-activité du marché
+si les pools sont hétérogènes.
+\end{critique}
+
+Avec $k=3$ et $\text{MAX\_IDLE} = 9$, si les 9 paires tirées sont incompatibles
+(emprunteur trop petit, offre nulle), le marché s'arrête même s'il existe des paires
+profitables dans la population totale. Le nombre de transactions par pas dépend
+fortement de cet arbitrage et introduit une sensibilité artificielle aux tirages.
+
+\subsection{Le modèle mélange stocks et flux dans le même numéraire}
+
+\begin{critique}[Incohérence temporelle des intérêts]
+Les intérêts $r \cdot q$ sont versés en une seule fois par pas, que le pas représente
+une heure, un mois ou un an. Le taux $r$ est donc un taux \textbf{par pas}, non annualisé.
+\end{critique}
+
+Si $r^* = \alpha / (2\sqrt{P})$ avec $\alpha \approx 1$ et $P \approx 200$, on a
+$r^* \approx 0.035$ par pas. Si un pas représente un trimestre, cela correspond à
+$\approx 14\%$ annuels — plausible. Mais les taux de dépréciation ($\delta_L = 1\%$,
+$\delta_{\text{endo}} = 10\%$ par pas) sont incompatibles avec cette interprétation :
+une dépréciation de 10\% par trimestre correspond à une perte de $\approx 34\%$ annuelle
+du capital productif, ce qui est extrêmement élevé pour du capital physique.
+L'homogénéité temporelle du modèle n'est pas vérifiée.
+
+% =========================================================================
+\section{Critiques de la calibration}
+
+\subsection{Le paramètre $\theta = 0.35$ est un régulateur empirique}
+
+\begin{critique}[$\theta$ n'a pas de fondement théorique]
+La fraction de demande effectivement empruntée $\theta = 0.35$ est calibrée pour
+éviter une mortalité excessive (avec $\theta = 1$, la mortalité dépassait 90\%).
+C'est une contrainte ad hoc sur la rationalité des agents.
+\end{critique}
+
+Dans un modèle d'équilibre, un agent rationnel emprunterait exactement $q_{\max}$ si
+les conditions d'acceptabilité sont satisfaites. Le fait qu'il faille brider cette
+rationalité à 35\% révèle que les conditions d'acceptabilité $(\mu, \bar{d})$ ne sont
+pas suffisamment contraignantes seules. On régule par la demande ce qui devrait être
+régulé par les conditions d'octroi.
+
+\subsection{$\lambda_{\text{création}} = 2$ est un paramètre de régulation populationnelle}
+
+\begin{critique}[Taux de création non dérivé d'une dynamique endogène]
+Le paramètre $\lambda = 2$ est choisi pour stabiliser la population autour de quelques
+centaines d'entités. Il compense exactement (à l'équilibre statistique) le taux de
+faillite. Il n'est pas le résultat d'une dynamique d'entrée/sortie endogène.
+\end{critique}
+
+Un modèle plus cohérent lierait le taux de création à la rentabilité moyenne du système
+(entrée quand $r^*_{\text{moyen}}$ est élevé) ou à un acteur externe (État, secteur
+bancaire). Ici, le taux d'entrée est exogène et constant, ce qui revient à supposer que
+de nouvelles entités apparaissent à un rythme fixe indépendamment de l'attractivité
+économique du système.
+
+\subsection{La population initiale n'est pas en équilibre}
+
+\begin{critique}[État initial hors équilibre et transient long]
+Les 100 entités initiales ont toutes $(L_0=200, B_0=190)$, un état très particulier
+(toutes identiques sauf $\alpha$). La dynamique pendant les premiers centaines de pas
+reflète un transient d'initialisation, pas un régime permanent.
+\end{critique}
+
+Les statistiques sont collectées depuis $t=0$, ce qui biaise toutes les moyennes
+calculées sur l'ensemble de la simulation (1000 pas). Un calcul rigoureux exigerait
+d'identifier la durée du transient et de n'analyser que le régime stationnaire.
+
+\subsection{La graine unique ne garantit pas la robustesse}
+
+\begin{critique}[Résultats issus d'une seule trajectoire stochastique]
+Toutes les simulations de référence utilisent \texttt{seed=42}. Les résultats
+(nombre de cascades, distribution de taille) peuvent être fortement influencés par
+les fluctuations d'une seule trajectoire.
+\end{critique}
+
+La cascade maximale de 8 entités sur 1000 pas, obtenue avec \texttt{seed=42}, n'est
+pas représentative de la distribution statistique. La même simulation avec d'autres
+graines pourrait produire des cascades de 50 entités ou aucune cascade du tout.
+Une étude de SOC rigoureuse exige des centaines de trajectoires indépendantes.
+
+% =========================================================================
+\section{Critiques d'interprétation}
+
+\subsection{La loi de puissance n'est pas vérifiée}
+
+\begin{critique}[Affirmation de SOC sans analyse statistique rigoureuse]
+Le régime de $k=3$ est qualifié de « SOC » sur la base de 652 cascades dans
+1000 pas (seed=42). Aucune vérification formelle d'une loi de puissance
+$P(s) \sim s^{-\beta}$ n'est présentée.
+\end{critique}
+
+La vérification statistique d'une loi de puissance requiert :
+(1) un grand nombre d'événements (minimum $\sim 10^3$–$10^4$ cascades),
+(2) un test formel (Kolmogorov-Smirnov, méthode de Clauset-Shalizi-Newman),
+(3) une comparaison avec des distributions alternatives (log-normale, exponentielle).
+Avec 652 cascades dont la plupart sont de taille 1 ou 2, aucune de ces conditions n'est
+satisfaite. Le terme « SOC » est ici au mieux une hypothèse de travail, au pire un
+abus de langage.
+
+\subsection{La transition de phase à $k=3$ est un artefact de taille finie}
+
+\begin{critique}[Transition apparente liée à la taille de population, non à $k$]
+La transition observée entre $k=2$ (stable) et $k=3$ (critique) dépend de la taille
+de population $N \approx 500$ entités. Pour $N \to \infty$, la transition pourrait se
+déplacer ou disparaître.
+\end{critique}
+
+Dans un système de taille finie, un réseau aléatoire avec $N=500$ nœuds et une probabilité
+de connexion $p \propto 1/k$ présente une transition de connectivité à $kp \approx 1$
+(transition de percolation de Erdős–Rényi). La transition observée à $k=3$ pourrait
+simplement refléter cette transition de percolation dans le graphe de crédit, et non
+une propriété intrinsèque de la dynamique économique.
+
+\subsection{Les intermédiaires financiers ne jouent pas le rôle prévu}
+
+\begin{critique}[Intermédiaires financiers comme artefact de matching, non comme banques]
+Les « intermédiaires financiers naturels » émergent parce que le matching aléatoire
+tire la même entité des deux côtés du marché à différents instants. Ce mécanisme est
+radicalement différent d'un vrai intermédiaire financier qui transforme les maturités
+ou mutualise les risques.
+\end{critique}
+
+Un vrai intermédiaire financier emprunte à court terme et prête à long terme, crée de
+la monnaie, et gère un portefeuille diversifié. Ici, l'entité médiane se retrouve
+simultanément prêteuse et emprunteuse par hasard, sans stratégie délibérée. La contagion
+qui en résulte est mécaniquement similaire à une simple chaîne d'obligations, pas à une
+défaillance bancaire systémique.
+
+\subsection{L'absence d'un marché des biens brise la chaîne de causalité économique}
+
+\begin{critique}[Pas de demande agrégée, pas de prix, pas de transmission réelle]
+Le modèle n'a pas de marché des biens. Il n'y a pas de demande des ménages, pas de
+prix de vente, pas de choc de demande. Les faillites sont purement financières (bilan)
+et ne se transmettent pas via une contraction de la demande agrégée.
+\end{critique}
+
+Dans les modèles économiques standard de crise (modèle de Bernanke-Gertler, modèle
+DSGE avec accélérateur financier), la contagion se propage à la fois par le canal
+financier (pertes de bilan) et par le canal réel (contraction de la demande, chômage).
+Ici, seul le canal financier existe. Le modèle ne peut donc pas représenter les crises
+économiques réelles, où la récession réelle amplifie la crise financière.
+
+\subsection{La dépréciation exo à 10\% par pas est irréaliste}
+
+\begin{critique}[Taux de dépréciation incompatible avec un actif physique]
+$\delta_{\text{exo}} = 10\%$ par pas signifie que l'actif perd la moitié de sa valeur
+en 7 pas. Si un pas représente une semaine, c'est 4 mois pour diviser par deux la valeur
+d'une machine. Si un pas représente un an, c'est une durée de vie de 7 ans.
+\end{critique}
+
+Ce taux élevé sert principalement à effacer le passif exogène rapidement ($P^{\text{exo}}$
+décroît aussi à 10\%), ce qui transforme le prêt en une subvention progressive :
+le principal résiduel tend vers zéro sans remboursement. Cela revient à imposer une
+durée de vie implicite aux prêts ($\approx 1/\delta_{\text{exo}} = 10$ pas) sans le
+formaliser explicitement. L'amortissement formel ($\tau=0$) est désactivé, mais la
+dépréciation joue le même rôle de manière détournée.
+
+% =========================================================================
+\section{Critiques algorithmiques et numériques}
+
+\subsection{L'arrêt du marché du crédit sous-estime les transactions}
+
+\begin{critique}[Biais par construction dans le nombre de transactions]
+Le mécanisme \texttt{need\_resort=True} après chaque transaction garantit un tri frais,
+mais aussi que le pool est systématiquement re-tiré avec $2k=6$ entités parmi $N \approx 500$.
+Avec un pool de 6, la probabilité de trouver une paire profitable est limitée même si
+le marché total est profond.
+\end{critique}
+
+Le nombre de transactions par pas est de l'ordre de 17 (statistiques observées), soit
+bien moins que les $O(N)$ transactions possibles. Le marché est donc massivement
+incomplet : la plupart des échanges mutuellement profitables ne se réalisent pas, non
+pas par manque de contreparties, mais par limitation de l'algorithme.
+Cela biaise toutes les mesures d'efficacité du marché.
+
+\subsection{La réévaluation des créances n'est pas effectuée régulièrement}
+
+\begin{critique}[Fragilité cachée non prise en compte dans les décisions de crédit]
+La valeur réelle d'une créance ($q \cdot (1-\delta)^{\text{âge}}$) n'est calculée
+que lors d'une cession. La contrainte d'endettement utilise le principal \textbf{nominal},
+non le principal réel.
+\end{critique}
+
+Cela signifie qu'une entité peut apparaître solvable sur la base de ses créances nominales
+alors qu'elle est insolvable sur la base des créances réelles. Le critère de faillite
+utilise lui aussi les valeurs nominales (via \texttt{actif\_total} qui inclut \texttt{actif\_prete}
+au nominal). La fragilité cachée calculée par \texttt{compute\_hidden\_fragility} n'est
+jamais intégrée aux décisions.
+
+\subsection{Le cache des intérêts est reconstruit à froid à chaque pas}
+
+\begin{critique}[Coût algorithmique $O(N_{\text{prêts}})$ potentiellement élevé]
+La méthode \texttt{\_rebuild\_interest\_cache} itère sur tous les prêts actifs.
+Avec 4757 prêts actifs à $t=1000$ (simulation de référence), ce coût est significatif.
+\end{critique}
+
+Le cache est reconstruit à chaque pas même si très peu de prêts changent entre deux
+pas (dépréciation, pas de transactions). Une solution incrémentale (mise à jour uniquement
+lors de \texttt{execute\_loan}, amortissement, faillite) serait plus efficace et déjà
+partiellement implémentée (les caches sont mis à jour dans \texttt{execute\_loan}).
+La reconstruction complète à chaque pas est donc une redondance introduite par Bloc 8
+pour corriger les incohérences laissées par les autres méthodes.
+
+% =========================================================================
+\section{Critiques de la prétention SOC}
+
+\subsection{Le mécanisme d'auto-organisation n'est pas identifié}
+
+\begin{critique}[SOC sans mécanisme explicite d'auto-organisation]
+Dans les modèles SOC canoniques (tas de sable de Bak-Tang-Wiesenfeld, modèle de forêt
+d'Olami-Feder-Christensen), le mécanisme d'auto-organisation est explicite : le système
+s'accumule lentement et se décharge rapidement. Le modèle présenté n'identifie pas
+clairement ces deux phases.
+\end{critique}
+
+L'accumulation lente pourrait correspondre à l'accumulation de crédit (prêts perpétuels
+accumulés à chaque pas de marché). La décharge rapide correspond aux cascades de faillite.
+Mais cette analogie n'est pas formalisée, et le lien entre l'accumulation de crédit et
+la probabilité de cascade n'est pas démontré.
+
+\subsection{La stationnarité du système n'est pas vérifiée}
+
+\begin{critique}[Simulation non stationnaire sur 1000 pas]
+Les statistiques montrent une évolution continue sur 1000 pas (nombre d'entités,
+volume de prêts, taux de faillite). Le système n'a probablement pas atteint un
+régime stationnaire, ce qui rend toute analyse de distribution problématique.
+\end{critique}
+
+Avec $\lambda=2$, $n_0=100$ et $\sim$1600 faillites sur 1000 pas, le flux de création
+est de $\sim$2000 entités et le flux de destruction de $\sim$1600. Ce déséquilibre
+crée une population croissante (530 entités à $t=1000$ vs 100 à $t=0$). Analyser
+la distribution des cascades sur cette trajectoire non stationnaire mélange
+les régimes transitoire et (hypothétiquement) stationnaire.
+
+\subsection{La définition de la cascade est ambiguë}
+
+\begin{critique}[Cascade vs. défaillances indépendantes simultanées]
+La méthode \texttt{resolve\_cascades} détecte toutes les faillites dans un même pas
+comme une « cascade ». Cependant, deux faillites indépendantes (dues à des chocs
+non reliés) dans le même pas sont comptées comme une cascade de taille 2.
+\end{critique}
+
+La distinction entre faillites exogènes (due à la dépréciation ou l'épuisement
+d'une entité isolée) et faillites endogènes (due à la contagion via le réseau de crédit)
+est partiellement capturée par le flag \texttt{etait\_solvable}, mais ce flag compare
+la solvabilité \textit{avant} le pas et \textit{après} les faillites précédentes,
+sans distinguer l'ordre des causalités. La taille de cascade mesurée surestime
+probablement la contagion réelle.
+
+% =========================================================================
+\section{Axes d'amélioration suggérés}
+
+\subsection{Court terme}
+
+\begin{enumerate}
+  \item Ajouter une réévaluation systématique des créances en début de pas (pas seulement
+        lors des cessions) et utiliser les valeurs réelles dans le critère de faillite.
+  \item Implémenter un test de stationnarité (autocorrélation du nombre d'entités vivantes)
+        avant de collecter des statistiques de distribution.
+  \item Répliquer les simulations avec $N_{\text{seeds}} \geq 100$ graines différentes et
+        calculer les intervalles de confiance sur les statistiques de cascades.
+  \item Ajouter un critère de distinction exogène/endogène pour les faillites (via le
+        graphe de crédit au moment de la faillite).
+\end{enumerate}
+
+\subsection{Moyen terme}
+
+\begin{enumerate}
+  \item Formaliser le mécanisme d'accumulation/décharge (quantifier l'accumulation de crédit
+        par pas et la corrélation avec la taille de cascade suivante).
+  \item Tester des alternatives à la fonction $\alpha\sqrt{P}$ (Cobb-Douglas $\alpha P^\beta$
+        pour différents $\beta$) pour évaluer la robustesse des propriétés SOC.
+  \item Introduire un mécanisme endogène de taux de création (entrée proportionnelle au
+        profit moyen du système) pour éliminer le paramètre $\lambda$ exogène.
+  \item Vérifier formellement la loi de puissance avec la méthode de Clauset et al. (2009)
+        sur $N_{\text{cascades}} \geq 5000$.
+\end{enumerate}
+
+\subsection{Long terme}
+
+\begin{enumerate}
+  \item Séparer explicitement les secteurs (ménages, firmes, banques) avec des bilans
+        asymétriques et des règles comportementales différentes.
+  \item Introduire un marché des biens (demande agrégée, prix) pour modéliser la
+        transmission réelle des crises financières.
+  \item Définir explicitement le numéraire et la période de temps d'un pas, puis
+        recalibrer tous les paramètres de manière cohérente.
+\end{enumerate}
+
+% =========================================================================
+\section{Conclusion}
+
+Le modèle est un outil de simulation intéressant qui produit des phénomènes non-triviaux :
+émergence d'intermédiaires financiers, cascades de faillite, sensibilité à $k$.
+Ses forces principales sont sa richesse bilancielle et son mécanisme de matching
+innovant (Bloc 8).
+
+Ses faiblesses principales sont :
+\begin{itemize}
+  \item L'ambiguïté du numéraire et l'absence d'un marché des biens ;
+  \item L'usage du terme « SOC » sans vérification statistique rigoureuse ;
+  \item La forte dépendance aux paramètres ad hoc ($\theta$, $\lambda$, $\delta$) ;
+  \item La non-stationnarité des simulations de référence ;
+  \item L'incohérence entre valeur nominale et valeur réelle des créances.
+\end{itemize}
+
+Ces faiblesses ne remettent pas en cause l'intérêt du modèle comme laboratoire
+d'exploration, mais elles interdisent toute interprétation quantitative directe
+des résultats. Le modèle est au stade d'une \textbf{preuve de concept} pour la
+dynamique des systèmes financiers complexes, pas d'un outil de modélisation calibré.
+
+\end{document}

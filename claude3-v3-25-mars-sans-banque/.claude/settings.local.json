@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(venvj python3:*)",
+      "Read(//home/anatole/**)",
+      "Read(//usr/local/bin/**)",
+      "Bash(source /home/anatole/jupyter/.venv/bin/activate)",
+      "Bash(pdflatex -interaction=nonstopmode description_theorisation_modele.txt)",
+      "Bash(pdflatex -interaction=nonstopmode critique_exhaustive_modele.txt)"
+    ]
+  }
+}

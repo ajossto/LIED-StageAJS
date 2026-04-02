@@ -1,0 +1,32 @@
+{
+  "label": "standard",
+  "notes": "Reference — croissance sans crise",
+  "date": "2026-03-23T16:27:45.843256",
+  "parametres": {
+    "alpha": 1.0,
+    "seuil_ratio_liquide_passif": 0.05,
+    "theta": 0.5,
+    "mu": 0.05,
+    "spread_taux_preteur": 0.0,
+    "lambda_creation": 0.5,
+    "actif_liquide_initial": 10.0,
+    "passif_inne_initial": 5.0,
+    "taux_depreciation_liquide": 0.02,
+    "taux_depreciation_endo": 0.03,
+    "taux_depreciation_exo": 0.03,
+    "coefficient_reliquefaction": 0.5,
+    "fraction_auto_investissement": 0.3,
+    "nb_pas": 200,
+    "graine": 42
+  },
+  "resume": {
+    "nb_pas_simules": 200,
+    "entites_creees_total": 112,
+    "entites_vivantes_final": 112,
+    "faillites_total": 0,
+    "cascade_max": 0,
+    "prets_crees_total": 268,
+    "prets_actifs_final": 268,
+    "masses_faillite_creees": 0
+  }
+}
