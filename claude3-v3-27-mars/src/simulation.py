@@ -1,20 +1,35 @@
 """
 simulation.py — Moteur de simulation multi-agents.
 
-Architecture :
-  - Références par ID entier (pas de pointeurs directs entre objets)
-  - Conteneurs : Dict[int, Entity], Dict[int, Loan]
-  - RNG isolé (random.Random(seed), pas de random global)
-  - Redistribution directe des créances lors des faillites (pas de masses de faillite)
+Ce module implémente la dynamique complète du modèle économique multi-agents.
+Un pas de simulation (run_step) exécute les 9 étapes suivantes dans l'ordre :
 
-Mécanismes clés :
-  - Extraction : Π = α√P (passif productif)
-  - Cession de créances réévaluées à la valeur réelle avant transfert
-  - Arbitrage vente-de-créance / reliquéfaction guidé par r* interne
-  - Contrainte d'endettement sur revenus totaux (extraction + intérêts reçus)
+  1. Mouvement brownien des α   — choc de productivité géométrique
+  2. Création d'entités         — arrivée Poisson(λ) de nouveaux agents
+  3. Extraction                 — Π_i = α_i √P_i ajouté au liquide
+  4. Paiement des intérêts      — r·q de chaque emprunteur vers son prêteur,
+                                   avec mobilisation de capacité si illiquidité
+  5. Amortissement              — remboursement géométrique τ·q du principal (τ=0 par défaut)
+  6. Dépréciation               — décroissance géométrique de tous les actifs
+  7. Marché du crédit           — appariement aléatoire k-pool, prêts nouveaux
+  8. Cascades de faillites      — résolution itérative des insolvabilités
+  9. Auto-investissement        — conversion φ·surplus en capital endogène
 
-Statistiques : le Collector est instancié dans Simulation et appelé
-               à chaque pas — voir statistics.py pour le détail.
+Architecture technique :
+  - Références par ID entier : Entity et Loan ne se pointent pas mutuellement.
+    Les conteneurs sim.entities et sim.loans sont des Dict[int, ...].
+  - RNG isolé : random.Random(seed) utilisé exclusivement, jamais le module
+    random global. Garantit la reproductibilité indépendamment du contexte.
+  - Caches d'intérêts (Bloc 8) : charges_interets et revenus_interets sont
+    des attributs maintenus en temps réel sur chaque Entity. Ils sont mis à jour
+    de façon incrémentale dans toute opération qui crée, modifie ou détruit un prêt.
+    Suppression du _rebuild_interest_cache() O(N_prêts) à chaque pas.
+  - Redistribution directe lors des faillites (pas de « masses de faillite ») :
+    les créances de l'entité faillie sont fractionnées entre ses créanciers au
+    prorata de leurs encours, évitant une entité intermédiaire temporaire.
+
+Statistiques : le Collector (statistics.py) est instancié dans Simulation
+               et appelé à la fin de chaque pas via record_step().
 """
 
 from __future__ import annotations
@@ -28,33 +43,54 @@ from config import SimulationConfig
 from models import Entity, Loan
 from statistics import CascadeEvent, Collector
 
+# Probabilité qu'une entité nouvellement créée (après t=0) soit enregistrée
+# pour le suivi détaillé (entity_histories.csv). 3 % ≈ 3 entités surveillées
+# pour une cohorte de 100 nouveaux agents.
 _P_WATCH_NEW = 0.03
 
 
 class Simulation:
+    """
+    Moteur principal de la simulation multi-agents.
+
+    Attributs publics utiles en lecture :
+        entities    — Dict[int, Entity] : toutes les entités (vivantes et mortes)
+        loans       — Dict[int, Loan]   : tous les prêts (actifs et inactifs)
+        stats       — List[Dict]        : statistiques légères par pas
+        collector   — Collector         : données statistiques riches
+        current_step — int              : pas courant (incrémenté en fin de run_step)
+    """
+
     def __init__(self, config: Optional[SimulationConfig] = None) -> None:
         self.config = config or SimulationConfig()
+
+        # RNG isolé : toute la stochasticité passe par ce générateur.
+        # Garantit la reproductibilité : même seed → même trajectoire.
         self.rng = random.Random(self.config.seed)
 
+        # Conteneurs principaux (croissent au fil de la simulation, jamais purgés).
         self.entities: Dict[int, Entity] = {}
         self.loans: Dict[int, Loan] = {}
 
         self.current_step: int = 0
-        self.next_entity_id: int = 1
-        self.next_loan_id: int = 1
+        self.next_entity_id: int = 1   # compteur d'IDs entités (monotone croissant)
+        self.next_loan_id: int = 1     # compteur d'IDs prêts   (monotone croissant)
 
-        # Statistiques légères (une ligne par pas)
+        # Statistiques légères : une ligne par pas, exportée dans stats_legeres.csv.
         self.stats: List[Dict] = []
+
+        # Journal d'événements (prêts, faillites) — rempli seulement si log_events=True.
         self.event_log: List[str] = []
 
-        # Collecteur statistique riche
+        # Collecteur statistique riche (distributions, cascades, indicateurs systémiques).
         self.collector = Collector(freq_snapshot=self.config.freq_snapshot)
 
-        self._step_flows: dict = {}  # eid -> flow dict (reset each step)
+        # Flux de chaque entité surveillée sur le pas courant (extraction, intérêts...).
+        # Réinitialisé en début de pas par _reset_step_flows().
+        self._step_flows: dict = {}  # eid -> {'extraction': 0, 'interest_received': 0, ...}
 
+        # Population initiale : toutes les entités initiales sont enregistrées pour suivi.
         self._create_initial_population(self.config.n_entites_initiales)
-
-        # Watch all initial entities
         for eid in list(self.entities.keys()):
             self.collector.register_entity(eid)
             self._step_flows[eid] = {'extraction': 0.0, 'interest_received': 0.0,
@@ -65,25 +101,38 @@ class Simulation:
     # ------------------------------------------------------------------
 
     def log(self, message: str) -> None:
+        """Ajoute un message horodaté dans event_log si log_events=True."""
         if self.config.log_events:
             self.event_log.append(f"[t={self.current_step}] {message}")
 
     def _reset_step_flows(self) -> None:
+        """Réinitialise les compteurs de flux des entités surveillées en début de pas."""
         for eid in self.collector.watched_entity_ids:
             self._step_flows[eid] = {'extraction': 0.0, 'interest_received': 0.0,
                                       'interest_paid': 0.0, 'depreciation': 0.0}
 
     def active_entities(self) -> List[Entity]:
+        """Retourne la liste des entités vivantes (alive=True)."""
         return [e for e in self.entities.values() if e.alive]
 
     def active_loans(self) -> List[Loan]:
+        """Retourne la liste des prêts actifs (active=True)."""
         return [loan for loan in self.loans.values() if loan.active]
 
     def get_entity(self, entity_id: int) -> Entity:
+        """Accès direct à une entité par son ID (KeyError si inexistant)."""
         return self.entities[entity_id]
 
     def compute_internal_rate(self, entity: Entity) -> float:
-        """r* = alpha / (2 * sqrt(P))"""
+        """
+        Taux de rendement marginal interne de l'entité :
+            r* = α / (2√P)
+        C'est la dérivée de l'extraction Π = α√P par rapport à P.
+        r* décroît avec la taille (P) : les grandes entités ont un r* faible
+        → naturellement prêteuses ; les petites ont un r* élevé → naturellement
+        emprunteuses. C'est le seul signal de prix du marché du crédit.
+        Le max avec ε évite la division par zéro si P ≈ 0.
+        """
         p = max(entity.passif_total, self.config.epsilon)
         return entity.alpha / (2.0 * math.sqrt(p))
 
@@ -116,11 +165,12 @@ class Simulation:
         return entity
 
     def _create_initial_population(self, n: int) -> None:
+        """Peuple la simulation avec n entités identiques (sauf alpha) à t=0."""
         for _ in range(n):
             self.create_entity()
 
     # ------------------------------------------------------------------
-    #  CRÉATION DE PRÊTS
+    #  CRÉATION DE PRÊTS (primitive bas-niveau)
     # ------------------------------------------------------------------
 
     def create_loan(
@@ -131,6 +181,14 @@ class Simulation:
         rate: float,
         parent_loan_id: Optional[int] = None,
     ) -> Loan:
+        """
+        Primitive bas-niveau : crée un prêt et l'enregistre dans sim.loans.
+        NE met PAS à jour les bilans ni les caches d'intérêts.
+
+        Utiliser execute_loan() pour un nouveau prêt de marché (met à jour bilans et caches).
+        Utiliser directement create_loan() uniquement lors des redistributions de faillite
+        ou des réévaluations, où les mises à jour de bilan sont gérées manuellement.
+        """
         if principal <= self.config.epsilon:
             raise ValueError("Le principal doit être strictement positif.")
         loan = Loan(
@@ -152,7 +210,13 @@ class Simulation:
     # ------------------------------------------------------------------
 
     def poisson(self, lam: float) -> int:
-        """Algorithme de Knuth pour un tirage Poisson(lam)."""
+        """
+        Algorithme de Knuth pour un tirage Poisson(λ) à partir du RNG isolé.
+
+        Principe : la somme de k variables U[0,1] est > e^{-λ} en attendant la première
+        qui fait passer le produit cumulé en dessous de e^{-λ}. Retourne 0 si λ ≤ 0.
+        Complexité : O(λ) en moyenne.
+        """
         if lam <= 0:
             return 0
         l_val = math.exp(-lam)
@@ -168,6 +232,10 @@ class Simulation:
     # ------------------------------------------------------------------
 
     def spawn_new_entities(self) -> int:
+        """
+        Tire n ~ Poisson(λ_création) nouvelles entités et les crée avec la dotation par défaut.
+        Retourne le nombre d'entités créées ce pas.
+        """
         n = self.poisson(self.config.lambda_creation)
         for _ in range(n):
             self.create_entity()
@@ -178,7 +246,14 @@ class Simulation:
     # ------------------------------------------------------------------
 
     def extract_from_nature(self) -> float:
-        """Π = alpha * sqrt(P) ajouté au liquide de chaque entité vivante."""
+        """
+        Chaque entité vivante extrait Π_i = α_i √P_i et l'ajoute à son liquide.
+
+        La fonction √P est concave : rendements décroissants à l'échelle.
+        α_i est hétérogène entre entités et varie lentement (mouvement brownien).
+        C'est la seule source exogène de ressources dans le système.
+        Retourne le flux total extrait ce pas.
+        """
         total = 0.0
         for e in self.active_entities():
             extracted = e.alpha * math.sqrt(max(e.passif_total, 0.0))
@@ -194,8 +269,12 @@ class Simulation:
 
     def pay_interest_phase(self) -> float:
         """
-        Paiement des intérêts pour tous les prêts actifs.
-        En cas d'illiquidité : liquide → cession de créances → reliquéfaction endo.
+        Traite le paiement des intérêts pour l'ensemble des prêts actifs.
+
+        Les prêts sont traités dans l'ordre croissant de loan_id (ordre de création)
+        pour garantir un ordre déterministe quel que soit l'état du dict.
+        Si un emprunteur est illiquide, _ensure_payment_capacity() est appelé.
+        Retourne le flux total d'intérêts versé ce pas.
         """
         total_paid = 0.0
         for loan in sorted(self.active_loans(), key=lambda x: x.loan_id):
@@ -203,6 +282,7 @@ class Simulation:
         return total_paid
 
     def _pay_single_interest(self, loan: Loan) -> float:
+        """Traite le paiement des intérêts d'un seul prêt. Retourne le montant effectivement payé."""
         if not loan.active:
             return 0.0
         borrower = self.get_entity(loan.borrower_id)
@@ -415,6 +495,28 @@ class Simulation:
     # ------------------------------------------------------------------
 
     def apply_depreciation(self) -> None:
+        """
+        Applique une dépréciation géométrique à tous les actifs de chaque entité vivante.
+
+        Actif liquide       : L  ← L  × (1 − δ_L)       δ_L    = 0.01
+        Capital endo (K,P)  : K^endo ← K^endo × (1 − δ_endo),
+                              P^endo ← P^endo × (1 − δ_endo)    δ_endo = 0.10
+        Capital exo  (K,P)  : K^exo  ← K^exo  × (1 − δ_exo),
+                              P^exo  ← P^exo  × (1 − δ_exo)     δ_exo  = 0.10
+
+        L'invariant K^endo = P^endo et K^exo = P^exo est préservé car les deux
+        côtés du bilan dépécient au même taux.
+
+        passif_total est recalculé depuis zéro après dépréciation car les trois
+        composantes (B, P^endo, P^exo) changent simultanément — un calcul direct
+        est plus sûr qu'une mise à jour incrémentale.
+
+        Note : la dépréciation des créances (actif_prete/passif_credit_detenu) n'est
+        PAS effectuée ici. Elle est traitée paresseusement, à la demande, via
+        _revalue_loan() lors d'une cession ou d'une faillite. Cela crée une fragilité
+        cachée (valeur nominale > valeur réelle) qui est capturée par
+        compute_hidden_fragility() à des fins statistiques.
+        """
         for e in self.active_entities():
             if e.entity_id in self.collector.watched_entity_ids:
                 dep = (e.actif_liquide * self.config.taux_depreciation_liquide +
@@ -431,7 +533,8 @@ class Simulation:
             e.actif_exoinvesti *= factor_exo
             e.passif_exoinvesti *= factor_exo
 
-            # Bloc 8 : recalcul du cache passif_total après dépréciations
+            # Recalcul complet du cache passif_total après les dépréciations :
+            # plus fiable qu'une mise à jour incrémentale car les trois termes changent.
             e.passif_total = e.passif_inne + e.passif_endoinvesti + e.passif_exoinvesti
 
     # ------------------------------------------------------------------
@@ -440,10 +543,15 @@ class Simulation:
 
     def _rebuild_interest_cache(self) -> None:
         """
-        Recalcule charges_interets et revenus_interets pour toutes les entités
-        vivantes à partir des prêts actifs. O(N_loans) une seule fois par pas,
-        appelé juste avant la phase de marché de crédit.
-        Évite les itérations O(N_loans) répétées dans _debt_ratio_ok/_existing_interest_burden.
+        Reconstruction complète des caches charges_interets / revenus_interets.
+
+        USAGE : outil de débogage ou de vérification de cohérence uniquement.
+        En fonctionnement normal, ces caches sont maintenus de façon INCRÉMENTALE
+        dans toutes les opérations qui créent, modifient ou détruisent un prêt :
+          execute_loan, _revalue_loan, _transfer_claims_for_payment,
+          _pay_single_amortization, process_single_failure (phases 2 et 3).
+        Appeler cette méthode à chaque pas (comportement antérieur au Bloc 9)
+        est redondant et coûte O(N_prêts) inutilement.
         """
         for e in self.active_entities():
             e.charges_interets = 0.0
@@ -458,6 +566,12 @@ class Simulation:
                 lender.revenus_interets += flow
 
     def _select_active_credit_entities(self) -> List[Entity]:
+        """
+        Retourne les entités éligibles au marché du crédit :
+          P_i > 0  ET  L_i / P_i > s  (seuil de liquidité relative).
+        Filtre les entités sans passif productif (division par zéro) et celles
+        trop illiquides pour offrir ou demander du crédit utilement.
+        """
         s = self.config.seuil_ratio_liquide_passif
         return [
             e for e in self.active_entities()
@@ -465,13 +579,24 @@ class Simulation:
         ]
 
     def _lender_offer(self, lender: Entity) -> float:
-        # Réserve = max(s·P, B_innée) : protège la solvabilité (L ≥ B) quand s·P < B.
-        # Sans cette contrainte, un prêteur avec P < B/s prête sous son seuil de faillite.
+        """
+        Liquidité que le prêteur peut offrir : L − réserve.
+        La réserve = max(s·P, B_innée) garantit L ≥ B après le prêt,
+        ce qui protège contre un passage sous le seuil de faillite.
+        Sans cette contrainte, une entité avec P < B/s prêterait sous son propre
+        seuil d'insolvabilité.
+        """
         return max(0.0, lender.actif_liquide - self._liquidity_reserve(lender))
 
     def _liquidity_reserve(self, entity: Entity) -> float:
-        """Réserve de liquidité minimale : max(s·P, B_innée). Cohérente avec
-        _lender_offer et auto_invest_end_of_turn."""
+        """
+        Réserve de liquidité minimale imposée à toute entité :
+            réserve = max(s·P, B_innée)
+
+        Utilisée de façon cohérente dans _lender_offer() (offre de crédit)
+        et auto_invest_end_of_turn() (surplus auto-investi) pour éviter des
+        incohérences de comportement entre les deux phases.
+        """
         return max(
             self.config.seuil_ratio_liquide_passif * entity.passif_total,
             entity.passif_inne,
@@ -479,10 +604,15 @@ class Simulation:
 
     def _borrower_qmax(self, borrower: Entity, rate: float) -> float:
         """
-        Volume optimal à emprunter étant donné que le surplus sera auto-investi.
-        L'emprunteur cherche le q tel que le rendement marginal à (P + surplus + q) = rate.
-        qmax = (α/2r)² - P - surplus
-        Le surplus planifié utilise la même réserve que auto_invest_end_of_turn.
+        Volume optimal d'emprunt pour un emprunteur au taux r.
+
+        Dérivation : l'emprunteur va auto-investir son surplus s de toute façon.
+        La question est combien emprunter en PLUS. Le gain marginal d'une unité
+        supplémentaire de passif à (P + s + q) est r*(P+s+q) = α / (2√(P+s+q)).
+        Optimal quand ce gain marginal = coût r :
+            α / (2√(P + s + q_max)) = r  ⟹  q_max = (α/2r)² − P − s
+
+        Retourne 0 si q_max ≤ 0 (l'entité a déjà atteint ou dépassé l'optimum).
         """
         if rate <= self.config.epsilon:
             return 0.0
@@ -491,12 +621,18 @@ class Simulation:
         return max(0.0, qmax)
 
     def _gain_auto_invest(self, borrower: Entity, amount: float) -> float:
+        """Gain brut d'auto-investissement de `amount` : α(√(P+amount) − √P)."""
         if amount <= self.config.epsilon:
             return 0.0
         p = borrower.passif_total
         return borrower.alpha * (math.sqrt(p + amount) - math.sqrt(p))
 
     def _gain_borrow(self, borrower: Entity, amount: float, rate: float) -> float:
+        """
+        Gain net d'emprunt de `amount` au taux r :
+            gain_brut − coût = α(√(P+amount) − √P) − r·amount
+        Ne tient pas compte du surplus déjà planifié (utilisé pour calculs marginaux).
+        """
         if amount <= self.config.epsilon:
             return 0.0
         p = borrower.passif_total
@@ -504,8 +640,9 @@ class Simulation:
         return gross - rate * amount
 
     def _gain_lend(self, lender: Entity, amount: float, rate: float) -> float:
+        """Gain du prêteur pour un prêt de `amount` au taux r : r·amount."""
         if amount <= self.config.epsilon:
-            return 0.0 
+            return 0.0
         return rate * amount
 
     def _borrowing_is_acceptable(self, borrower: Entity, amount: float, rate: float) -> bool:
@@ -541,16 +678,24 @@ class Simulation:
         return rate >= self.compute_internal_rate(lender) - self.config.epsilon
 
     def _existing_interest_burden(self, borrower: Entity) -> float:
-        """Somme des intérêts annuels (r·q) sur les prêts existants de l'emprunteur.
-        Utilise le cache charges_interets (initialisé par _rebuild_interest_cache)."""
+        """
+        Charge d'intérêts existante de l'emprunteur : Σ r·q sur ses prêts actifs.
+        Lit directement le cache borrower.charges_interets (O(1)).
+        Ce cache est maintenu incrémentalement par toutes les opérations de prêt.
+        """
         return borrower.charges_interets
 
     def _debt_ratio_ok(self, borrower: Entity, principal: float, rate: float) -> bool:
         """
-        Contrainte d'endettement : (intérêts existants + r_new·q_new) / revenus_totaux ≤ seuil.
-        Les revenus totaux comprennent l'extraction et les intérêts financiers reçus.
-        Utilise les caches charges_interets / revenus_interets (O(1)).
-        Retourne True si le prêt est admissible.
+        Vérifie la contrainte d'endettement avant d'accorder un nouveau prêt :
+            (charges_existantes + r_new · q_new) / revenus_totaux ≤ seuil_d
+
+        Revenus totaux = extraction α√P + intérêts financiers reçus.
+        Cette contrainte empêche un emprunteur de s'endetter au-delà de sa
+        capacité à rembourser les intérêts (seuil = 1 : charges ≤ revenus).
+
+        Utilise les caches O(1) charges_interets et revenus_interets.
+        Retourne True si le prêt est admissible (ou si seuil ≤ 0 = contrainte désactivée).
         """
         seuil = self.config.seuil_ratio_endettement
         if seuil <= 0:
@@ -562,14 +707,31 @@ class Simulation:
         return (borrower.charges_interets + rate * principal) / revenus <= seuil
 
     def execute_loan(self, lender: Entity, borrower: Entity, principal: float, rate: float) -> Loan:
+        """
+        Exécute un prêt de marché : met à jour les bilans des deux parties et les caches.
+
+        Effets sur le bilan du prêteur :
+            L_prêteur  -= q   (liquidité sortante)
+            R_prêteur  += q   (nouvelle créance)
+            C_prêteur  += q   (passif miroir de R)
+
+        Effets sur le bilan de l'emprunteur :
+            K^exo_empr += q   (capital exo-investi reçu)
+            P^exo_empr += q   (passif exo-investi correspondant)
+            P_empr     += q   (cache passif_total)
+
+        Caches d'intérêts mis à jour immédiatement (O(1)) :
+            lender.revenus_interets  += r·q
+            borrower.charges_interets += r·q
+        """
         lender.actif_liquide -= principal
         lender.actif_prete += principal
         lender.passif_credit_detenu += principal
         borrower.actif_exoinvesti += principal
         borrower.passif_exoinvesti += principal
-        borrower.passif_total += principal             # Bloc 8 : cache passif_total
-        lender.revenus_interets  += rate * principal   # Bloc 8 : cache intérêts
-        borrower.charges_interets += rate * principal  # Bloc 8 : cache intérêts
+        borrower.passif_total += principal             # cache passif_total
+        lender.revenus_interets  += rate * principal   # cache intérêts
+        borrower.charges_interets += rate * principal  # cache intérêts
         loan = self.create_loan(lender.entity_id, borrower.entity_id, principal, rate)
         self.log(
             f"Prêt {loan.loan_id}: {lender.entity_id} -> {borrower.entity_id}, "
@@ -600,28 +762,37 @@ class Simulation:
         pool_lenders: List[Entity] = []
         pool_borrowers: List[Entity] = []
 
-        # charges_interets / revenus_interets initialisés par _rebuild_interest_cache()
-        # avant cet appel (O(1) par accès, O(N_loans) une fois par pas).
+        # Les caches charges_interets / revenus_interets sont maintenus en temps réel
+        # (mises à jour incrémentales dans execute_loan, _revalue_loan, etc.).
+        # Accès O(1) ici sans reconstruction préalable.
         seuil = self.config.seuil_ratio_endettement
         eps   = self.config.epsilon
         f     = self.config.fraction_taux_emprunteur
 
         for _ in range(self.config.max_credit_iterations):
             if need_resort:
+                # Reconstruction du pool après chaque transaction réussie.
+                # On tire un échantillon de 2k entités (O(k)) au lieu de trier N entités (O(N log N)).
+                # Cela reflète un marché décentralisé à information locale : chaque agent
+                # n'observe qu'un sous-ensemble de contreparties potentielles.
                 active = self._select_active_credit_entities()
                 if len(active) < 2:
                     break
-                # Échantillonnage O(k log k) : marché décentralisé avec information locale.
                 sample_size = min(len(active), 2 * k)
                 sample = self.rng.sample(active, sample_size)
                 active_sorted = sorted(sample, key=self.compute_internal_rate)
                 n = len(active_sorted)
+                # Moitié basse → pool prêteurs (r* faible = excédent de capital)
+                # Moitié haute → pool emprunteurs (r* élevé = besoin de capital)
                 pool_lenders = active_sorted[:max(1, n // 2)]
                 pool_borrowers = active_sorted[n // 2:]
                 if not pool_lenders or not pool_borrowers:
                     break
                 need_resort = False
 
+            # Tirage aléatoire dans les pools : c'est ici que k > 1 crée les intermédiaires.
+            # Une entité médiane peut être tirée comme prêteur face à une petite entité dans
+            # une itération, et comme emprunteur face à une grande dans une autre.
             lender = self.rng.choice(pool_lenders)
             pool_b = [e for e in pool_borrowers if e.entity_id != lender.entity_id]
             if not pool_b:
@@ -646,8 +817,12 @@ class Simulation:
                     break
                 continue
 
+            # Taux de transaction : interpolation convexe entre r*_prêteur et r*_emprunteur.
+            # f = 0 → taux = r*_prêteur (neutre pour lui, tout le surplus va à l'emprunteur).
+            # f = 1 → taux = r*_emprunteur (neutre pour lui, tout le surplus va au prêteur).
             rate = (1.0 - f) * lender_rate + f * borrower_rate
 
+            # Volume : fraction θ de la demande optimale, plafonnée par l'offre du prêteur.
             qmax = self._borrower_qmax(borrower, rate)
             demand = self.config.theta * qmax
             principal = min(offer, demand)
@@ -657,13 +832,15 @@ class Simulation:
                 if idle >= MAX_IDLE:
                     break
                 continue
+            # Vérification de la prime de rendement μ : gain_avec ≥ (1+μ)·gain_sans
             if not self._borrowing_is_acceptable(borrower, principal, rate):
                 idle += 1
                 if idle >= MAX_IDLE:
                     break
                 continue
 
-            # Contrainte d'endettement via attributs Entity (O(1), initialisés par _rebuild_interest_cache)
+            # Contrainte d'endettement : (charges + r·q) / revenus ≤ seuil_d
+            # Inlinée ici pour éviter un appel de méthode (hot path de la boucle).
             if seuil > 0:
                 p = max(borrower.passif_total, eps)
                 revenus = borrower.alpha * math.sqrt(p) + borrower.revenus_interets
@@ -673,11 +850,12 @@ class Simulation:
                         break
                     continue
 
+            # Transaction validée : mise à jour bilans + caches intérêts.
             self.execute_loan(lender, borrower, principal, rate)
-            # execute_loan met déjà à jour charges_interets / revenus_interets
             transactions += 1
             idle = 0
-            need_resort = True  # r* et offres ont changé → ré-échantillonner
+            # Les r* et les offres ont changé → ré-échantillonner les pools au prochain tour.
+            need_resort = True
 
         return transactions
 
@@ -687,10 +865,19 @@ class Simulation:
 
     def auto_invest_end_of_turn(self) -> float:
         """
-        Convertit une fraction du surplus liquide en investissement endogène.
-        Surplus = max(0, L - reserve) où reserve = max(s·P, B_innée).
-        La réserve minimale est max(s·P, B) pour garantir L ≥ B après conversion,
-        cohérent avec _lender_offer qui applique la même contrainte.
+        Auto-investissement en fin de pas : convertit une fraction φ du surplus liquide
+        en capital endogène.
+
+        Pour chaque entité :
+            surplus  = max(0, L − réserve)   avec réserve = max(s·P, B_innée)
+            x        = φ · surplus           (φ = fraction_auto_investissement = 0.5)
+            L       -= x
+            K^endo  += x,   P^endo += x      (invariant K^endo = P^endo maintenu)
+            P       += x                      (cache passif_total mis à jour)
+
+        La réserve max(s·P, B_innée) garantit L ≥ B après conversion,
+        cohérente avec _lender_offer() qui applique la même contrainte.
+        Retourne le volume total auto-investi ce pas.
         """
         total = 0.0
         for e in self.active_entities():
@@ -700,7 +887,7 @@ class Simulation:
                 e.actif_liquide -= x
                 e.actif_endoinvesti += x
                 e.passif_endoinvesti += x
-                e.passif_total += x   # Bloc 8 : cache passif_total
+                e.passif_total += x   # cache passif_total
                 total += x
         return total
 
@@ -712,7 +899,10 @@ class Simulation:
         return entity.alive and entity.actif_total + self.config.epsilon < entity.passif_bilan
 
     def _capture_system_state(self) -> dict:
-        """Snapshot du système avant résolution des faillites."""
+        """
+        Snapshot agrégé du système juste avant la résolution des faillites.
+        Utilisé par resolve_cascades() pour construire le CascadeEvent (comparaison avant/après).
+        """
         alive = self.active_entities()
         return {
             "actif_total": sum(e.actif_total for e in alive),
@@ -723,10 +913,15 @@ class Simulation:
 
     def compute_hidden_fragility(self) -> Dict[int, float]:
         """
-        Calcule, pour chaque entité vivante prêteuse, l'écart entre la valeur
-        nominale portée au bilan (actif_prete, via loan.principal) et la valeur
-        économique réelle de ses créances (principal × (1−δ_exo)^âge).
-        Ne modifie aucun bilan. Utilisé uniquement à des fins statistiques.
+        Calcule la fragilité cachée de chaque prêteur vivant :
+            perte_cachée = Σ [q_nominal − q_nominal×(1−δ_exo)^âge]
+                         = Σ q_nominal × [1 − (1−δ_exo)^âge]
+
+        Cette quantité représente l'écart entre la valeur comptable nominale des
+        créances (actif_prete) et leur valeur économique réelle (dépréciée). Elle
+        mesure le risque de write-down latent si les prêts étaient réévalués aujourd'hui.
+
+        NE modifie aucun bilan. Purement analytique.
         Retourne {entity_id: perte_cachée_totale}.
         """
         factor = max(0.0, 1.0 - self.config.taux_depreciation_exo)
@@ -908,6 +1103,28 @@ class Simulation:
         return total
 
     def _pay_single_amortization(self, loan: Loan, tau: float) -> float:
+        """
+        Traite l'amortissement d'un seul prêt.
+
+        Le remboursement est géométrique : dû = τ × principal_restant.
+        L'emprunteur verse le montant via _ensure_payment_capacity() (mobilisation
+        de liquidité ou cession de créances si illiquidité).
+
+        Effets bilans :
+            loan.principal     -= reduction   (réduction proportionnelle au paiement)
+            P^exo_empr         -= reduction   (la dette fond)
+            P_empr             -= reduction   (cache passif_total)
+            R_prêteur          -= reduction   (créance réduite d'autant)
+            C_prêteur          -= reduction   (passif miroir réduit)
+            L_prêteur          += payment     (cash reçu)
+
+        Caches d'intérêts :
+            borrower.charges_interets -= r × reduction
+            lender.revenus_interets   -= r × reduction
+
+        Note : actif_exoinvesti de l'emprunteur n'est PAS réduit. Le capital reste
+        déployé ; seule la dette correspondante diminue, créant de l'équité graduelle.
+        """
         if not loan.active:
             return 0.0
         lender = self.get_entity(loan.lender_id)
@@ -919,15 +1136,16 @@ class Simulation:
         borrower = self.get_entity(loan.borrower_id)
         payment = self._ensure_payment_capacity(borrower, due, loan.lender_id)
 
-        # Réduction du principal (proportionnelle au paiement effectif)
+        # Réduction du principal proportionnelle au paiement effectif.
+        # Si payment < due (illiquidité partielle), réduction proportionnelle seulement.
         reduction = min(payment, loan.principal)
         loan.principal -= reduction
         borrower.passif_exoinvesti -= reduction   # la dette fond
-        borrower.passif_total -= reduction         # Bloc 8 : cache passif_total
+        borrower.passif_total -= reduction         # cache passif_total
         lender.actif_prete -= reduction            # créance réduite d'autant
         lender.passif_credit_detenu -= reduction   # passif miroir réduit
         lender.actif_liquide += payment            # cash reçu par le prêteur
-        # Cache intérêts : la réduction de principal diminue les flux futurs r·q.
+        # Cache intérêts : la réduction du principal diminue les flux futurs r·q.
         delta_flow = loan.rate * reduction
         borrower.charges_interets -= delta_flow
         lender.revenus_interets -= delta_flow
@@ -942,9 +1160,13 @@ class Simulation:
     # ------------------------------------------------------------------
 
     def _update_alphas(self) -> None:
-        """Mise à jour géométrique de alpha pour chaque entité vivante.
-        alpha_t = alpha_{t-1} * exp(sigma * N(0,1))
-        Sans effet si alpha_sigma_brownien == 0.
+        """
+        Choc de productivité géométrique sur chaque entité vivante :
+            α(t+1) = α(t) × exp(σ · N(0,1))
+
+        Modélise une hétérogénéité temporelle des productivités. Le processus
+        est géométrique (pas de signe négatif possible sur α) et log-normal.
+        σ = 0 désactive le processus (α statique).
         """
         sigma = self.config.alpha_sigma_brownien
         if sigma <= 0:
@@ -966,6 +1188,16 @@ class Simulation:
         auto_invest_total: float,
         cascade_totals: Dict,
     ) -> Dict:
+        """
+        Collecte les statistiques légères (une ligne par pas) et les ajoute à self.stats.
+
+        Ces statistiques sont exportées dans stats_legeres.csv et permettent un suivi
+        macroscopique rapide sans charger les données du Collector.
+
+        Champs exportés : step, population (vivante/totale), flux d'extraction,
+        intérêts, transactions de crédit, faillites, volume de prêts, actif/passif/liquidité
+        systémique, passif moyen, taux interne moyen.
+        """
         alive = self.active_entities()
         active_loans = self.active_loans()
         passifs = [e.passif_total for e in alive]
@@ -1002,6 +1234,23 @@ class Simulation:
     # ------------------------------------------------------------------
 
     def run_step(self) -> Dict:
+        """
+        Exécute un pas complet de simulation et retourne les statistiques légères.
+
+        Séquence des 9 étapes :
+          0. Réinitialisation des flux de suivi
+          1. Chocs browniens sur les α
+          2. Création d'entités Poisson(λ)
+          3. Extraction Π = α√P
+          4. Paiement des intérêts r·q (avec mobilisation de capacité)
+          5. Amortissement τ·q (désactivé par défaut)
+          6. Dépréciation géométrique des actifs
+          7. Marché du crédit (matching aléatoire k-pool)
+          8. Résolution des cascades de faillite
+          9. Auto-investissement φ·surplus
+
+        current_step est incrémenté en fin de méthode.
+        """
         self._reset_step_flows()
         self._update_alphas()
         spawn_count = self.spawn_new_entities()
@@ -1012,7 +1261,6 @@ class Simulation:
         amortissement_total = self.pay_amortization_phase()
 
         self.apply_depreciation()
-        self._rebuild_interest_cache()  # Bloc 8 : O(N_loans) une seule fois par pas
         credit_transactions = self.credit_market_iteration()
         cascade_totals, cascade_event = self.resolve_cascades()
         auto_invest_total = self.auto_invest_end_of_turn()
@@ -1033,6 +1281,11 @@ class Simulation:
     # ------------------------------------------------------------------
 
     def run(self, n_steps: Optional[int] = None, verbose: bool = True) -> List[Dict]:
+        """
+        Lance la simulation pour n_steps pas (par défaut config.duree_simulation).
+        Affiche une progression toutes les 10 % si verbose=True.
+        Retourne self.stats (liste de dicts, une entrée par pas).
+        """
         n = self.config.duree_simulation if n_steps is None else n_steps
         report_interval = max(1, n // 10)
 
@@ -1059,6 +1312,7 @@ class Simulation:
     # ------------------------------------------------------------------
 
     def export_stats_csv(self, filepath: str) -> None:
+        """Exporte self.stats (statistiques légères par pas) dans un fichier CSV."""
         if not self.stats:
             return
         fieldnames = list(self.stats[0].keys())
@@ -1068,11 +1322,18 @@ class Simulation:
             writer.writerows(self.stats)
 
     def export_event_log(self, filepath: str) -> None:
+        """Exporte le journal d'événements (log_events=True) dans un fichier texte."""
         with open(filepath, "w", encoding="utf-8") as f:
             for line in self.event_log:
                 f.write(line + "\n")
 
     def summary(self) -> dict:
+        """
+        Retourne un résumé statistique de la simulation terminée.
+        Utilisé pour meta.json et l'affichage final.
+        cascade_max_size est la taille maximale d'une cascade sur un seul pas
+        (nombre de faillites), pas la taille maximale enregistrée par le Collector.
+        """
         if not self.stats:
             return {}
         total_failures = sum(s["n_failures"] for s in self.stats)

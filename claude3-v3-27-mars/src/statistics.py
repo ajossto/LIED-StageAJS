@@ -1,19 +1,29 @@
 """
 statistics.py — Module de collecte et d'organisation des données statistiques.
 
-Ce module est indépendant du moteur de simulation. Il collecte :
+Ce module est indépendant du moteur de simulation : il ne modifie aucun état,
+il lit uniquement les attributs publics des objets Entity et Loan.
 
-  1. Snapshots périodiques des distributions (taille des entités, liquidité, levier…)
-  2. Données brutes des cascades de faillite (volume en joules, contagion)
-  3. Indicateurs systémiques dynamiques (levier agrégé, concentration, liquidité)
+Trois types de données sont collectés :
+
+  1. SnapshotDistribution — distribution d'une grandeur sur toutes les entités
+     vivantes, capturée toutes les freq_snapshot étapes. Permet de suivre
+     l'évolution de la structure de la population (taille, liquidité, levier…).
+
+  2. CascadeEvent — données complètes d'un épisode de faillites (volume détruit,
+     contagion, état du système avant la cascade). Une entrée par pas avec faillites.
+
+  3. SystemicIndicator — indicateurs agrégés macroscopiques à chaque pas
+     (levier système, ratio de liquidité, densité financière, concentration).
 
 Interface principale :
-    collector = Collector(freq_snapshot=10)
-    # dans chaque pas de simulation :
-    collector.record_step(sim, cascade_event_optionnel)
+    collector = Collector(freq_snapshot=50)
+    # à appeler en fin de chaque pas :
+    collector.record_step(sim, cascade_event=event_ou_None, entity_flows=flows)
+    # en fin de simulation :
+    collector.export_all(csv_dir, entities=sim.entities)
 
-Aucune dépendance circulaire : le collecteur lit uniquement les
-attributs/méthodes publics de la simulation.
+Aucune dépendance circulaire : uniquement des lectures, jamais d'écriture dans sim.
 """
 
 import math
@@ -27,8 +37,12 @@ from typing import Dict, List, Optional
 
 class SnapshotDistribution:
     """
-    Capture la distribution d'une grandeur sur toutes les entités vivantes
-    à un instant donné. Stocke les valeurs brutes (pas d'agrégation précoce).
+    Capture la distribution d'une grandeur (ex. passif_total, ratio_L_P)
+    sur toutes les entités vivantes à un instant donné.
+
+    Les valeurs brutes sont stockées triées pour un calcul efficace des quantiles.
+    Les méthodes quantiles(), mean() et std() permettent des résumés statistiques
+    exportés dans snapshots_distributions.csv.
     """
 
     def __init__(self, step: int, name: str, values: List[float]):
@@ -79,8 +93,14 @@ class SnapshotDistribution:
 
 class CascadeEvent:
     """
-    Capture les données complètes d'une cascade de faillites.
-    L'unité de mesure principale est le joule (volume), pas le nombre d'entités.
+    Données complètes d'un épisode de faillites au sein d'un seul pas de simulation.
+
+    Distingue les faillites « contagiées » (entités qui étaient solvables avant la
+    cascade, rendues insolvables par la propagation des pertes via le réseau de crédit)
+    des faillites « déjà fragiles » (insolvables dès le début du pas).
+
+    ratio_contagion = nb_contamines / nb_entites_faillie mesure la part de la cascade
+    qui résulte de la propagation de la contagion vs. des défaillances exogènes.
     """
 
     def __init__(self, step: int):
@@ -144,8 +164,16 @@ class CascadeEvent:
 
 class SystemicIndicator:
     """
-    Indicateurs agrégés du système à un instant donné.
-    Permettent de suivre l'évolution macroscopique et de détecter les précurseurs.
+    Indicateurs macroscopiques agrégés du système pour un pas donné.
+
+    Calculés une fois par pas dans Collector._compute_indicators() et exportés
+    dans indicateurs_systemiques.csv pour l'analyse des tendances macroéconomiques.
+
+    Indicateurs dérivés notables :
+      levier_systeme    = P_total / A_total        (endettement moyen du système)
+      ratio_liquidite   = L_total / P_total        (tampon de liquidité agrégé)
+      densite_financiere = vol_prets / A_total     (importance du crédit relatif aux actifs)
+      concentration_prets = Σ (q_k / Q_total)²    (Herfindahl sur les nominaux de prêts)
     """
 
     def __init__(self, step: int):
@@ -197,13 +225,14 @@ class Collector:
     """
     Agrège toutes les données statistiques pendant la simulation.
 
-    Usage depuis la Simulation :
-        collector = Collector(freq_snapshot=10)
-        # dans chaque pas :
-        collector.record_step(sim, cascade_event_optionnel)
+    Instancié par Simulation.__init__() et alimenté via record_step() à chaque pas.
+    Aucune dépendance circulaire : lecture seule des attributs publics de sim.
 
-    Aucune dépendance circulaire : le collecteur lit les attributs publics
-    des objets Entity et Loan, sans rien modifier.
+    Suivi des entités individuelles :
+        - Toutes les entités initiales (t=0) sont suivies.
+        - Les entités créées après t=0 sont suivies avec probabilité _P_WATCH_NEW = 3%.
+        - Pour chaque entité suivie, un snapshot de son bilan complet est enregistré
+          toutes les freq_snapshot étapes dans entity_histories.csv.
     """
 
     def __init__(self, freq_snapshot: int = 10):
