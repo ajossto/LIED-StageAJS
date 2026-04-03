@@ -48,7 +48,7 @@ except ImportError as e:
     print(f"IMPORT_ERROR:{e}")
     sys.exit(0)
 
-cfg = SimulationConfig(seed=42, n_steps=200)
+cfg = SimulationConfig(seed=42, duree_simulation=200)
 sim = Simulation(cfg)
 sim.run(verbose=False)
 
