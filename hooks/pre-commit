@@ -1,0 +1,131 @@
+#!/usr/bin/env bash
+# pre-commit — Vérifications avant chaque commit.
+#
+# Contrôles effectués :
+#   1. Syntaxe Python (py_compile) sur les fichiers src/ stagés.
+#   2. Invariant du cache incrémental : _rebuild_interest_cache() absent de run_step.
+#   3. Cohérence des caches : tout nouveau bloc "loan.active = False" dans simulation.py
+#      doit être accompagné d'une mise à jour de cache (revenus_interets/charges_interets).
+#
+# Installation : git config core.hooksPath hooks
+
+set -euo pipefail
+
+SRC_DIR="claude3-v3-27-mars/src"
+VENV="/home/anatole/jupyter/.venv/bin/activate"
+
+# Couleurs
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m'
+
+ok()   { echo -e "${GREEN}✓${NC} $*"; }
+warn() { echo -e "${YELLOW}⚠${NC} $*"; }
+fail() { echo -e "${RED}✗${NC} $*"; exit 1; }
+
+echo "[pre-commit] Vérification des fichiers stagés..."
+
+# ── Fichiers Python stagés dans src/ ──────────────────────────────────────────
+staged_py=$(git diff --cached --name-only --diff-filter=ACMR \
+            | grep -E "^${SRC_DIR}/.*\.py$" || true)
+
+if [ -z "$staged_py" ]; then
+    ok "Aucun fichier Python modifié dans src/ — skip"
+    exit 0
+fi
+
+# Activer le venv si disponible
+[ -f "$VENV" ] && source "$VENV"
+
+# ── 1. Syntaxe Python ─────────────────────────────────────────────────────────
+echo "[1/3] Syntaxe Python..."
+syntax_ok=true
+for f in $staged_py; do
+    if ! python3 -m py_compile "$f" 2>/tmp/pce_err; then
+        fail "Erreur de syntaxe dans $f :\n$(cat /tmp/pce_err)"
+        syntax_ok=false
+    fi
+done
+$syntax_ok && ok "Syntaxe Python OK"
+
+# ── 2. Invariant cache : _rebuild_interest_cache absent de run_step ────────────
+if echo "$staged_py" | grep -q "simulation.py"; then
+    echo "[2/3] Invariant cache incrémental..."
+    result=$(python3 - <<'EOF'
+import ast, sys
+
+with open("claude3-v3-27-mars/src/simulation.py") as f:
+    tree = ast.parse(f.read())
+
+for node in ast.walk(tree):
+    if isinstance(node, ast.FunctionDef) and node.name == "run_step":
+        for child in ast.walk(node):
+            if isinstance(child, ast.Call):
+                func = child.func
+                name = (func.attr if isinstance(func, ast.Attribute) else
+                        func.id   if isinstance(func, ast.Name) else "")
+                if name == "_rebuild_interest_cache":
+                    print("FAIL")
+                    sys.exit(0)
+print("OK")
+EOF
+)
+    if [ "$result" = "FAIL" ]; then
+        fail "_rebuild_interest_cache() détecté dans run_step.\n  → Utiliser les mises à jour incrémentales dans chaque opération modifiant un prêt."
+    fi
+    ok "Cache incrémental : _rebuild_interest_cache absent de run_step"
+
+    # ── 3. Cohérence caches : loan.active = False → mise à jour cache ──────────
+    echo "[3/3] Cohérence des caches d'intérêts..."
+    result=$(python3 - <<'EOF'
+import ast, sys
+
+with open("claude3-v3-27-mars/src/simulation.py") as f:
+    src = f.read()
+    tree = ast.parse(src)
+    lines = src.splitlines()
+
+# Fonctions autorisées à désactiver un prêt sans mise à jour de cache
+# (create_loan, et les méthodes qui le font implicitement)
+EXEMPT = {"create_loan", "_rebuild_interest_cache"}
+
+# Fonctions qui mettent à jour les caches (liste exhaustive)
+CACHE_ATTRS = {"charges_interets", "revenus_interets"}
+
+issues = []
+
+for node in ast.walk(tree):
+    if not isinstance(node, ast.FunctionDef):
+        continue
+    if node.name in EXEMPT:
+        continue
+
+    func_src = ast.unparse(node)
+    has_deactivation = "loan.active = False" in func_src
+    has_cache_update = any(attr in func_src for attr in CACHE_ATTRS)
+
+    if has_deactivation and not has_cache_update:
+        issues.append(node.name)
+
+if issues:
+    print("WARN:" + ",".join(issues))
+else:
+    print("OK")
+EOF
+)
+    if echo "$result" | grep -q "^WARN:"; then
+        funcs=$(echo "$result" | sed 's/^WARN://')
+        warn "Fonction(s) qui désactivent un prêt sans mise à jour de cache détectées : $funcs"
+        warn "  → Vérifier que charges_interets / revenus_interets sont bien ajustés."
+        warn "  → (Ce n'est pas bloquant mais mérite vérification.)"
+    else
+        ok "Cohérence des caches d'intérêts OK"
+    fi
+else
+    ok "[2/3] simulation.py non modifié — vérification cache skippée"
+    ok "[3/3] simulation.py non modifié — vérification cache skippée"
+fi
+
+echo "[pre-commit] Toutes les vérifications passées."
+exit 0

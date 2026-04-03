@@ -1,0 +1,57 @@
+#!/usr/bin/env bash
+# commit-msg — Validation du format du message de commit.
+#
+# Règles :
+#   - Première ligne : 10–72 caractères.
+#   - Première ligne : pas de message vague ("wip", "fix", "temp", "todo" seuls) sur main.
+#   - Si le message modifie simulation.py ou models.py, suggère de mentionner
+#     le "Bloc" concerné (avertissement non bloquant).
+#
+# Installation : git config core.hooksPath hooks
+
+RED='\033[0;31m'
+YELLOW='\033[1;33m'
+GREEN='\033[0;32m'
+NC='\033[0m'
+
+msg_file="$1"
+msg=$(cat "$msg_file")
+first_line=$(echo "$msg" | head -1)
+len=${#first_line}
+
+# Ignorer les messages de merge/revert automatiques
+if echo "$first_line" | grep -qE "^(Merge|Revert) "; then
+    exit 0
+fi
+
+# ── Longueur minimale ──────────────────────────────────────────────────────────
+if [ "$len" -lt 10 ]; then
+    echo -e "${RED}[commit-msg] ✗ Message trop court ($len car. < 10 min) : '$first_line'${NC}"
+    exit 1
+fi
+
+# ── Longueur maximale (avertissement) ─────────────────────────────────────────
+if [ "$len" -gt 72 ]; then
+    echo -e "${YELLOW}[commit-msg] ⚠ Première ligne longue ($len car. > 72 conseillés)${NC}"
+fi
+
+# ── Messages vagues interdits sur main ────────────────────────────────────────
+branch=$(git symbolic-ref --short HEAD 2>/dev/null || echo "")
+if [ "$branch" = "main" ]; then
+    if echo "$first_line" | grep -qiE '^(wip|fix|temp|todo|update|changes?|stuff)\s*[.!]?\s*$'; then
+        echo -e "${RED}[commit-msg] ✗ Message trop vague pour un commit sur main : '$first_line'${NC}"
+        echo "  → Décrire ce qui change et pourquoi (ex: 'Corriger le cache charges_interets lors de la faillite')"
+        exit 1
+    fi
+fi
+
+# ── Suggestion non bloquante : mentionner le Bloc si simulation.py modifié ────
+staged_sim=$(git diff --cached --name-only | grep -E "src/(simulation|models)\.py$" || true)
+if [ -n "$staged_sim" ]; then
+    if ! echo "$msg" | grep -qiE "(bloc|bloc\s*[0-9]|critiq|cache|invariant|fix)"; then
+        echo -e "${YELLOW}[commit-msg] ⚠ simulation.py ou models.py modifié — pensez à mentionner le Bloc ou la critique concernée.${NC}"
+    fi
+fi
+
+echo -e "${GREEN}[commit-msg] ✓ Message OK${NC}"
+exit 0

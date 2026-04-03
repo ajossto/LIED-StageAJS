@@ -1,0 +1,97 @@
+#!/usr/bin/env bash
+# pre-push — Test de non-régression avant chaque push.
+#
+# Exécute la simulation avec seed=42 pendant 200 pas et vérifie
+# que les résultats sont déterministes et cohérents avec les valeurs
+# de référence établies lors de l'implémentation de la Critique 20.
+#
+# Valeurs de référence (seed=42, 200 pas) :
+#   failures_total         = 1
+#   loans_active_final     = 1390
+#   entities_alive_final   = 519
+#
+# Installation : git config core.hooksPath hooks
+
+set -euo pipefail
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m'
+
+ok()   { echo -e "${GREEN}✓${NC} $*"; }
+warn() { echo -e "${YELLOW}⚠${NC} $*"; }
+fail() { echo -e "${RED}✗${NC} $*"; exit 1; }
+
+VENV="/home/anatole/jupyter/.venv/bin/activate"
+SRC="claude3-v3-27-mars/src"
+
+echo "[pre-push] Test de non-régression (seed=42, 200 pas)..."
+
+# Activer le venv si disponible
+[ -f "$VENV" ] && source "$VENV"
+
+# Vérifier que le répertoire src existe
+if [ ! -d "$SRC" ]; then
+    warn "Répertoire $SRC introuvable — smoke test ignoré."
+    exit 0
+fi
+
+result=$(python3 - <<'EOF'
+import sys, os
+sys.path.insert(0, "claude3-v3-27-mars/src")
+
+try:
+    from config import SimulationConfig
+    from simulation import Simulation
+except ImportError as e:
+    print(f"IMPORT_ERROR:{e}")
+    sys.exit(0)
+
+cfg = SimulationConfig(seed=42, n_steps=200)
+sim = Simulation(cfg)
+sim.run(verbose=False)
+
+summary = sim.summary()
+failures = summary.get("failures_total", -1)
+loans    = summary.get("loans_active_final", -1)
+alive    = summary.get("entities_alive_final", -1)
+
+REF_FAILURES = 1
+REF_LOANS    = 1390
+REF_ALIVE    = 519
+
+errors = []
+if failures != REF_FAILURES:
+    errors.append(f"failures_total={failures} (attendu {REF_FAILURES})")
+if loans != REF_LOANS:
+    errors.append(f"loans_active_final={loans} (attendu {REF_LOANS})")
+if alive != REF_ALIVE:
+    errors.append(f"entities_alive_final={alive} (attendu {REF_ALIVE})")
+
+if errors:
+    print("FAIL:" + "|".join(errors))
+else:
+    print(f"OK:failures={failures},loans={loans},alive={alive}")
+EOF
+)
+
+if echo "$result" | grep -q "^IMPORT_ERROR:"; then
+    warn "Import impossible ($(echo "$result" | sed 's/^IMPORT_ERROR://')) — smoke test ignoré."
+    exit 0
+fi
+
+if echo "$result" | grep -q "^FAIL:"; then
+    details=$(echo "$result" | sed 's/^FAIL://')
+    fail "Non-régression détectée :\n$(echo "$details" | tr '|' '\n' | sed 's/^/  → /')"
+fi
+
+if echo "$result" | grep -q "^OK:"; then
+    values=$(echo "$result" | sed 's/^OK://')
+    ok "Smoke test OK ($values)"
+else
+    warn "Résultat inattendu du smoke test : $result — push autorisé avec réserve."
+fi
+
+echo "[pre-push] Non-régression validée."
+exit 0

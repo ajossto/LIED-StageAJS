@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'file=$(echo \"$CLAUDE_TOOL_INPUT\" | python3 -c \"import json,sys; d=json.load(sys.stdin); print(d.get(\\\"file_path\\\",\\\"\\\"))\" 2>/dev/null); if [[ \"$file\" == *.py ]]; then source /home/anatole/jupyter/.venv/bin/activate 2>/dev/null; if ! python3 -m py_compile \"$file\" 2>/tmp/cc_pce_err; then echo \"[Claude hook] Erreur de syntaxe dans $file :\"; cat /tmp/cc_pce_err; fi; fi'"
+          }
+        ]
+      }
+    ]
+  }
+}
