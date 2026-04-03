@@ -26,6 +26,16 @@ fail() { echo -e "${RED}✗${NC} $*"; exit 1; }
 
 echo "[pre-commit] Vérification des fichiers stagés..."
 
+# ── CLAUDE.md staleness check ─────────────────────────────────────────────────
+staged_all=$(git diff --cached --name-only --diff-filter=ACMR || true)
+structural_changed=$(echo "$staged_all" | grep -E \
+    "^${SRC_DIR}/(config|models|simulation|main|output|analysis|statistics)\.py$" || true)
+if [ -n "$structural_changed" ] && ! echo "$staged_all" | grep -q "^CLAUDE\.md$"; then
+    warn "Fichiers structurels modifiés sans mise à jour de CLAUDE.md :"
+    echo "$structural_changed" | sed 's/^/    /'
+    warn "  → Vérifier si CLAUDE.md doit être mis à jour."
+fi
+
 # ── Fichiers Python stagés dans src/ ──────────────────────────────────────────
 staged_py=$(git diff --cached --name-only --diff-filter=ACMR \
             | grep -E "^${SRC_DIR}/.*\.py$" || true)

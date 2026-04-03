@@ -6,5 +6,18 @@
       "Bash(/home/anatole/jupyter/.venv/bin/python3 -c \"\nimport sys\nsys.path.insert\\(0, '.'\\)\nfrom analysis import analyze_folder\nanalyze_folder\\('simulations_test/simu_20260324_151251_test_rapide_99fb981'\\)\n\" 2>&1)",
       "Bash(/home/anatole/jupyter/.venv/bin/python3 -c \":*)"
     ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /home/anatole/jupyter/hooks/check-claude-md-hook.sh"
+          }
+        ]
+      }
+    ]
   }
 }
