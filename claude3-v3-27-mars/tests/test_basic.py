@@ -13,7 +13,7 @@ import math
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 from config import SimulationConfig
-from models import Entity, Loan, BankruptcyEstate
+from models import Entity, Loan
 from simulation import Simulation
 
 
@@ -36,7 +36,7 @@ def test_extraction():
     e = sim.create_entity(actif_liquide=0.0, passif_inne=4.0)
     liq_avant = e.actif_liquide
     sim.extract_from_nature()
-    expected = cfg.alpha * math.sqrt(e.passif_total)
+    expected = e.alpha * math.sqrt(e.passif_total)
     assert abs(e.actif_liquide - (liq_avant + expected)) < 1e-9, \
         f"Extraction incorrecte : {e.actif_liquide} ≠ {liq_avant + expected}"
     print("  [OK] test_extraction")
@@ -81,10 +81,12 @@ def test_auto_invest_on_surplus():
     sim = Simulation(cfg)
     sim.entities = {}
     sim.next_entity_id = 1
-    # L=20, P=10 → surplus = 20 - 0.1*10 = 19 → x = 0.5 * 19 = 9.5
+    # L=20, P=10 → réserve = max(s·P, B_innée) = max(0.1*10, 10) = 10
+    # surplus = 20 - 10 = 10 → x = 0.5 * 10 = 5
     e = sim.create_entity(actif_liquide=20.0, passif_inne=10.0)
     sim.auto_invest_end_of_turn()
-    expected_surplus = 20.0 - 0.1 * 10.0
+    reserve = max(cfg.seuil_ratio_liquide_passif * e.passif_total, e.passif_inne)
+    expected_surplus = max(0.0, 20.0 - reserve)
     expected_x = 0.5 * expected_surplus
     assert abs(e.actif_liquide - (20.0 - expected_x)) < 1e-9, \
         f"Liquide après auto-invest : {e.actif_liquide} ≠ {20.0 - expected_x}"
@@ -156,7 +158,7 @@ def test_internal_rate():
     sim.next_entity_id = 1
     e = sim.create_entity(passif_inne=4.0, actif_liquide=0.0)
     r = sim.compute_internal_rate(e)
-    expected = 2.0 / (2.0 * math.sqrt(4.0))
+    expected = e.alpha / (2.0 * math.sqrt(4.0))
     assert abs(r - expected) < 1e-9
     print("  [OK] test_internal_rate")
 
@@ -185,34 +187,7 @@ def test_bankruptcy():
 
 
 # ------------------------------------------------------------------
-#  9. Masse de faillite
-# ------------------------------------------------------------------
-def test_bankruptcy_estate():
-    cfg = make_config(lambda_creation=0, seed=0)
-    sim = Simulation(cfg)
-    sim.entities = {}
-    sim.next_entity_id = 1
-    creditor = sim.create_entity(actif_liquide=50.0, passif_inne=5.0)
-    failed = sim.create_entity(actif_liquide=0.0, passif_inne=5.0)
-    debtor = sim.create_entity(actif_liquide=10.0, passif_inne=5.0)
-    # failed prête à debtor
-    sim.execute_loan(failed, debtor, principal=15.0, rate=0.04)
-    # creditor prête à failed → failed est emprunteur
-    sim.execute_loan(creditor, failed, principal=20.0, rate=0.05)
-    # Rendre failed insolvable
-    failed.actif_liquide = 0.0
-    failed.actif_exoinvesti = 1.0  # actif << passif
-    totals, cascade_ev = sim.resolve_cascades()
-    assert not failed.alive
-    # Une masse de faillite doit être créée
-    assert len(sim.estates) > 0
-    estate = next(iter(sim.estates.values()))
-    assert estate.failed_entity_id == failed.entity_id
-    print("  [OK] test_bankruptcy_estate")
-
-
-# ------------------------------------------------------------------
-#  10. Simulation complète (courte)
+#  9. Simulation complète (courte)
 # ------------------------------------------------------------------
 def test_full_simulation():
     cfg = make_config(
@@ -229,7 +204,7 @@ def test_full_simulation():
 
 
 # ------------------------------------------------------------------
-#  11. Collecteur statistique
+#  10. Collecteur statistique
 # ------------------------------------------------------------------
 def test_collector():
     cfg = make_config(duree_simulation=50, seed=7, freq_snapshot=5)
@@ -256,7 +231,6 @@ if __name__ == "__main__":
         test_loan_split,
         test_internal_rate,
         test_bankruptcy,
-        test_bankruptcy_estate,
         test_full_simulation,
         test_collector,
     ]
