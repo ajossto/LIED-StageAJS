@@ -1,0 +1,22 @@
+Résumé d'analyse
+================
+
+Métadonnées
+-----------
+Label : scenario_base
+Date : 2026-04-03T10:16:05.868195
+alpha = 1.0
+lambda_creation = 2
+seed = 42
+
+Indicateurs finaux
+------------------
+Pas final : 999
+Nombre d'entités : 530
+Actif total : 292192.6124
+Volume de prêts : 112559.0898
+Levier système : 0.59325
+
+Faillites : 1598 entités, 437451.22 J détruits
+
+Cascades : 652 événements, max=2157.42 J, médiane=572.48 J
