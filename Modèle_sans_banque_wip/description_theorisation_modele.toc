@@ -1,0 +1,58 @@
+\babel@toc {french}{}\relax 
+\contentsline {part}{I\hspace {1em}Description complète du modèle}{2}{part.1}%
+\contentsline {section}{\numberline {1}Architecture générale}{2}{section.1}%
+\contentsline {section}{\numberline {2}Bilan comptable d'une entité}{2}{section.2}%
+\contentsline {subsection}{\numberline {2.1}Actifs}{2}{subsection.2.1}%
+\contentsline {subsection}{\numberline {2.2}Passifs}{2}{subsection.2.2}%
+\contentsline {subsection}{\numberline {2.3}Passif productif et valeur nette}{2}{subsection.2.3}%
+\contentsline {subsection}{\numberline {2.4}Critère de faillite}{3}{subsection.2.4}%
+\contentsline {section}{\numberline {3}Paramètre de productivité et taux interne}{3}{section.3}%
+\contentsline {subsection}{\numberline {3.1}Extraction depuis la nature}{3}{subsection.3.1}%
+\contentsline {subsection}{\numberline {3.2}Taux interne marginal}{3}{subsection.3.2}%
+\contentsline {section}{\numberline {4}Séquence d'un pas de simulation}{3}{section.4}%
+\contentsline {subsection}{\numberline {4.1}Création d'entités}{4}{subsection.4.1}%
+\contentsline {subsection}{\numberline {4.2}Paiement des intérêts et mobilisation de liquidité}{4}{subsection.4.2}%
+\contentsline {subsection}{\numberline {4.3}Dépréciation}{4}{subsection.4.3}%
+\contentsline {subsection}{\numberline {4.4}Marché du crédit — Appariement aléatoire (Bloc 8)}{4}{subsection.4.4}%
+\contentsline {subsubsection}{\numberline {4.4.1}Sélection des participants}{4}{subsubsection.4.4.1}%
+\contentsline {subsubsection}{\numberline {4.4.2}Mécanisme de matching aléatoire}{4}{subsubsection.4.4.2}%
+\contentsline {subsubsection}{\numberline {4.4.3}Conditions d'une transaction}{5}{subsubsection.4.4.3}%
+\contentsline {subsubsection}{\numberline {4.4.4}Arrêt et réinitialisation}{5}{subsubsection.4.4.4}%
+\contentsline {subsubsection}{\numberline {4.4.5}Effets sur les bilans}{5}{subsubsection.4.4.5}%
+\contentsline {subsection}{\numberline {4.5}Résolution des cascades de faillite}{5}{subsection.4.5}%
+\contentsline {subsubsection}{\numberline {4.5.1}Traitement d'une faillite individuelle}{5}{subsubsection.4.5.1}%
+\contentsline {subsubsection}{\numberline {4.5.2}Propagation en cascade}{5}{subsubsection.4.5.2}%
+\contentsline {subsection}{\numberline {4.6}Auto-investissement}{6}{subsection.4.6}%
+\contentsline {section}{\numberline {5}Paramètres calibrés (Bloc 8)}{6}{section.5}%
+\contentsline {part}{II\hspace {1em}Théorisation mathématique de la dynamique}{6}{part.2}%
+\contentsline {section}{\numberline {6}Taux d'intérêt d'équilibre partiel}{6}{section.6}%
+\contentsline {section}{\numberline {7}Équilibre extractif sans crédit}{7}{section.7}%
+\contentsline {section}{\numberline {8}Gain marginal à l'emprunt et volume optimal}{7}{section.8}%
+\contentsline {section}{\numberline {9}Dynamique du réseau de crédit et émergence des intermédiaires}{7}{section.9}%
+\contentsline {subsection}{\numberline {9.1}Structure du graphe de crédit}{7}{subsection.9.1}%
+\contentsline {subsection}{\numberline {9.2}Condition d'émergence d'un intermédiaire}{8}{subsection.9.2}%
+\contentsline {subsection}{\numberline {9.3}Contagion par les intermédiaires}{8}{subsection.9.3}%
+\contentsline {section}{\numberline {10}Transition de phase et criticalité auto-organisée}{8}{section.10}%
+\contentsline {subsection}{\numberline {10.1}Paramètre d'ordre}{8}{subsection.10.1}%
+\contentsline {subsection}{\numberline {10.2}Hypothèse SOC}{8}{subsection.10.2}%
+\contentsline {subsection}{\numberline {10.3}Mécanisme de rétroaction}{9}{subsection.10.3}%
+\contentsline {part}{III\hspace {1em}Critique comportementale : les mécanismes simples qui dominent}{9}{part.3}%
+\contentsline {section}{\numberline {11}Préambule}{9}{section.11}%
+\contentsline {section}{\numberline {12}L'extraction domine tout le reste}{9}{section.12}%
+\contentsline {subsection}{\numberline {12.1}Observation}{9}{subsection.12.1}%
+\contentsline {subsection}{\numberline {12.2}Mécanisme simple}{9}{subsection.12.2}%
+\contentsline {subsection}{\numberline {12.3}Conséquence}{9}{subsection.12.3}%
+\contentsline {section}{\numberline {13}Le levier exo crée de l'équité sans coût (avec $\tau =0$)}{10}{section.13}%
+\contentsline {subsection}{\numberline {13.1}Observation}{10}{subsection.13.1}%
+\contentsline {subsection}{\numberline {13.2}Mécanisme simple}{10}{subsection.13.2}%
+\contentsline {subsection}{\numberline {13.3}Conséquence}{10}{subsection.13.3}%
+\contentsline {section}{\numberline {14}La faillite est un problème de liquidité, pas de solvabilité fondamentale}{10}{section.14}%
+\contentsline {subsection}{\numberline {14.1}Observation}{10}{subsection.14.1}%
+\contentsline {subsection}{\numberline {14.2}Mécanisme simple}{10}{subsection.14.2}%
+\contentsline {section}{\numberline {15}Le matching aléatoire est le seul générateur de topologie}{11}{section.15}%
+\contentsline {subsection}{\numberline {15.1}Observation}{11}{subsection.15.1}%
+\contentsline {subsection}{\numberline {15.2}Mécanisme simple}{11}{subsection.15.2}%
+\contentsline {subsection}{\numberline {15.3}Conséquence}{11}{subsection.15.3}%
+\contentsline {section}{\numberline {16}La distribution de taille comme conséquence d'une hétérogénéité aléatoire}{11}{section.16}%
+\contentsline {subsection}{\numberline {16.1}Observation}{11}{subsection.16.1}%
+\contentsline {subsection}{\numberline {16.2}Mécanisme simple}{11}{subsection.16.2}%

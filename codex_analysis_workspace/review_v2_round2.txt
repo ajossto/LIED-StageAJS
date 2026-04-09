@@ -1,0 +1,167 @@
+REVIEW CRITIQUE — paper_v2_baseline.tex (2e lecture)
+Rôle du relecteur : mathématicien-statisticien
+Date : 3 avril 2026
+
+────────────────────────────────────────────────────────────────────────────────
+APPRÉCIATION GÉNÉRALE DE LA RÉVISION
+────────────────────────────────────────────────────────────────────────────────
+
+La révision a traité sérieusement les six points bloquants signalés. La
+correction de ΔNW_i^{endo} = -x_i est bienvenue, la distinction matching
+déterministe / noyau analytique est maintenant explicite, le terme +ιm a
+disparu de ℓ̇, et la censure à droite est mentionnée. Le paper est
+substantiellement amélioré.
+
+Il reste néanmoins quatre problèmes, dont l'un constitue une contradiction
+interne introduite par la révision elle-même, et trois lacunes formelles qui
+méritent traitement avant publication.
+
+────────────────────────────────────────────────────────────────────────────────
+1. PROBLÈME MAJEUR — CONTRADICTION INTERNE INTRODUITE PAR LA RÉVISION
+────────────────────────────────────────────────────────────────────────────────
+
+En Section 2.3, la révision corrige à juste titre :
+
+    ΔNW_i^{endo} = -x_i
+
+Mais en Section 4 (Équation de dérive), le paper conserve l'affirmation :
+
+    « Les termes d'auto-investissement et de prêt initial ne changent pas
+      directement NW_i au moment de l'opération ; ils changent les flux futurs. »
+
+Ces deux affirmations sont directement contradictoires. L'auto-investissement
+change NW_i de -x_i à l'instant même de l'opération, ainsi que la Section 2.3
+vient de l'établir. La phrase de la Section 4 est un résidu de la version
+précédente et n'a pas été mise à jour.
+
+Si l'intention de la Section 4 est de dire que le prêt en lui-même (du point de
+vue du prêteur ou de l'emprunteur séparément) ne change pas NW au moment du
+déblocage (ce qui peut être vrai selon la comptabilité des postes miroirs C_i /
+R_i dans v3, mais pas nécessairement dans v2 où C_i n'apparaît pas), alors cela
+doit être énoncé explicitement et différencié de l'auto-investissement.
+
+→ Supprimer ou réécrire la phrase en Section 4 pour la rendre cohérente avec
+  la Section 2.3.
+
+────────────────────────────────────────────────────────────────────────────────
+2. PROBLÈME MODÉRÉ — LA FORMULE SYNTHÉTIQUE Δ_t UTILISE LA FERMETURE INCORRECTE
+────────────────────────────────────────────────────────────────────────────────
+
+Dans la Section 6.6 (Prédiction qualitative), la quantité synthétique est
+définie comme :
+
+    Δ_t = α√p_t - δ_L ℓ_t - service de dette moyen - pertes de réseau moyennes
+
+Or la Section 4 a précisément établi que la production moyenne correcte est
+E[α√P_i] et que remplacer E[√P_i] par √(E[P_i]) = √p_t est une fermeture
+optimiste par Jensen. La formule de Δ_t utilise cette fermeture incorrecte sans
+le signaler, alors que le paper vient d'introduire Π̄(p) dans l'ODE pour éviter
+exactement ce problème.
+
+Il y a donc une inconsistance de notation dans le même texte : l'ODE utilise
+Π̄(p) ≤ α√p, mais la quantité diagnostique Δ_t utilise α√p directement.
+
+→ Remplacer α√p_t par Π̄(p_t) dans la définition de Δ_t, ou ajouter une note
+  explicite indiquant que la formule diagnostique est une borne supérieure.
+
+────────────────────────────────────────────────────────────────────────────────
+3. PROBLÈME MODÉRÉ — LA CONDITION D'ACCEPTATION DU CRÉDIT EST ANALYSÉE
+   INCOMPLÈTEMENT
+────────────────────────────────────────────────────────────────────────────────
+
+L'auteur reconnaît lui-même (note de réponse, point 3) que la condition
+d'acceptation est « corrigée partiellement » et qu'il manque « une fermeture
+complète en fonction des tailles relatives prêteur/emprunteur ». Cette lacune
+est notable car la condition conditionne entièrement la fréquence des
+transactions et donc la densité du graphe.
+
+Plus précisément, le développement de Taylor donne au premier ordre :
+
+    q · (r*_b(après S_b) - r) ≥ μ · α · (√(P_b + S_b) - √P_b)
+
+Le membre gauche est la marge brute que l'emprunteur capture sur la dette q.
+Le membre droit est un coût de seuil proportionnel au gain déjà réalisé par
+auto-investissement sans dette. La condition dit donc : la dette ne vaut la
+peine que si son gain marginal dépasse un multiple μ du gain déjà accessible
+par auto-investissement seul.
+
+Ceci a une implication structurelle forte : si S_b est grand (entité avec
+beaucoup de surplus), le membre droit est grand, et la condition est difficile
+à satisfaire. Les entités avec surplus élevé empruntent donc moins — ce qui va
+à l'encontre de l'intuition et mérite d'être noté explicitement. Par ailleurs,
+dans v2 où θ = 1, on prend q = q_max = (α/(2r))² - P_b, et il n'est pas
+démontré que ce q satisfait toujours la condition pour μ > 0.
+
+→ Soit compléter l'analyse en dérivant la condition en termes du ratio P_b/P_ℓ
+  (ou r*_b / r), soit signaler cette lacune comme point ouvert dans la conclusion.
+
+────────────────────────────────────────────────────────────────────────────────
+4. PROBLÈME MODÉRÉ — COMPARABILITÉ TEMPORELLE DES RÉSULTATS INTER-RUNS
+────────────────────────────────────────────────────────────────────────────────
+
+Le paper présente deux jeux de résultats empiriques :
+- une run de référence sur 1000 pas : 444.22 prêts actifs moyens ;
+- un batch de 10 seeds sur 300 pas : 297.2 ± 26.3 prêts actifs moyens.
+
+La différence (~50 %) est imputée implicitement à la variabilité entre seeds.
+Mais le nombre de prêts actifs augmente mécaniquement avec le temps (accumulation
+des liens non encore amortis), si bien que l'écart entre 297 et 444 reflète
+au moins autant la différence de durée (300 vs 1000 pas) que la variabilité
+stochastique entre seeds.
+
+Cette confusion de variables temporelle/stochastique fragilise la comparaison.
+Elle affecte également la durée de vie moyenne et l'extraction (qui croissent
+avec la taille du réseau) : les chiffres du batch 300 pas ne sont pas
+directement comparables à ceux de la run 1000 pas.
+
+→ Signaler explicitement que les deux jeux de résultats couvrent des horizons
+  différents, ou réaliser le batch à 1000 pas pour comparabilité.
+
+────────────────────────────────────────────────────────────────────────────────
+5. REMARQUE FORMELLE — LE HAZARD h(t) EST UN PARAMÈTRE CIRCULAIRE
+────────────────────────────────────────────────────────────────────────────────
+
+Dans le système de champ moyen, h(t) apparaît dans toutes les équations mais
+n'est jamais modélisé en fonction des variables d'état (ℓ, p, m). Le point fixe
+λ = h* N* est exact mais circulaire : h* est la valeur d'équilibre du hazard,
+qui dépend elle-même de NW_i, qui dépend de (ℓ, p, m).
+
+Pour v2 où la topologie est simple, une fermeture naturelle existe. La faillite
+survient quand NW_i < 0, et NW_i ≈ ℓ_i - (P_i - B_i) en première approximation.
+Un hazard exponentiel
+
+    h ≈ P(NW_i < 0) ≈ Φ(-(ℓ̄ - p + B̄) / σ_NW)
+
+serait une fermeture de champ moyen minimale. Le paper ne doit pas forcément
+l'implémenter, mais mentionner cette circularité comme limitation de l'analyse
+de stabilité serait plus rigoureux.
+
+────────────────────────────────────────────────────────────────────────────────
+6. REMARQUE FORMELLE — q_max DANS v2 vs v3 : UNE DIFFÉRENCE STRUCTURELLE
+   JAMAIS COMMENTÉE
+────────────────────────────────────────────────────────────────────────────────
+
+Dans v2 (Section 2.4) :   q_max = (α/(2r))² - P_b
+Dans v3 (Section 5) :     q_max = (α_b/(2r))² - P_b - S_b
+
+Dans v3, le surplus S_b est soustrait car il est déjà compté comme capacité
+productive mobilisable. Dans v2, S_b est absent. Or v2 possède aussi un
+auto-investissement avec surplus S_i = max(0, L_i - sP_i). Est-ce que S_b
+est implicitement zéro dans la procédure de crédit de v2 (l'entité emprunte
+sans tenir compte de son surplus) ? Ou est-ce que l'optimisation de v2 est
+simplement différente ?
+
+Cette différence structurelle entre les deux modèles affecte directement la
+quantité d'endettement optimal et donc la densité du graphe. Elle mériterait
+au moins une phrase de comparaison dans ce paper ou dans le paper v3.
+
+────────────────────────────────────────────────────────────────────────────────
+RECOMMANDATION GLOBALE
+────────────────────────────────────────────────────────────────────────────────
+
+La révision est sérieuse et progresse bien. Le point 1 (contradiction interne)
+est bloquant et doit être corrigé avant toute diffusion. Les points 2 et 4
+sont des ajustements de rigueur rédactionnelle directement accessibles. Les
+points 3, 5 et 6 peuvent figurer comme points ouverts en conclusion.
+
+Statut proposé : révision mineure nécessaire.

@@ -1,0 +1,307 @@
+REVIEW CRITIQUE — paper_v3_wip_criticality.tex (2e lecture)
+Rôle du relecteur : mathématicien-statisticien
+Date : 3 avril 2026
+
+────────────────────────────────────────────────────────────────────────────────
+APPRÉCIATION GÉNÉRALE DE LA RÉVISION
+────────────────────────────────────────────────────────────────────────────────
+
+La révision du paper v3 est substantielle et de bonne foi. Les points les plus
+sérieux de la première lecture ont été traités : la décomposition exacte de
+Π_eff avec terme de covariance, la dérive implicite du brownien géométrique, le
+retrait de la revendication SOC forte, l'appendice de dérivation discret-vers-
+continu, et l'ajout de statistiques multi-seeds avec censure de Kaplan-Meier.
+Ces améliorations sont réelles et font progresser le texte vers une note
+mathématique honnête.
+
+Cependant, la révision a aussi introduit une contradiction interne grave
+(Section 6 vs Section 3), le proxy de contagion est mal défini par rapport au
+critère spectral qu'il est censé approcher, les données inter-runs révèlent une
+incohérence de régime non discutée, et l'ODE de H dans l'appendice repose sur
+une approximation plus forte que ce qui est admis.
+
+────────────────────────────────────────────────────────────────────────────────
+1. PROBLÈME MAJEUR — CONTRADICTION INTERNE ENTRE SECTION 3 ET SECTION 6
+────────────────────────────────────────────────────────────────────────────────
+
+En Section 3 (Extraction hétérogène et réserve), la révision établit
+correctement :
+
+    ΔNW_i^{endo} = -x_i
+
+En Section 6 (Dynamique de bilan et équation de dérive), le paper affirme :
+
+    « L'auto-investissement, le prêt et le passif miroir ne détruisent pas
+      directement la richesse nette ; ils agissent par les termes de flux futurs. »
+
+Ces deux énoncés sont formellement incompatibles. L'auto-investissement réduit
+NW_i de x_i à l'instant t, pas seulement « par les flux futurs ».
+
+L'affirmation de la Section 6 peut avoir été vraie dans l'ancienne version où
+ΔNW = 0, mais elle n'a pas été mise à jour après la correction. Il s'agit d'un
+résidu direct de la version antérieure.
+
+Note : pour le prêt (du point de vue de l'emprunteur au moment du déblocage),
+l'affirmation de la Section 6 peut être défendable si les postes miroirs C_i et
+R_i se compensent dans NW_i. Mais cela doit être démontré explicitement et
+séparé du cas de l'auto-investissement.
+
+→ Réécrire la phrase de la Section 6 en distinguant (a) l'auto-investissement,
+  qui réduit NW_i de x_i immédiatement, et (b) le prêt, dont l'effet sur NW_i
+  est nul au déblocage si les postes miroirs se compensent.
+
+────────────────────────────────────────────────────────────────────────────────
+2. PROBLÈME MAJEUR — LE PROXY DE CONTAGION EST MAL RELIÉ AU RAYON SPECTRAL
+────────────────────────────────────────────────────────────────────────────────
+
+La Section 10 présente le proxy :
+
+    ρ̂_contagion ≈ Σ(nb_contaminés) / Σ(nb_entités_faillies) ≈ 0.272
+
+et dit que c'est un « indicateur utile pour montrer qu'une fraction non triviale
+des faillites appartient bien à la propagation ». C'est juste en tant que tel.
+
+Mais le proxy est introduit juste après le critère spectral ρ(B_t) ≷ 1, créant
+l'impression qu'il s'agit d'une approximation de ce rayon. Ce n'est pas le cas.
+
+Le rayon spectral ρ(B_t) mesure combien de secondaires une faillite primaire
+génère en moyenne dans la génération suivante de la cascade. Le proxy calculé
+mesure la fraction totale de faillites secondaires parmi toutes les faillites
+de la simulation. Ces deux quantités n'ont pas la même dimension ni la même
+interprétation.
+
+Pour que ρ̂ ≈ 0.272 soit cohérent avec une subcriticité, il faudrait que le
+nombre moyen de secondaires par primaire soit 0.272, ce qui est possible.
+Mais si une cascade génère en moyenne k primaires et k·0.272 secondaires,
+le nombre moyen de secondaires par primaire est 0.272, qui implique bien
+ρ(B_t) < 1. Ceci n'est cependant valide que si chaque cascade ne compte
+qu'une seule faillite primaire initiale, hypothèse jamais vérifiée.
+
+De plus, si « nb_entités_faillies » inclut à la fois les faillites initiales
+et les faillites secondaires dans le dénominateur, alors la formule calcule
+en réalité (secondaires) / (primaires + secondaires), et le lien avec ρ(B_t)
+est encore plus indirect.
+
+→ Soit clarifier précisément ce que sont "nb_contaminés" et "nb_entités_faillies"
+  dans le code de collecte, et montrer formellement le lien avec ρ(B_t). Soit
+  présenter le proxy sous un nom qui ne suggère pas un rayon spectral
+  (par exemple : « taux de propagation secondaire »), et le déconnecter
+  complètement de la discussion sur ρ(B_t).
+
+────────────────────────────────────────────────────────────────────────────────
+3. PROBLÈME MAJEUR — INCOHÉRENCE DE RÉGIME ENTRE LES DEUX JEUX DE DONNÉES
+────────────────────────────────────────────────────────────────────────────────
+
+Le paper présente deux sources de statistiques :
+- run de référence 1000 pas  : 36.77 transactions de crédit/pas, 3173.96 prêts
+  actifs moyens ;
+- batch 8 seeds / 500 pas    : 22.70 ± 2.72 transactions de crédit/pas, 1926.7
+  ± 136.6 prêts actifs moyens.
+
+L'écart est de l'ordre de 60-65 % sur les deux indicateurs de densité, nettement
+au-delà de la variabilité inter-seeds (±2.72 sur les transactions). Le paper
+attribue cela au « régime transitoire ».
+
+Cette explication est insuffisante. Si le système n'a pas atteint son régime
+stationnaire à t = 500, alors :
+(a) l'attracteur stochastique postulé dans la conclusion n'est pas observable
+    sur 500 pas ;
+(b) les statistiques du batch 8-seed/500-pas ne documentent pas le régime
+    asymptotique mais un régime transitoire ;
+(c) l'affirmation que « l'architecture dynamique du WIP est robuste
+    qualitativement » s'appuie sur des données hors-régime.
+
+Alternativement, si le système a atteint un régime stationnaire avant t = 500
+mais que les 500-1000 pas constituent une phase d'expansion lente (portée par
+la dérive implicite E[α_i(t)] → +∞), alors c'est la run de référence 1000 pas
+qui sort du régime, et les statistiques reportées ne sont pas représentatives
+d'un attracteur.
+
+Dans les deux cas, la discordance de 60 % n'est pas une affaire de variance
+stochastique ; c'est un signal d'alarme sur la stationnarité du système.
+
+→ Produire une figure de l'évolution temporelle des indicateurs clefs
+  (transactions/pas, prêts actifs, faillites/pas) sur au moins une run pour
+  dater le début du régime stationnaire. Ou reconnaître explicitement que
+  les deux jeux de données couvrent des régimes différents et adapter
+  les conclusions en conséquence.
+
+────────────────────────────────────────────────────────────────────────────────
+4. PROBLÈME MODÉRÉ — L'ODE POUR H REPOSE SUR UNE APPROXIMATION NON ADMISE
+────────────────────────────────────────────────────────────────────────────────
+
+L'appendice dérive l'ODE pour H à partir de la définition microscopique :
+
+    H_i(t) = Σ_{e ∈ L_i} q_e(t) · (1 - (1-δ_exo)^{a_e(t)})
+
+L'incrément de H pour un prêt existant d'âge a qui survit au pas t est :
+
+    ΔH_e = q_e · [(1 - (1-δ_exo)^{a+1}) - (1 - (1-δ_exo)^a)]
+          = q_e · (1-δ_exo)^a · δ_exo
+
+Le terme d'accumulation de fragilité pour le portefeuille total est donc :
+
+    ΔH^{accum} = δ_exo · Σ_{e actif} q_e · (1-δ_exo)^{a_e}
+
+L'appendice écrit à la place :
+
+    ΔH ≈ δ_exo · M_t · q̄_t  =  δ_exo · Σ_e q_e
+
+Cette approximation revient à supposer que (1-δ_exo)^{a_e} ≈ 1 pour tous les
+prêts actifs, c'est-à-dire que tous les prêts sont jeunes (a_e ≈ 0).
+Si le portefeuille vieillit, la croissance effective de H ralentit par un
+facteur (1-δ_exo)^ā (ā = âge moyen des prêts), ce qui peut être significatif.
+
+L'approximation est qualifiée de « schéma linéaire fermé » sans mentionner
+cette hypothèse de jeunesse du portefeuille.
+
+→ Ajouter une condition d'applicabilité : l'approximation δ_exo · M_t · q̄_t
+  est valide si δ_exo · ā ≪ 1, c'est-à-dire si les prêts sont amortis bien
+  avant que le facteur (1-δ_exo)^a ne s'écarte significativement de 1.
+  Si τ (taux d'amortissement) est non nul, ā ≈ 1/τ et la condition devient
+  δ_exo/τ ≪ 1.
+
+────────────────────────────────────────────────────────────────────────────────
+5. PROBLÈME MODÉRÉ — LES RATIOS DE JENSEN INTER-RUNS SONT CONTRADICTOIRES
+────────────────────────────────────────────────────────────────────────────────
+
+Le paper rapporte deux mesures du terme de production :
+
+    Batch court (5 seeds, 200 pas) :
+        E[α√P] / (ᾱ √E[P]) ≈ 1.00079 ± 0.00060  [> 1, covariance domine Jensen]
+
+    Batch long  (8 seeds, 500 pas) :
+        E[α√P] / (ᾱ √E[P]) ≈ 0.99528 ± 0.00102  [< 1, Jensen domine covariance]
+
+Ces deux résultats ont des signes opposés et ne se chevauchent pas à ±3σ.
+Le paper note que ces mesures « montrent que l'architecture dynamique est robuste
+qualitativement » — mais elles montrent précisément l'inverse pour ce ratio :
+son signe change selon le régime.
+
+Une explication possible : la covariance Cov(α_i, √P_i) est positive dans les
+premiers pas (les entités nées avec un α élevé croissent vite, corrélant α et
+P), mais cette corrélation se dilue avec le temps (sélection et mortalité
+mélangent les profils). À t = 200, la covariance compense Jensen ; à t = 500,
+elle ne le fait plus. Si cette interprétation est correcte, elle doit être
+dite explicitement, car elle signifie que le signe du biais change avec le
+régime transitoire — ce qui est une information importante pour l'utilisation
+de Π̄(p) dans l'ODE.
+
+→ Discuter le retournement de signe du ratio entre les deux batches et en
+  proposer une explication mécanique. Ne pas présenter les deux chiffres sans
+  commentaire.
+
+────────────────────────────────────────────────────────────────────────────────
+6. PROBLÈME MODÉRÉ — INCOHÉRENCE ENTRE LA FORMULE Γ_t DU CORPS ET DE L'APPENDICE
+────────────────────────────────────────────────────────────────────────────────
+
+En Section 8.12 (Lecture dynamique d'ensemble), la quantité synthétique est :
+
+    Γ_t = ᾱ_t √p_t - δ_L ℓ_t + ιm_t - service de dette - pertes de réseau
+
+En Appendice A.5, la même quantité est définie comme :
+
+    Γ_t = Π_eff(p_t, t) - δ_L ℓ_t - φ[ℓ_t - R̄(p_t)]_+ + (ι-η)m_t - κ_ℓ h_t ℓ_t
+
+Il y a trois différences :
+(a) ᾱ_t √p_t vs Π_eff (fermeture optimiste vs terme exact) ;
+(b) +ιm_t vs +(ι-η)m_t (le terme d'auto-investissement −ηm manque dans le corps) ;
+(c) présence du terme −κ_ℓ h_t ℓ_t dans l'appendice uniquement.
+
+La quantité Γ_t de l'appendice est plus proche de la véritable ℓ̇ (c'est son
+numérateur). Celle du corps est une approximation de lisibilité — ce qui est
+légitime, mais les deux formules portent le même nom sans que leur relation
+soit explicitée.
+
+→ Renommer l'une des deux (par exemple Γ̃_t pour la version approchée du corps),
+  ou unifier les deux formules avec une note indiquant les termes omis pour
+  simplification.
+
+────────────────────────────────────────────────────────────────────────────────
+7. REMARQUE FORMELLE — LA POPULATION DES « ENTITÉS SUIVIES » N'EST PAS DÉFINIE
+────────────────────────────────────────────────────────────────────────────────
+
+L'analyse de survie (Kaplan-Meier, RMST) porte sur 162 entités suivies,
+extraites d'une cohorte de 2128 créées. Ce sous-ensemble représente ~7.6 % de
+la population totale. Les critères de sélection ne sont jamais précisés :
+sont-ce les entités présentes à t = 0 ? Les entités créées durant les k premiers
+pas ? Un échantillon aléatoire ?
+
+Sans cette information, le RMST ≈ 495.9 est un estimateur dont le biais potentiel
+(sélection de cohorte) est inconnu. L'estimateur de Kaplan-Meier est correct
+conditionnellement à la cohorte choisie, mais la représentativité de cette
+cohorte par rapport à la population globale n'est pas établie.
+
+En particulier, si les 162 entités sont les entités initialement présentes, elles
+ont une distribution d'âge initial de 0 (nées au début), alors que les entités
+créées en cours de simulation naissent dans un réseau déjà dense. Leur durée de
+vie n'est pas comparable.
+
+→ Définir précisément la règle de constitution de la cohorte de 162 entités,
+  et discuter si cette cohorte est représentative de l'ensemble des entités du
+  système.
+
+────────────────────────────────────────────────────────────────────────────────
+8. REMARQUE FORMELLE — LA CONDITION D'ENDETTEMENT : DÉNOMINATEUR NON DISCUTÉ
+────────────────────────────────────────────────────────────────────────────────
+
+La contrainte de service de dette est :
+
+    (χ_b + r·q) / (α_b√P_b + ρ_b) ≤ d
+
+Le dénominateur mélange un flux d'extraction (α_b√P_b) et un revenu financier
+(ρ_b). Ce choix est inhabituel en finance (où le service de dette se normalise
+typiquement par les revenus opérationnels seuls). Il a une conséquence directe :
+une entité avec fort ρ_b (nombreux prêts en cours, donc créancière nette) peut
+contracter davantage de dettes même si sa productivité propre est faible.
+
+Ce couplage entre rôle de prêteur et capacité d'emprunt peut générer des
+entités à la fois très prêteuses et très emprunteuses — les intermédiaires
+endogènes mentionnés en Section 4.2. Si c'est intentionnel, cette mécanique
+mérite d'être soulignée explicitement comme un mécanisme actif d'intermédiation
+(et non comme une convention de normalisation neutre).
+
+────────────────────────────────────────────────────────────────────────────────
+9. REMARQUE FORMELLE — LE TERME ιm RESTE PROBLÉMATIQUE DANS v3
+────────────────────────────────────────────────────────────────────────────────
+
+La première review signalait que +ιm dans ℓ̇ était injustifié. La révision le
+conserve avec la justification que « les liquidations forcées et write-downs
+cassent la stricte conservation ». C'est correct en principe.
+
+Cependant, l'appendice décompose le terme comme appartenant à Q_t^net (transfert
+net de liquidité vers les prêts et amortissements), qui contient à la fois les
+flux d'entrée (remboursements, liquidations) et les flux de sortie (déblocage
+de nouveaux prêts). La justification que la résultante nette est proportionnelle
+à m (nombre de prêts actifs par entité) est une hypothèse de fermeture
+supplémentaire, jamais dérivée, qui doit être signalée comme telle.
+
+En particulier, si les liquidations forcées sont rares (la plupart des prêts
+vont à terme), Q_t^net ≈ 0 et ιm ≈ 0. Si elles sont fréquentes, ιm peut être
+non nul mais son signe dépend du sens des liquidations (perte pour le prêteur
+ou gain de liquidité pour l'emprunteur qui récupère du P_i ?).
+
+→ Soit calibrer ι sur les simulations (est-il positif ou négatif en pratique ?),
+  soit le retirer de l'équation principale et le mentionner comme terme résiduel
+  d'ordre faible dans les régimes testés.
+
+────────────────────────────────────────────────────────────────────────────────
+RECOMMANDATION GLOBALE
+────────────────────────────────────────────────────────────────────────────────
+
+La révision est sincère et améliore réellement le texte. Les contributions les
+plus solides restent la décomposition pas-à-pas de F, la dérivation de q_max,
+l'appendice de fermeture discret-vers-continu, et le Kaplan-Meier.
+
+Priorité de révision :
+    1. [Bloquant] Corriger la contradiction Section 3 / Section 6 sur ΔNW.
+    2. [Bloquant] Clarifier le proxy de contagion et son rapport au rayon spectral.
+    3. [Important] Expliquer l'incohérence de régime entre run 1000 et batch 500.
+    4. [Important] Discuter le retournement de signe du ratio Jensen entre batches.
+    5. [Modéré] Unifier les deux définitions de Γ_t.
+    6. [Modéré] Préciser la condition d'applicabilité de l'approximation pour ΔH.
+    7. [Mineur] Définir la règle de constitution de la cohorte des 162 entités.
+    8. [Mineur] Commenter le rôle de ρ_b dans le dénominateur de la contrainte de dette.
+
+Le texte peut atteindre le niveau d'une note de travail publiable après
+traitement des points 1 à 4.

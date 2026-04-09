@@ -1,0 +1,420 @@
+DESCRIPTION TECHNIQUE DU MODÈLE DE SIMULATION
+Note de travail — source de vérité : code (simulation.py, models.py, config.py)
+==============================================================================
+
+
+OBJET DU MODÈLE
+---------------
+Le modèle simule un système multi-agents d'entités économiques abstraites échangeant
+une ressource unique (les « joules », unité comptable universelle). Chaque entité
+extrait des ressources depuis un réservoir extérieur, investit pour accroître sa
+capacité productive, et peut prêter ou emprunter auprès d'autres entités. Le système
+génère des cascades de faillites endogènes dont on observe les propriétés statistiques
+(lois de puissance, contagion financière, dynamique macroéconomique agrégée).
+
+La population est ouverte : de nouvelles entités apparaissent à chaque pas selon une
+loi de Poisson ; les entités en faillite sont définitivement exclues du système.
+
+
+BILAN COMPTABLE D'UNE ENTITÉ
+-----------------------------
+Chaque entité i est décrite par cinq postes d'actif et quatre postes de passif.
+
+Actifs :
+  - actif_liquide          (L_i) : joules immédiatement disponibles
+  - actif_prete            (R_i) : valeur nominale des créances détenues sur d'autres entités
+  - actif_endoinvesti      (K^endo_i) : joules immobilisés par auto-investissement
+  - actif_exoinvesti       (K^exo_i) : joules investis via emprunt (financés de l'extérieur)
+
+  Total actif : A_i = L_i + R_i + K^endo_i + K^exo_i
+
+Passifs :
+  - passif_inne            (B_i) : passif fixé à la naissance, constant, base productive minimale
+  - passif_endoinvesti     (P^endo_i) : contrepartie comptable de l'auto-investissement
+  - passif_exoinvesti      (P^exo_i) : contrepartie comptable de l'investissement financé par emprunt
+  - passif_credit_detenu   (C_i) : contrepartie miroir des créances détenues (passif financier pur)
+
+Deux agrégats de passif sont utilisés à des fins différentes :
+
+  passif_total (P_i) = B_i + P^endo_i + P^exo_i
+    → sert à l'extraction et au marché du crédit (passif « productif »)
+
+  passif_bilan = B_i + P^endo_i + P^exo_i + C_i
+    → sert au test de faillite (passif total bilanciel)
+
+Cette distinction est centrale : C_i est un passif financier pur, sans influence sur
+la capacité d'extraction, mais il alourdit le bilan au sens du test de solvabilité.
+
+Paramètre productif :
+  - alpha (α_i) : productivité individuelle, tirée à la naissance dans [alpha_min, alpha_max]
+    selon une loi uniforme. Peut suivre un mouvement brownien géométrique si
+    alpha_sigma_brownien > 0 (désactivé par défaut, σ = 0).
+
+
+EXTRACTION DEPUIS LA NATURE
+-----------------------------
+À chaque pas, chaque entité vivante reçoit :
+
+  Π_i = α_i * √(P_i)
+
+ajouté directement à L_i. Le taux marginal d'extraction est donc r*_i = α_i / (2√P_i),
+décroissant avec la taille du passif productif. La formule utilise passif_total (P_i),
+non passif_bilan.
+
+L'extraction est effectuée sur toutes les entités vivantes, y compris celles créées
+au même pas.
+
+
+DÉPRÉCIATION
+-------------
+Après le paiement des intérêts et de l'amortissement, les stocks se déprécient
+géométriquement :
+
+  L_i   ← (1 − δ_L) · L_i
+  K^endo_i  ← (1 − δ_endo) · K^endo_i     et    P^endo_i  ← (1 − δ_endo) · P^endo_i
+  K^exo_i   ← (1 − δ_exo)  · K^exo_i     et    P^exo_i   ← (1 − δ_exo)  · P^exo_i
+
+L'actif et le passif correspondants sont dépréciés simultanément et au même taux, de
+sorte que la dépréciation ne crée ni ne détruit de valeur nette sur les postes endo et
+exo. Le principal des prêts (valeur nominale dans les contrats Loan) n'est pas directement
+affecté par la dépréciation : les prêts vivent à valeur nominale jusqu'à remboursement,
+transfert de créance, ou faillite.
+
+
+AUTO-INVESTISSEMENT
+--------------------
+À la fin de chaque pas (après la résolution des cascades), chaque entité convertit une
+fraction de son surplus de liquidité en investissement endogène :
+
+  surplus_i = max(0, L_i − s · P_i)
+  x_i = fraction_auto_invest · surplus_i
+
+Si x_i > ε :
+  L_i        ← L_i − x_i
+  K^endo_i   ← K^endo_i + x_i
+  P^endo_i   ← P^endo_i + x_i
+
+L'opération est symétrique sur l'actif et le passif endogènes. Elle augmente la
+capacité productive (P_i croît) et diminue la liquidité. Elle n'affecte pas C_i.
+
+Paramètres : seuil_ratio_liquide_passif (s), fraction_auto_investissement.
+
+
+MARCHÉ DU CRÉDIT
+-----------------
+
+Taux interne de rendement marginal :
+  r*_i = α_i / (2 · √P_i)
+
+Condition d'entrée sur le marché :
+  L_i / P_i > s   (et P_i > ε)
+  Une entité ne participe au marché que si sa liquidité dépasse le seuil relatif s·P_i.
+
+Appariement itératif (jusqu'à max_credit_iterations par pas) :
+  1. Parmi les entités actives (critère ci-dessus), trier par r* croissant.
+  2. L'entité avec le r* le plus faible est désignée prêteuse (elle a intérêt à externaliser
+     sa liquidité plutôt qu'à se surinvestir).
+  3. L'entité avec le r* le plus élevé est désignée emprunteuse.
+  4. Si r*_borrower ≤ r*_lender (à ε près), arrêt : plus d'arbitrage possible.
+
+Détermination du taux de transaction :
+  r = (1 − f) · r*_lender + f · r*_borrower
+  où f = fraction_taux_emprunteur (par défaut 0.2, soit une faible pondération du taux
+  emprunteur). Le taux résultant est proche du taux interne du prêteur.
+
+Offre du prêteur :
+  q_offre = max(0, L_lender − s · P_lender)
+  Le prêteur ne s'engage pas au-delà de son surplus de liquidité.
+
+Demande de l'emprunteur :
+  surplus_borrower = max(0, L_borrower − s · P_borrower)
+  q_max = (α_borrower / (2r))² − P_borrower − surplus_borrower
+  q_dem = θ · max(0, q_max)
+  Le surplus préexistant de l'emprunteur (qu'il auto-investirait de toute façon) est
+  soustrait du besoin total : l'emprunteur n'emprunte que ce qui dépasse ce qu'il peut
+  financer lui-même.
+
+Montant effectif : principal = min(q_offre, q_dem)
+
+Critère d'acceptation de l'emprunteur :
+  gain_avec_emprunt = α·(√(P + surplus + principal) − √P) − r·principal
+  gain_sans_emprunt = α·(√(P + surplus) − √P)   [ou 0 si surplus ≤ ε]
+  Condition : gain_avec_emprunt ≥ (1 + μ) · gain_sans_emprunt
+  (si gain_sans ≤ ε, la condition devient : gain_avec > ε)
+
+Contrainte d'endettement :
+  (charge_interets_existants + r · principal) / (α_borrower · √P_borrower) ≤ seuil_ratio_endettement
+  La charge totale en intérêts annuels ne doit pas dépasser une fraction du flux
+  d'extraction courant de l'emprunteur. Si seuil_ratio_endettement ≤ 0, la contrainte
+  est inactive.
+
+Exécution du prêt (si toutes les conditions sont satisfaites) :
+  Côté prêteur :
+    L_lender        ← L_lender − principal
+    R_lender        ← R_lender + principal
+    C_lender        ← C_lender + principal    [passif_credit_detenu]
+
+  Côté emprunteur :
+    K^exo_borrower  ← K^exo_borrower + principal
+    P^exo_borrower  ← P^exo_borrower + principal
+
+  Un objet Loan est créé (loan_id, lender_id, borrower_id, principal, rate).
+
+Le marché s'arrête dès qu'une iteration ne produit aucune transaction (offre nulle,
+demande nulle, critère d'acceptation non satisfait, contrainte d'endettement violée, ou
+plus de deux entités actives).
+
+
+PAIEMENT DES INTÉRÊTS
+----------------------
+Pour chaque prêt actif (parcourus dans l'ordre croissant de loan_id) :
+
+  intérêt dû = r · principal_courant
+
+L'emprunteur mobilise sa capacité de paiement selon une hiérarchie stricte :
+
+  1) Actif liquide : paiement direct jusqu'à concurrence de L_i.
+
+  2) Cession de créances (si L_i insuffisant) : l'emprunteur transfère ses propres créances
+     (ses prêts en tant que prêteur) au créancier, en priorité les créances à taux les plus
+     faibles (ordre secondaire : loan_id croissant). La cession est nominale (1 joule de
+     créance couvre 1 joule de dette). Si la créance est partiellement cédée, le prêt
+     original est désactivé et remplacé par deux prêts (le fragment cédé avec nouveau
+     prêteur, le fragment restant avec l'ancien prêteur). Le actif_prete et passif_credit_detenu
+     sont ajustés symétriquement des deux côtés.
+
+  3) Reliquéfaction endogène (si cession insuffisante) : destruction partielle du stock
+     endo-investi avec coefficient c ∈ (0,1) :
+       y = min(K^endo_i, P^endo_i, y_needed)   où y_needed = montant_restant / c
+       K^endo_i  ← K^endo_i − y
+       P^endo_i  ← P^endo_i − y
+       L_i       ← L_i + c·y
+     Seul l'investissement endogène est liquidable ; l'investissement exogène ne peut pas
+     être sacrifié.
+
+Le montant effectivement versé (somme des trois étapes) est crédité au prêteur :
+  L_lender ← L_lender + paiement_effectif
+
+Si l'emprunteur ne parvient pas à payer intégralement, il verse ce qu'il peut sans
+déclencher automatiquement une faillite à ce stade ; la faillite est décidée plus tard
+par le test de solvabilité bilancielle.
+
+
+REDISTRIBUTION DES MASSES DE FAILLITE (ÉTAPE 3b)
+--------------------------------------------------
+Les entités en faillite dont la masse est active continuent à générer des flux d'intérêts
+via les prêts qu'elles détenaient en tant que prêteurs au moment de leur faillite (voir
+ci-dessous). À chaque pas, pour chaque prêt actif dont le prêteur est une entité faillie :
+
+  - L'intérêt dû est collecté auprès de l'emprunteur (via la même hiérarchie de paiement).
+  - Le proxy utilisé pour la cession de créances en cas d'illiquidité de l'emprunteur est
+    le premier bénéficiaire listé dans la masse (choix d'implémentation).
+  - Le montant perçu est distribué aux créanciers bénéficiaires au prorata de leurs poids.
+
+
+AMORTISSEMENT DU PRINCIPAL
+----------------------------
+Si taux_amortissement (τ) > 0, un remboursement géométrique du principal est effectué
+à chaque pas pour chaque prêt actif dont le prêteur est vivant (les prêts portés par
+une masse de faillite sont exclus) :
+
+  montant_dû = τ · principal_courant
+
+L'emprunteur mobilise sa capacité de paiement (même hiérarchie que pour les intérêts).
+Après paiement :
+  réduction = min(paiement_effectif, principal_courant)
+  loan.principal      ← loan.principal − réduction
+  P^exo_borrower      ← P^exo_borrower − réduction   [la dette fond]
+  R_lender            ← R_lender − réduction           [créance réduite]
+  C_lender            ← C_lender − réduction           [passif miroir réduit]
+  L_lender            ← L_lender + paiement_effectif
+
+L'actif_exoinvesti de l'emprunteur n'est pas réduit : l'investissement physique subsiste,
+seule la dette diminue, ce qui crée graduellement de l'équité endogène (K^exo > P^exo).
+Si le principal atteint ε, le prêt est désactivé.
+
+Par défaut, τ = 0 : les prêts sont perpétuels.
+
+
+CONTRAINTE DE SOLVABILITÉ ET FAILLITE
+---------------------------------------
+Test appliqué après le marché du crédit et la résolution des cascades :
+
+  Faillite si : A_i + ε < passif_bilan_i
+  c'est-à-dire : L_i + R_i + K^endo_i + K^exo_i < B_i + P^endo_i + P^exo_i + C_i
+
+Le passif_credit_detenu (C_i) entre dans le test de faillite. En pratique, C_i est
+l'exact reflet de R_i (les deux évoluent en miroir lors des transactions de prêt et de
+cession), de sorte que la condition se réduit à :
+
+  L_i + K^endo_i + K^exo_i < B_i + P^endo_i + P^exo_i
+
+soit : la part non-financière des actifs est inférieure au passif productif total.
+
+
+TRAITEMENT D'UNE FAILLITE INDIVIDUELLE
+-----------------------------------------
+1. Création d'une masse de faillite (BankruptcyEstate) si l'entité faillie détient des
+   créances actives en tant que prêteuse :
+
+   a) Identification des créanciers de l'entité faillie (ceux à qui elle doit de l'argent
+      en tant qu'emprunteuse) : poids proportionnels aux encours nominaux.
+
+   b) Réévaluation des prêts hérités (ceux que l'entité faillie détenait comme prêteuse) :
+      Pour chaque prêt de ce type :
+        real_value = principal_nominal · (1 − δ_exo)^age
+        où age = pas_courant − creation_step du prêt
+      L'ancien prêt est désactivé. Un nouveau prêt est créé à real_value, même taux,
+      même emprunteur, prêteur = entité faillie (héritée par la masse).
+      Le bilan de l'emprunteur correspondant est ajusté :
+        K^exo_borrower  ← K^exo_borrower + (real_value − principal_nominal)
+        P^exo_borrower  ← P^exo_borrower + (real_value − principal_nominal)
+      Cette réévaluation aligne la valeur comptable nominale sur la valeur économique
+      effective, compte tenu de la dépréciation accumulée non encore comptabilisée.
+
+   c) La masse hérite des identifiants des nouveaux prêts réévalués. Elle redistribuera
+      les intérêts futurs issus de ces prêts aux bénéficiaires pondérés.
+
+2. Annulation des prêts dont l'entité faillie est emprunteuse :
+   Pour chaque prêt actif avec borrower_id = entité faillie :
+     R_lender  ← R_lender − principal
+     C_lender  ← C_lender − principal
+     Loan.active ← False
+   Ces créances sont perdues sans récupération.
+
+3. L'entité est marquée morte (alive = False, death_step = pas courant).
+
+
+PROPAGATION DES DÉFAUTS (CASCADES)
+-------------------------------------
+La résolution des cascades est itérative :
+
+  Tant qu'il existe des entités satisfaisant le critère de faillite :
+    Pour chaque entité faillie (dans l'ordre de parcours) :
+      Traitement individuel (voir ci-dessus)
+      changed = True
+  Répéter
+
+L'annulation des créances des prêteurs lors d'une faillite peut rendre ces prêteurs
+eux-mêmes insolvables, déclenchant leur faillite à l'itération suivante. Le processus
+s'arrête quand aucune entité vivante ne satisfait plus le critère de faillite.
+
+Les entités contagiées (solvables avant la première faillite du pas, défaillantes après)
+sont identifiées pour la statistique, mais le mécanisme de résolution est identique pour
+les faillites initiales et contagiées.
+
+Indicateurs collectés par cascade : nombre de défauts, actifs détruits (créances annulées),
+créances redirigées (prêts hérités par les masses), fraction issue de la contagion.
+
+
+CRÉATION DE NOUVELLES ENTITÉS
+--------------------------------
+Au début de chaque pas, le nombre de nouvelles entités est tiré selon une loi de Poisson
+de paramètre λ (lambda_creation), implémentée par l'algorithme de Knuth.
+
+Chaque nouvelle entité naît avec :
+  L_i       = actif_liquide_initial
+  B_i       = passif_inne_initial
+  α_i       ~ Uniforme[alpha_min, alpha_max]
+  Tous les autres postes = 0
+  passif_credit_detenu = 0
+
+Les entités initiales (créées à t = 0) sont toutes enregistrées pour le suivi individuel.
+Les entités nées après t = 0 sont enregistrées avec probabilité 0.03 (constante interne).
+
+
+MOUVEMENT BROWNIEN DE LA PRODUCTIVITÉ
+----------------------------------------
+Si alpha_sigma_brownien (σ) > 0, la productivité individuelle évolue à chaque pas selon :
+
+  α_i(t) = α_i(t−1) · exp(σ · N(0,1))
+
+Ce mouvement est appliqué avant toute autre opération du pas. Par défaut σ = 0, le
+mouvement est inactif et α_i reste constant sur toute la durée de vie de l'entité.
+
+
+DÉROULÉ D'UN PAS DE SIMULATION
+---------------------------------
+Ordre exact des opérations dans run_step() :
+
+  1. Mouvement brownien des alphas  (_update_alphas)
+  2. Création de nouvelles entités  (spawn_new_entities)
+  3. Extraction depuis la nature    (extract_from_nature)
+  4. Paiement des intérêts          (pay_interest_phase) — hiérarchie liquide/cession/reliq.
+  5. Redistribution des masses de faillite (redistribute_estate_interest)
+  6. Amortissement du principal     (pay_amortization_phase) — si τ > 0
+  7. Dépréciation des stocks        (apply_depreciation) — liquide, endo (symétrique), exo (symétrique)
+  8. Marché du crédit               (credit_market_iteration) — appariements itératifs
+  9. Résolution des cascades        (resolve_cascades) — faillites et contagion
+  10. Auto-investissement            (auto_invest_end_of_turn) — fraction du surplus liquide
+  11. Collecte des statistiques
+
+Remarques sur l'ordre :
+  - L'auto-investissement a lieu APRÈS la résolution des cascades (une entité qui vient
+    d'échapper à la faillite auto-investit son surplus résiduel).
+  - Le marché du crédit a lieu APRÈS la dépréciation et AVANT la résolution des cascades
+    (une transaction de crédit peut donc déclencher une faillite dans le même pas).
+  - L'extraction est effectuée AVANT le paiement des intérêts (les joules extraits sont
+    disponibles pour couvrir les obligations du pas).
+
+
+PARAMÈTRES PRINCIPAUX
+-----------------------
+Productivité :
+  alpha (α)                   = 1.0      centre de la distribution initiale
+  alpha_min                   = 0.8      borne basse du tirage uniforme initial
+  alpha_max                   = 1.2      borne haute du tirage uniforme initial
+  alpha_sigma_brownien (σ)    = 0.005    volatilité du mouvement brownien (0 = statique)
+
+Marché du crédit :
+  seuil_ratio_liquide_passif (s) = 0.05  seuil de liquidité relative pour participer
+  theta (θ)                      = 1.0   fraction de la demande maximale effectivement demandée
+  mu (μ)                         = 0.05  marge minimale relative d'acceptation d'un emprunt
+  seuil_ratio_endettement        = 1.0   plafond de charge d'intérêts sur flux d'extraction
+  fraction_taux_emprunteur (f)   = 0.2   poids du taux emprunteur dans le taux de transaction
+
+Prêts :
+  taux_amortissement (τ)         = 0.0   fraction du principal remboursée par pas (0 = perpétuel)
+
+Création d'entités :
+  n_entites_initiales            = 10    population initiale
+  lambda_creation (λ)            = 1.0   taux d'arrivée de Poisson par pas
+  actif_liquide_initial          = 10.0  dotation en liquidité à la naissance
+  passif_inne_initial            = 5.0   passif inné (base productive) à la naissance
+
+Dépréciation :
+  taux_depreciation_liquide (δ_L)  = 0.01  taux de dépréciation du liquide
+  taux_depreciation_endo (δ_endo)  = 0.10  taux de dépréciation de l'endo-investi (et passif miroir)
+  taux_depreciation_exo (δ_exo)    = 0.10  taux de dépréciation de l'exo-investi (et passif miroir)
+
+Illiquidité :
+  coefficient_reliquefaction (c)   = 0.5   fraction récupérable par destruction d'endo-investi
+
+Auto-investissement :
+  fraction_auto_investissement     = 0.5   fraction du surplus liquide auto-investie par pas
+
+Simulation :
+  duree_simulation                 = 1000  nombre de pas
+  seed                             = 42    graine du générateur aléatoire isolé
+  max_credit_iterations            = 100 000  limite par pas du marché du crédit
+  epsilon (ε)                      = 1e-6  seuil numérique de nullité
+
+
+CONVENTIONS COMPTABLES EFFECTIVEMENT UTILISÉES
+------------------------------------------------
+- Le passif_credit_detenu (C_i) est une contrepartie miroir de actif_prete (R_i) :
+  toute création, cession ou annulation de créance se répercute symétriquement sur
+  les deux postes. Ce passif n'influence ni l'extraction ni le marché du crédit, mais
+  entre dans le test de solvabilité.
+
+- La dépréciation des prêts (valeur nominale dans les objets Loan) n'est pas automatique
+  au fil du temps ; les prêts vivent à leur valeur nominale. La dépréciation effective
+  est calculée et comptabilisée uniquement lors de la création d'une masse de faillite
+  (réévaluation à valeur économique réelle par la formule principal · (1−δ_exo)^age).
+
+- L'amortissement (si τ > 0) réduit le principal du prêt et P^exo de l'emprunteur, mais
+  laisse K^exo inchangé : l'investissement physique subsiste après remboursement de la dette.
+
+- Les intérêts versés par un emprunteur illiquide ne sont pas nécessairement intégraux :
+  le paiement partiel ne déclenche pas de pénalité ni d'événement de crédit distinct.
+  La solvabilité est testée séparément, sur la base du bilan complet post-paiement.

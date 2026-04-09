@@ -1,0 +1,404 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[french]{babel}
+\usepackage{lmodern}
+\usepackage{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\geometry{margin=2.4cm}
+
+\title{Analyse mathematique du modele de base \texttt{claude3-v2}\\
+\large Champ moyen, topologie de reseau, stabilite et duree de vie moyenne}
+\author{Codex}
+\date{3 avril 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Ce texte etudie le premier modele stable explicitement marque a documenter dans le depot, c'est-a-dire \texttt{arborescence\_modeles/stable/v2\_modulaire\_stable\_A\_documenter\_DONE}, qui pointe vers \texttt{claude3-v2}. L'objectif est d'extraire la structure mathematique sous-jacente du code. Nous montrons que \texttt{v2} est un systeme discret d'entites couplees par un reseau de credit oriente, piloté par une fonction de production concave $\Pi(P)=\alpha\sqrt{P}$ et par un taux marginal interne $r^\star=\alpha/(2\sqrt{P})$. A partir du code, nous proposons quatre niveaux de lecture: dynamique locale exacte, formation deterministe du graphe de credit, approximation de champ moyen en equations differentielles, et formule de duree de vie comme temps de premier passage de la valeur nette. Les passages continus et stochastiques sont explicitement utilises comme approximations analytiques, non comme descriptions exactes du code. Une execution locale a $1000$ pas donne un regime modere: extraction moyenne $\approx 3665.83$, $418$ faillites cumulees, duree de vie moyenne des entites defuntes non censurees $\approx 187.06$ pas.
+\end{abstract}
+
+\section{Identification}
+Le modele etudie ici est:
+\begin{itemize}
+\item le premier stable marque a documenter dans l'arborescence;
+\item le symlink \texttt{stable/v2\_modulaire\_stable\_A\_documenter\_DONE};
+\item sa cible resolue \texttt{claude3-v2}.
+\end{itemize}
+
+Dans l'esprit de la note d'intention, les mots \emph{actif}, \emph{passif}, \emph{pret}, \emph{interet} et \emph{faillite} sont lus comme des notations de mecanismes abstraits de reserve, de taille engagee, de couplage oriente, de flux recurrent et de perte de viabilite.
+
+\section{Dynamique microscopique exacte}
+\subsection{Variables d'etat}
+Pour chaque entite $i$:
+\[
+A_i = L_i + R_i + K_i^{\mathrm{endo}} + K_i^{\mathrm{exo}},
+\qquad
+P_i = B_i + P_i^{\mathrm{endo}} + P_i^{\mathrm{exo}}.
+\]
+La condition de faillite du code est
+\[
+A_i + \varepsilon < P_i,
+\]
+soit une valeur nette
+\[
+NW_i = A_i - P_i.
+\]
+
+\subsection{Extraction et rendement marginal}
+La ressource extraite a chaque pas vaut
+\[
+\Pi_i = \alpha \sqrt{P_i},
+\]
+avec $\alpha=1$ par defaut. La derivee marginale est
+\[
+r_i^\star = \frac{\partial \Pi_i}{\partial P_i} = \frac{\alpha}{2\sqrt{P_i}}.
+\]
+La concavite de $\Pi$ implique simultanement:
+\begin{itemize}
+\item croissance avec la taille productive;
+\item rendements marginaux decroissants;
+\item ordre partiel naturel entre grandes entites a faible $r^\star$ et petites entites a fort $r^\star$.
+\end{itemize}
+
+\subsection{Auto-investissement}
+Le surplus liquide est
+\[
+S_i = \max(0,L_i-sP_i),
+\]
+et l'investissement endogene
+\[
+x_i = \varphi S_i.
+\]
+Le code effectue
+\[
+L_i' = L_i-x_i,\qquad
+K_i^{\mathrm{endo}\,'}=K_i^{\mathrm{endo}}+x_i,\qquad
+P_i^{\mathrm{endo}\,'}=P_i^{\mathrm{endo}}+x_i.
+\]
+Cette transformation ne conserve pas la valeur nette bilancielle definie plus haut. En effet,
+\[
+A_i' = A_i,
+\qquad
+P_i' = P_i + x_i,
+\]
+d'ou
+\[
+\Delta NW_i^{\mathrm{endo}} = -x_i.
+\]
+Le bon enonce est donc le suivant: l'auto-investissement conserve l'actif brut mais augmente la taille engagee productive. Il convertit reserve en capacite productive future au prix d'une baisse immediate de richesse nette bilancielle.
+
+\subsection{Credit}
+Le marche est accessible si
+\[
+\frac{L_i}{P_i}>s.
+\]
+Le preteur est choisi comme l'entite minimisant $r^\star$, l'emprunteur comme celle maximisant $r^\star$. Le taux est
+\[
+r = r^\star_{\ell}.
+\]
+Le volume maximal de dette admissible pour l'emprunteur est
+\[
+q_{\max} = \left(\frac{\alpha}{2r}\right)^2 - P_i,
+\qquad
+q=\theta q_{\max},
+\]
+avec $\theta=1$ dans le parametrage de base.
+
+La condition d'acceptation ecrite par le code est
+\[
+\alpha\big(\sqrt{P_i+S_i+q}-\sqrt{P_i}\big)-rq
+\ge
+(1+\mu)\alpha\big(\sqrt{P_i+S_i}-\sqrt{P_i}\big).
+\]
+Comme $r=r^\star_\ell$, on peut lire la transaction comme une externalisation de capital depuis les faibles rendements marginaux vers les forts rendements marginaux. Pour $q$ petit devant $P_i+S_i$, un developpement de Taylor donne
+\[
+\sqrt{P_i+S_i+q}\approx \sqrt{P_i+S_i} + \frac{q}{2\sqrt{P_i+S_i}},
+\]
+donc, au premier ordre,
+\[
+q\left(\frac{\alpha}{2\sqrt{P_i+S_i}}-r\right)
+\gtrsim
+\mu\,\alpha\big(\sqrt{P_i+S_i}-\sqrt{P_i}\big).
+\]
+La condition ne se contente donc pas de verifier la profitabilite brute: elle borne aussi l'ecart admissible entre rendement marginal propre de l'emprunteur et taux propose.
+
+\section{Graphe de credit: lecture en theorie des graphes}
+On note $G_t=(V_t,E_t)$ le graphe oriente des prets au pas $t$. Un arc $i\to j$ existe si $i$ est preteur de $j$. Dans \texttt{v2}, la procedure de matching selectionne a chaque iteration les deux extremes de la distribution des $r^\star$. Le graphe code est donc determine conditionnellement a l'etat $X_t$; il n'est pas stochastique au sens strict, hors alea induit par l'evolution de la population.
+
+Une approximation utile, purement analytique, consiste a ordonner les entites par rang de rendement marginal $u_i \in [0,1]$, puis a definir une probabilite de lien conditionnelle lisse
+\[
+\mathbb{P}(i\to j \mid u_i,u_j)
+\approx
+c_t\,\mathbf{1}_{u_i<u_j}\,\mathbf{1}_{u_i\le \underline{u}_t}\,\mathbf{1}_{u_j\ge \overline{u}_t},
+\]
+ou $\underline{u}_t$ et $\overline{u}_t$ representent les zones de preteurs et d'emprunteurs extremaux. Ce noyau ne pretend pas decrire la regle exacte du code; il sert uniquement a lisser une procedure de rang. Il est presque de rang $1$, ce qui explique:
+\begin{itemize}
+\item une segregation nette des roles;
+\item peu d'intermediaires financiers;
+\item une contagion relativement limitee topologiquement.
+\end{itemize}
+
+En theorie des graphes, \texttt{v2} se situe donc plus pres d'un graphe dirige assortatif par rang que d'un graphe de configuration general.
+
+\section{Equation de derive de valeur nette}
+Une approximation discreto-continue de la derive de $NW_i$ est
+\[
+\Delta NW_i
+\approx
+\alpha\sqrt{P_i}
+- \delta_L L_i
++ I_i^{\mathrm{rec}}
+- I_i^{\mathrm{pay}}
+- D_i^{\mathrm{fail}}.
+\]
+Le pret initial peut etre neutre instantanement sur $NW_i$ si l'actif recu et le passif exo correspondant se compensent au deblocage. En revanche, l'auto-investissement reduit immediatement $NW_i$ de $x_i$: il retire $x_i$ de la liquidite sans creer de creance miroir dans la definition $NW_i=L_i+R_i-B_i-C_i$.
+
+Si l'on passe a un temps continu $t$ et a des moyennes conditionnelles, on obtient
+\[
+\frac{d}{dt}\mathbb{E}[NW_i]
+=
+\mathbb{E}[\alpha\sqrt{P_i}]
+- \delta_L\mathbb{E}[L_i]
++ \mathbb{E}[I_i^{\mathrm{rec}}-I_i^{\mathrm{pay}}]
+- \mathbb{E}[D_i^{\mathrm{fail}}].
+\]
+Comme $\sqrt{\cdot}$ est concave,
+\[
+\mathbb{E}[\sqrt{P_i}] \le \sqrt{\mathbb{E}[P_i]}.
+\]
+Dans \texttt{v2}, $\alpha$ est constant par defaut, si bien que le seul biais est un biais de Jensen, typiquement positif sur l'estimation de la production si l'on remplace $\mathbb{E}[\sqrt{P_i}]$ par $\sqrt{p}$. Les equations de champ moyen ci-dessous doivent donc etre lues comme des fermetures optimistes de premier ordre.
+
+\section{Approximation de champ moyen}
+Pour decrire la dynamique moyenne du systeme, on introduit:
+\[
+N(t) = \text{nombre moyen d'entites vivantes},\quad
+p(t)=\mathbb{E}[P_i(t)],\quad
+\ell(t)=\mathbb{E}[L_i(t)],\quad
+m(t)=\frac{|E_t|}{N(t)}.
+\]
+
+Une fermeture minimale inspiree du code est
+\begin{align*}
+\dot N &= \lambda - h(t)N, \\
+\dot p &= \varphi[\ell-sp]_+ + \eta m - \delta_P p - \kappa_p h p, \\
+\dot \ell &= \bar \Pi(p) - \delta_L \ell - \varphi[\ell-sp]_+ - \eta m - \kappa_\ell h\ell, \\
+\dot m &= \beta(\ell,p) - \nu m - \kappa_m h m.
+\end{align*}
+
+Interpretation des termes:
+\begin{itemize}
+\item $\lambda$ est l'intensite de creation;
+\item $h(t)$ est un hazard moyen de faillite;
+\item $\varphi[\ell-sp]_+$ est l'auto-investissement moyen;
+\item $\eta m$ represente la contribution moyenne du credit a la taille productive;
+\item $\bar \Pi(p)$ designe une fermeture de la production moyenne, avec $\bar \Pi(p)\le \alpha\sqrt p$ par Jensen;
+\item $\beta(\ell,p)$ est le taux de creation d'arcs de credit, croissant avec le surplus de liquidite et l'heterogeneite des $r^\star$;
+\item $\nu$ est un terme de disparition des liens par extinction ou illiquidite.
+\end{itemize}
+
+\subsection{Conditions de stabilite}
+Un point fixe $(N^\star,p^\star,\ell^\star,m^\star)$ doit satisfaire
+\[
+\lambda = h^\star N^\star,
+\]
+\[
+\varphi[\ell^\star-sp^\star]_+ + \eta m^\star = \delta_P p^\star + \kappa_p h^\star p^\star,
+\]
+\[
+\bar \Pi(p^\star)
+=
+\delta_L\ell^\star + \varphi[\ell^\star-sp^\star]_+ + \eta m^\star + \kappa_\ell h^\star \ell^\star.
+\]
+Le systeme est durable si la creation compense l'extinction et si la production sous-lineaire suffit a soutenir la reserve moyenne. Formellement, un regime supercritique de croissance exige
+\[
+\bar \Pi(p^\star)
+>
+\delta_L\ell^\star + \mathbb{E}[I^{\mathrm{pay}}] + \mathbb{E}[D^{\mathrm{fail}}],
+\]
+tandis qu'un regime sous-critique conduit a l'erosion de $\ell$ puis a la disparition de la population active.
+
+\section{Analyse dynamique pas-a-pas}
+Le code implemente une application discrete
+\[
+X_{t+1}=\mathcal F(X_t),
+\]
+ou l'etat global $X_t$ contient les bilans de toutes les entites, le multigraphe de credit et les statistiques de population. Pour \texttt{v2}, on peut decomposer
+\[
+\mathcal F=\mathcal U \circ \mathcal C \circ \mathcal D \circ \mathcal I \circ \mathcal E \circ \mathcal S,
+\]
+avec:
+\begin{itemize}
+\item $\mathcal S$: creation de nouvelles entites;
+\item $\mathcal E$: extraction;
+\item $\mathcal I$: paiements d'interets;
+\item $\mathcal D$: depreciation;
+\item $\mathcal C$: marche du credit;
+\item $\mathcal U$: auto-investissement puis resolution des faillites.
+\end{itemize}
+
+\subsection{Etape 1: creation}
+Si $N_t$ designe la population vivante juste avant la creation,
+\[
+N_t^{(1)} = N_t + \Xi_t,
+\qquad
+\Xi_t \sim \mathrm{Poisson}(\lambda).
+\]
+Cette etape n'ajoute pas seulement des noeuds au graphe. Elle injecte aussi un stock initial de reserve et de taille productive. Le role de $\lambda$ est donc double: flux demographique et injection de masse productive minimale.
+
+\subsection{Etape 2: extraction}
+Conditionnellement a l'etat apres creation,
+\[
+L_i^{(2)} = L_i^{(1)} + \alpha\sqrt{P_i^{(1)}}.
+\]
+Cette etape est monotone croissante en $P_i$. Elle favorise les entites deja grandes en volume absolu, mais favorise les petites en rendement marginal. Le systeme cree donc a chaque pas une tension entre \emph{niveau} et \emph{marge}.
+
+\subsection{Etape 3: interets}
+Les paiements d'interets sont purement redistributifs au niveau du systeme total si l'on ignore les cessions forcees. Cependant, au niveau local, ils ont un effet de tri:
+\[
+L_i^{(3)} = L_i^{(2)} - I_i^{\mathrm{pay}} + I_i^{\mathrm{rec}} - \Lambda_i,
+\]
+ou $\Lambda_i$ represente les pertes de capacite dues aux liquidations forcees. Cette etape concentre la liquidite chez les preteurs et fragilise les emprunteurs deja tendus.
+
+\subsection{Etape 4: depreciation}
+Le code applique approximativement
+\[
+L_i^{(4)}=(1-\delta_L)L_i^{(3)},
+\qquad
+P_i^{(4)} \approx B_i + (1-\delta_P)(P_i^{(3)}-B_i).
+\]
+La consequence fondamentale est que la production future
+\[
+\Pi_i^{(t+1)} \propto \sqrt{P_i^{(4)}}
+\]
+est deja conditionnee par cette erosion. La depreciation agit donc comme une force de rappel contre l'explosion des tailles.
+
+\subsection{Etape 5: credit}
+Le credit augmente $P_i$ des emprunteurs et diminue la liquidite libre des preteurs. Au niveau moyen,
+\[
+p^{(5)} - p^{(4)} \approx \eta m_t,
+\qquad
+\ell^{(5)} - \ell^{(4)} \approx -\eta m_t.
+\]
+Cette etape pousse le systeme vers plus de taille productive et moins de tampon liquide. C'est l'etape destabilsante par excellence.
+
+\subsection{Etape 6: auto-investissement et faillites}
+L'auto-investissement reconvertit une partie de la liquidite restante:
+\[
+P_i^{(6)} = P_i^{(5)} + \varphi[L_i^{(5)}-sP_i^{(5)}]_+.
+\]
+Puis la faillite supprime les entites avec
+\[
+NW_i^{(6)}<0.
+\]
+Cette derniere operation est mathematiquement une projection non lineaire sur l'ensemble viable. Elle coupe brutalement les trajectoires qui ont accumule trop de taille relativement a leur reserve.
+
+\subsection{Prediction qualitative d'un pas a l'autre}
+En composant ces effets, on obtient la logique suivante:
+\begin{enumerate}
+\item la creation et l'extraction augmentent masse et liquidite;
+\item les interets redistribuent la liquidite vers les rendements faibles;
+\item la depreciation reduit le potentiel futur;
+\item le credit augmente la taille productive plus vite que la reserve;
+\item l'auto-investissement accentue encore cette conversion de reserve en taille;
+\item la faillite elimine les entites dont cette conversion a ete excessive.
+\end{enumerate}
+
+Autrement dit, le systeme alterne \emph{phase d'accumulation} et \emph{phase de nettoyage}. Le comportement general peut etre predit en observant le signe de la quantite moyenne
+\[
+\Delta_t = \alpha\sqrt{p_t}
+-\delta_L\ell_t
+-\text{service de dette moyen}
+-\text{pertes de reseau moyennes}.
+\]
+Si $\Delta_t$ reste durablement positif, le systeme grossit jusqu'a rencontrer une contrainte de liquidation. Si $\Delta_t$ devient durablement negatif, la population s'atrophie. Si $\Delta_t$ oscille autour de zero, on obtient un regime stationnaire bruité.
+
+\section{Duree de vie moyenne comme temps de premier passage}
+Pour une entite individuelle, on peut approximer la valeur nette par un processus de diffusion
+\[
+dNW_i(t)=g_i\,dt+\sigma_i\,dW_t,
+\]
+avec barriere absorbante en $0$. Ici $g_i$ est la derive moyenne locale et $\sigma_i^2$ agrege les fluctuations de production, de credit et de pertes de reseau.
+
+Lorsque $g_i<0$, l'esperance du temps de premier passage depuis un niveau initial $NW_{i,0}>0$ vaut, a premier ordre,
+\[
+\mathbb{E}[\tau_i] \approx \frac{NW_{i,0}}{|g_i|}.
+\]
+Une approximation plus fine de type inverse-gaussienne donne
+\[
+\tau_i \sim \mathrm{IG}\!\left(\frac{NW_{i,0}}{|g_i|},\,\frac{NW_{i,0}^2}{\sigma_i^2}\right),
+\]
+mais cette loi n'est exacte que pour une derive et une volatilite constantes. Dans le cadre present, elle doit etre comprise comme une conjecture de premier ordre a tester, et non comme un ajustement valide empiriquement.
+
+\section{Condition de cascade}
+Si l'on note $B_t$ la matrice de contagion linearisée, avec coefficients
+\[
+(B_t)_{ij}
+=
+\mathbb{P}(j \text{ devient insolvable } \mid i \text{ tombe})
+\cdot w_{ij},
+\]
+alors un critere standard de theorie des cascades est
+\[
+\rho(B_t) < 1 \quad \Rightarrow \quad \text{cascades amorties},
+\]
+\[
+\rho(B_t) > 1 \quad \Rightarrow \quad \text{propagation supercritique possible}.
+\]
+Dans \texttt{v2}, l'absence d'intermediation locale importante tend qualitativement a reduire $\rho(B_t)$, mais ce rayon spectral n'est pas estime ici. Cette section doit donc etre lue comme un cadre theorique pour une analyse ulterieure.
+
+\section{Resultats empiriques}
+Une execution locale sur $1000$ pas avec les parametres par defaut donne:
+\begin{center}
+\begin{tabular}{lr}
+\toprule
+Indicateur & Valeur \\
+\midrule
+Entites totales creees & 526 \\
+Entites vivantes a la fin & 108 \\
+Faillites cumulees & 418 \\
+Extraction moyenne par pas & 3665.83 \\
+Transactions de credit moyennes par pas & 3.96 \\
+Nombre moyen de prets actifs & 444.22 \\
+Duree de vie moyenne des defuntes non censurees & 187.06 \\
+Duree de vie mediane des defuntes non censurees & 179.00 \\
+Duree de vie maximale observee parmi les defuntes & 882 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Les $108$ entites encore vivantes a la fin sont censurees a droite et ne sont pas incluses dans ces statistiques de duree de vie. Une analyse de survie plus rigoureuse requerrait un estimateur de Kaplan-Meier.
+
+Sur un ensemble plus leger de $10$ seeds et $300$ pas, on observe aussi:
+\begin{center}
+\begin{tabular}{lr}
+\toprule
+Indicateur inter-runs & Moyenne $\pm$ ecart-type \\
+\midrule
+Entites vivantes finales & $107.5 \pm 14.6$ \\
+Faillites cumulees & $55.8 \pm 5.8$ \\
+Extraction moyenne par pas & $2153.3 \pm 218.8$ \\
+Transactions de credit par pas & $3.42 \pm 0.21$ \\
+Nombre moyen de prets actifs & $297.2 \pm 26.3$ \\
+Ratio de Jensen final $\mathbb E[\sqrt P]/\sqrt{\mathbb E[P]}$ & $0.9907 \pm 0.0064$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Le biais de Jensen est donc empiriquement de l'ordre de $1\%$ dans ce regime pour \texttt{v2}, ce qui justifie une fermeture de premier ordre tout en rappelant qu'elle surestime legerement la production moyenne.
+
+Ces chiffres sont coherents avec la theorie:
+\begin{itemize}
+\item reseau actif mais peu dense;
+\item hazard de faillite positif mais non devastateur;
+\item maintien d'une population vivante non nulle;
+\item existence d'une queue de survivants longue, compatible avec le modele de temps de premier passage.
+\end{itemize}
+
+\section{Conclusion}
+\texttt{claude3-v2} realise deja un veritable systeme dynamique de graphe oriente, mais dans une geometre tres contrainte. Sa mathematique repose sur quatre objets centraux: la concavite de $\sqrt{P}$, le taux marginal $r^\star$, la derive de valeur nette et le rayon spectral d'une matrice de contagion linearisée. La duree de vie moyenne des entites n'est pas un parametre ad hoc; elle emerge d'un probleme de premier passage dont la derive est determinee par la competition entre extraction, depreciation liquide et pertes de reseau. Cette base est solide pour la comparaison avec les versions plus recentes, qui enrichissent fortement la topologie du graphe de credit.
+
+\end{document}

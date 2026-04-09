@@ -1,0 +1,36 @@
+\babel@toc {french}{}\relax 
+\contentsline {section}{\numberline {1}Introduction}{2}{section.1}%
+\contentsline {section}{\numberline {2}Critiques conceptuelles}{2}{section.2}%
+\contentsline {subsection}{\numberline {2.1}La nature du numéraire est indéfinie}{2}{subsection.2.1}%
+\contentsline {subsection}{\numberline {2.2}La fonction d'extraction est une hypothèse ad hoc}{2}{subsection.2.2}%
+\contentsline {subsection}{\numberline {2.3}L'invariant $\mathrm {NW} = L + R - B - C$ masque une asymétrie}{2}{subsection.2.3}%
+\contentsline {subsection}{\numberline {2.4}La création ex nihilo du passif inné n'a pas de contrepartie réelle}{3}{subsection.2.4}%
+\contentsline {section}{\numberline {3}Critiques structurelles}{3}{section.3}%
+\contentsline {subsection}{\numberline {3.1}Le passif miroir $C_i = R_i$ n'est pas maintenu correctement}{3}{subsection.3.1}%
+\contentsline {subsection}{\numberline {3.2}La dépréciation exo crée une dette fantôme}{3}{subsection.3.2}%
+\contentsline {subsection}{\numberline {3.3}L'arrêt du marché du crédit est arbitraire}{3}{subsection.3.3}%
+\contentsline {subsection}{\numberline {3.4}Le modèle mélange stocks et flux dans le même numéraire}{4}{subsection.3.4}%
+\contentsline {section}{\numberline {4}Critiques de la calibration}{4}{section.4}%
+\contentsline {subsection}{\numberline {4.1}Le paramètre $\theta = 0.35$ est un régulateur empirique}{4}{subsection.4.1}%
+\contentsline {subsection}{\numberline {4.2}$\lambda _{\text {création}} = 2$ est un paramètre de régulation populationnelle}{4}{subsection.4.2}%
+\contentsline {subsection}{\numberline {4.3}La population initiale n'est pas en équilibre}{4}{subsection.4.3}%
+\contentsline {subsection}{\numberline {4.4}La graine unique ne garantit pas la robustesse}{5}{subsection.4.4}%
+\contentsline {section}{\numberline {5}Critiques d'interprétation}{5}{section.5}%
+\contentsline {subsection}{\numberline {5.1}La loi de puissance n'est pas vérifiée}{5}{subsection.5.1}%
+\contentsline {subsection}{\numberline {5.2}La transition de phase à $k=3$ est un artefact de taille finie}{5}{subsection.5.2}%
+\contentsline {subsection}{\numberline {5.3}Les intermédiaires financiers ne jouent pas le rôle prévu}{5}{subsection.5.3}%
+\contentsline {subsection}{\numberline {5.4}L'absence d'un marché des biens brise la chaîne de causalité économique}{6}{subsection.5.4}%
+\contentsline {subsection}{\numberline {5.5}La dépréciation exo à 10\% par pas est irréaliste}{6}{subsection.5.5}%
+\contentsline {section}{\numberline {6}Critiques algorithmiques et numériques}{6}{section.6}%
+\contentsline {subsection}{\numberline {6.1}L'arrêt du marché du crédit sous-estime les transactions}{6}{subsection.6.1}%
+\contentsline {subsection}{\numberline {6.2}La réévaluation des créances n'est pas effectuée régulièrement}{6}{subsection.6.2}%
+\contentsline {subsection}{\numberline {6.3}Le cache des intérêts est reconstruit à froid à chaque pas}{7}{subsection.6.3}%
+\contentsline {section}{\numberline {7}Critiques de la prétention SOC}{7}{section.7}%
+\contentsline {subsection}{\numberline {7.1}Le mécanisme d'auto-organisation n'est pas identifié}{7}{subsection.7.1}%
+\contentsline {subsection}{\numberline {7.2}La stationnarité du système n'est pas vérifiée}{7}{subsection.7.2}%
+\contentsline {subsection}{\numberline {7.3}La définition de la cascade est ambiguë}{7}{subsection.7.3}%
+\contentsline {section}{\numberline {8}Axes d'amélioration suggérés}{8}{section.8}%
+\contentsline {subsection}{\numberline {8.1}Court terme}{8}{subsection.8.1}%
+\contentsline {subsection}{\numberline {8.2}Moyen terme}{8}{subsection.8.2}%
+\contentsline {subsection}{\numberline {8.3}Long terme}{8}{subsection.8.3}%
+\contentsline {section}{\numberline {9}Conclusion}{8}{section.9}%

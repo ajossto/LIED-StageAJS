@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Simulation Lab - Lancement</title>
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body data-page="launch">
+  <header class="topbar">
+    <div>
+      <h1>Simulation Lab</h1>
+      <p class="muted">Page de lancement des modélisations</p>
+    </div>
+    <nav class="topnav">
+      <a class="nav-link active" href="/launch">Lancement</a>
+      <a class="nav-link" href="/results">Afficher les résultats</a>
+    </nav>
+  </header>
+
+  <main class="page-grid">
+    <section class="panel">
+      <h2>Nouveau lancement</h2>
+      <label>Modèle</label>
+      <select id="model-select"></select>
+      <div id="model-description" class="help"></div>
+      <label>Label</label>
+      <input id="run-label" type="text" placeholder="ex: scenario_base">
+      <div id="parameter-form"></div>
+
+      <div class="section-block">
+        <h3>Simulation unique</h3>
+        <label>Seed</label>
+        <input id="single-seed" type="number" value="1000">
+        <button id="run-single">Lancer une simulation</button>
+      </div>
+
+      <div class="section-block">
+        <h3>Batch parallèle</h3>
+        <label>Nombre de runs</label>
+        <input id="batch-count" type="number" min="1" value="4">
+        <label>Workers</label>
+        <input id="batch-workers" type="number" min="1" value="2">
+        <label>Seed de base</label>
+        <input id="batch-seed" type="number" value="1000">
+        <button id="run-batch">Lancer le batch</button>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Suivi d’exécution</h2>
+      <div id="job-status-card" class="status-card">
+        <div class="muted">Aucun lancement en cours.</div>
+      </div>
+      <div class="progress-shell">
+        <div id="progress-bar" class="progress-bar"></div>
+      </div>
+      <div class="inline-actions">
+        <button id="cancel-job" class="secondary hidden">Avorter la simulation</button>
+      </div>
+      <pre id="messages"></pre>
+      <div class="inline-actions">
+        <a class="button-link" href="/results">Afficher les résultats</a>
+      </div>
+    </section>
+  </main>
+  <script src="/static/app.js"></script>
+</body>
+</html>

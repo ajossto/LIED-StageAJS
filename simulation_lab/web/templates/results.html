@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Simulation Lab - Résultats</title>
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body data-page="results">
+  <header class="topbar">
+    <div>
+      <h1>Simulation Lab</h1>
+      <p class="muted">Navigation dans les modélisations passées</p>
+    </div>
+    <nav class="topnav">
+      <a class="nav-link" href="/launch">Lancement</a>
+      <a class="nav-link active" href="/results">Résultats</a>
+    </nav>
+  </header>
+
+  <main class="results-grid">
+    <section class="panel">
+      <div class="toolbar">
+        <h2>Simulations</h2>
+        <button id="refresh-runs">Rafraîchir</button>
+      </div>
+      <div class="filter-row">
+        <button class="secondary" data-scope="active">Actives</button>
+        <button class="secondary" data-scope="trash">Corbeille</button>
+      </div>
+      <div id="runs-list" class="runs-list"></div>
+      <div id="trash-actions" class="inline-actions hidden">
+        <button id="empty-trash" class="secondary">Vider la corbeille</button>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Détail</h2>
+      <div id="run-detail" class="detail muted">Sélectionnez une simulation.</div>
+      <div id="artifacts-grid" class="artifacts-grid"></div>
+    </section>
+  </main>
+  <script src="/static/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,722 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[french]{babel}
+\usepackage{lmodern}
+\usepackage{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\geometry{margin=2.4cm}
+
+\title{Analyse mathematique du dernier modele et du WIP courant\\
+\large Graphes stochastiques, criticite, equations differentielles et duree de vie}
+\author{Codex}
+\date{3 avril 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Ce texte etudie le dernier modele commite dans \texttt{HEAD}, \texttt{claude3-v3-27-mars}, ainsi que le WIP courant \texttt{Modèle\_sans\_banque\_wip}. L'inspection du depot montre que les fichiers centraux de ces deux reperes coïncident; ils sont donc analyses comme une meme famille dynamique. Par rapport a \texttt{v2}, cette famille ajoute de l'heterogeneite de productivite, un passif financier miroir, une contrainte d'endettement, un matching local aleatoire, une revaluation economique des creances et une redistribution directe lors des faillites. Nous formalisons ces ingredients en termes de graphe stochastique dirige, de champ moyen macroeconomique, de condition spectrale de cascade et de temps de premier passage pour la duree de vie moyenne. Les equations continues et les criteres spectraux sont presentes comme cadres analytiques qualitatifs, non comme calibrations closes. L'execution de reference a $1000$ pas montre une population ouverte durable et un reseau de credit dense: extraction moyenne $\approx 9419.06$, environ $36.77$ transactions de credit par pas, $652$ cascades et une duree de vie moyenne observee d'environ $363.34$ pas sur les entites suivies defuntes.
+\end{abstract}
+
+\section{Identification}
+Les trois reperes utiles du depot sont:
+\begin{itemize}
+\item premier stable a documenter: \texttt{stable/v2\_modulaire\_stable\_A\_documenter\_DONE} $\to$ \texttt{claude3-v2};
+\item dernier modele commite: \texttt{HEAD:claude3-v3-27-mars};
+\item WIP courant: \texttt{Modèle\_sans\_banque\_wip}.
+\end{itemize}
+
+L'analyse du code montre que le WIP reprend les modules centraux du dernier modele commite. La theorie ci-dessous s'applique donc aux deux.
+
+\section{Invariants de bilan et variable de fragilite}
+Pour chaque entite $i$:
+\[
+A_i = L_i + R_i + K_i^{\mathrm{endo}} + K_i^{\mathrm{exo}},
+\]
+\[
+P_i = B_i + P_i^{\mathrm{endo}} + P_i^{\mathrm{exo}},
+\qquad
+P_i^{\mathrm{bilan}} = P_i + C_i.
+\]
+La condition de faillite du code est
+\[
+A_i + \varepsilon < P_i^{\mathrm{bilan}}.
+\]
+Comme $R_i$ et $C_i$ sont modifies en miroir dans les operations ordinaires, la richesse nette se reduit a
+\[
+NW_i = A_i - P_i^{\mathrm{bilan}}
+= L_i + K_i^{\mathrm{endo}} + K_i^{\mathrm{exo}} - B_i - P_i^{\mathrm{endo}} - P_i^{\mathrm{exo}}.
+\]
+
+La nouveaute profonde est que les actifs financiers n'accroissent pas le patrimoine net: ils augmentent simultanement l'actif brut et la surface d'exposition du bilan. Le code introduit en outre une fragilite cachee
+\[
+H_i(t)=\sum_{e \in \mathcal{L}_i(t)} q_e(t)\Big(1-(1-\delta_{\mathrm{exo}})^{a_e(t)}\Big),
+\]
+ou $a_e$ est l'age du pret. $H_i$ mesure la perte latente entre valeur nominale et valeur economique des creances.
+
+\section{Extraction heterogene et reserve}
+Chaque entite vivante suit
+\[
+\Pi_i(t)=\alpha_i(t)\sqrt{P_i(t)},
+\qquad
+r_i^\star(t)=\frac{\alpha_i(t)}{2\sqrt{P_i(t)}}.
+\]
+La productivite est tiree initialement selon
+\[
+\alpha_i(0)\sim \mathcal{U}[\alpha_{\min},\alpha_{\max}],
+\]
+puis evolue comme un brownien geometrique discret
+\[
+\alpha_i(t+1)=\alpha_i(t)\exp(\sigma \xi_{i,t}),
+\qquad \xi_{i,t}\sim \mathcal N(0,1).
+\]
+Sous cette forme exacte, on a
+\[
+\mathbb E[\exp(\sigma \xi)] = e^{\sigma^2/2},
+\]
+et donc, en l'absence de correction martingale,
+\[
+\mathbb E[\alpha_i(t)] = \mathbb E[\alpha_i(0)]\,e^{\sigma^2 t/2}.
+\]
+Le code implemente donc une derive moyenne positive implicite de la productivite. Deux lectures sont possibles: soit on analyse le code tel quel et il faut alors laisser varier $\bar \alpha(t)$ dans le champ moyen; soit on introduit une version martingale corrigee
+\[
+\alpha_i(t+1)=\alpha_i(t)\exp(\sigma \xi_{i,t}-\sigma^2/2),
+\]
+mais ce n'est pas celle du code source courant.
+
+La reserve liquide minimale est
+\[
+\mathcal R_i = \max(sP_i,B_i).
+\]
+Le surplus auto-investissable est
+\[
+S_i = \max(0,L_i-\mathcal R_i),
+\qquad
+x_i=\varphi S_i.
+\]
+L'operation change $P_i$ et reduit la richesse nette bilancielle:
+\[
+L_i' = L_i-x_i,\quad
+K_i^{\mathrm{endo}\,'}=K_i^{\mathrm{endo}}+x_i,\quad
+P_i^{\mathrm{endo}\,'}=P_i^{\mathrm{endo}}+x_i,\quad
+P_i'=P_i+x_i.
+\]
+\[
+\Delta NW_i^{\mathrm{endo}} = -x_i.
+\]
+
+\section{Le marche du credit comme graphe stochastique dirige}
+\subsection{Definition du graphe}
+On note $G_t=(V_t,E_t)$ le graphe oriente des prets au temps $t$. Un arc $i\to j$ signifie que $i$ prete a $j$. Contrairement a \texttt{v2}, le matching n'utilise plus les deux extremes globaux, mais un \emph{pool local aleatoire} de taille $k$.
+
+On peut approximer la probabilite conditionnelle d'un lien par un noyau
+\[
+\mathbb P(i\to j \mid r_i^\star, r_j^\star, \ell_i,\ell_j)
+\approx
+\gamma_t\,
+\mathbf 1_{r_i^\star<r_j^\star}\,
+\psi_k(r_i^\star,r_j^\star)\,
+\mathbf 1_{\ell_i>\mathcal R_i},
+\]
+ou $\psi_k$ est la probabilite que $i$ et $j$ tombent simultanement dans un meme pool avec ordre compatible. Plus $k$ augmente, plus le noyau se diffuse.
+
+\subsection{Intermediation endogene}
+Avec $k=1$, le graphe se rapproche d'un arbitrage pur entre classes extremes. Avec $k\ge 3$, une entite mediane peut recevoir et emettre des arêtes au meme pas ou sur des pas voisins. Formellement, l'evenement
+\[
+\deg_t^-(i)>0 \quad \text{et} \quad \deg_t^+(i)>0
+\]
+cesse d'etre rare. On voit donc apparaitre des \emph{intermediaires endogenes}. C'est le passage topologique decisif: le reseau n'est plus quasi-bipartite, mais multietage.
+
+\subsection{Degre moyen et densite}
+Si $N_t=|V_t|$ et $M_t=|E_t|$, le degre moyen oriente vaut
+\[
+\bar d_t = \frac{M_t}{N_t}.
+\]
+Sur l'execution WIP de reference, on mesure environ
+\[
+\bar d \approx \frac{3173.96}{548.97}\approx 5.78,
+\]
+ce qui situe deja le systeme dans un regime de connectivite non triviale.
+
+\section{Prix, volume et contrainte d'endettement}
+Le taux de transaction est
+\[
+r = (1-f)r^\star_{\ell}+fr^\star_b.
+\]
+Le volume potentiel de dette nouvelle est
+\[
+q_{\max} = \left(\frac{\alpha_b}{2r}\right)^2 - P_b - S_b,
+\qquad
+q=\theta\max(0,q_{\max}).
+\]
+Cette formule provient du probleme statique suivant: l'emprunteur choisit $q\ge 0$ pour maximiser
+\[
+G(q)=\alpha_b\big(\sqrt{P_b+S_b+q}-\sqrt{P_b}\big)-rq.
+\]
+La condition du premier ordre
+\[
+G'(q)=\frac{\alpha_b}{2\sqrt{P_b+S_b+q}}-r=0
+\]
+donne
+\[
+q^\star = \left(\frac{\alpha_b}{2r}\right)^2 - P_b - S_b.
+\]
+Le code tronque ensuite a $0$ puis applique la fraction comportementale $\theta$.
+La transaction n'est executee que si
+\[
+\frac{\chi_b + rq}{\alpha_b\sqrt{P_b}+\rho_b}\le d,
+\]
+ou $\chi_b$ est la charge d'interets existante et $\rho_b$ le revenu financier recu.
+
+Cette inegalite est essentielle. Elle remplace un simple arbitrage de rendement par une condition de \emph{stabilite locale de service de dette}. Le credit n'est pas seulement profitable; il doit etre soutenable dynamiquement.
+
+\section{Dynamique de bilan et equation de derive}
+Une approximation de la derive de valeur nette est
+\[
+\Delta NW_i
+\approx
+\alpha_i\sqrt{P_i}
+-\delta_L L_i
++I_i^{\mathrm{rec}}
+-I_i^{\mathrm{pay}}
+-W_i
+-F_i,
+\]
+ou:
+\begin{itemize}
+\item $W_i$ est le flux de write-downs imputable a la revaluation de creances;
+\item $F_i$ est la perte de reseau imputable aux faillites de contrepartie.
+\end{itemize}
+
+En temps continu moyen:
+\[
+\frac{d}{dt}\mathbb E[NW_i]
+=
+\mathbb E[\alpha_i\sqrt{P_i}]
+-\delta_L\mathbb E[L_i]
++\mathbb E[I_i^{\mathrm{rec}}-I_i^{\mathrm{pay}}]
+-\mathbb E[W_i+F_i].
+\]
+L'auto-investissement, le pret et le passif miroir ne detruisent pas directement la richesse nette; ils agissent par les termes de flux futurs.
+
+\section{Systeme de champ moyen}
+On introduit les variables macroscopiques
+\[
+N(t),\qquad
+p(t)=\mathbb E[P_i(t)],\qquad
+\ell(t)=\mathbb E[L_i(t)],\qquad
+m(t)=\frac{M_t}{N(t)},\qquad
+h(t)=\text{hazard moyen de faillite}.
+\]
+Un systeme ferme minimal compatible avec le code est
+\begin{align*}
+\dot N &= \lambda - hN, \\
+\dot p &= \varphi[\ell-\bar{\mathcal R}(p)]_+ + \eta m - \delta_P p - \kappa_p hp, \\
+\dot \ell &= \Pi_{\mathrm{eff}}(p,t) - \delta_L \ell - \varphi[\ell-\bar{\mathcal R}(p)]_+ - \eta m + \iota m - \kappa_\ell h\ell, \\
+\dot m &= \beta_k(\ell,p,\sigma_\alpha) - \nu m - \kappa_m hm, \\
+\dot H &= \delta_{\mathrm{exo}} m \bar q - \omega H - \kappa_H hH.
+\end{align*}
+
+Commentaires:
+\begin{itemize}
+\item $\Pi_{\mathrm{eff}}(p,t)$ designe le terme exact $\mathbb E[\alpha_i(t)\sqrt{P_i(t)}]$ ou une fermeture de celui-ci;
+\item $\beta_k$ croît avec la taille du pool $k$ et avec l'heterogeneite $\sigma_\alpha$;
+\item $H$ est un stock de fragilite cachee;
+\item $\eta m$ traduit l'alimentation de taille productive par le credit;
+\item $\iota m$ represente un terme net de redistribution liquide/recouvrement qui n'est pas nul au niveau agrégé des lors que les liquidations forcees et write-downs cassent la stricte conservation.
+\end{itemize}
+
+Le point crucial est que
+\[
+\Pi_{\mathrm{eff}}(p,t)=\mathbb E[\alpha_i\sqrt{P_i}]
+= \bar \alpha(t)\,\mathbb E[\sqrt{P_i}] + \operatorname{Cov}(\alpha_i,\sqrt{P_i}).
+\]
+Il est donc incorrect d'identifier sans discussion $\Pi_{\mathrm{eff}}$ a $\bar \alpha\sqrt p$. Comme $\sqrt{\cdot}$ est concave,
+\[
+\mathbb E[\sqrt{P_i}] \le \sqrt{\mathbb E[P_i]},
+\]
+mais une covariance positive entre productivite et taille peut compenser partiellement ce biais. Nous laissons donc $\Pi_{\mathrm{eff}}$ sous forme non fermee.
+
+\subsection{Point fixe et systeme stable}
+Un regime stationnaire exige
+\[
+\lambda = h^\star N^\star,
+\]
+\[
+\varphi[\ell^\star-\bar{\mathcal R}(p^\star)]_+ + \eta m^\star
+=
+\delta_P p^\star + \kappa_p h^\star p^\star,
+\]
+\[
+\Pi_{\mathrm{eff}}(p^\star,t^\star) + \iota m^\star
+=
+\delta_L\ell^\star + \varphi[\ell^\star-\bar{\mathcal R}(p^\star)]_+ + \eta m^\star + \kappa_\ell h^\star \ell^\star.
+\]
+Le systeme est stable si le Jacobien de cette dynamique a ses valeurs propres dans le demi-plan gauche. Dans ce texte, ces equations sont employees qualitativement; les coefficients de fermeture $\eta,\iota,\kappa_\bullet,\omega,\nu,\beta_k$ ne sont pas calibres sur les donnees. De facon qualitative:
+\begin{itemize}
+\item trop peu de credit: le systeme reste sous-alimente et declinant;
+\item trop de credit sans contrainte: $m$ et $H$ explosent, puis le hazard $h$ devient dominant;
+\item regime intermediaire: $N$, $p$, $\ell$ et $m$ se stabilisent autour d'un attracteur bruité.
+\end{itemize}
+
+\section{Analyse dynamique pas-a-pas}
+Le point central pour predire le comportement general est de decrire explicitement l'application discrete
+\[
+X_{t+1}=\mathcal F(X_t),
+\]
+ou $X_t$ rassemble:
+\begin{itemize}
+\item la population vivante;
+\item les bilans individuels;
+\item le graphe de credit $G_t$;
+\item le stock de fragilite cachee $H_t$.
+\end{itemize}
+
+Dans le WIP, l'operateur se decompose naturellement en neuf sous-etapes:
+\[
+\mathcal F=
+\mathcal U \circ
+\mathcal F_{\mathrm{fail}} \circ
+\mathcal C \circ
+\mathcal D \circ
+\mathcal A \circ
+\mathcal I \circ
+\mathcal E \circ
+\mathcal S \circ
+\mathcal B,
+\]
+ou $\mathcal B$ est la mise a jour brownienne des $\alpha_i$, $\mathcal S$ la creation, $\mathcal E$ l'extraction, $\mathcal I$ les interets, $\mathcal A$ l'amortissement, $\mathcal D$ la depreciation, $\mathcal C$ le credit, $\mathcal F_{\mathrm{fail}}$ les cascades, et $\mathcal U$ l'auto-investissement.
+
+\subsection{Etape 0: choc de productivite}
+Le brownien geometrique agit d'abord:
+\[
+\alpha_i^{(0)}(t+1)=\alpha_i(t)\exp(\sigma \xi_{i,t}).
+\]
+Cette etape ne modifie ni $L_i$ ni $P_i$, mais elle deforme l'ordre des $r_i^\star$ et, telle qu'implantee, pousse aussi la moyenne de $\alpha$ vers le haut. C'est donc a la fois un generateur de \emph{rebrassage topologique} et une source lente d'expansion exogene.
+
+\subsection{Etape 1: creation}
+La population devient
+\[
+N_t^{(1)}=N_t+\Xi_t,
+\qquad
+\Xi_t\sim\mathrm{Poisson}(\lambda).
+\]
+Chaque naissance injecte a la fois reserve et taille minimale, ce qui empeche l'extinction definitive des noeuds tant que $\lambda>0$.
+
+\subsection{Etape 2: extraction}
+Puis
+\[
+L_i^{(2)} = L_i^{(1)} + \alpha_i^{(0)}\sqrt{P_i^{(1)}}.
+\]
+Cette etape augmente la liquidite sans changer $P_i$. Elle remplit donc la reserve avant toute obligation financiere du pas.
+
+\subsection{Etape 3: interets}
+Les interets redistribuent de la liquidite le long des arcs du graphe:
+\[
+L_i^{(3)} = L_i^{(2)} - I_i^{\mathrm{pay}} + I_i^{\mathrm{rec}} - \Lambda_i.
+\]
+Le terme $\Lambda_i$ condense la liquidation de creances et la reliquefaction endogene. Cette etape tend a:
+\begin{itemize}
+\item augmenter la centralite liquide des preteurs;
+\item diminuer la reserve des emprunteurs;
+\item reveler la tension entre rentabilite nominale et soutenabilite de bilan.
+\end{itemize}
+
+\subsection{Etape 4: amortissement}
+Si $\tau>0$, le principal se reduit:
+\[
+q_{e,t+1}=(1-\tau)q_{e,t}
+\]
+au premier ordre. Cette etape est structurellement stabilisante: elle reduit le levier productif et le poids futur des interets.
+
+\subsection{Etape 5: depreciation}
+La depreciation applique
+\[
+L_i^{(5)}=(1-\delta_L)L_i^{(4)},
+\]
+\[
+P_i^{(5)} \approx B_i + (1-\delta_P)(P_i^{(4)}-B_i),
+\]
+et contribue a la fragilite cachee des creances via le decalage entre nominal et valeur economique. C'est l'etape qui fabrique progressivement $H_t$.
+
+\subsection{Etape 6: marche du credit}
+Le credit agit ensuite comme un operateur d'expansion du graphe:
+\[
+M_{t+1} = M_t + \Delta M_t,
+\qquad
+\Delta M_t \approx \beta_k(\ell_t,p_t,\sigma_\alpha)N_t.
+\]
+Au niveau des bilans, il augmente $P_i$ des emprunteurs et $C_i$ des preteurs. Cette etape est localement expansive et globalement ambiguë:
+\begin{itemize}
+\item elle augmente la production future via $P_i$;
+\item elle diminue le tampon liquide;
+\item elle augmente la connectivite et donc le potentiel de contagion.
+\end{itemize}
+
+\subsection{Etape 7: cascades de faillite}
+La resolution des faillites agit comme une projection non lineaire:
+\[
+X_t^{(7)} = \Pi_{\mathrm{viable}}(X_t^{(6)}),
+\]
+ou $\Pi_{\mathrm{viable}}$ retire les noeuds dont $NW_i<0$, annule certains arcs, redistribue d'autres et provoque des pertes secondaires. Cette etape est mathematiquement un \emph{operateur de dissipation topologique}: elle diminue $N$, $M$ et parfois $H$, mais peut aussi faire tomber de nouveaux noeuds.
+
+\subsection{Etape 8: auto-investissement}
+Enfin,
+\[
+P_i^{(8)} = P_i^{(7)} + \varphi[L_i^{(7)}-\mathcal R_i^{(7)}]_+.
+\]
+Cette etape reconvertit la reserve rescapée en capacite productive. Elle reprepare la phase d'extraction du pas suivant.
+
+\subsection{Lecture dynamique d'ensemble}
+Le comportement general se predit alors en suivant quatre quantites clefs:
+\[
+(\ell_t,\; p_t,\; m_t,\; H_t).
+\]
+Les roles des sous-etapes sont:
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+Etape & Effet principal & Signe structurel \\
+\midrule
+Brownien $\alpha$ & reordonne les rendements & brassage \\
+Creation & augmente $N$ et la masse de base & expansif \\
+Extraction & augmente $\ell$ & expansif \\
+Interets & redistribue $\ell$ et peut liquider & polarisant \\
+Amortissement & reduit le levier & stabilisant \\
+Depreciation & reduit $\ell$ et $p$ & dissipatif \\
+Credit & augmente $p$ et $m$ & expansif et risquant \\
+Faillites & reduit $N$, $M$ et pertes latentes & purgatif \\
+Auto-investissement & transforme $\ell$ en $p$ & expansif differe \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+On peut alors predire trois regimes:
+\begin{itemize}
+\item \textbf{regime extinctif}: extraction et creation ne compensent pas depreciation, service de dette et pertes de reseau;
+\item \textbf{regime explosif}: credit et auto-investissement font croitre $p_t$ et $m_t$ plus vite que la dissipation, jusqu'a hausse brutale de $h_t$;
+\item \textbf{regime stationnaire proche du seuil}: les phases expansives et purgatives se compensent statistiquement, avec $N_t$, $m_t$ et $H_t$ fluctuants autour d'un attracteur.
+\end{itemize}
+
+Une quantite synthetique utile est
+\[
+\Gamma_t =
+\bar\alpha_t\sqrt{p_t}
+-\delta_L\ell_t
++\iota m_t
+-\text{service de dette}_t
+-\text{pertes de reseau}_t.
+\]
+Si $\Gamma_t \gg 0$, l'expansion domine. Si $\Gamma_t \ll 0$, la contraction domine. Si $\Gamma_t \approx 0$ en moyenne mais avec forte variance, on obtient un regime proche d'un seuil critique. Cela ne suffit pas, en soi, a etablir une SOC au sens statistique strict.
+
+\section{Condition spectrale de cascade}
+On linearise la propagation d'une defaillance via une matrice de reproduction
+\[
+\mathcal B_t = (b_{ij}(t)),
+\qquad
+b_{ij}(t)=
+\mathbb P(j \text{ tombe si } i \text{ tombe})\,w_{ij}(t),
+\]
+ou $w_{ij}$ encode l'importance economique de l'exposition. Le critere classique devient
+\[
+\rho(\mathcal B_t)<1
+\Rightarrow
+\text{cascades subcritiques},
+\]
+\[
+\rho(\mathcal B_t)>1
+\Rightarrow
+\text{supercriticite locale possible}.
+\]
+
+Le matching local aleatoire et l'intermediation endogene augmentent typiquement $\rho(\mathcal B_t)$, tandis que la contrainte d'endettement le reduit. Dans ce texte, $\rho(\mathcal B_t)$ n'est pas estime numeriquement; cette section fournit donc un cadre theorique de localisation spectrale, a tester empiriquement plutot qu'un resultat etabli.
+
+\section{Duree de vie moyenne}
+Pour une entite individuelle, on modele a nouveau la richesse nette par une diffusion
+\[
+dNW_i(t)=g_i(t)\,dt+\sigma_i(t)\,dW_t,
+\]
+avec barriere absorbante en $0$. Lorsque $g_i$ est approximativement constant et negatif sur une plage temporelle:
+\[
+\mathbb E[\tau_i \mid NW_{i,0}] \approx \frac{NW_{i,0}}{|g_i|}.
+\]
+Mais ici $g_i$ depend fortement du reseau:
+\[
+g_i
+\approx
+\alpha_i\sqrt{P_i}
+-\delta_L L_i
++\rho_i-\chi_i-\omega_i-\phi_i,
+\]
+ou $\rho_i$ est le revenu financier, $\chi_i$ la charge d'interets, $\omega_i$ le write-down moyen et $\phi_i$ la perte attendue de contrepartie.
+
+Cette dependance reseautee explique pourquoi le WIP observe une duree de vie moyenne plus longue que \texttt{v2} tout en supportant davantage de faillites globales: le systeme nourrit plus de trajectoires viables, mais il supporte aussi un debit permanent de destructions locales. L'approximation diffusionnelle doit cependant etre lue comme un developpement lent; dans les episodes de cascade, un modele a sauts serait plus fidele.
+
+\section{Resultats empiriques}
+Sur l'execution de reference \texttt{simu\_20260403\_103200\_scenario\_base\_d6a1d52}, on observe:
+\begin{center}
+\begin{tabular}{lr}
+\toprule
+Indicateur & Valeur \\
+\midrule
+Pas simules & 1000 \\
+Entites creees au total & 2128 \\
+Entites vivantes a la fin & 530 \\
+Faillites cumulees & 1598 \\
+Extraction moyenne par pas & 9419.06 \\
+Transactions de credit moyennes par pas & 36.77 \\
+Nombre moyen de prets actifs & 3173.96 \\
+Nombre moyen d'entites vivantes & 548.97 \\
+Faillites moyennes par pas & 1.60 \\
+Cascades enregistrees & 652 \\
+Volume detruit moyen par cascade & 670.94 \\
+Volume detruit median par cascade & 573.01 \\
+Volume detruit maximal par cascade & 2157.42 \\
+Entites suivies & 162 \\
+Duree de vie moyenne observee des suivies defuntes & 363.34 \\
+Duree de vie mediane observee des suivies defuntes & 293.00 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Ces valeurs proviennent d'une trajectoire de reference unique. Elles documentent un comportement plausible du systeme, mais ne suffisent pas a etablir des lois universelles ni une criticite au sens fort.
+
+Deux controles quantitatifs complementaires ont ete effectues.
+
+\paragraph{Biais de Jensen et terme de production.}
+Sur $5$ seeds et $200$ pas dans le WIP, on mesure en fin de trajectoire
+\[
+\frac{\mathbb E[\sqrt P]}{\sqrt{\mathbb E[P]}} \approx 0.99827 \pm 0.00014,
+\]
+et
+\[
+\frac{\mathbb E[\alpha\sqrt P]}{\bar\alpha\sqrt{\mathbb E[P]}}
+\approx
+1.00079 \pm 0.00060.
+\]
+Dans ce regime court, le biais de Jensen est donc tres faible, et la covariance positive entre $\alpha$ et $\sqrt P$ le compense presque exactement.
+
+\paragraph{Derive moyenne de $\alpha$.}
+Avec $\sigma=0.005$, le multiplicateur theorique sans correction martingale vaut
+\[
+\exp\!\left(\frac{\sigma^2 t}{2}\right),
+\]
+soit environ $1.0025$ a $t=200$ et $1.0126$ a $t=1000$. Sur le batch court a $200$ pas, on observe
+\[
+\bar\alpha_{\mathrm{final}} \approx 1.0018 \pm 0.0046,
+\]
+ce qui est coherent avec une derive faible mais non nulle.
+
+\paragraph{Survie avec censure.}
+Sur les $162$ entites suivies de la run de reference, l'estimateur de Kaplan-Meier donne une probabilite de survie finale d'environ
+\[
+\hat S(1000)\approx 0.198,
+\]
+et une restricted mean survival time jusqu'a $1000$ pas d'environ
+\[
+\mathrm{RMST}_{1000}\approx 495.9.
+\]
+Cette quantite est plus informative que la moyenne non censuree $363.34$.
+
+\paragraph{Proxy de contagion.}
+Sur les cascades de la run de reference, on obtient un proxy grossier
+\[
+\widehat \rho_{\mathrm{contagion}}
+\approx
+\frac{\sum \text{nb\_contamines}}{\sum \text{nb\_entites\_faillie}}
+\approx 0.272.
+\]
+Ce n'est pas un rayon spectral au sens strict, mais c'est un indicateur utile pour montrer qu'une fraction non triviale des faillites appartient bien a la propagation plutot qu'a la seule fragilite initiale.
+
+\paragraph{Robustesse inter-runs.}
+Pour sortir de la lecture sur trajectoire unique, un batch plus long sur $8$ seeds et $500$ pas donne les ordres de grandeur suivants:
+\[
+\text{entites vivantes finales} \approx 716.5 \pm 90.3,
+\]
+\[
+\text{faillites cumulees} \approx 385.0 \pm 79.7,
+\]
+\[
+\text{extraction moyenne par pas} \approx 9629.9 \pm 743.9,
+\]
+\[
+\text{transactions de credit par pas} \approx 22.70 \pm 2.72,
+\]
+\[
+\text{prets actifs moyens} \approx 1926.7 \pm 136.6,
+\]
+\[
+\text{faillites moyennes par pas} \approx 0.770 \pm 0.159,
+\]
+\[
+\text{duree de vie moyenne des defuntes} \approx 259.8 \pm 30.0.
+\]
+Le ratio de Jensen final reste proche de $1$,
+\[
+\frac{\mathbb E[\sqrt P]}{\sqrt{\mathbb E[P]}} \approx 0.99643 \pm 0.00032,
+\]
+tandis que
+\[
+\frac{\mathbb E[\alpha\sqrt P]}{\bar\alpha\sqrt{\mathbb E[P]}}
+\approx
+0.99528 \pm 0.00102.
+\]
+Ces mesures montrent que l'architecture dynamique du WIP est robuste qualitativement: le systeme soutient une population ouverte, un reseau de credit dense et un flux permanent de faillites locales. En revanche, les valeurs numeriques exactes des hazards et des densites de graphe restent sensibles a la seed et au regime transitoire.
+
+Par comparaison, \texttt{v2} ne produit qu'environ $3.96$ transactions de credit par pas et $444.22$ prets actifs moyens sur $1000$ pas. La difference de densite topologique est donc d'un ordre de grandeur.
+
+\section{Lecture du regime}
+Le scenario de reference du WIP est compatible avec le schema suivant:
+\begin{enumerate}
+\item la production sous-lineaire cree une hierarchie de rendements marginaux;
+\item le matching aleatoire local genere des intermediaires;
+\item ces intermediaires accumulent une fragilite cachee $H$;
+\item les write-downs et les defaillances locales regularisent le systeme;
+\item la creation continue d'entites compense cette destruction.
+\end{enumerate}
+
+Autrement dit, la stabilite n'est pas l'absence de faillite. C'est un equilibre statistique entre naissance, croissance, couplage, destruction et recreation. Le bon objet mathematique n'est pas un equilibre de chaque trajectoire individuelle, mais un attracteur stochastique de population.
+
+\appendix
+
+\section{Derivation discret-vers-continu du champ moyen}
+On peut rendre la fermeture precedente plus explicite en partant des increments moyens conditionnels de l'operateur discret. On note
+\[
+\Delta Z_t = Z_{t+1}-Z_t,
+\]
+et l'on conditionne par l'etat $X_t$.
+
+\subsection{Population}
+La decomposition creation puis faillites donne
+\[
+\Delta N_t = \Xi_t - F_t,
+\]
+ou $\Xi_t$ est le nombre de naissances et $F_t$ le nombre de faillites resolues au pas. En prenant l'esperance conditionnelle,
+\[
+\mathbb E[\Delta N_t\mid X_t] = \lambda - h_t N_t,
+\]
+avec
+\[
+h_t = \frac{\mathbb E[F_t\mid X_t]}{N_t}.
+\]
+En divisant par $\Delta t=1$, on retrouve la forme
+\[
+\dot N = \lambda - hN.
+\]
+
+\subsection{Liquidite moyenne}
+Pour la liquidite totale $\mathcal L_t=\sum_i L_i(t)$, le code sugere au premier ordre
+\[
+\Delta \mathcal L_t
+=
+\sum_i \alpha_i(t)\sqrt{P_i(t)}
+-\delta_L \mathcal L_t
+-X_t^{\mathrm{endo}}
+-Q_t^{\mathrm{net}}
+-W_t
+-\Phi_t,
+\]
+ou:
+\begin{itemize}
+\item $X_t^{\mathrm{endo}}$ est l'auto-investissement total;
+\item $Q_t^{\mathrm{net}}$ condense le transfert net de liquidite vers les nouveaux prets et les amortissements;
+\item $W_t$ regroupe les write-downs et liquidations forcees;
+\item $\Phi_t$ est la perte liquide imputable aux faillites et cessions de contrepartie.
+\end{itemize}
+En divisant par $N_t$ et en fermant par des quantites moyennes, on obtient
+\[
+\dot \ell
+=
+\Pi_{\mathrm{eff}}(p,t)
+-\delta_L\ell
+-\varphi[\ell-\bar{\mathcal R}(p)]_+
+-\eta m
++\iota m
+-\kappa_\ell h\ell.
+\]
+Cette equation n'est donc pas postulee ex nihilo: elle provient d'une moyenne des contributions codees pas a pas.
+
+\subsection{Taille productive moyenne}
+Pour la taille productive totale $\mathcal P_t=\sum_i P_i(t)$, les termes dominants sont
+\[
+\Delta \mathcal P_t
+=
+X_t^{\mathrm{endo}}
++Y_t^{\mathrm{credit}}
+-\delta_P \mathcal P_t
+-\Psi_t,
+\]
+ou $Y_t^{\mathrm{credit}}$ est la creation nette de passif productif via nouveaux prets et $\Psi_t$ la destruction de taille lors des faillites. Au niveau moyen:
+\[
+\dot p
+=
+\varphi[\ell-\bar{\mathcal R}(p)]_+
++\eta m
+-\delta_P p
+-\kappa_p hp.
+\]
+
+\subsection{Nombre de liens}
+Si $M_t$ est le nombre d'arcs actifs,
+\[
+\Delta M_t = C_t - A_t - R_t,
+\]
+ou $C_t$ est le nombre de nouveaux contrats, $A_t$ les extinctions par amortissement complet et $R_t$ les retraits dus aux faillites. On ecrit alors
+\[
+\mathbb E[\Delta M_t\mid X_t]
+=
+\beta_k(\ell_t,p_t,\sigma_\alpha)N_t
+-\nu M_t
+-\kappa_m h_t M_t.
+\]
+En divisant par $N_t$ et en negligeant les termes de covariance d'ordre superieur, on obtient
+\[
+\dot m
+=
+\beta_k(\ell,p,\sigma_\alpha)
+-\nu m
+-\kappa_m hm.
+\]
+
+\subsection{Fragilite cachee}
+Le stock de fragilite cachee cumulee $\mathcal H_t=\sum_i H_i(t)$ augmente lorsque les creances vieillissent sous depreciation economique et diminue lorsque les positions disparaissent. Un schema lineaire ferme est
+\[
+\Delta \mathcal H_t
+\approx
+\delta_{\mathrm{exo}}\,M_t\bar q_t
+-\omega \mathcal H_t
+-\kappa_H h_t \mathcal H_t,
+\]
+d'ou
+\[
+\dot H
+=
+\delta_{\mathrm{exo}}m\bar q
+-\omega H
+-\kappa_H hH.
+\]
+Le coefficient $\omega$ doit etre lu comme un taux effectif d'effacement de fragilite, non comme un parametre directement present dans le code.
+
+\subsection{Regime stable comme bilan de flux}
+Le critere synthétique
+\[
+\Gamma_t =
+\Pi_{\mathrm{eff}}(p_t,t)
+-\delta_L\ell_t
+-\varphi[\ell_t-\bar{\mathcal R}(p_t)]_+
++(\iota-\eta)m_t
+-\kappa_\ell h_t\ell_t
+\]
+se lit comme un bilan de flux moyens sur la liquidite disponible. Lorsque $\Gamma_t$ est positif de maniere persistante, la reserve aggregatee monte, alimente l'auto-investissement, puis fait monter $p_t$ et $m_t$. Lorsque $\Gamma_t$ devient trop negatif, la reserve s'effondre, le hazard augmente et la projection de faillite purge le reseau. Le regime stationnaire est donc un point ou une petite orbite aleatoire autour de
+\[
+\mathbb E[\Gamma_t]\approx 0,
+\]
+non pas une absence de destruction locale.
+
+\section{Conclusion}
+Le dernier modele et son WIP courant implementent une veritable dynamique de graphe stochastique dirige sous contrainte de bilan. Les notions mathematiques les plus pertinentes ne sont plus seulement le rendement marginal et la derive individuelle, mais aussi le degre moyen, la fragilite cachee, le hazard de defaillance et le rayon spectral d'une matrice de contagion. La duree de vie moyenne d'une entite s'interprete comme un temps de premier passage d'une richesse nette soumise a un drift reseaute; la stabilite du systeme s'interprete comme l'existence d'un attracteur macroscopique ou creation, production, dette et destruction se compensent en moyenne. A ce stade, le resultat defendable est celui d'un systeme complexe proche d'un seuil critique plausible, et non celui d'une SOC statistiquement demontree.
+
+\end{document}

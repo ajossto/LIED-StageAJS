@@ -1,0 +1,45 @@
+{
+  "reference_spectral": {
+    "seed": 42,
+    "steps": 1000,
+    "late_window": 500,
+    "sample_every": 10
+  },
+  "k_sweep_multiseed": {
+    "steps": 400,
+    "late_window": 200,
+    "theta": 0.35,
+    "lambda_creation": 2,
+    "k_values": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "seeds": [
+      31,
+      32,
+      33,
+      34,
+      35,
+      36,
+      37,
+      38,
+      39,
+      40
+    ]
+  },
+  "default_horizon_compare": {
+    "seeds": [
+      42,
+      43,
+      44,
+      45
+    ],
+    "horizons": [
+      400,
+      1000
+    ]
+  }
+}

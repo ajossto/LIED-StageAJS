@@ -1,0 +1,375 @@
+REVIEW CRITIQUE — report_round3_formal_regimes.tex (3e lecture)
+Role du relecteur : mathematicien-statisticien, objectif de supervision formelle
+Date : 9 avril 2026
+
+================================================================================
+APPRECIATION GENERALE
+================================================================================
+
+Le rapport round 3 marque un progres conceptuel significatif par rapport aux
+deux passes precedentes. L'abandon du vocabulaire SOC, la separation explicite
+flux/stocks, la carte de parametres (k, theta, lambda) et les deux metriques de
+propagation (s_t^sec, R_t^sec) repondent correctement aux critiques anterieures.
+La decomposition discrete en neuf sous-etapes est utile et ancree dans le code.
+
+Le rapport reste neanmoins un travail empirique habille de notation formelle.
+Son point faible central est qu'il ne PREDIT rien analytiquement : la carte de
+parametres est entierement numerique, le systeme de champ moyen a des
+coefficients non calibres, et la connexion formelle (k, theta, lambda) -->
+(m^late, f^late, R_sec^late) n'existe pas. Pour un rapport qui se presente
+comme « modelisation predictive », c'est la lacune principale.
+
+Je structure cette critique en trois categories :
+  A. Problemes formels (predictions manquantes ou incorrectes) ;
+  B. Problemes empiriques (donnees mal interpretees ou insuffisantes) ;
+  C. Problemes redactionnels (incoherences internes, termes non definis).
+
+================================================================================
+A. PROBLEMES FORMELS
+================================================================================
+
+A1. PROBLEME MAJEUR — AUCUNE PREDICTION ANALYTIQUE N'EST EFFECTIVEMENT DERIVEE
+--------------------------------------------------------------------------------
+
+Le rapport annonce (titre, abstract, Section 5) une « modelisation predictive ».
+En realite, les predictions de la Section 5 sont qualitatives et triviales :
+
+  - si k <= 2, pas de propagation ;
+  - si theta augmente, le reseau se densifie ;
+  - si lambda est trop grand, dilution.
+
+Ces affirmations sont des relectures directes des donnees du sweep, pas des
+predictions derivees du modele formel. Le systeme de champ moyen du paper v3
+(equations pour N, p, ell, m, H) contient des coefficients non calibres
+(eta, iota, kappa_*, omega, nu, beta_k). Or le rapport round 3 ne calibre
+aucun de ces coefficients et ne les mentionne plus du tout.
+
+Pour qu'une modelisation soit « predictive », il faudrait au minimum :
+  (a) une expression fermee ou semi-empirique de beta_k en fonction de k et de
+      la distribution des r* ;
+  (b) une estimation du hazard h* a l'equilibre en fonction de (theta, lambda) ;
+  (c) une prediction du point fixe (N*, m*, H*) pour un jeu de parametres donne,
+      AVANT de lancer la simulation.
+
+Rien de cela n'est fait. L'objectif scientifique — « comprendre suffisamment le
+fonctionnement pour permettre un choix de parametres » — est atteint
+empiriquement (la carte de parametres est utile), mais pas formellement.
+
+--> Soit calibrer au moins beta_k et h* sur les donnees existantes et montrer
+    que le point fixe du champ moyen reproduit les observables tardifs ;
+    soit reformuler l'objectif du rapport comme « cartographie empirique des
+    regimes » plutot que « modelisation predictive ».
+
+A2. PROBLEME MAJEUR — beta_k EST DERIVABLE MAIS JAMAIS DERIVE
+--------------------------------------------------------------
+
+La lecture du code (simulation.py:credit_market_iteration) revele que le
+matching procede ainsi :
+  1. Echantillonner 2k entites parmi les eligibles ;
+  2. Trier par r* ;
+  3. Scinder en deux moities (basse = preteurs, haute = emprunteurs) ;
+  4. Tirer aleatoirement un preteur et un emprunteur dans ces moities ;
+  5. Verifier les conditions (offre > 0, gain > (1+mu)*gain_auto, dette < seuil).
+
+Ce mecanisme est suffisamment simple pour qu'une expression approchee de la
+probabilite de transaction par tentative soit derivable. En notant F la CDF
+des r* sur la population active :
+
+  P(transaction | une tentative) ~= P(r*_b > r*_l) * P(offre > 0) * P(gain ok)
+                                     * P(dette ok)
+
+Le premier terme depend de k et de F. Pour k=1, le matching est purement
+entre les extremes ; pour k grand, il converge vers un tirage uniforme. La
+transition topologique entre k=2 (zero cascade) et k=3 (cascades) pourrait
+etre reliee a un seuil de degre moyen critique, de la meme facon que la
+percolation sur un graphe aleatoire a un seuil a degre moyen = 1.
+
+Le rapport appelle k le « parametre de percolation topologique » (p. 257) mais
+ne derive jamais ce seuil. C'est la piece manquante la plus importante du
+modele formel.
+
+--> Deriver beta_k au moins au premier ordre, en particulier montrer pourquoi
+    le seuil est entre k=2 et k=3 et pas ailleurs.
+
+A3. PROBLEME MODERE — LA FRAGILITE CACHEE N'EST PAS FERMEE
+-----------------------------------------------------------
+
+La Section 2.3 donne correctement :
+
+  Delta H_e = q_e * delta_exo * (1 - delta_exo)^a_e
+
+et note que la fermeture grossiere delta_exo * M_t * q_bar n'est valide que si
+delta_exo * a_bar << 1. C'est une avancee par rapport aux versions precedentes.
+
+Cependant, le rapport s'arrete la. Il ne donne pas de fermeture amelioree. Or
+la distribution des ages est connue en regime de flux quasi-stationnaire : si
+les prets naissent au taux beta_k*N et survivent avec probabilite (1-delta_exo)^a,
+la distribution d'age a l'equilibre est geometrique :
+
+  P(age = a) ~= (1 - delta_exo)^a * beta_k * N / M*
+
+D'ou :
+
+  H_t ~= delta_exo * M_t * q_bar * sum_{a=0}^{infty} (1-delta_exo)^{2a}
+       = delta_exo * M_t * q_bar / (1 - (1-delta_exo)^2)
+
+Avec delta_exo = 0.1 :
+
+  1 / (1 - 0.9^2) = 1 / 0.19 = 5.26
+
+Cette correction est un facteur ~5 par rapport a la fermeture naive. Elle
+expliquerait le ratio de fragilite cachee de 0.894 observe en regime tardif.
+
+--> Deriver cette fermeture amelioree et la confronter aux donnees.
+
+A4. PROBLEME MODERE — LE CRITERE SPECTRAL RESTE UN CADRE VIDE
+--------------------------------------------------------------
+
+Le rapport v3 (Section 9 du paper) et le round 3 (Section 2.4) evoquent le
+critere rho(B_t) < 1 mais ne l'estiment jamais. Or estimer rho(B_t) est
+faisable : a chaque pas, le graphe G_t et les bilans sont connus. La matrice
+B_t peut etre construite comme :
+
+  b_{ij} = P(j tombe | i tombe) = 1_{i prete a j} * min(1, q_{ij} / NW_j)
+
+Le rayon spectral de B_t peut etre estime par la methode des puissances en O(M)
+par iteration. Cela donnerait enfin une mesure structuree de la criticite, au
+lieu du proxy R_t^sec qui reste un ratio scalaire.
+
+Je comprends que ce n'est pas trivial a implementer, mais c'est explicitement
+liste comme « point ouvert » depuis le round 1. Trois rounds plus tard, il
+devrait au moins y avoir une tentative.
+
+--> Produire une estimation numerique de rho(B_t) sur au moins la run de
+    reference et comparer avec R_t^sec.
+
+================================================================================
+B. PROBLEMES EMPIRIQUES
+================================================================================
+
+B1. PROBLEME MAJEUR — SEULEMENT 2 SEEDS PAR CONFIGURATION
+----------------------------------------------------------
+
+L'examen des donnees (wip_k_sweep_aggregate.csv, wip_theta_lambda_sweep_aggregate.csv)
+montre que chaque configuration (k, theta, lambda) n'est testee que sur 2 seeds.
+Cela se voit aux ecarts-types : par exemple, pour k=3, late_failures_per_step_sd
+= 0.05, ce qui avec 2 echantillons donne un intervalle de confiance t de Student
+a 95% de +/- 0.32 (facteur t = 12.71 pour df=1, se = 0.05/sqrt(2) = 0.035).
+
+En d'autres termes, les barres d'erreur reelles sont ~6x plus grandes que les
+ecarts-types rapportes. La plupart des differences entre configurations ne sont
+pas statistiquement significatives avec seulement 2 seeds.
+
+Exemple concret : le rapport affirme que k=4 donne 2.00 faillites/pas vs k=3
+donne 1.53 faillites/pas. Avec 2 seeds, la difference de 0.47 n'est pas
+significative (p >> 0.05).
+
+--> Augmenter a au moins 10 seeds par configuration, ou a defaut, presenter
+    les resultats avec des intervalles de confiance corrects (t de Student avec
+    df = n-1 = 1) au lieu d'ecarts-types simples.
+
+B2. PROBLEME MODERE — LA POPULATION DECLINE DANS LE « QUASI-REGIME »
+--------------------------------------------------------------------
+
+Les pentes de reference (reference_slopes.csv) montrent que sur la fenetre
+500-1000, la population vivante decline :
+
+  n_entities_alive_slope = -0.304 par pas
+  soit environ -152 entites sur 500 pas
+
+Partant d'environ 585 entites en moyenne sur la fenetre, cela represente une
+perte de ~26% sur l'horizon. Ce n'est pas un quasi-regime pour la population.
+
+Le rapport presente ce regime comme quasi-stationnaire pour les flux mais ne
+mentionne pas cette derive negative de la population. Or la population
+intervient dans toutes les quantites normalisees (prets/entite, faillites/pas).
+Si N decline, les ratios « par entite » augmentent mecaniquement meme si les
+flux absolus sont stables.
+
+Cela explique aussi pourquoi le ratio de fragilite cachee AUGMENTE en regime
+tardif (0.163 sur 0-500 vs 0.491 sur 500-1000 pour secondary_per_fragile) :
+les entites survivantes sont de plus en plus vieilles et interconnectees.
+
+--> Mentionner explicitement le decline de population et ses consequences sur
+    les ratios normalises. Discuter si lambda = 2 est suffisant pour stabiliser
+    N ou s'il faut lambda > 2.
+
+B3. PROBLEME MODERE — LE BATCH LONG (4 SEEDS) ET LE SWEEP (2 SEEDS) SONT
+         INCOHERENTS
+------------------------------------------------------------------------
+
+Le rapport cite les resultats du « batch long par defaut » (4 seeds, 1000 pas)
+en Section 3.2 avec des valeurs comme 45.50 +/- 0.95 tx/pas, 4265.9 +/- 33.5
+prets actifs. Mais le sweep a k=3, theta=0.35, lambda=2 (2 seeds) donne
+4.29 prets/entite avec 603.5 +/- 32.5 entites, soit ~2591 prets actifs — tres
+different des 4266 du batch long.
+
+La seule explication possible est que le batch long utilise d'AUTRES seeds que
+le sweep, et que la variabilite inter-seeds est tres grande. Cela renforce le
+point B1 : 2-4 seeds sont insuffisants.
+
+--> Harmoniser les seeds entre le batch long et le sweep, ou expliquer la
+    divergence.
+
+B4. PROBLEME MINEUR — LES FIGURES NE SONT PAS LISIBLES DANS LE TEX
+-------------------------------------------------------------------
+
+Le rapport reference 5 figures PNG mais le fichier .tex utilise des chemins
+relatifs (../data/round3/figures/). Pour un lecteur qui compile le tex, cela ne
+fonctionnera pas necessairement. Les figures ne contiennent pas de legende
+detaillee dans le tex non plus (seulement des captions generiques).
+
+--> Ajouter des descriptions plus detaillees dans les captions.
+
+================================================================================
+C. PROBLEMES REDACTIONNELS ET D'INCOHERENCE
+================================================================================
+
+C1. PROBLEME MODERE — GAMMA_t ABANDONNE SANS REMPLACEMENT
+----------------------------------------------------------
+
+Le paper v3 (Section 8.3, ligne 404-413) definit :
+
+  Gamma_t = alpha_bar * sqrt(p_t) - delta_L * ell_t + iota * m_t
+            - service de dette - pertes de reseau
+
+Le rapport round 3 remplace +iota*m par epsilon_t^ell, ce qui est correct. Mais
+Gamma_t disparait completement du round 3 sans etre remplace par un diagnostic
+synthetique equivalent. Le triplet (m^late, f^late, R_sec^late) de la Section 5
+remplace Gamma_t comme observable de sortie, mais ce n'est pas un diagnostic de
+bilan de flux au meme sens.
+
+Or Gamma_t etait le seul outil de prediction directionnelle du modele (Gamma > 0
+--> expansion, Gamma < 0 --> contraction). Sans remplacement, le rapport round 3
+est entierement descriptif.
+
+--> Soit conserver Gamma_t avec la correction epsilon_t^ell, soit le remplacer
+    par un indicateur directionnel equivalent.
+
+C2. PROBLEME MODERE — L'ANALOGIE « FEU DE FORET » N'EST JAMAIS FORMALISEE
+--------------------------------------------------------------------------
+
+Le rapport utilise quatre fois l'analogie avec les feux de foret auto-critiques
+(Drossel-Schwabl) mais ne la formalise jamais. Dans le modele DS, il y a :
+  - croissance d'arbres (taux p) ;
+  - allumage exogene (taux f << p) ;
+  - propagation locale (sur grille) ;
+  - criticite auto-organisee quand f/p --> 0.
+
+L'analogie naturelle serait :
+  - croissance = creation d'entites + credit --> augmente la connectivite ;
+  - allumage = fragilite endogene (NW < 0) sans contagion ;
+  - propagation = cascades secondaires via le graphe de credit ;
+  - criticite = R_t^sec --> 1.
+
+Mais dans le modele DS, la topologie est fixe (grille). Ici, le graphe evolue
+dynamiquement. C'est une difference fondamentale : dans le WIP, la croissance
+et la topologie sont couplees. Un modele de feu de foret sur graphe dynamique
+est un objet plus complexe qu'un DS standard.
+
+--> Soit formaliser l'analogie (identifier p, f, la topologie effective) et
+    montrer en quoi le WIP s'en ecarte ; soit abandonner l'analogie.
+
+C3. PROBLEME MINEUR — DEFINITION DE G_t AMBIGUE
+------------------------------------------------
+
+En Section 2.4, G_t est defini comme « nombre de faillites deja fragiles au
+debut de la resolution ». Le code (resolve_cascades) definit plus precisement :
+
+  solvent_before = { eid : actif_total >= passif_total - epsilon }
+  etait_solvable = entity_id in solvent_before
+
+Donc une entite « fragile » (G_t) est une entite qui etait deja insolvable
+AVANT la resolution du pas courant, tandis qu'une entite « secondaire » (C_t)
+est une entite qui etait solvable avant mais tombe pendant la resolution.
+
+La definition du rapport n'est pas incorrecte mais elle est imprecise. Le mot
+« fragile » suggere une zone grise (proche de l'insolvabilite), alors que le
+code utilise une condition binaire (solvable vs insolvable au sens strict).
+
+--> Preciser la definition de G_t : G_t = nombre d'entites insolvables au debut
+    de la resolution (i.e., qui seraient tombees sans aucune contagion).
+
+C4. PROBLEME MINEUR — ERRATA v2 INCOMPLETS
+-------------------------------------------
+
+La Section 7 liste six errata pour v2, mais ne mentionne pas que le paper v2
+(paper_v2_baseline.tex, Section 4 ligne ~158) contient TOUJOURS la phrase
+contradictoire :
+
+  « Les termes d'auto-investissement et de pret initial ne changent pas
+    directement NW_i au moment de l'operation »
+
+Cette contradiction a ete signalee au round 2 et la note de reponse dit
+« corrige ». Mais le fichier tex n'est pas corrige. Le round 3 devrait soit
+corriger le fichier, soit signaler explicitement que le paper v2 n'est pas a
+jour.
+
+--> Corriger la phrase dans paper_v2_baseline.tex ou l'inscrire explicitement
+    dans les errata du round 3.
+
+C5. PROBLEME MINEUR — NOTATION F_t SURCHARGEE
+----------------------------------------------
+
+F_t est utilise a la fois pour :
+  - le nombre de faillites resolues au pas t (eq. de population, Section 2.1) ;
+  - le nombre total de faillites du pas dans la decomposition cascade
+    (Section 2.4).
+
+Ce sont la meme quantite, mais cette surcharge merite une confirmation explicite.
+Plus grave : dans le paper v3 (Section 6, ligne 186), F_i est utilise pour la
+perte de reseau individuelle d'une entite i, ce qui est une quantite totalement
+differente. Le rapport round 3 ne clarifie pas cette ambiguite.
+
+--> Distinguer explicitement F_t (nombre de faillites global) et F_i (perte
+    individuelle de contrepartie).
+
+================================================================================
+D. CONFRONTATION AVEC L'OBJECTIF SCIENTIFIQUE
+================================================================================
+
+L'objectif annonce est de « construire un modele formel suffisant pour
+comprendre et regler les observables finaux du WIP ». Evaluons :
+
+  1. COMPRENDRE le comportement : partiellement atteint.
+     La decomposition en 9 etapes et la separation flux/stocks sont utiles.
+     La carte (k, theta, lambda) est informative. Mais la comprehension reste
+     qualitative ; aucun mecanisme n'est quantifie formellement.
+
+  2. PREDIRE les observables : non atteint.
+     Aucune prediction analytique n'est derivee. On ne peut pas calculer
+     m^late ou f^late a partir de (k, theta, lambda) sans lancer une simulation.
+
+  3. REGLER les parametres pour un regime cible : partiellement atteint.
+     La carte de parametres permet de choisir un regime empiriquement, mais
+     les recommandations (k=3, theta in [0.35, 0.5], lambda ~ 2) sont des
+     lectures directes des donnees, pas des derivations.
+
+Pour atteindre pleinement l'objectif, il manque :
+  (a) une expression de beta_k (taux de formation de credit) ;
+  (b) une fermeture du hazard h en fonction de (ell, p, m, H) ;
+  (c) une estimation de rho(B_t) pour ancrer le critere de propagation ;
+  (d) un test du point fixe du champ moyen calibre contre les observables.
+
+================================================================================
+RECOMMANDATION GLOBALE
+================================================================================
+
+Le rapport round 3 represente un progres solide en rigueur empirique et en
+honnetete intellectuelle. Les principaux defauts des rounds precedents
+(vocabulaire SOC, confusion proxy/spectral, non-stationnarite) sont corriges.
+
+Cependant, le rapport ne remplit pas encore son objectif predictif. Pour y
+parvenir, trois derivations concretes sont a portee :
+
+  1. Deriver beta_k (taux de matching) au premier ordre, en montrant le seuil
+     critique entre k=2 et k=3 ;
+  2. Calibrer le hazard h* et le point fixe (N*, m*) du champ moyen sur les
+     donnees du sweep ;
+  3. Estimer rho(B_t) numeriquement sur la run de reference.
+
+Sans ces trois elements, le rapport est une bonne cartographie empirique, mais
+pas un modele formel predictif.
+
+Statut propose : revision majeure sur le volet formel, mineure sur le volet
+empirique.

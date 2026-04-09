@@ -1,0 +1,48 @@
+{
+  "reference": {
+    "steps": 1000,
+    "seeds": [
+      42,
+      43,
+      44,
+      45
+    ],
+    "late_window": 500
+  },
+  "k_sweep": {
+    "steps": 400,
+    "seeds": [
+      31,
+      32
+    ],
+    "late_window": 200,
+    "k_values": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ]
+  },
+  "theta_lambda": {
+    "steps": 400,
+    "seeds": [
+      41,
+      42
+    ],
+    "late_window": 200,
+    "theta_values": [
+      0.2,
+      0.35,
+      0.5,
+      0.7
+    ],
+    "lambda_values": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "k": 3
+  }
+}

@@ -1,0 +1,268 @@
+REVIEW CRITIQUE — paper_v3_wip_criticality.tex
+Rôle du relecteur : mathématicien-statisticien, spécialiste des systèmes dynamiques discrets
+et des graphes aléatoires.
+Date : 3 avril 2026
+Version relue : « Analyse mathématique du dernier modèle et du WIP courant »
+
+────────────────────────────────────────────────────────────────────────────────
+APPRÉCIATION GÉNÉRALE
+────────────────────────────────────────────────────────────────────────────────
+
+Le texte représente un travail sérieux d'habillage mathématique d'un simulateur
+discret complexe. L'architecture globale (dynamique microscopique → graphe
+stochastique → champ moyen → temps de premier passage) est cohérente et suit un
+chemin classique en physique statistique des systèmes financiers. Plusieurs idées
+sont bonnes — notamment l'introduction de la fragilité cachée H_i, la
+décomposition de l'opérateur F en neuf sous-étapes, et la distinction entre
+régimes extinctif / explosif / stationnaire critique.
+
+Cependant, à l'état actuel, le texte souffre d'un écart important entre
+l'ambition formelle et la rigueur effective. De nombreuses affirmations
+quantitatives sont non dérivées, plusieurs approximations introduisent des biais
+non discutés, et l'affirmation centrale de « criticité auto-organisée » n'est pas
+étayée par les données empiriques présentées.
+
+La révision est nécessaire avant toute soumission.
+
+────────────────────────────────────────────────────────────────────────────────
+1. PROBLÈME MAJEUR — JENSEN MAL APPLIQUÉ (Section 7, équation de dérive)
+────────────────────────────────────────────────────────────────────────────────
+
+Le système de champ moyen utilise à plusieurs reprises l'approximation
+
+    E[α_i √(P_i)] ≈ ᾱ √(p)    avec p = E[P_i]
+
+Or √ est concave, donc par l'inégalité de Jensen :
+
+    E[√(P_i)] ≤ √(E[P_i]) = √p
+
+L'approximation ci-dessus revient à traiter l'inégalité comme une égalité et à
+ignorer la covariance Cov(α_i, √P_i). Dans un système où la productivité α_i et
+la taille productive P_i sont corrélées (les entités qui survivent longtemps ont
+à la fois un α_i favorable et un P_i grand), cette covariance est vraisemblablement
+positive et non négligeable.
+
+En conséquence, le terme d'extraction dans l'ODE de ℓ̇ est systématiquement
+sous-estimé, ce qui peut fausser la localisation du point fixe.
+
+→ L'auteur devrait soit proposer une borne sur le terme de correction Cov(α_i, √P_i),
+  soit travailler avec E[α_i √(P_i)] directement et calibrer ce terme sur les
+  données de simulation.
+
+────────────────────────────────────────────────────────────────────────────────
+2. PROBLÈME MAJEUR — LE PROCESSUS α_i N'A PAS LA BONNE ESPÉRANCE
+────────────────────────────────────────────────────────────────────────────────
+
+Le brownien géométrique discret défini en Section 3 est
+
+    α_i(t+1) = α_i(t) exp(σ ξ_{i,t}),    ξ_{i,t} ~ N(0,1)
+
+Or E[exp(σ ξ)] = exp(σ²/2). Donc
+
+    E[α_i(t)] = α_i(0) · exp(σ²t/2)
+
+ce qui implique que la productivité moyenne dérive vers +∞ exponentiellement,
+même sans terme de dérive intentionnel. Ceci n'est ni mentionné ni discuté.
+
+Dans le système de champ moyen, ᾱ est traité comme une constante, ce qui est
+incompatible avec cette dynamique.
+
+Si l'intention est de conserver E[α_i(t)] = α_i(0) (martingale), il faudrait
+
+    α_i(t+1) = α_i(t) exp(σ ξ_{i,t} - σ²/2)
+
+Si la dérive est intentionnelle, son effet macroscopique doit être incorporé dans
+le système de champ moyen.
+
+→ Point à clarifier absolument, car il affecte l'ensemble de l'analyse de
+  stabilité du champ moyen.
+
+────────────────────────────────────────────────────────────────────────────────
+3. PROBLÈME MAJEUR — L'AFFIRMATION DE CRITICITÉ AUTO-ORGANISÉE N'EST PAS ÉTAYÉE
+────────────────────────────────────────────────────────────────────────────────
+
+L'abstract et la conclusion évoquent une « criticité auto-organisée bornée » (SOC).
+Cette terminologie a un sens technique précis depuis Bak, Tang & Wiesenfeld (1987) :
+elle implique l'existence d'une loi de puissance dans la distribution des tailles
+d'avalanches, sans réglage fin d'un paramètre externe.
+
+Les données empiriques présentées sont :
+- Volume détruit moyen par cascade : 670.94
+- Volume détruit médian : 573.01
+- Volume détruit maximal : 2157.42
+- Nombre de cascades : 652
+
+Ces statistiques de premier et second ordre sont manifestement insuffisantes pour
+confirmer une loi de puissance. La ratio max/médiane ≈ 3.76 suggère même une
+distribution relativement peu étalée.
+
+Pour soutenir l'affirmation SOC, il faudrait a minima :
+(a) un histogramme log-log des tailles de cascades ;
+(b) un ajustement de type loi de puissance avec test de goodness-of-fit (Clauset
+    et al. 2009) ;
+(c) une comparaison avec une distribution exponentielle ou log-normale comme
+    modèle nul.
+
+Sans cela, le terme « criticité auto-organisée » est non justifié et doit être
+remplacé par une formulation neutre (par exemple : « régime avec queue de
+distribution non gaussienne »).
+
+────────────────────────────────────────────────────────────────────────────────
+4. PROBLÈME MODÉRÉ — LE SYSTÈME DE CHAMP MOYEN EST SOUS-SPÉCIFIÉ
+────────────────────────────────────────────────────────────────────────────────
+
+Le système d'ODE en Section 6 contient les paramètres libres suivants :
+κ_p, κ_ℓ, κ_m, κ_H, ω, η, ι, ν, β_k(·)
+
+Aucun de ces paramètres n'est calibré sur les données de simulation ni relié
+aux paramètres du code source (config.py). L'auteur les introduit comme des
+coefficients de fermeture qualitatifs, ce qui est légitime pour une première
+approximation, mais cela interdit toute comparaison quantitative entre les
+prédictions du champ moyen et les résultats empiriques du tableau de la Section 9.
+
+En particulier :
+- Le hazard moyen h(t) est utilisé dans toutes les équations mais n'est jamais
+  modélisé explicitement en fonction de NW_i ou H. Il est traité comme un
+  paramètre exogène alors que le texte lui-même (Section 8.7) le décrit comme
+  endogène.
+- β_k est décrit qualitativement (croît avec k et σ_α) mais aucune forme
+  fonctionnelle n'est proposée, ni mesurée.
+
+→ Soit l'auteur restreint l'ODE à une description qualitative en l'assumant
+  explicitement, soit il propose une calibration même grossière sur une ou deux
+  exécutions de référence.
+
+────────────────────────────────────────────────────────────────────────────────
+5. PROBLÈME MODÉRÉ — L'APPROXIMATION INVERSE-GAUSSIENNE N'EST VALIDE QUE
+   SOUS DES CONDITIONS NON VÉRIFIÉES
+────────────────────────────────────────────────────────────────────────────────
+
+En Section 10, la distribution de la durée de vie est approximée par
+
+    τ_i ~ IG(NW_{i,0}/|g_i|, NW_{i,0}²/σ_i²)
+
+Cette formule est exacte pour un mouvement brownien avec dérive constante g_i < 0
+et volatilité constante σ_i. Mais le texte lui-même précise que
+
+    g_i ≈ α_i √(P_i) - δ_L L_i + ρ_i - χ_i - ω_i - φ_i
+
+est fortement dépendant du réseau et donc du temps. L'application de l'IG comme
+approximation à g_i variable n'est correcte que si g_i varie lentement devant
+l'échelle de temps 1/|g_i|. Cette condition n'est pas vérifiée ni même discutée.
+
+De plus, le terme φ_i (pertes de contrepartie) introduit des sauts dans le
+processus de NW_i, ce qui rend l'approximation diffusion inadéquate dans les
+épisodes de cascade. Un modèle de diffusion à sauts (jump-diffusion) serait
+plus approprié.
+
+→ L'approximation IG peut être conservée comme résultat qualitatif, mais doit
+  être présentée avec des hypothèses explicites et avec une comparaison visuelle
+  sur la distribution empirique des durées de vie (histogramme + ajustement).
+
+────────────────────────────────────────────────────────────────────────────────
+6. PROBLÈME MODÉRÉ — LA MATRICE DE REPRODUCTION B_t N'EST JAMAIS CALCULÉE
+────────────────────────────────────────────────────────────────────────────────
+
+La Section 8 introduit la matrice de reproduction B_t et le critère spectral
+ρ(B_t) ≷ 1, ce qui est correct et pertinent. Mais :
+- B_t n'est jamais construite explicitement ni même schématisée ;
+- ρ(B_t) n'est jamais estimé empiriquement ;
+- l'affirmation que « le WIP peut être lu comme un système ajusté près d'un seuil
+  spectral » est donc purement qualitative.
+
+Avec 652 cascades sur 1000 pas et un taux de faillite moyen de 1.60/pas, on
+est potentiellement dans un régime observable. Mesurer ρ(B_t) moyen (même par
+proxy : taille de cascade / taille de choc initial) aurait une réelle valeur.
+
+→ Soit ce critère est calculé (même approximativement), soit la section doit
+  être réécrite comme une proposition théorique à tester, sans prétendre
+  localiser le système par rapport au seuil.
+
+────────────────────────────────────────────────────────────────────────────────
+7. REMARQUE MINEURE — DÉFINITION DE H_i ET COHÉRENCE AVEC L'ODE
+────────────────────────────────────────────────────────────────────────────────
+
+La fragilité cachée H_i(t) est définie en Section 2 comme
+
+    H_i(t) = Σ_{e ∈ L_i(t)} q_e(t) · (1 - (1-δ_exo)^{a_e(t)})
+
+ce qui est un écart entre valeur nominale et valeur économique des créances.
+Cependant, dans le système de champ moyen (Section 6), l'équation pour Ḣ est
+
+    Ḣ = δ_exo · m · q̄ - ω H - κ_H h H
+
+Le terme δ_exo · m · q̄ correspond à l'accumulation de nouveaux prêts, ce qui
+est raisonnable à l'ordre 1. Mais le terme -ω H n'a pas de justification
+directe depuis la définition microscopique (le processus de revalorisation est
+multiplicatif en (1-δ_exo)^{a_e}, pas linéaire en H). L'ODE pour H devrait
+être une approximation du premier ordre de la dynamique discrète, avec ω relié
+à δ_exo explicitement.
+
+→ Relier ω à δ_exo dans le texte, ou préciser que -ωH est une fermeture ad hoc.
+
+────────────────────────────────────────────────────────────────────────────────
+8. REMARQUE MINEURE — INCOHÉRENCE DANS LA CONDITION DE FAILLITE
+────────────────────────────────────────────────────────────────────────────────
+
+En Section 2, la condition de faillite est
+
+    A_i + ε < P_i^{bilan}
+
+avec P_i^{bilan} = P_i + C_i, soit NW_i = A_i - P_i^{bilan} < -ε.
+
+Mais la formule de NW_i donnée ensuite est
+
+    NW_i = L_i + K_i^{endo} + K_i^{exo} - B_i - P_i^{endo} - P_i^{exo}
+
+ce qui n'inclut pas les créances C_i au passif. L'auteur devrait clarifier si
+C_i est inclus dans P_i^{exo} ou constitue une composante séparée. Une table
+des variables (glossaire) en début d'article éliminerait cette ambiguïté.
+
+────────────────────────────────────────────────────────────────────────────────
+9. REMARQUE MINEURE — STATISTIQUES SUR UNE SEULE RUN
+────────────────────────────────────────────────────────────────────────────────
+
+Toutes les valeurs empiriques (Section 9) proviennent d'une seule exécution
+(simu_20260403_103200). Pour un système stochastique avec graine aléatoire, les
+résultats sont des réalisations d'une variable aléatoire. Sans au moins 10-20
+runs indépendants, il est impossible de savoir si les valeurs rapportées
+(extraction moyenne, nombre de cascades, durée de vie) sont typiques ou outliers.
+
+→ Rapporter les statistiques sur un ensemble de runs (moyenne ± écart-type)
+  serait minimal. Ou bien assumer explicitement que la section présente une
+  trajectoire de référence, sans prétendre à la généralité.
+
+────────────────────────────────────────────────────────────────────────────────
+10. REMARQUE MINEURE — LA FORMULE q_max CONTIENT UN TERME AMBIGU
+────────────────────────────────────────────────────────────────────────────────
+
+En Section 5, le volume maximal de dette est
+
+    q_max = (α_b / (2r))² - P_b - S_b
+
+La soustraction de S_b (surplus auto-investissable) semble impliquer que
+l'auto-investissement est compté comme de la taille productive déjà engagée.
+Cependant, S_b = max(0, L_b - R_b) est une quantité liquide, pas une taille
+productive. La justification de ce terme mérite une explication.
+
+────────────────────────────────────────────────────────────────────────────────
+RECOMMANDATION GLOBALE
+────────────────────────────────────────────────────────────────────────────────
+
+Le texte est à réviser substantiellement avant d'être soumis. Les points 1-3
+sont bloquants : l'erreur de Jensen et la dérive implicite du brownien géométrique
+affectent les résultats du champ moyen, et la revendication SOC n'est pas étayée.
+Les points 4-6 constituent des lacunes sérieuses qui affaiblissent la contribution.
+Les points 7-10 sont des clarifications formelles importantes.
+
+Priorité de révision :
+    1. Corriger l'approximation de Jensen ou en quantifier le biais.
+    2. Clarifier la martingale / dérive de α_i et mettre à jour le champ moyen.
+    3. Remplacer « criticité auto-organisée » par un claim calibré aux données.
+    4. Soit calibrer le système d'ODE, soit le réduire à un rôle qualitatif assumé.
+    5. Ajouter histogramme + ajustement pour durées de vie et tailles de cascades.
+    6. Proposer une estimation proxy de ρ(B_t) ou reformuler la section cascade.
+
+La structure du papier est par ailleurs solide. La Section 8 (décomposition
+pas-à-pas) est la contribution la plus originale et la plus rigoureuse du texte
+en l'état.
