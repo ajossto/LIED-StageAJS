@@ -1,4 +1,4 @@
-\documentclass[10pt,a4paper,twocolumn]{article}
+\documentclass[10pt,a4paper]{article}
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
 \usepackage[numbers]{natbib}
@@ -8,6 +8,7 @@
 \usepackage{amsmath,amssymb}
 \usepackage{booktabs}
 \usepackage{graphicx}
+\usepackage{tabularx}
 \graphicspath{{./}{images_nettoyees/}}
 \usepackage{tikz}
 \usetikzlibrary{arrows.meta,calc}
@@ -19,6 +20,7 @@
 \input{typo_francaise} % règles typographiques françaises (guillemets, nombres, micro-typographie)
 \geometry{margin=2.4cm}
 \setlength{\columnsep}{0.8cm}
+\setcounter{tocdepth}{2}
 \setlist[itemize]{leftmargin=*,nosep}
 \setlist[enumerate]{leftmargin=*,nosep}
 \newcommand{\modelrepo}{https://github.com/ajossto/LIED-StageAJS}
@@ -62,13 +64,24 @@
 \date{\today}
 
 \begin{document}
+\hypersetup{pageanchor=false}
+\pagenumbering{gobble}
+\begin{titlepage}
 \maketitle
+\thispagestyle{empty}
 
 \begin{abstract}
 	Ce document a pour but de communiquer sur mes travaux au cours du stage de recherche commencé début mars 2026. La première partie permet une explication concise et générale sans rentrer en détail. La seconde partie s'attarde plus sur les rouages. Les lectrices pourront se satisfaire de la lecture d'une (10 min), deux (30 min) parties. Les notes de bas de page consistent à des auto-critiques et peuvent être ignorées. La première partie est volontairement narrée. \\
 	Mes travaux portent sur la modélisation d’interaction multi-agents, et plus précisément de l'émergence de comportements macroscopiques complexes issus d’interactions microscopiques simples. Le domaine principal d'application est la physico-économie.  
 \end{abstract}
+\end{titlepage}
+
+\clearpage
+\hypersetup{pageanchor=true}
+\pagenumbering{arabic}
 \tableofcontents
+\clearpage
+\twocolumn
 
 \section{Première approche superficielle}
 
@@ -164,7 +177,6 @@ Une autre partie serait aussi d'améliorer les graphiques et les représentation
 \end{itemize}
 
 L'objectif à moyen terme est d'arriver à simuler un effet rebond avec des hypothèses légères et tirant parti des systèmes auto-critiques. Ce modèle vient essayer d'appuyer mon hypothèse : l'effet rebond est une conséquence endogène de la structure de système auto-critique qu'est notre société.\footnote{Il y a du travail pour correctement définir tout les termes de cette phrase.} A plus long terme, en adossant l'approche \textit{agent-based} et système auto-critique avec la modélisation de Herbert, Giraud, Louis-Napoléon, Goupil \cite{herbert2022}, obtenir une modélisation pertinente et générale des systèmes à agents soumis à la thermodynamique.  
-\clearpage
 \section{Deuxième approche détaillée}
 
 % ============================================================
@@ -186,9 +198,11 @@ La population n'est pas fermée. De nouvelles entités apparaissent au cours du 
 
 Pour une entité \(i\), le bilan comporte quatre postes d'actif et quatre postes de passif.
 
-\begin{table}[h]
+\begin{table*}[!t]
 \centering
-\begin{tabular}{lll}
+\small
+\setlength{\tabcolsep}{6pt}
+\begin{tabularx}{\textwidth}{@{}l l X@{}}
 \toprule
 Note & Code & Sens \\
 \midrule
@@ -201,10 +215,10 @@ Note & Code & Sens \\
 \(P_i^{\mathrm{exo}}\) & \texttt{passif\_exoinvesti} & contrepartie exo \\
 \(C_i\) & \texttt{passif\_credit\_detenu} & passif miroir des créances \\
 \bottomrule
-\end{tabular}
+\end{tabularx}
 \caption{Correspondance minimale entre la notation du texte et les attributs du code.}
 \label{tab:correspondance_code_note}
-\end{table}
+\end{table*}
 
 Les postes d'actif sont :
 \begin{itemize}
