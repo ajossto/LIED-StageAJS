@@ -1,0 +1,560 @@
+\documentclass[10pt,a4paper,twocolumn]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[numbers]{natbib}
+\usepackage[french]{babel}
+\usepackage{lmodern}
+\usepackage{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\graphicspath{{./}{images_nettoyees/}}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,calc}
+\usepackage{dblfloatfix} % autorise [b] sur figure* (figures double-colonne en bas de page)
+\usepackage{float}       % fournit le placement [H] (figure non flottante)
+\usepackage{enumitem}
+\usepackage{qrcode}
+\usepackage{hyperref}
+\input{typo_francaise} % règles typographiques françaises (guillemets, nombres, micro-typographie)
+\geometry{margin=2.4cm}
+\setlength{\columnsep}{0.8cm}
+\setlist[itemize]{leftmargin=*,nosep}
+\setlist[enumerate]{leftmargin=*,nosep}
+\newcommand{\modelrepo}{https://github.com/ajossto/LIED-StageAJS}
+
+% Figure colonne (1 colonne) : \monimage[largeur]{fichier}{légende}{label}
+% largeur optionnelle, défaut 0.95 de la colonne
+\newcommand{\monimage}[4][0.95]{%
+  \begin{figure}[htbp]
+    \centering
+    \includegraphics[width=#1\linewidth]{#2}
+    \caption{#3}
+    \label{#4}
+  \end{figure}%
+}
+
+% Figure pleine largeur en bas de page : \monimagelarge[largeur]{fichier}{légende}{label}
+% largeur optionnelle, défaut 0.95 de la largeur de page (\textwidth)
+\newcommand{\monimagelarge}[4][0.95]{%
+  \begin{figure*}[!tb]
+    \centering
+    \includegraphics[width=#1\textwidth]{#2}
+    \caption{#3}
+    \label{#4}
+  \end{figure*}%
+}
+
+% Figure non flottante, placée exactement à l'endroit du code, pleine largeur :
+% \monimagefixe[largeur]{fichier}{légende}{label}
+% À utiliser dans une zone \onecolumn pour figures pleine page collées au texte.
+\newcommand{\monimagefixe}[4][0.95]{%
+  \begin{figure*}[!tb]
+    \centering
+    \includegraphics[width=#1\textwidth]{#2}
+    \caption{#3}
+    \label{#4}
+  \end{figure*}%
+}
+
+\title{Note de travail}
+\author{Anatole Joseph-Stouls \\ \tiny{Ne pas diffuser}}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+	Ce document a pour but de communiquer sur mes travaux au cours du stage de recherche commencé début mars 2026. La première partie permet une explication concise et générale sans rentrer en détail. La seconde partie s'attarde plus sur les rouages. Les lectrices pourront se satisfaire de la lecture d'une (10 min), deux (30 min) parties. Les notes de bas de page consistent à des auto-critiques et peuvent être ignorées. La première partie est volontairement narrée. \\
+	Mes travaux portent sur la modélisation d’interaction multi-agents, et plus précisément de l'émergence de comportements macroscopiques complexes issus d’interactions microscopiques simples. Le domaine principal d'application est la physico-économie.  
+\end{abstract}
+\tableofcontents
+
+\section{Première approche superficielle}
+
+\subsection{Objectifs, intuitions préfaçant le modèle, et hypothèses ad hoc}
+
+Le stage ambitionne de décrire l'effet rebond en économie en s'appuyant sur des analogies venues du monde vivant, notamment la loi de Kleiber, qui lie la consommation d'oxygène d'un organisme à son poids par une loi de puissance. 
+Une proposition d'explication de la valeur de l'exposant de cette loi de puissance repose sur la structure fractale de la vascularisation, l'exposant étant finalement lié à la dimension fractale \cite{west1997}. 
+Une autre étude s’intéressant à l'analogie ville-organisme souligne la similarité des villes dans leurs statistiques normalisées caractérisant leurs développement. Ils suggèrent qu'un \textbf{système autocritique} est un bon candidat pour expliquer ces similitudes \cite{hendrick2025}. 
+\newline
+\textit{Intuition}: Les comportements similaires et les analogies entre villes et organismes ne sont pas fortuites. Plus globalement, que ce soit des humains formant une ville, des entreprises un tissu de dette scripturale, ou des bactéries une colonie, leurs règles d’interactions inter-individus sont similaires et conduisent à des comportements d'ensemble similaires. Reformulé, j'ambitionne de montrer qu'à partir de règles simples régissant les interactions inter-individus, couplé à des principes physiques fondamentaux, on peut expliquer les distributions statistiques observées in situ, et plus précisément leurs classes (distribution exponentielle, normale, \textit{power-law}). Nous parlerons indifféremment d'entité, d'agent, ou d'individu. Nous parlerons indifféremment de réseau, de structure ou de système. \footnote{Il faudra absolument adopter une nomenclature. L'objet mathématique utilisé est un graphe orienté pondéré dynamique, il serait judicieux de garder ce formalisme}
+\newline
+\textit{Hypothèses ad hoc}:  
+\begin{itemize}
+\item Le paramètre principal est l'énergie. Les entités accumulent de l'énergie et en extraient de leur environnement. Dans le modèle développé ci-dessous, l'énergie tient le rôle de monnaie. Nous utiliserons le vocabulaire issu de l'économie et de la comptabilité, à l'exception notable des termes «actif» et «passif» qui seront ici redéfinis. 
+\item Les entités extraient l'énergie de leur environnement, et leur puissance extractrice est une fonction concave de leur taille. \textit{ie}, plus une entité est grosse, plus le gain marginal de productivité issu d'une croissance est faible. Leur taille est définie en première approche comme l'accumulation de l'énergie qu'elles ont précédemment extraite. On parlera indifféremment de puissance extractrice ou de productivité (Figure~\ref{fig:courbe_puissance}).
+\monimage{courbe_puissance.jpg}{Puissance extractrice $\Pi_{\mathrm{ext}}$ en fonction du passif auto-investi $P_{\mathrm{auto}}$ : fonction concave illustrant le rendement marginal décroissant.}{fig:courbe_puissance}
+\item L’énergie se dissipe. Chaque Joule d'énergie au bilan comptable d'une entité est dépréciée géométriquement (d'un certain pourcentage) de manière continue. Voyez ici l'application du second-principe thermodynamique.  
+\item Les entités peuvent se prêter de l'énergie. Une grosse entité, au gain marginal faible, peut investir une partie de son énergie dans une petite entité, au gain marginal fort, contre la redirection ad vitam æternam d'une partie fixe de la puissance extractrice de la petite entité au profit de la plus grosse. Ce mécanisme est central dans la modélisation, et constitue le point crucial de ma proposition. Voyez ce mécanisme comme un investissement entre entreprises, mais aussi comme ce que peut représenter la confection d'un outil par un humain: l'humain investit de l'énergie dans une hache, dans le seul espoir que cette hache lui permette de récolter plus de bois une fois nanti de cette hache. Une entité investit dans une autre. 
+\end{itemize}
+Résumons: Des entités peuvent extraire de l'énergie de leur environnement, l’énergie extraite se dissipe et les entités peuvent se prêter de l'énergie.   \\
+
+\textit{Description du modèle}:
+Les règles explicitées ci-dessus permettent d'imaginer la création spontanée d'un réseau de crédit entre les entités. Si deux entités ont des tailles différentes, il existe un intérêt commun instantané à contracter un prêt. La grosse entité gagne à l'échange si le taux d'intérêt est supérieur à son taux de gain marginal (voir figure~\ref{fig:courbe_puissance}) si elle \textit{utilisait} cette énergie pour elle même, et la petite entité gagne au change si les intérêts sont inférieurs au gain de productivité que produit cette énergie nouvellement acquise. Si on considère un monde où apparaissent spontanément au cours du temps des entités, il n'y a pas de limite théorique à une accumulation infinie d'entités et une divergence de la puissance extractrice cumulée. Une entité meurt lorsqu'elle ne peut plus payer ses intérêts, c'est à dire que son passif tombe à zéro. 
+
+
+\subsection{Modèle formel et modélisation numérique}
+
+\monimagelarge{dynamique_extraction_erosion.jpg}{Dynamique d'extraction et d'érosion : évolution de $P_{\mathrm{auto}}$ et de la puissance extractrice au fil des pas de temps, jusqu'à l'équilibre asymptotique.}{fig:dynamique_erosion}
+
+\monimagelarge{bilan_comptable_pret_erosion.jpg}{Bilans comptables d'un prêt et de son érosion : évolution des actifs/passifs des entités $A$ et $B$ au fil du temps.}{fig:bilan_pret_erosion}
+
+Chaque entité possède un bilan comptable composé d'une somme d'actifs et d'une somme de passifs. La description du fonctionnement de la simulation numérique du modèle permet de comprendre ce que représentent ces deux catégories. Les figures \ref{fig:dynamique_erosion} et \ref{fig:bilan_pret_erosion} illustrent les points suivants.
+\begin{itemize}
+\item La simulation se déroule par pas de temps discret. À chaque pas de temps, un nombre aléatoire de nouvelles entités est ajouté au système, on dit qu'elles naissent. 
+\item Chaque tour, chaque entité vivante extrait de l'énergie en fonction de sa taille: la colonne passif sous l’appellation d'\textit{énergie auto-investie} (en elle même). Cette énergie nouvellement extraite est ajoutée sous l'appellation \textit{liquide} dans sa colonne d'actif.
+\item Elle peut décider d'auto-investir ce liquide en elle même, ajoutant ainsi de l'énergie auto-investie dans sa colonne passif et transformant dans la colonne d'actif l'énergie «\textit{liquide}» en énergie «\textit{endo-investie}». Les quantités «\textit{energie endo-investie}» sont égales à tout instant entre les colonnes \textit{passif} et \textit{actif}. Néanmoins, la colonne actif ayant en plus une quantité «liquide», elle est supérieure à la colonne passif.
+
+\item Une entité peut, au lieu d'auto-investir son liquide, décider d'investir dans une autre entité. Au bilan de l'entité prêteuse, s'ajoute une quantité «\textit{énergie prêtée}» à son actif et son passif. Ce gain de passif ne se traduit pas par une augmentation de sa puissance extractrice, mais par le versement d'intérêts de la part de l'entité emprunteuse. Dans le bilan de l'entité emprunteuse s'ajoute une ligne «\textit{énergie exo-investie}» à son actif et son passif qui elle, se traduit par un gain de productivité.
+\item  Le choix de prêter ou non au marché des prêts pour une entité dépend de son bilan de puissance: une fois considérées mes rentes et ma puissance extractrice, est-il préférable que j'auto-investisse ou que je prête une partie de mon liquide ? Les entités emprunteuses observent les propositions de prêts et en acceptent un lorsque les gains de productivité dépassent les intérêts du prêt, leur permettant alors une croissance plus rapide. La Figure~\ref{fig:schema_extraction} synthétise la distinction entre auto-investissement et hétéro-investissement.
+\item Une des notions structurantes du modèle est que les Joules se dissipent. Or, les joules prêtés apparaissent deux fois, une fois dans le bilan comptable de l'entité prêteuse et une fois dans le bilan comptable de l'entité emprunteuse. À chaque pas de temps, les joules s'érodent d'un pourcentage fixe. Sont concernés les catégories labellisées «endo/exo investies» et «liquide». Ce sont, en somme, les quantités d'énergies \textit{directement possédées} par une entité. Les quantités prêtées, elles, restent inscrites à leur nominal courant chez le prêteur et ne sont réévaluées qu'en cas de cession ou de faillite. Dans le scénario étudié ici, le principal n'est pas remboursé : seuls des intérêts fixes, calculés sur ce nominal, circulent jusqu'à extinction du prêt par faillite ou cession.
+
+\monimage[0.7]{schema_extraction_auto_hetero.jpg}{Schéma comparatif de l'auto-investissement et de l'hétéro-investissement entre deux entités $A$ et $B$.}{fig:schema_extraction}
+
+\end{itemize}
+Il se crée ici une double fragilité :
+\begin{itemize}
+\item l'énergie exo-investie, permettant une puissance extractrice supplémentaire, décroît dans le temps, entraînant la puissance extractrice avec elle ;
+\item les intérêts, eux, restent constants et ne peuvent être payés qu'avec des joules \textit{liquides}.
+\end{itemize}
+À terme, le crédit n'est plus rentable et, si l'entité n'a pas obtenu un flux entrant d'énergie suffisant, peut arriver en illiquidité. Du côté de l'entité prêteuse, cette fragilité grandissante n'est pas perçue directement dans son bilan comptable. L'énergie prêtée continue tour après tour de produire des intérêts et n'est pas réévaluée en continu. L'entité prêteuse continue donc d'arbitrer ses décisions avec une taille comptable qui peut surestimer la valeur économique réelle de ses créances, même si les entités payeuses se rapprochent de l'insolvabilité. Lorsqu'une entité devient illiquide, elle peut transformer en liquide son énergie auto-investie, moyennant une perte conséquente de valeur (par exemple, \SI{10}{\joule} d'énergie endo-investie peuvent être reliquéfiés en \SI{5}{\joule} de liquide), ou céder les contrats de prêts dont elle est bénéficiaire. Juste avant une telle cession, la valeur de l'énergie prêtée est actualisée : la dépréciation est prise en compte et le contrat vendu à la valeur réelle de l'énergie restante. Le bénéfice des intérêts futurs est aussi transféré. Si, après paiement partiel éventuel, le bilan demeure insolvable, l'entité fait faillite et est déclarée morte.\footnote{Tout ce mécanisme d'illiquidité est arbitraire et mérite une réflexion plus poussée quant à sa pertinence. C'est l'aspect le plus critiquable de ma modélisation. Que se passe-t-il lorsque la hache est trop vieille ?}
+
+\paragraph{}
+Le mécanisme de prêt permet l'émergence d'un fonctionnement \textit{accumulation-relaxation}. En temps normal, les entités accumulent des dettes, en tant que prêteuse comme en tant qu'emprunteuse, et optimisent ainsi leur puissance extractrice commune en prenant avantage de la nature concave de la courbe régissant le rapport puissance extractrice sur énergie auto-investie. Le temps passe et la fragilité cachée de dettes s'accumule, et lorsqu'une entité fait faillite, la disparition de revenus correspondant à l'arrêt des versements des intérêts chez ses créanciers peut prendre ces derniers de court et les mener à leur tour à se retrouver en illiquidité dans les tours qui suivent. Il y a donc une propagation en cascade des faillites, chaque faillite facilitant l'apparition d'autres faillites.
+\subsection{Premiers résultats et interprétations}
+À première vue, rien n'empêche le nombre d'entités vivantes, dont les naissances se font continuellement, de diverger et avec elle la puissance totale d'extraction du système. De manière intéressante, il existe des configurations de paramètres où ce phénomène ne se produit pas, c'est-à-dire où le nombre d'entités vivantes et la puissance totale extractrice varient dans une plage de valeur fixe. D'une manière encore plus intéressante, deux classes d'entités apparaissent spontanément, une classe dont le flux entrant d'énergie provient essentiellement des intérêts et celles dont la principale source de revenu est leur extraction propre, tandis que toutes les entités sont égales à leur naissance. Nous les appellerons, avec un plaisir non feint, les banques et les travailleurs.
+
+\monimagefixe{macro_overview.png}{Vue macroscopique d'une simulation typique sur \num{3000} pas de temps.}{fig:macro_overview}
+
+La Figure~\ref{fig:macro_overview} donne une vue d'ensemble d'une simulation représentative. On observe une rupture régime transitoire/permanent vers \num{500} pas. Cette stabilité macroscopique masque une activité microscopique soutenue : naissances, faillites et renouvellement permanent du tissu de prêts.\footnote{Une statistique rapide du nombre de prêt par entité montre un graphe plus proche d'un arbre que d'un réseau dans le sens commun. Les graphes de prêts se forment en étoiles autour des banques. Il serait très intéressant de visualiser ce processus.}
+
+\monimagefixe{entity_size_histos.png}{Histogrammes des tailles d'entités (actif total, échelle log) à différents pas de simulation.}{fig:entity_size_histos}
+
+L'émergence des deux classes annoncée plus haut se lit sur la Figure~\ref{fig:entity_size_histos}.Une fois le régime permanent atteint: un mode principal autour de quelques centaines de joules — les \textit{travailleurs}, dont le revenu provient essentiellement de leur extraction propre — et un second mode plus diffus aux grandes tailles — les \textit{banques}, qui captent une part majoritaire de leurs revenus via les intérêts. Cette structure bimodale persiste jusqu'à la fin de la simulation, malgré le renouvellement de la population.
+
+\monimagefixe{lifespan_analysis.png}{Espérance de vie des entités en fonction de leur actif moyen et de leur levier moyen $P/A$.ATTENTION - IGNORER LE PANNEAU CENTRAL QUI NE CORRESPOND A RIEN}{fig:lifespan_analysis}
+
+La Figure~\ref{fig:lifespan_analysis} caractérise la fragilité différentielle des entités. Un faible levier $P/A$ signe une entité dont l'actif est dominé par les prêts détenus $R$ plutôt que par l'energie auto-investie : c'est précisément la signature d'une \textit{banque}. Les panneaux de gauche montrent une corrélation positive marquée entre l'actif total moyen et la durée de vie. Néanmoins, on observe clairement une rupture de classe autour de \num{2000} J, où la croissance logarithmique s'arrête et les entités deviennent virtuellement presque immortelles. Cette rupture colle à la séparation des deux classes de population observée dans la figure \ref{fig:entity_size_histos}. Attention, les entités marquées "survivantes" sont celles encore en vie au moment de la fin de la simulation. Aucune autre information ne peut être déduite \textit{a priori}. Le panneau de droite est le plus instructif : on voit apparaître clairement une courbe, qu'il s'agit de quantifier, et d'expliquer. Chose particulièrement importante, les banques meurent (on a l'exemple de l'entité 2) et les banques naissent : en regardant de plus près la figure P/A, on a une survivante avec un levier de \num{0,35} et une durée de vie de \num{2250}, c'est-à-dire qu'elle est née au pas \num{750}, au moment où le régime était déjà permanent. On la retrouve dans les panneaux de gauche avec le plus petit actif et passif qu'ont les \textit{banques}, mais elle rentre tout de même dans cette catégorie. Notons sans surprise, que c'est la présence d'intérêts sortants qui précipite la mort des entités.\footnote{Il faudra lancer une simulation, une fois le modèle bien élagué, avec toutes les données de toutes les entités, pour ensuite ne travailler qu'à partir de ces données-là. Dommage de n'avoir pas les données détaillées de cette dite entité !}
+
+\monimagefixe{entity_2.png}{Trajectoire d'une entité de longue durée de vie (entité 2, née au pas 0). De haut en bas : actifs, passifs, flux d'énergie. Faillite vers le pas \num{2600}.}{fig:entity_2}
+
+L'entité 2 (Figure~\ref{fig:entity_2}), née à l'initialisation, traverse plusieurs cycles avant de s'effondrer après plus de \num{2500} pas. Elle illustre la trajectoire typique d'une banque.
+
+\monimagefixe{entity_866.png}{Trajectoire d'une entité de courte durée de vie (entité 866, née au pas \num{386}). Faillite en moins de \num{200} pas.}{fig:entity_866}
+
+À l'inverse, l'entité 866 (Figure~\ref{fig:entity_866}) ne survit qu'environ \num{200} pas : née tardivement, elle accumule très vite des crédits importants et fait faillite. Le contraste avec l'entité 2 suggère que la date de naissance et la dynamique locale du marché des prêts au moment de l'apparition d'une entité conditionnent fortement sa trajectoire. Il sera intéressant de n'étudier que les entités nées en régime permanent.
+
+\paragraph{Artefacts de tracé.} Les trajectoires individuelles (Figures~\ref{fig:entity_2} et~\ref{fig:entity_866}) comportent deux artefacts à garder en tête. D'une part, les variations observées sur les courbes proviennent en partie de la fréquence des \textit{snapshots} — pas nécessairement d'oscillations physiques du bilan. D'autre part, les longues queues plates visibles après la faillite (au-delà du pas \num{2600} pour l'entité 2, du pas \num{600} pour l'entité 866) sont un gel d'affichage : l'entité n'existe plus, les valeurs sont simplement figées à la dernière itération.
+
+\subsection{Horizons, suite prévue des travaux}
+La suite de mon travail va se diviser en quatre parties.
+\begin{itemize}
+\item La première, lecture bibliographique, pour --- entre autres --- récupérer la nomenclature usuelle du milieu. Je dois me concentrer sur les graphes orientés pondérés, les travaux faits sur le \textit{chip-firing}, sur les systèmes auto-critiques, et plus généralement les travaux faits en physico-économie.
+\item La seconde, essayer \textit{d'élaguer mon modèle}, c'est-à-dire enlever des hypothèses, de la complexité, tout en gardant les mêmes comportements. Je prévois ensuite de faire une analyse de sensibilité des paramètres, et de lier les paramètres intensifs pour pouvoir modifier la granularité de ma simulation. Actuellement, les deux hypothèses \textit{physiques} structurantes du modèle sont l'érosion de l'énergie ainsi que la structure concave de la courbe d'extraction. J'ambitionne que toutes les règles d'interaction des entités soient raisonnables et le moins artificielles possibles. J'aimerais surtout m'attarder sur la structure en graphe du modèle. Quelle mesure de densité, quelle forme a mon graphe ? Quelle dynamique opère-t-il ? Si je prétends modéliser des réseaux réels, il serait de bon aloi de retrouver les mêmes classes de statistiques, par exemple la distribution du nombre d'arêtes par nœud. Pour le moment, aucune loi de puissance n'a été observée, notamment parce que les cascades de faillites ne se résolvent pas en un seul pas. Je n'ai aussi peut être pas regardé au bon endroit. Il est aussi parfaitement probable que mon approche soit un cul de sac.
+\item La troisième, formaliser le comportement de mon modèle, c'est-à-dire expliquer mathématiquement les statistiques observées à partir de mes paramètres de simulation. Idéalement, caractériser la dynamique complète du modèle (nombre moyen d'entités en régime permanent, puissance extractrice totale, coefficient d'une transformée de Fourier de mon régime permanent etc.), mais aussi la dynamique individuelle d'une entité. De manière particulièrement importante, je dois m'intéresser à la martingale qu'est l'agrégat des actifs. Quelle dépendance de la loi aléatoire $F_n$ « \textit{énergie totale perdue par faillite au tour $n$} » par rapport à la tribu engendrée par les $F_{k<n}$ ?
+\item La quatrième, expliquer le comportement de mon modèle. Les deux points très cruciaux sont l'explication des deux classes d'entités, et la courbe de mortalité P/A. Je dois m'assurer qu'il ne s'agit pas d'artefacts de simulation, puis réussir à expliquer ces phénomènes.
+\end{itemize}
+
+Une autre partie serait aussi d'améliorer les graphiques et les représentations statistiques :
+\begin{itemize}
+\item se débarrasser des artefacts ;
+\item se doter de graphiques dynamiques ;
+\item idéalement, pouvoir modifier les paramètres dynamiquement dans la simulation.
+\end{itemize}
+
+L'objectif à moyen terme est d'arriver à simuler un effet rebond avec des hypothèses légères et tirant parti des systèmes auto-critiques. Ce modèle vient essayer d'appuyer mon hypothèse : l'effet rebond est une conséquence endogène de la structure de système auto-critique qu'est notre société.\footnote{Il y a du travail pour correctement définir tout les termes de cette phrase.} A plus long terme, en adossant l'approche \textit{agent-based} et système auto-critique avec la modélisation de Herbert, Giraud, Louis-Napoléon, Goupil \cite{herbert2022}, obtenir une modélisation pertinente et générale des systèmes à agents soumis à la thermodynamique.  
+\clearpage
+\section{Deuxième approche détaillée}
+
+% ============================================================
+% Note de modélisation — version alignée sur le code WIP sans banque
+% (corrigée par rapport à la v3 : paramètres, pool k-aléatoire,
+%  redistribution directe sans masse de faillite, hiérarchie à 4 niveaux,
+%  réserve max(sP,B), dénominateur de la contrainte d'endettement)
+% ============================================================
+
+\subsection{Objet scientifique du modèle}
+
+Le modèle considère une population ouverte d'entités économiques abstraites échangeant une ressource unique, notée en \emph{joules}, qui joue le rôle d'unité comptable universelle. Chaque entité extrait des ressources d'un réservoir extérieur, transforme une partie de sa liquidité en capacité productive, et peut établir des relations de crédit avec d'autres entités. La dynamique engendre endogènement des faillites et des cascades de défaut, dont on observe ensuite les propriétés agrégées.
+
+La population n'est pas fermée. De nouvelles entités apparaissent au cours du temps selon une loi de Poisson, tandis que les entités en faillite quittent définitivement le système. Le modèle articule ainsi trois mécanismes : une dynamique productive fondée sur l'extraction, une dynamique financière fondée sur le crédit inter-entités, et une dynamique de sélection fondée sur la solvabilité bilancielle.
+
+\subsection{Structure comptable des entités}
+
+\subsubsection{Bilan élémentaire}
+
+Pour une entité \(i\), le bilan comporte quatre postes d'actif et quatre postes de passif.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lll}
+\toprule
+Note & Code & Sens \\
+\midrule
+\(L_i\) & \texttt{actif\_liquide} & liquide \\
+\(R_i\) & \texttt{actif\_prete} & créances détenues \\
+\(K_i^{\mathrm{endo}}\) & \texttt{actif\_endoinvesti} & capital auto-investi \\
+\(K_i^{\mathrm{exo}}\) & \texttt{actif\_exoinvesti} & capital financé par emprunt \\
+\(B_i\) & \texttt{passif\_inne} & passif inné \\
+\(P_i^{\mathrm{endo}}\) & \texttt{passif\_endoinvesti} & contrepartie endo \\
+\(P_i^{\mathrm{exo}}\) & \texttt{passif\_exoinvesti} & contrepartie exo \\
+\(C_i\) & \texttt{passif\_credit\_detenu} & passif miroir des créances \\
+\bottomrule
+\end{tabular}
+\caption{Correspondance minimale entre la notation du texte et les attributs du code.}
+\label{tab:correspondance_code_note}
+\end{table}
+
+Les postes d'actif sont :
+\begin{itemize}
+\item \(L_i\) : actif liquide ;
+\item \(R_i\) : créances détenues ;
+\item \(K_i^{\mathrm{endo}}\) : actif endo-investi ;
+\item \(K_i^{\mathrm{exo}}\) : actif exo-investi.
+\end{itemize}
+L'actif total est donc
+\[
+A_i = L_i + R_i + K_i^{\mathrm{endo}} + K_i^{\mathrm{exo}}.
+\]
+
+Les postes de passif sont :
+\begin{itemize}
+\item \(B_i\) : passif inné ;
+\item \(P_i^{\mathrm{endo}}\) : contrepartie de l'auto-investissement ;
+\item \(P_i^{\mathrm{exo}}\) : contrepartie de l'investissement financé par emprunt ;
+\item \(C_i\) : \texttt{passif\_credit\_detenu}.
+\end{itemize}
+
+Le passif inné \(B_i\) est fixé à la naissance et demeure constant. Il représente une base productive minimale.
+
+\subsubsection{Passif productif et passif bilanciel}
+
+Le \emph{passif productif} est
+\[
+P_i = B_i + P_i^{\mathrm{endo}} + P_i^{\mathrm{exo}}.
+\]
+Il intervient dans la loi d'extraction et sur le marché du crédit.
+
+Le \emph{passif bilanciel} est
+\[
+P_i^{\mathrm{bilan}} = P_i + C_i.
+\]
+Il intervient dans le test de faillite. Le poste \(C_i\) constitue un passif financier pur : il n'affecte ni l'extraction ni le marché du crédit, mais alourdit le bilan au moment du test de solvabilité.
+
+\subsubsection{Fonction du passif\_credit\_detenu}
+
+Le poste \(C_i\) est la contrepartie miroir de \(R_i\). Toute création, cession ou annulation de créance modifie symétriquement \(R_i\) et \(C_i\). Ce choix comptable conserve la trace bilancielle des créances financières sans leur attribuer de rôle productif.
+
+\subsection{Productivité et extraction}
+
+\subsubsection{Productivité individuelle}
+
+À la naissance, \(\alpha_i\sim\mathcal U([\alpha_{\min},\alpha_{\max}])\). Si \(\sigma>0\), un mouvement brownien géométrique est appliqué au début de chaque pas :
+\[
+\alpha_i(t) = \alpha_i(t-1)\exp\!\bigl(\sigma Z_i(t)\bigr),\qquad Z_i(t)\sim\mathcal N(0,1).
+\]
+Cette formulation multiplicative non recentrée induit un drift positif \(\mathbb E[\exp(\sigma Z)]=\exp(\sigma^2/2)>1\).
+
+\subsubsection{Loi d'extraction}
+
+Chaque entité vivante reçoit
+\[
+\Pi_i = \alpha_i\sqrt{P_i},\qquad L_i \leftarrow L_i + \Pi_i.
+\]
+Le taux marginal vaut \(r_i^\star = \alpha_i/(2\sqrt{P_i})\). L'extraction inclut les entités nées au même pas.
+
+\subsection{Dépréciation et accumulation interne}
+
+\subsubsection{Réserve de liquidité}
+
+Plusieurs étapes font intervenir la réserve
+\[
+\mathrm{reserve}_i = \max\!\bigl(s\,P_i,\ B_i\bigr).
+\]
+Le plancher absolu \(B_i\) complète le seuil relatif \(sP_i\) : toute entité conserve une liquidité supérieure à son passif inné à l'issue d'un auto-investissement ou d'un prêt consenti.
+
+\subsubsection{Dépréciation des stocks}
+
+Après paiement des intérêts et amortissement éventuel :
+\begin{align*}
+L_i &\leftarrow (1-\delta_L)L_i,\\
+K_i^{\mathrm{endo}} &\leftarrow (1-\delta_{\mathrm{endo}})K_i^{\mathrm{endo}},\\
+P_i^{\mathrm{endo}} &\leftarrow (1-\delta_{\mathrm{endo}})P_i^{\mathrm{endo}},\\
+K_i^{\mathrm{exo}} &\leftarrow (1-\delta_{\mathrm{exo}})K_i^{\mathrm{exo}},\\
+P_i^{\mathrm{exo}} &\leftarrow (1-\delta_{\mathrm{exo}})P_i^{\mathrm{exo}}.
+\end{align*}
+La dépréciation est symétrique sur chaque couple actif--passif : pas de valeur nette créée ou détruite.
+
+Le principal des prêts n'est pas déprécié continûment. Il vit à sa valeur nominale jusqu'à ce qu'un événement spécifique (cession en paiement ou liquidation de faillite) déclenche la réévaluation explicite \(\pi^{\mathrm{reel}} = \pi(1-\delta_{\mathrm{exo}})^{t-t_0}\).
+
+\subsubsection{Auto-investissement}
+
+À la fin de chaque pas, après les cascades :
+\begin{align*}
+\mathrm{surplus}_i &= \max\!\bigl(0,\ L_i - \mathrm{reserve}_i\bigr),\\
+x_i &= \phi\,\mathrm{surplus}_i.
+\end{align*}
+Si \(x_i>\varepsilon\),
+\begin{align*}
+L_i &\leftarrow L_i - x_i,\\
+K_i^{\mathrm{endo}} &\leftarrow K_i^{\mathrm{endo}} + x_i,\\
+P_i^{\mathrm{endo}} &\leftarrow P_i^{\mathrm{endo}} + x_i.
+\end{align*}
+
+\subsection{Marché du crédit}
+
+\subsubsection{Condition d'entrée}
+
+Une entité participe si \(L_i/P_i > s\) et \(P_i>\varepsilon\).
+
+\subsubsection{Appariement aléatoire par pool}
+
+L'appariement n'est pas un arbitrage déterministe mais un appariement aléatoire local, piloté par \(k\) :
+\begin{enumerate}
+    \item tirage d'un échantillon de \(\min(|\mathcal A|,\,2k)\) entités dans l'ensemble actif \(\mathcal A\) ;
+    \item tri par \(r_i^\star\) croissant ;
+    \item moitié basse = pool des prêteurs ; moitié haute = pool des emprunteurs ;
+    \item prêteur et emprunteur tirés aléatoirement dans leurs pools respectifs.
+\end{enumerate}
+\(k=1\) dégénère vers un arbitrage déterministe. Pour \(k\ge 2\), une entité médiane peut être prêteuse dans une itération et emprunteuse dans une autre, d'où émergent des intermédiaires financiers et un canal de contagion. Après chaque transaction, recalcul des \(r^\star\) et ré-échantillonnage. Arrêt sur \texttt{MAX\_IDLE} tentatives consécutives infructueuses ou après \texttt{max\_credit\_iterations}.
+
+\subsubsection{Taux de transaction}
+
+Si \(r^\star_{\mathrm{emprunteur}} > r^\star_{\mathrm{preteur}} + \varepsilon\),
+\[
+r = (1-f)\,r^\star_{\mathrm{preteur}} + f\,r^\star_{\mathrm{emprunteur}}.
+\]
+
+\subsubsection{Offre et demande}
+
+En notant \(b\) l'emprunteur :
+
+\[
+q_{\mathrm{offre}} =
+\max\!\bigl(0,\ L_{\mathrm{preteur}}-\mathrm{reserve}_{\mathrm{preteur}}\bigr),
+\]
+\begin{align*}
+\mathrm{surplus}_b
+&=
+\max\!\bigl(
+0,\,
+L_b-\mathrm{reserve}_b
+\bigr),
+\end{align*}
+\begin{align*}
+q_{\max}
+&=
+\left(\frac{\alpha_b}{2r}\right)^2\\
+&\quad - P_b\\
+&\quad - \mathrm{surplus}_b,
+\end{align*}
+\begin{align*}
+q_{\mathrm{dem}} &= \theta\,\max(0,\,q_{\max}),\\
+\mathrm{principal} &= \min(q_{\mathrm{offre}},\,q_{\mathrm{dem}}).
+\end{align*}
+
+\subsubsection{Critère d'acceptation}
+
+\begin{align*}
+G_{\mathrm{avec}} &= \alpha\bigl(\sqrt{P+u+q}-\sqrt P\bigr)-rq,\\
+G_{\mathrm{sans}} &= \alpha\bigl(\sqrt{P+u}-\sqrt P\bigr).
+\end{align*}
+Transaction acceptée si \(G_{\mathrm{avec}}\ge(1+\mu)G_{\mathrm{sans}}\). Si \(G_{\mathrm{sans}}\le\varepsilon\), condition remplacée par \(G_{\mathrm{avec}}>\varepsilon\).
+
+\subsubsection{Contrainte d'endettement}
+
+Lorsque \(\rho>0\),
+\begin{align*}
+\frac{
+\mathrm{charges\ existantes} + r\,\mathrm{principal}
+}{
+\alpha_b\sqrt{P_b}
++ \mathrm{revenus\_interets}_b
+}
+&\le \rho.
+\end{align*}
+Le dénominateur agrège le flux courant d'extraction et les intérêts perçus en tant que prêteur.
+
+\subsubsection{Comptabilisation d'un prêt}
+
+Prêteur :
+\begin{align*}
+L_{\mathrm{preteur}} &\leftarrow L_{\mathrm{preteur}}-\mathrm{principal},\\
+R_{\mathrm{preteur}} &\leftarrow R_{\mathrm{preteur}}+\mathrm{principal},\\
+C_{\mathrm{preteur}} &\leftarrow C_{\mathrm{preteur}}+\mathrm{principal}.
+\end{align*}
+Emprunteur :
+\begin{align*}
+K_{\mathrm{emprunteur}}^{\mathrm{exo}} &\leftarrow K_{\mathrm{emprunteur}}^{\mathrm{exo}}+\mathrm{principal},\\
+P_{\mathrm{emprunteur}}^{\mathrm{exo}} &\leftarrow P_{\mathrm{emprunteur}}^{\mathrm{exo}}+\mathrm{principal}.
+\end{align*}
+
+\subsection{Service de la dette}
+
+\subsubsection{Paiement des intérêts}
+
+Les prêts actifs sont parcourus dans l'ordre croissant de leur identifiant. L'intérêt dû vaut \(r\times\text{principal courant}\). Mobilisation en quatre niveaux successifs :
+
+\begin{enumerate}
+    \item \textbf{Liquide} : paiement direct sur \(L_i\) jusqu'à épuisement.
+    \item \textbf{Cession des créances sous \(r^\star\)} : prêts dont \(r<r^\star\), triés par taux puis identifiant croissants, cédés prioritairement.
+    \item \textbf{Reliquéfaction endogène} : si \(m\) reste dû,
+    \begin{align*}
+    y_{\mathrm{needed}} &= \frac{m}{c},\\
+    y &= \min\!\bigl(K_i^{\mathrm{endo}},\,P_i^{\mathrm{endo}},\,y_{\mathrm{needed}}\bigr),
+    \end{align*}
+    \begin{align*}
+    K_i^{\mathrm{endo}} &\leftarrow K_i^{\mathrm{endo}}-y,\\
+    P_i^{\mathrm{endo}} &\leftarrow P_i^{\mathrm{endo}}-y,\\
+    L_i &\leftarrow L_i+cy.
+    \end{align*}
+    L'exogène n'est jamais sacrifiable.
+    \item \textbf{Cession des créances à \(r^\star\) ou au-dessus} : après recalcul de \(r^\star\), les prêts de taux supérieur sont cédés en dernier recours.
+\end{enumerate}
+
+\paragraph{Réévaluation à la cession.} Toute cession est précédée d'une réévaluation à \(\pi^{\mathrm{reel}}=\pi(1-\delta_{\mathrm{exo}})^{t-t_0}\). Le prêt original est désactivé, un nouveau prêt de principal \(\pi^{\mathrm{reel}}\) est créé, avec un \textit{write-down} enregistré chez le prêteur (\(R\) et \(C\) diminués symétriquement). La cession porte sur la valeur réelle.
+
+\paragraph{Fractionnement.} En cas de cession partielle, le prêt réévalué est scindé en deux fragments, l'un transféré au créancier cible, l'autre conservé par le prêteur initial.
+
+Un paiement partiel ne déclenche pas de faillite automatique ; la solvabilité est examinée au niveau du bilan complet.
+
+\subsubsection{Remboursement du principal}
+
+Dans la version documentée ici, le mécanisme de remboursement du principal n'est pas activé :
+\[
+\tau = 0.
+\]
+Les prêts sont donc perpétuels au sens suivant :
+\begin{itemize}
+\item le principal ne décroît pas au fil du temps ;
+\item l'intérêt versé à chaque pas reste égal à \(r \times \text{principal}\) ;
+\item un prêt ne disparaît que par cession, \textit{write-down} explicite, ou faillite.
+\end{itemize}
+Le code contient un crochet d'amortissement optionnel, mais il n'intervient pas dans le scénario analysé par cette note et n'est donc pas utilisé pour l'interprétation économique présentée ici.
+
+\subsection{Solvabilité et faillites}
+
+\subsubsection{Critère de faillite}
+
+\[
+A_i + \varepsilon < P_i^{\mathrm{bilan}},
+\]
+c'est-à-dire, puisque \(C_i=R_i\),
+\[
+L_i + K_i^{\mathrm{endo}} + K_i^{\mathrm{exo}}
+<
+B_i + P_i^{\mathrm{endo}} + P_i^{\mathrm{exo}}.
+\]
+
+\subsubsection{Traitement individuel d'une faillite}
+
+Le modèle ne crée pas d'entité intermédiaire (\og masse \fg{}) persistant au-delà du pas. Trois phases, dans le même pas.
+
+\paragraph{Phase 1 — Poids créanciers.} Identifiés parmi les entités auxquelles la faillie doit de l'argent en tant qu'emprunteuse, poids proportionnels aux encours :
+\[
+w_c = \frac{
+\sum_{\ell:\ \mathrm{preteur}=c,\ \mathrm{emprunteur}=\mathrm{faillie}}\pi_\ell
+}{
+\sum_\ell \pi_\ell
+}.
+\]
+Ces poids sont fixés à ce moment.
+
+\paragraph{Phase 2 — Redistribution directe des créances détenues.} Pour chaque prêt \(\ell\) dont la faillie est prêteuse, de principal nominal \(\pi\) créé au pas \(t_0\), on calcule
+\[
+\pi^{\mathrm{reel}} = \pi\,(1-\delta_{\mathrm{exo}})^{t-t_0}.
+\]
+Les créanciers éligibles (exclusion d'éventuels auto-prêts) se partagent \(\pi^{\mathrm{reel}}\) au prorata : chaque créancier \(c\) reçoit un nouveau prêt de principal \(w_c\pi^{\mathrm{reel}}\), au même taux, vers le même emprunteur, \(R_c\) et \(C_c\) augmentés d'autant. Le prêt original est désactivé. Si la valeur réelle ou la somme des poids éligibles est négligeable, le prêt est annulé : \(K_{\mathrm{emprunteur}}^{\mathrm{exo}}\) et \(P_{\mathrm{emprunteur}}^{\mathrm{exo}}\) diminués symétriquement jusqu'à la valeur restante.
+
+Le bilan exogène de l'emprunteur n'est pas réajusté par \(\pi^{\mathrm{reel}}-\pi\) : la dépréciation pas à pas a déjà ramené \(K^{\mathrm{exo}}\) et \(P^{\mathrm{exo}}\) au voisinage de la valeur réelle.
+
+\paragraph{Phase 3 — Annulation des prêts où la faillie est emprunteuse.} Pour chaque tel prêt,
+\begin{align*}
+R_{\mathrm{preteur}} &\leftarrow R_{\mathrm{preteur}}-\pi_\ell,\\
+C_{\mathrm{preteur}} &\leftarrow C_{\mathrm{preteur}}-\pi_\ell,
+\end{align*}
+prêt désactivé. Aucune récupération partielle.
+
+\paragraph{Clôture.} Entité marquée morte, sort de la population vivante. Elle ne perçoit plus d'intérêts aux pas suivants, toutes ses créances ayant été redistribuées au pas courant.
+
+\subsubsection{Cascades de défaut}
+
+Résolution itérative. Tant qu'une entité vivante satisfait le critère de faillite, elle est traitée. L'annulation des créances (phase 3) peut rendre d'autres prêteurs insolvables à l'itération suivante : c'est le canal endogène de contagion. Arrêt quand plus aucune insolvabilité n'est détectée. Distinction statistique entre faillites initiales et de contagion, sans différence de traitement.
+
+\subsection{Création de nouvelles entités}
+
+Au début de chaque pas, \(N_t\sim\mathrm{Poisson}(\lambda)\) (algorithme de Knuth). Bilan initial :
+\begin{align*}
+L_i &= L_0,\\
+B_i &= B_0,\\
+R_i &= 0,\\
+K_i^{\mathrm{endo}} &= 0,\\
+K_i^{\mathrm{exo}} &= 0,\\
+P_i^{\mathrm{endo}} &= 0,\\
+P_i^{\mathrm{exo}} &= 0,\\
+C_i &= 0,\\
+\alpha_i &\sim\mathcal U([\alpha_{\min},\alpha_{\max}]).
+\end{align*}
+Population initiale \(N_0\). Les nouvelles entités participent immédiatement à l'extraction du pas courant. Toutes les entités initiales sont enregistrées pour le suivi individuel ; les entités nées après \(t=0\) ne le sont qu'avec probabilité \(0{,}03\).
+
+\subsection{Ordre exact d'un pas de simulation}
+
+\begin{enumerate}
+    \item mise à jour brownienne éventuelle des productivités \(\alpha_i\) ;
+    \item création de nouvelles entités ;
+    \item extraction depuis le réservoir extérieur ;
+    \item paiement des intérêts sur les prêts actifs ;
+    \item étape d'amortissement présente dans le code mais inactive dans le scénario étudié (\(\tau=0\)) ;
+    \item dépréciation des stocks liquides, endo-investis et exo-investis ;
+    \item fonctionnement itératif du marché du crédit (appariement aléatoire par pool) ;
+    \item résolution des cascades de faillites (redistribution directe, sans masse) ;
+    \item auto-investissement de fin de tour ;
+    \item collecte des statistiques.
+\end{enumerate}
+
+Extraction avant service de la dette : les ressources du pas courant peuvent être mobilisées immédiatement. Marché du crédit après dépréciation mais avant les faillites : une opération de crédit peut déclencher une insolvabilité dans le même pas. Auto-investissement après les cascades, sur les seules survivantes.
+
+\subsection{Paramètres principaux}
+
+Valeurs par défaut de \texttt{SimulationConfig} (code WIP sans banque).
+
+\begin{itemize}
+    \item \emph{Productivité.} \(\alpha_{\min}=0{,}8\), \(\alpha_{\max}=1{,}2\). Volatilité \(\sigma=0{,}005\).
+    \item \emph{Marché du crédit.} \(s=0{,}05\) ; \(\theta=0{,}35\) ; \(\mu=0{,}05\) ; \(\rho=1{,}0\) ; \(f=0{,}2\) ; taille de pool \(k=3\) (seuil de bifurcation : \(k\le 2\) régime stable, \(k\ge 3\) régime critique visé).
+    \item \emph{Prêts.} \(\tau = 0\) (prêts perpétuels).
+    \item \emph{Création.} \(N_0=100\) ; \(\lambda=2\) ; \(L_0=200{,}0\) ; \(B_0=190{,}0\) (NW initial \(=10\)).
+    \item \emph{Dépréciation.} \(\delta_L=0\) ; \(\delta_{\mathrm{endo}}=0{,}05\) ; \(\delta_{\mathrm{exo}}=0{,}05\).
+    \item \emph{Illiquidité.} \(c = 0{,}5\).
+    \item \emph{Auto-investissement.} \(\phi = 0{,}5\).
+    \item \emph{Simulation.} \(T=1000\) ; graine \(42\) ; plafond \(100\,000\) itérations de marché par pas ; \(\varepsilon = 10^{-6}\).
+\end{itemize}
+
+\subsection{Conventions comptables essentielles}
+
+\paragraph{C-miroir.} \(C_i\) est la contrepartie miroir exacte de \(R_i\) à tout instant, créé/transféré/annulé simultanément à la créance. N'affecte ni l'extraction ni le marché du crédit ; intervient dans le bilan de solvabilité.
+
+\paragraph{Dépréciation des prêts paresseuse.} La dépréciation n'est pas enregistrée continûment dans les contrats. Un prêt vit à son nominal jusqu'à un événement spécifique (cession en paiement ou liquidation de faillite) déclenchant la réévaluation \(\pi^{\mathrm{reel}}=\pi(1-\delta_{\mathrm{exo}})^{\mathrm{age}}\). L'écart \(\pi-\pi^{\mathrm{reel}}\) est une \emph{fragilité cachée}, mesurée statistiquement mais non corrigée en flux courant.
+
+\paragraph{Absence d'amortissement dans le scénario étudié.} Le code prévoit un amortissement optionnel si \(\tau>0\), mais la configuration documentée fixe \(\tau=0\). Le principal n'est donc jamais remboursé dans les résultats analysés ici.
+
+\paragraph{Absence de masse de faillite.} Aucune entité intermédiaire ne survit à une faillite. Les créances de la faillie sont immédiatement redistribuées au prorata des poids créanciers ; plus aucun intérêt n'est perçu en son nom aux pas suivants. Pas d'étape de \og redistribution des intérêts des masses \fg{} dans la boucle temporelle. Cette propriété est bien celle du code actuel.
+
+\paragraph{Paiement partiel.} Un paiement partiel d'intérêts est autorisé. Il ne provoque ni pénalité spécifique ni faillite automatique. La défaillance est tranchée séparément à partir du bilan complet après paiement, ce qui correspond au comportement effectif du code.
+
+\clearpage
+\bibliographystyle{unsrtnat}
+\bibliography{references}
+
+\section*{Code source}
+Le code correspondant au modèle \texttt{modele\_sans\_banque\_wip}, qui sera ensuite distingué, renommé et archivé tout en continuant à évoluer, est accessible sur mon dépôt Git :
+
+\begin{center}
+\url{\modelrepo}
+
+\vspace{0.8em}
+\qrcode[height=3.2cm]{\modelrepo}
+\end{center}
+
+Le lien et le QR code renvoient vers le même dépôt, afin que le lecteur puisse retrouver les codes du modèle.
+\end{document}

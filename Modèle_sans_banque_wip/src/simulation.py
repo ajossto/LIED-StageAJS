@@ -1045,6 +1045,12 @@ class Simulation:
         """
         state_before = self._capture_system_state()
         # Entités solvables avant la cascade (pour détecter la contagion)
+        # Remarque : cette étiquette statistique n'utilise volontairement ici que
+        # passif_total, alors que le critère effectif de faillite passe par
+        # passif_bilan = passif_total + passif_credit_detenu (voir is_bankrupt()).
+        # Il n'y a donc pas de contradiction dans la dynamique de faillite elle-même,
+        # mais une légère divergence possible dans la classification analytique
+        # "faillite initiale" vs "faillite de contagion".
         solvent_before = {
             eid for eid, e in self.entities.items()
             if e.alive and e.actif_total >= e.passif_total - self.config.epsilon
