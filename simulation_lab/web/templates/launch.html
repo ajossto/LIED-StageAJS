@@ -30,6 +30,7 @@
 
       <div class="section-block">
         <h3>Simulation unique</h3>
+        <p class="help">Une simulation unique utilise actuellement un seul cœur, car le moteur des modèles legacy est séquentiel.</p>
         <label>Seed</label>
         <input id="single-seed" type="number" value="1000">
         <button id="run-single">Lancer une simulation</button>
@@ -37,10 +38,11 @@
 
       <div class="section-block">
         <h3>Batch parallèle</h3>
+        <p id="cpu-hint" class="help"></p>
         <label>Nombre de runs</label>
         <input id="batch-count" type="number" min="1" value="4">
         <label>Workers</label>
-        <input id="batch-workers" type="number" min="1" value="2">
+        <input id="batch-workers" type="number" min="0" value="0">
         <label>Seed de base</label>
         <input id="batch-seed" type="number" value="1000">
         <button id="run-batch">Lancer le batch</button>

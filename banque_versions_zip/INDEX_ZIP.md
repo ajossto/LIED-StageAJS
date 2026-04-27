@@ -11,8 +11,12 @@ Ce dossier centralise les archives `.zip` conservées pour futures simulations e
 - `claude_files.zip` (ex-`claude/files.zip`)
 - `claude3-v2_codes.zip` (ex-`claude3-v2/src/codes.zip`)
 - `claude3-v2_simulation_resultats.zip` (ex-`claude3-v2/src/resultats/simulation.zip`)
+- `claude_sauvegarde9avril.zip` — sauvegarde racine déplacée depuis la racine du dépôt
+- `claude3-v2_sauvegarde9avril.zip` — sauvegarde racine déplacée depuis la racine du dépôt
+- `Modèle_sans_banque_wip_sauvegarde9avril.zip` — sauvegarde racine déplacée depuis la racine du dépôt
 
 ## Usage
 
-- Source active de développement : `claude3-v3-27-mars/`.
+- Modèle actuellement branché en priorité dans l'outillage local : `modeles-systeme-physicoeconomique/modele_sans_banque_wip/`.
+- Ancienne lignée 27 mars archivée sur disque : `archives/modeles/claude3-v3-27-mars/`.
 - Source d'expérimentation historique : extraire une archive ZIP dans un dossier de travail temporaire dédié.

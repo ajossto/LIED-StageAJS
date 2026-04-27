@@ -7,9 +7,9 @@ Le projet modélise une société industrielle simplifiée avec prêts, faillite
 Contexte de recherche académique : pas d'application web, pas d'API, pas de déploiement.
 
 **Lire avant d'agir** :
-- `claude3-v3-27-mars/src/config.py` — paramètres du modèle
-- `claude3-v3-27-mars/src/simulation.py` — moteur principal
-- `ORGANISATION_ACTIVE_27_MARS.md` — version active et périmètre de travail
+- `modeles-systeme-physicoeconomique/modele_sans_banque_wip/model.py` — adaptateur du modèle WIP actuellement branché
+- `simulation_lab/` — orchestration locale, stockage et UI
+- `docs/ORGANISATION_ACTIVE_27_MARS.md` — note historique du 27 mars à ne pas confondre avec l'état courant
 
 ---
 
@@ -20,7 +20,7 @@ Contexte de recherche académique : pas d'application web, pas d'API, pas de dé
 - **Frameworks** : aucun
 - **Venv** : `/home/anatole/jupyter/.venv`
 - **Python à utiliser** : `/home/anatole/jupyter/.venv/bin/python3`
-- **Tests** : assertions Python simples dans `claude3-v3-27-mars/tests/test_basic.py`
+- **Tests** : tests simples dans les versions historiques + validations locales via `simulation_lab`
 - **Formatage** : `black` disponible dans le venv
 - **Git hooks** : `hooks/` (activation via `git config core.hooksPath hooks`)
 
@@ -30,19 +30,17 @@ Contexte de recherche académique : pas d'application web, pas d'API, pas de dé
 
 ```text
 jupyter/
-├── claude3-v3-27-mars/       ← VERSION ACTIVE, cible par défaut
-│   ├── src/
-│   │   ├── config.py         ← paramètres
-│   │   ├── models.py         ← structures métier
-│   │   ├── simulation.py     ← logique principale
-│   │   ├── statistics.py     ← collecte et métriques
-│   │   ├── output.py         ← sorties horodatées
-│   │   ├── analysis.py       ← graphiques et analyses
-│   │   └── main.py           ← point d'entrée
-│   └── tests/
-│       └── test_basic.py     ← validation de base
+├── simulation_lab/           ← orchestration actuelle (CLI + UI locale)
+├── modeles-systeme-physicoeconomique/
+│   ├── modele_sans_banque_wip/  ← modèle le plus abouti actuellement branché
+│   └── claude3_v2/              ← autre modèle intégré au lab
+├── archives/
+│   └── modeles/
+│       └── claude3-v3-27-mars/  ← archive complète de l'ancienne lignée 27 mars
 ├── claude/                   ← archive v1, ne pas modifier
 ├── claude3-v2/               ← archive v2, ne pas modifier
+├── docs/                     ← documentation de cadrage et notes de session
+├── recherche/                ← matériaux de recherche, notes et visuels hors flux actif
 ├── arborescence_modeles/     ← index et symlinks d'archives
 ├── banque_versions_zip/      ← archives ZIP
 ├── hooks/                    ← hooks git
@@ -54,25 +52,25 @@ jupyter/
 ## Commands
 
 ```bash
-# Lancer une simulation
-cd /home/anatole/jupyter/claude3-v3-27-mars/src
-/home/anatole/jupyter/.venv/bin/python3 main.py
+# Lancer l'interface locale
+cd /home/anatole/jupyter
+/home/anatole/jupyter/.venv/bin/python3 -m simulation_lab.cli gui --open-browser
 
-# Lancer les tests
-cd /home/anatole/jupyter/claude3-v3-27-mars
+# Lister les modèles branchés
+/home/anatole/jupyter/.venv/bin/python3 -m simulation_lab.cli list-models
+
+# Lancer une validation historique ciblée si nécessaire
+cd /home/anatole/jupyter/claude3-v2
 /home/anatole/jupyter/.venv/bin/python3 tests/test_basic.py
 
-# Formater
-/home/anatole/jupyter/.venv/bin/black claude3-v3-27-mars/src/
-
 # Vérifier la syntaxe d'un fichier
-/home/anatole/jupyter/.venv/bin/python3 -m py_compile claude3-v3-27-mars/src/<fichier>.py
+/home/anatole/jupyter/.venv/bin/python3 -m py_compile simulation_lab/<fichier>.py
 
 # Activer les hooks
 git config core.hooksPath hooks
 ```
 
-Sorties générées dans `claude3-v3-27-mars/src/resultats/`.
+Sorties générées dans `simulation_lab_data/` et, pour les anciens modèles, dans leurs dossiers `resultats/`.
 
 ---
 
@@ -92,8 +90,8 @@ Sorties générées dans `claude3-v3-27-mars/src/resultats/`.
 
 ## Working Rules for Codex
 
-- Lire `config.py` et `simulation.py` avant toute modification fonctionnelle
-- Travailler par défaut uniquement dans `claude3-v3-27-mars/`
+- Lire d'abord l'adaptateur WIP et la couche `simulation_lab` avant toute modification fonctionnelle
+- Travailler par défaut sur `simulation_lab/` et `modeles-systeme-physicoeconomique/`
 - Ne pas modifier `claude/` ou `claude3-v2/` sans demande explicite
 - Mettre à jour ce fichier si la structure du dossier, la version active, les commandes utiles ou les conventions changent
 - Faire des changements minimaux, ciblés et justifiables
@@ -134,9 +132,9 @@ En cas de conflit entre souvenir, commentaire et implémentation : **le code fai
 
 ## Source of Truth
 
-- **Paramètres du modèle** : `claude3-v3-27-mars/src/config.py`
-- **Logique de simulation** : `claude3-v3-27-mars/src/simulation.py`
-- **Version active** : `ORGANISATION_ACTIVE_27_MARS.md`
+- **Modèle WIP branché** : `modeles-systeme-physicoeconomique/modele_sans_banque_wip/model.py`
+- **Orchestration actuelle** : `simulation_lab/`
+- **Note historique 27 mars** : `docs/ORGANISATION_ACTIVE_27_MARS.md`
 - **Archives et index** : `arborescence_modeles/INDEX_ARBORESCENCE.md`
 - **Archives ZIP** : `banque_versions_zip/INDEX_ZIP.md`
-- **Description théorique** : `claude3-v3-27-mars/description_theorisation_modele.pdf`
+- **Description théorique WIP** : `Modèle_sans_banque_wip/description_theorisation_modele.pdf`

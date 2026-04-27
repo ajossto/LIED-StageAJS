@@ -11,7 +11,7 @@ from urllib.parse import parse_qs, unquote, urlparse
 from simulation_lab.jobs import JobManager
 from simulation_lab.models.discovery import ModelRegistry
 from simulation_lab.runs.storage import RunStorage
-from simulation_lab.settings import APP_NAME, DEFAULT_HOST, DEFAULT_PORT, ROOT_DIR
+from simulation_lab.settings import APP_NAME, DEFAULT_HOST, DEFAULT_PORT, ROOT_DIR, cpu_count, recommended_workers
 
 
 class SimulationLabHTTPServer(ThreadingHTTPServer):
@@ -35,6 +35,12 @@ class SimulationLabHandler(BaseHTTPRequestHandler):
             return self._serve_file(ROOT_DIR / "simulation_lab" / "web" / parsed.path.lstrip("/"))
         if parsed.path == "/api/models":
             return self._json_response([model.describe() for model in self.server.registry.list_models()])
+        if parsed.path == "/api/system":
+            return self._json_response({
+                "cpu_count": cpu_count(),
+                "recommended_workers": recommended_workers(),
+                "reserved_cores": max(0, cpu_count() - recommended_workers()),
+            })
         if parsed.path == "/api/runs":
             scope = parse_qs(parsed.query).get("scope", ["active"])[0]
             if scope == "trash":
@@ -98,6 +104,10 @@ class SimulationLabHandler(BaseHTTPRequestHandler):
                 label=body.get("label"),
                 comment=body.get("comment"),
             )
+            return self._json_response(payload)
+        if parsed.path.startswith("/api/runs/") and parsed.path.endswith("/refresh-artifacts"):
+            run_id = unquote(parsed.path.split("/")[3])
+            payload = self.server.storage.refresh_artifacts(run_id)
             return self._json_response(payload)
         if parsed.path.startswith("/api/runs/") and parsed.path.endswith("/locate"):
             run_id = unquote(parsed.path.split("/")[3])

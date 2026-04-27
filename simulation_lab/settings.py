@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 APP_NAME = "Simulation Lab"
@@ -28,3 +29,11 @@ def ensure_directories() -> None:
     RUNS_DIR.mkdir(parents=True, exist_ok=True)
     BASKET_DIR.mkdir(parents=True, exist_ok=True)
     BATCHES_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def cpu_count() -> int:
+    return os.cpu_count() or 1
+
+
+def recommended_workers(reserve_cores: int = 2) -> int:
+    return max(1, cpu_count() - reserve_cores)

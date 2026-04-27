@@ -1,0 +1,38 @@
+% typo_francaise.tex
+% Règles typographiques françaises (guide du dactylographe).
+% Inclusion : \input{typo_francaise} dans le préambule.
+% Pré-requis : babel chargé avec l'option [french] (gère déjà les espaces
+% fines insécables avant : ; ! ? et autour de « »).
+
+% --- Espace fine insécable automatique avant : ; ! ? -------------------
+% Force babel-french à insérer une fine insécable avant la ponctuation double
+% quelle que soit la saisie (mot:, mot :, mot   : donnent le même rendu).
+\frenchsetup{AutoSpacePunctuation=true}
+
+% --- Guillemets français : taper "texte" produit « texte » ---------------
+\usepackage{csquotes}
+\MakeOuterQuote{"}
+
+% --- Nombres : 1234567 -> 1 234 567 ; décimales avec virgule -------------
+% Usage : \num{1234567}, \num{3,14}, \SI{12}{\kilo\meter}, \SI{50}{\percent}
+\usepackage{siunitx}
+\sisetup{
+  locale                  = FR,
+  group-separator         = {\,},   % espace fine entre milliers
+  group-minimum-digits    = 4,      % regrouper à partir de 4 chiffres
+  output-decimal-marker   = {,},
+  per-mode                = symbol,
+  detect-all                        % suit la fonte du texte courant
+}
+
+% --- Micro-typographie : kerning, justification, débord en marge ---------
+\usepackage{microtype}
+
+% --- Tirets ---------------------------------------------------------------
+% Sous LaTeX : --- = tiret cadratin (—), -- = demi-cadratin (–), - = trait d'union.
+% Aucune configuration nécessaire, juste un rappel d'usage.
+
+% --- Note d'usage ---------------------------------------------------------
+% Espaces insécables manuelles (toujours nécessaires hors ponctuation forte) :
+%   M.~Dupont, 12~km, n\textsuperscript{o}~3, p.~42, etc.
+% Les espaces fines insécables avant : ; ! ? sont automatiques (babel french).

@@ -8,6 +8,7 @@ from simulation_lab.contracts import SimulationResult
 from simulation_lab.models.discovery import ModelRegistry
 from simulation_lab.progress import CancelledByUser
 from simulation_lab.runs.storage import RunStorage, _select_preview_artifact
+from simulation_lab.settings import recommended_workers
 
 
 def generate_seeds(run_count: int, base_seed: int | None = None) -> list[int]:
@@ -52,6 +53,8 @@ def execute_batch(
     batch = storage.create_batch(model_id=model_id, parameters=effective_parameters, seeds=seeds, label=label)
     run_ids: list[str] = []
     futures = {}
+    if max_workers <= 0:
+        max_workers = recommended_workers()
     with ProcessPoolExecutor(max_workers=max_workers) as executor:
         for seed in seeds:
             if should_cancel is not None and should_cancel():

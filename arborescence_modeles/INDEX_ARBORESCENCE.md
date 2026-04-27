@@ -12,7 +12,10 @@ Objectif : trier/organiser le repo en créant des **liens symboliques** vers les
 
 - `stable/v1_monolithique` → `claude/`
 - `stable/v2_modulaire_stable` → `claude3-v2/`
-- `candidates/v3_27mars_reference` → `claude3-v3-27-mars/`
+
+## Archives
+
+- `archives/v3_27mars_archive` → `archives/modeles/claude3-v3-27-mars/`
 
 ## Versions supprimées (archivées en ZIP)
 

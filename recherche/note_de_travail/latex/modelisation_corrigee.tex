@@ -1,0 +1,412 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[french]{babel}
+\usepackage[a4paper,margin=2.8cm]{geometry}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb,mathtools}
+\usepackage{microtype}
+\usepackage{enumitem}
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.6em}
+\setlist[itemize]{itemsep=0.25em, topsep=0.35em}
+\setlist[enumerate]{itemsep=0.25em, topsep=0.35em}
+
+\title{Note de modélisation d'un système multi-agents\\
+à extraction, crédit bilatéral et cascades de faillites\\
+\large (version alignée sur le code WIP sans banque)}
+\author{}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\section{Objet scientifique du modèle}
+
+Le modèle considère une population ouverte d'entités économiques abstraites échangeant une ressource unique, notée en \emph{joules}, qui joue le rôle d'unité comptable universelle. Chaque entité extrait des ressources d'un réservoir extérieur, transforme une partie de sa liquidité en capacité productive, et peut établir des relations de crédit avec d'autres entités. La dynamique engendre endogènement des faillites et des cascades de défaut, dont on observe ensuite les propriétés agrégées.
+
+La population n'est pas fermée. De nouvelles entités apparaissent au cours du temps selon une loi de Poisson, tandis que les entités en faillite quittent définitivement le système. Le modèle articule ainsi trois mécanismes : une dynamique productive fondée sur l'extraction, une dynamique financière fondée sur le crédit inter-entités, et une dynamique de sélection fondée sur la solvabilité bilancielle.
+
+\section{Structure comptable des entités}
+
+\subsection{Bilan élémentaire}
+
+Pour une entité \(i\), le bilan comporte quatre postes d'actif et quatre postes de passif.
+
+Les postes d'actif sont :
+\[
+L_i \quad \text{(actif liquide)}, \qquad
+R_i \quad \text{(créances détenues)}, \qquad
+K_i^{\mathrm{endo}} \quad \text{(actif endo-investi)}, \qquad
+K_i^{\mathrm{exo}} \quad \text{(actif exo-investi)}.
+\]
+L'actif total est donc
+\[
+A_i = L_i + R_i + K_i^{\mathrm{endo}} + K_i^{\mathrm{exo}}.
+\]
+
+Les postes de passif sont :
+\[
+B_i \quad \text{(passif inné)}, \qquad
+P_i^{\mathrm{endo}} \quad \text{(contrepartie de l'auto-investissement)}, \qquad
+P_i^{\mathrm{exo}} \quad \text{(contrepartie de l'investissement financé par emprunt)}, \qquad
+C_i \quad \text{(passif\_credit\_detenu)}.
+\]
+
+Le passif inné \(B_i\) est fixé à la naissance et demeure constant. Il représente une base productive minimale.
+
+\subsection{Passif productif et passif bilanciel}
+
+Deux agrégats de passif sont distingués.
+
+Le premier est le \emph{passif productif} :
+\[
+P_i = B_i + P_i^{\mathrm{endo}} + P_i^{\mathrm{exo}}.
+\]
+Cet agrégat intervient dans la loi d'extraction et dans le fonctionnement du marché du crédit.
+
+Le second est le \emph{passif bilanciel} :
+\[
+P_i^{\mathrm{bilan}} = B_i + P_i^{\mathrm{endo}} + P_i^{\mathrm{exo}} + C_i = P_i + C_i.
+\]
+Cet agrégat intervient dans le test de faillite.
+
+La distinction est centrale. Le poste \(C_i\) constitue un passif financier pur. Il ne modifie pas la capacité productive de l'entité et n'entre ni dans la loi d'extraction ni dans le calcul des opportunités sur le marché du crédit. En revanche, il alourdit le bilan au moment du test de solvabilité.
+
+\subsection{Fonction du passif\_credit\_detenu}
+
+Le poste \(C_i\) est la contrepartie miroir de \(R_i\), c'est-à-dire des créances détenues par l'entité sur les autres. Toute création, cession ou annulation de créance modifie symétriquement \(R_i\) et \(C_i\). Ce choix comptable conserve explicitement la trace bilancielle des créances financières sans leur attribuer de rôle productif.
+
+\section{Productivité et extraction}
+
+\subsection{Productivité individuelle}
+
+Chaque entité reçoit à la naissance un paramètre de productivité \(\alpha_i\), tiré uniformément sur \([\alpha_{\min},\alpha_{\max}]\).
+
+Si la volatilité brownienne \(\sigma\) est strictement positive, un mouvement brownien géométrique est appliqué au début de chaque pas :
+\[
+\alpha_i(t) = \alpha_i(t-1)\exp\!\bigl(\sigma Z_i(t)\bigr),
+\qquad Z_i(t)\sim\mathcal N(0,1).
+\]
+Lorsque \(\sigma=0\), \(\alpha_i\) reste constant pendant toute la vie de l'entité. On note que cette formulation multiplicative non recentrée induit un drift positif moyen \(\mathbb E[\exp(\sigma Z)]=\exp(\sigma^2/2)>1\).
+
+\subsection{Loi d'extraction}
+
+À chaque pas, toute entité vivante reçoit
+\[
+\Pi_i = \alpha_i \sqrt{P_i},\qquad L_i \leftarrow L_i + \Pi_i.
+\]
+La quantité pertinente est le passif productif \(P_i\), non le passif bilanciel. Le taux marginal d'extraction vaut
+\[
+r_i^\star = \frac{\alpha_i}{2\sqrt{P_i}},
+\]
+et décroît avec la taille productive. L'extraction inclut les entités nées au même pas.
+
+\section{Dépréciation et accumulation interne}
+
+\subsection{Réserve de liquidité}
+
+Plusieurs étapes du modèle font intervenir une réserve de liquidité minimale imposée à toute entité :
+\[
+\mathrm{r\acute eserve}_i = \max\!\bigl(s\,P_i,\ B_i\bigr).
+\]
+Le seuil relatif \(sP_i\) est complété par un plancher absolu \(B_i\), qui garantit que l'entité conserve une liquidité supérieure à son passif inné à l'issue de tout auto-investissement ou de tout prêt consenti.
+
+\subsection{Dépréciation des stocks}
+
+Après le paiement des intérêts et, le cas échéant, de l'amortissement du principal, les stocks se déprécient géométriquement :
+\[
+L_i \leftarrow (1-\delta_L)L_i,
+\]
+\[
+K_i^{\mathrm{endo}} \leftarrow (1-\delta_{\mathrm{endo}})K_i^{\mathrm{endo}},
+\qquad
+P_i^{\mathrm{endo}} \leftarrow (1-\delta_{\mathrm{endo}})P_i^{\mathrm{endo}},
+\]
+\[
+K_i^{\mathrm{exo}} \leftarrow (1-\delta_{\mathrm{exo}})K_i^{\mathrm{exo}},
+\qquad
+P_i^{\mathrm{exo}} \leftarrow (1-\delta_{\mathrm{exo}})P_i^{\mathrm{exo}}.
+\]
+
+La dépréciation agit symétriquement sur chaque couple actif--passif correspondant pour les investissements endogènes et exogènes : elle ne crée ni ne détruit de valeur nette sur ces postes.
+
+Le principal des prêts, stocké dans les contrats de crédit, n'est pas déprécié continûment : un prêt vit à sa valeur nominale jusqu'à ce qu'un événement spécifique (cession en paiement, liquidation d'une faillite) déclenche sa réévaluation explicite
+\[
+\pi^{\mathrm{r\acute eel}} = \pi\,(1-\delta_{\mathrm{exo}})^{t-t_0}.
+\]
+
+\subsection{Auto-investissement}
+
+À la fin de chaque pas, après la résolution des cascades, chaque entité convertit une fraction de son surplus de liquidité en investissement endogène. On pose
+\[
+\mathrm{surplus}_i = \max\!\bigl(0,\ L_i - \mathrm{r\acute eserve}_i\bigr),\qquad
+x_i = \phi\,\mathrm{surplus}_i.
+\]
+Si \(x_i > \varepsilon\), alors
+\[
+L_i \leftarrow L_i - x_i,\qquad
+K_i^{\mathrm{endo}} \leftarrow K_i^{\mathrm{endo}} + x_i,\qquad
+P_i^{\mathrm{endo}} \leftarrow P_i^{\mathrm{endo}} + x_i.
+\]
+L'opération réduit la liquidité, augmente l'investissement endogène, et accroît le passif productif \(P_i\). Elle ne modifie pas \(C_i\).
+
+\section{Marché du crédit}
+
+\subsection{Condition d'entrée}
+
+Le marché du crédit est activé après la dépréciation et avant la résolution des faillites. Une entité y participe si
+\[
+\frac{L_i}{P_i} > s \qquad\text{et}\qquad P_i > \varepsilon.
+\]
+
+\subsection{Appariement aléatoire par pool}
+
+Le mécanisme d'appariement n'est pas un arbitrage déterministe mais un appariement aléatoire local, piloté par un paramètre \(k\) (taille de pool). À chaque itération de marché :
+
+\begin{enumerate}
+    \item on tire un échantillon de \(\min(|\mathcal A|,\,2k)\) entités dans l'ensemble \(\mathcal A\) des entités actives ;
+    \item on trie cet échantillon par \(r_i^\star\) croissant ;
+    \item la moitié basse constitue le \emph{pool des prêteurs}, la moitié haute le \emph{pool des emprunteurs} ;
+    \item le prêteur et l'emprunteur sont tirés aléatoirement dans leurs pools respectifs.
+\end{enumerate}
+
+Lorsque \(k=1\), le mécanisme dégénère vers un arbitrage déterministe (prêteur à \(r^\star\) minimal et emprunteur à \(r^\star\) maximal). Pour \(k\ge 2\), une même entité médiane peut apparaître comme prêteuse face à une plus petite dans une itération et comme emprunteuse face à une plus grande dans une autre ; il en émerge des intermédiaires financiers naturels et un canal de contagion. Après chaque transaction effective, les \(r^\star\) sont recalculés et un nouveau tirage est effectué. Le marché s'arrête lorsque \texttt{MAX\_IDLE} tentatives consécutives échouent ou après \texttt{max\_credit\_iterations} itérations.
+
+\subsection{Taux de transaction}
+
+Si \(r^\star_{\mathrm{emprunteur}} > r^\star_{\mathrm{pr\^eteur}} + \varepsilon\), le taux du prêt est
+\[
+r = (1-f)\,r^\star_{\mathrm{pr\^eteur}} + f\,r^\star_{\mathrm{emprunteur}},
+\qquad f\in[0,1].
+\]
+
+\subsection{Offre du prêteur et demande de l'emprunteur}
+
+L'offre est limitée par l'excédent de liquidité au-dessus de la réserve :
+\[
+q_{\mathrm{offre}} = \max\!\bigl(0,\ L_{\mathrm{pr\^eteur}} - \mathrm{r\acute eserve}_{\mathrm{pr\^eteur}}\bigr).
+\]
+De même pour le surplus de l'emprunteur :
+\[
+\mathrm{surplus}_{\mathrm{emprunteur}} = \max\!\bigl(0,\ L_{\mathrm{emprunteur}} - \mathrm{r\acute eserve}_{\mathrm{emprunteur}}\bigr).
+\]
+La demande maximale admissible au taux \(r\) est
+\[
+q_{\max} = \left(\frac{\alpha_{\mathrm{emprunteur}}}{2r}\right)^2 - P_{\mathrm{emprunteur}} - \mathrm{surplus}_{\mathrm{emprunteur}},
+\]
+et la demande effective
+\[
+q_{\mathrm{dem}} = \theta\,\max(0,\,q_{\max}),\qquad
+\mathrm{principal} = \min(q_{\mathrm{offre}},\,q_{\mathrm{dem}}).
+\]
+
+\subsection{Critère d'acceptation}
+
+Avec \(P\) passif productif courant et \(u\) surplus liquide préexistant,
+\[
+G_{\mathrm{avec}} = \alpha\bigl(\sqrt{P+u+q}-\sqrt P\bigr)-rq,
+\qquad
+G_{\mathrm{sans}} = \alpha\bigl(\sqrt{P+u}-\sqrt P\bigr).
+\]
+La transaction est acceptée si \(G_{\mathrm{avec}} \ge (1+\mu)\,G_{\mathrm{sans}}\). Si \(G_{\mathrm{sans}}\le\varepsilon\), la condition se ramène à \(G_{\mathrm{avec}}>\varepsilon\).
+
+\subsection{Contrainte d'endettement}
+
+Lorsque \(\rho>0\), la transaction n'est autorisée que si
+\[
+\frac{\mathrm{charges\ existantes}\ +\ r\,\mathrm{principal}}
+{\alpha_{\mathrm{emprunteur}}\sqrt{P_{\mathrm{emprunteur}}}\ +\ \mathrm{revenus\_int\acute er\^ets}_{\mathrm{emprunteur}}}
+\le \rho,
+\]
+où le dénominateur agrège le flux courant d'extraction et les intérêts financiers perçus en tant que prêteur. Lorsque \(\rho\le 0\), la contrainte est inactive.
+
+\subsection{Comptabilisation d'un prêt}
+
+Pour le prêteur :
+\[
+L_{\mathrm{pr\^eteur}} \leftarrow L_{\mathrm{pr\^eteur}} - \mathrm{principal},\quad
+R_{\mathrm{pr\^eteur}} \leftarrow R_{\mathrm{pr\^eteur}} + \mathrm{principal},\quad
+C_{\mathrm{pr\^eteur}} \leftarrow C_{\mathrm{pr\^eteur}} + \mathrm{principal}.
+\]
+Pour l'emprunteur :
+\[
+K_{\mathrm{emprunteur}}^{\mathrm{exo}} \leftarrow K_{\mathrm{emprunteur}}^{\mathrm{exo}} + \mathrm{principal},\qquad
+P_{\mathrm{emprunteur}}^{\mathrm{exo}} \leftarrow P_{\mathrm{emprunteur}}^{\mathrm{exo}} + \mathrm{principal}.
+\]
+Un objet de prêt est enregistré avec identifiant, prêteur, emprunteur, principal et taux.
+
+\section{Service de la dette}
+
+\subsection{Paiement des intérêts}
+
+Les prêts actifs sont parcourus dans l'ordre croissant de leur identifiant. Pour chacun, l'intérêt dû vaut \(r\times\text{principal courant}\). L'emprunteur mobilise sa capacité de paiement selon quatre niveaux successifs, dans cet ordre :
+
+\begin{enumerate}
+    \item \textbf{Liquide.} L'entité paie sur \(L_i\) jusqu'à épuisement.
+    \item \textbf{Cession des créances sous \(r^\star\).} Les prêts détenus par le payeur dont le taux est strictement inférieur à son taux interne marginal courant \(r^\star\) sont cédés par priorité, avec un ordre croissant sur le taux puis sur l'identifiant.
+    \item \textbf{Reliquéfaction endogène.} Avec \(c\in(0,1)\) le coefficient de reliquéfaction, si un montant \(m\) reste dû,
+    \[
+    y_{\mathrm{needed}}=\frac{m}{c},\qquad
+    y = \min\!\bigl(K_i^{\mathrm{endo}},\,P_i^{\mathrm{endo}},\,y_{\mathrm{needed}}\bigr),
+    \]
+    \[
+    K_i^{\mathrm{endo}}\leftarrow K_i^{\mathrm{endo}}-y,\quad
+    P_i^{\mathrm{endo}}\leftarrow P_i^{\mathrm{endo}}-y,\quad
+    L_i\leftarrow L_i + cy.
+    \]
+    Seul l'endogène est liquidable ; l'exogène ne peut être sacrifié.
+    \item \textbf{Cession des créances à \(r^\star\) ou au-dessus.} En dernier recours, après recalcul éventuel de \(r^\star\), les prêts dont le taux est supérieur ou égal à \(r^\star\) sont cédés selon le même tri.
+\end{enumerate}
+
+La séparation \og sous \(r^\star\fg{}\) puis \og au-dessus \fg{} est significative : on cède d'abord les créances les moins rentables relativement à la capacité extractive marginale.
+
+\paragraph{Réévaluation à la cession.} Toute cession de créance en paiement est précédée d'une réévaluation à la valeur économique réelle \(\pi^{\mathrm{r\acute eel}}=\pi(1-\delta_{\mathrm{exo}})^{t-t_0}\). Le prêt original est désactivé, un nouveau prêt de principal \(\pi^{\mathrm{r\acute eel}}\) est créé, avec un write-down correspondant enregistré chez le prêteur (\(R\) et \(C\) diminués symétriquement). La cession porte sur la valeur réelle, pas sur le nominal.
+
+\paragraph{Fractionnement.} En cas de cession partielle, le prêt réévalué est scindé en deux fragments, l'un transféré au créancier cible, l'autre conservé par le prêteur initial ; les postes \(R_i\) et \(C_i\) sont ajustés symétriquement.
+
+Le montant effectivement recouvré est versé au prêteur et crédité sur sa liquidité. Un paiement partiel ne déclenche pas de faillite automatique : la solvabilité est examinée plus tard au niveau du bilan complet.
+
+\subsection{Amortissement éventuel du principal}
+
+Si \(\tau>0\), un remboursement géométrique est opéré à chaque pas pour tout prêt actif dont le prêteur est vivant :
+\[
+\text{montant dû} = \tau\times\text{principal courant}.
+\]
+Le paiement mobilise la même hiérarchie en quatre niveaux que pour les intérêts. Si le paiement effectif est \(p\),
+\[
+\mathrm{r\acute eduction}=\min(p,\,\text{principal courant}),
+\]
+\[
+\text{principal}\leftarrow\text{principal}-\mathrm{r\acute eduction},\qquad
+P_{\mathrm{emprunteur}}^{\mathrm{exo}}\leftarrow P_{\mathrm{emprunteur}}^{\mathrm{exo}}-\mathrm{r\acute eduction},
+\]
+\[
+R_{\mathrm{pr\^eteur}}\leftarrow R_{\mathrm{pr\^eteur}}-\mathrm{r\acute eduction},\qquad
+C_{\mathrm{pr\^eteur}}\leftarrow C_{\mathrm{pr\^eteur}}-\mathrm{r\acute eduction},
+\]
+et le montant payé est crédité à la liquidité du prêteur.
+
+Le poste \(K_i^{\mathrm{exo}}\) n'est pas diminué : l'investissement financé subsiste alors même que la dette se rembourse, ce qui crée graduellement une équité au sens où \(K_i^{\mathrm{exo}}\) peut devenir supérieur à \(P_i^{\mathrm{exo}}\). Si le principal passe sous \(\varepsilon\), le prêt est désactivé. Lorsque \(\tau=0\), les prêts sont perpétuels.
+
+\section{Solvabilité et faillites}
+
+\subsection{Critère de faillite}
+
+Après le marché du crédit et avant l'auto-investissement, l'entité \(i\) est déclarée en faillite si
+\[
+A_i + \varepsilon < P_i^{\mathrm{bilan}},
+\]
+c'est-à-dire
+\[
+L_i + R_i + K_i^{\mathrm{endo}} + K_i^{\mathrm{exo}} < B_i + P_i^{\mathrm{endo}} + P_i^{\mathrm{exo}} + C_i.
+\]
+Puisque \(C_i = R_i\), la condition se réduit en pratique à
+\[
+L_i + K_i^{\mathrm{endo}} + K_i^{\mathrm{exo}} < B_i + P_i^{\mathrm{endo}} + P_i^{\mathrm{exo}}.
+\]
+
+\subsection{Traitement individuel d'une faillite}
+
+Le modèle ne crée pas d'entité intermédiaire (\og masse de faillite \fg{}) persistant au-delà du pas courant. Le traitement s'effectue en trois phases réalisées dans le même pas que la déclaration.
+
+\paragraph{Phase 1 — Calcul des poids créanciers.} Les créanciers de l'entité faillie sont identifiés parmi les entités auxquelles elle doit de l'argent en tant qu'emprunteuse. Leurs poids sont proportionnels à leurs encours nominaux correspondants :
+\[
+w_c = \frac{\sum_{\ell:\ \mathrm{pr\^eteur}=c,\ \mathrm{emprunteur}=\mathrm{faillie}} \pi_\ell}{\sum_\ell \pi_\ell}.
+\]
+Les poids sont fixés à ce moment et ne sont pas recalculés ensuite.
+
+\paragraph{Phase 2 — Redistribution directe des créances détenues par la faillie.} Pour chaque prêt \(\ell\) dont l'entité faillie est prêteuse, de principal nominal \(\pi\) créé au pas \(t_0\), on calcule sa valeur réelle
+\[
+\pi^{\mathrm{r\acute eel}} = \pi\,(1-\delta_{\mathrm{exo}})^{t-t_0}.
+\]
+On filtre les créanciers éligibles (exclusion d'un éventuel auto-prêt) et l'on fractionne \(\pi^{\mathrm{r\acute eel}}\) au prorata de leurs poids : chaque créancier \(c\) reçoit un nouveau prêt de principal \(w_c \pi^{\mathrm{r\acute eel}}\), au même taux et vers le même emprunteur, et ses postes \(R_c\) et \(C_c\) sont augmentés d'autant. Le prêt original est désactivé. Si la valeur réelle ou la somme des poids éligibles est négligeable, le prêt est simplement annulé : l'emprunteur voit \(K_{\mathrm{emprunteur}}^{\mathrm{exo}}\) et \(P_{\mathrm{emprunteur}}^{\mathrm{exo}}\) diminués symétriquement jusqu'à concurrence de la valeur restante.
+
+Le bilan exogène de l'emprunteur n'est pas réajusté par \(\pi^{\mathrm{r\acute eel}}-\pi\) lors de cette redistribution : la dépréciation pas à pas appliquée à \(K^{\mathrm{exo}}\) et \(P^{\mathrm{exo}}\) a déjà ramené ces postes au voisinage de la valeur réelle.
+
+\paragraph{Phase 3 — Annulation des prêts où la faillie est emprunteuse.} Pour chaque prêt \(\ell\) dont l'entité faillie est emprunteuse,
+\[
+R_{\mathrm{pr\^eteur}}\leftarrow R_{\mathrm{pr\^eteur}}-\pi_\ell,\qquad
+C_{\mathrm{pr\^eteur}}\leftarrow C_{\mathrm{pr\^eteur}}-\pi_\ell,
+\]
+et le prêt est désactivé. Aucune récupération partielle n'est effectuée.
+
+\paragraph{Clôture.} L'entité est marquée comme morte et sort définitivement de la population vivante. Elle ne perçoit plus d'intérêts aux pas suivants, puisque toutes ses créances ont été redistribuées au pas courant.
+
+\subsection{Cascades de défaut}
+
+La propagation est résolue itérativement. Tant qu'il subsiste au moins une entité vivante satisfaisant le critère de faillite, chacune est traitée selon la procédure précédente. L'annulation des créances (phase 3) peut rendre d'autres prêteurs insolvables à l'itération suivante, ce qui constitue le mécanisme endogène de contagion. Le processus s'arrête lorsque plus aucune insolvabilité n'est détectée.
+
+Le modèle distingue, pour la statistique, les faillites initiales et les faillites de contagion, sans différence de traitement. Les indicateurs collectés à l'échelle d'une cascade comprennent le nombre de défauts, les actifs détruits par annulation de créances, les créances redirigées et la fraction imputable à la contagion.
+
+\section{Création de nouvelles entités}
+
+Au début de chaque pas, le nombre de nouvelles entités est tiré selon une loi de Poisson de paramètre \(\lambda\) (algorithme de Knuth). Une nouvelle entité naît avec
+\[
+L_i = L_0,\ B_i = B_0,\ R_i = K_i^{\mathrm{endo}} = K_i^{\mathrm{exo}} = P_i^{\mathrm{endo}} = P_i^{\mathrm{exo}} = C_i = 0,
+\]
+et \(\alpha_i\sim\mathcal U([\alpha_{\min},\alpha_{\max}])\).
+
+La population initiale contient \(N_0\) entités. Les entités créées au cours de la simulation participent immédiatement à l'extraction du pas courant. Toutes les entités initiales sont enregistrées pour le suivi individuel ; les entités nées après \(t=0\) ne le sont qu'avec probabilité \(0{,}03\).
+
+\section{Ordre exact d'un pas de simulation}
+
+Un pas de simulation enchaîne, dans l'ordre :
+
+\begin{enumerate}
+    \item mise à jour brownienne éventuelle des productivités \(\alpha_i\) ;
+    \item création de nouvelles entités ;
+    \item extraction depuis le réservoir extérieur ;
+    \item paiement des intérêts sur les prêts actifs ;
+    \item amortissement éventuel du principal des prêts ;
+    \item dépréciation des stocks liquides, endo-investis et exo-investis ;
+    \item fonctionnement itératif du marché du crédit (appariement aléatoire par pool) ;
+    \item résolution des cascades de faillites (redistribution directe, sans masse) ;
+    \item auto-investissement de fin de tour ;
+    \item collecte des statistiques.
+\end{enumerate}
+
+Trois remarques d'ordonnancement. Premièrement, l'extraction précède le service de la dette : les ressources extraites au pas courant peuvent être mobilisées immédiatement. Deuxièmement, le marché du crédit se tient après la dépréciation mais avant la résolution des faillites, de sorte qu'une opération de crédit peut déclencher une insolvabilité dans le même pas. Troisièmement, l'auto-investissement opère après les cascades, sur le surplus liquide résiduel des seules entités survivantes.
+
+\section{Paramètres principaux}
+
+Valeurs par défaut de la configuration \texttt{SimulationConfig} du modèle WIP sans banque.
+
+\begin{itemize}
+    \item \emph{Productivité.} \(\alpha_{\min}=0{,}8\), \(\alpha_{\max}=1{,}2\). Volatilité du brownien géométrique \(\sigma = 0{,}005\).
+
+    \item \emph{Marché du crédit.} Seuil de liquidité relative \(s=0{,}05\). Fraction de demande \(\theta=0{,}35\). Marge d'acceptation \(\mu=0{,}05\). Plafond d'endettement \(\rho=1{,}0\). Poids du taux emprunteur \(f=0{,}2\). Taille de pool \(k=3\) : \(k\le 2\) correspond à un régime stable (cascades nulles), \(k\ge 3\) au régime critique visé.
+
+    \item \emph{Prêts.} Taux d'amortissement \(\tau=0\) (prêts perpétuels).
+
+    \item \emph{Création.} \(N_0 = 100\). \(\lambda = 2\) par pas. \(L_0 = 200{,}0\), \(B_0 = 190{,}0\) (valeur nette initiale \(L_0-B_0 = 10\)).
+
+    \item \emph{Dépréciation.} \(\delta_L = 0{,}0\), \(\delta_{\mathrm{endo}} = 0{,}05\), \(\delta_{\mathrm{exo}} = 0{,}05\).
+
+    \item \emph{Illiquidité.} Coefficient de reliquéfaction \(c = 0{,}5\).
+
+    \item \emph{Auto-investissement.} Fraction \(\phi = 0{,}5\).
+
+    \item \emph{Simulation.} Durée \(T=1000\) pas. Graine \(42\). Marché borné à \(100\,000\) itérations par pas. Seuil numérique \(\varepsilon=10^{-6}\).
+\end{itemize}
+
+\section{Conventions comptables essentielles}
+
+\paragraph{C-miroir.} Le poste \(C_i\) est la contrepartie miroir exacte de \(R_i\) à tout instant. Il est créé, transféré ou annulé simultanément à la créance correspondante. Cette symétrie n'affecte ni l'extraction ni le marché du crédit, mais elle intervient dans le bilan de solvabilité.
+
+\paragraph{Dépréciation des prêts paresseuse.} La dépréciation des prêts n'est pas enregistrée continûment dans les contrats de crédit. Un prêt vit à son nominal tant qu'aucun événement spécifique n'intervient. La réévaluation explicite
+\[
+\pi^{\mathrm{r\acute eel}} = \pi\,(1-\delta_{\mathrm{exo}})^{\mathrm{age}}
+\]
+est calculée au moment d'une cession de créance en paiement ou d'une liquidation de faillite. L'écart \(\pi - \pi^{\mathrm{r\acute eel}}\) entre valeur comptable et valeur économique constitue une \emph{fragilité cachée}, mesurée statistiquement mais non corrigée en flux courant.
+
+\paragraph{Amortissement et équité endogène.} Lorsque \(\tau>0\), l'amortissement réduit \(\text{principal}\), \(P_i^{\mathrm{exo}}\), \(R\), \(C\) mais laisse \(K_i^{\mathrm{exo}}\) inchangé. Le remboursement ne détruit pas l'actif physique financé ; il en résulte une création graduelle d'équité endogène.
+
+\paragraph{Absence de masse de faillite.} Aucune entité intermédiaire ne survit à une faillite. Les créances de l'entité faillie sont immédiatement redistribuées au prorata des poids créanciers, et plus aucun intérêt n'est perçu au nom de l'entité faillie aux pas suivants. Il n'existe donc pas d'étape de \og redistribution des intérêts des masses \fg{} dans la boucle temporelle.
+
+\paragraph{Paiement partiel sans événement autonome.} Un paiement partiel d'intérêts ne provoque ni pénalité spécifique ni événement de crédit. La défaillance est tranchée séparément, plus tard dans le pas, à partir du bilan complet après paiement.
+
+\end{document}

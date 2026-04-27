@@ -1,0 +1,64 @@
+% figure_puissance.tex
+\begin{center}
+	
+
+\begin{tikzpicture}[>=Latex, scale=1.05]
+	
+	% Axes
+	\draw[blue, very thick, ->] (0,0) -- (10.5,0)
+	node[below right, black] {Passif auto-investi : $P_{\mathrm{auto}}$ (J)};
+	\draw[blue, very thick, ->] (0,0) -- (0,6.5)
+	node[above left, black] {Puissance extractrice : $\Pi_{\mathrm{ext}}$ (J/tour) (W)};
+	
+	% Courbe concave
+	\draw[orange!85!black, very thick, domain=0:9.4, smooth, samples=200]
+	plot (\x,{5.8*(1-exp(-0.28*\x))});
+	
+	% Repères verts
+	\draw[green!60!black, thick] (2.3,0) -- (2.3,2.75);
+	\draw[green!60!black, thick] (0,2.75) -- (2.3,2.75);
+	
+	\draw[green!60!black, thick] (7.3,0) -- (7.3,5.05);
+	\draw[green!60!black, thick] (0,5.05) -- (7.3,5.05);
+	
+	% Point origine
+	\filldraw[black] (0,0) circle (2pt);
+	
+	% Annotation concavité
+	\node at (4.8,2.4)
+	{$\dfrac{\partial^2 \Pi_{\mathrm{ext}}}{\partial P_{\mathrm{auto}}^2} < 0$};
+	
+	% Flèches tangentes
+	\draw[->] (3.9,2.85) -- (4.4,3.25);
+	\draw[->] (4.15,3.05) -- (4.6,2.65);
+	
+	\draw[->] (7.0,4.85) -- (7.55,4.98);
+	\draw[->] (7.45,4.97) -- (8.0,4.90);
+	
+	% Flèche pointillée courbe
+	\draw[dashed, ->]
+	(4.6,2.9)
+	.. controls (5.8,3.5) and (6.8,4.2)
+	.. (7.6,4.9);
+	
+	% Petite flèche pointillée droite
+	\draw[dashed, ->]
+	(7.9,4.6) -- (7.5,4.8);
+	
+	% Texte droite
+	\node[align=center] at (10.2,3.8)
+	{taux de gain marginal\\ à l'auto-investissement};
+	
+	% Petite / grande entité
+	\node[rotate=90] at (1.3,1.5) {\small petite entité};
+	
+	\draw (8.5,1) circle (0.2);
+	\draw (8.5,0.8) -- (8.5,0.3);
+	\draw (8.5,0.6) -- (8.2,0.4);
+	\draw (8.5,0.6) -- (8.8,0.4);
+	\draw (8.5,0.3) -- (8.3,0);
+	\draw (8.5,0.3) -- (8.7,0);
+	\node at (9.3,0.7) {\small grande entité};
+	
+\end{tikzpicture}
+\end{center}\\

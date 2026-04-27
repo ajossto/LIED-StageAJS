@@ -7,9 +7,9 @@ Modélise une société industrielle simplifiée avec prêts, faillites en casca
 Projet de recherche académique — pas d'application web, pas d'API, pas de déploiement.
 
 **Lire avant d'agir** :
-- `claude3-v3-27-mars/src/config.py` — tous les paramètres du modèle
-- `claude3-v3-27-mars/src/simulation.py` — moteur principal
-- `ORGANISATION_ACTIVE_27_MARS.md` — quelle version est active
+- `modeles-systeme-physicoeconomique/modele_sans_banque_wip/model.py` — modèle WIP actuellement branché
+- `simulation_lab/` — couche active d'orchestration locale
+- `docs/ORGANISATION_ACTIVE_27_MARS.md` — note historique du 27 mars
 
 ---
 
@@ -30,19 +30,17 @@ Projet de recherche académique — pas d'application web, pas d'API, pas de dé
 
 ```
 jupyter/
-├── claude3-v3-27-mars/       ← VERSION ACTIVE (seule cible de développement)
-│   ├── src/
-│   │   ├── config.py         ← paramètres (lire en premier)
-│   │   ├── models.py         ← Entity, Loan, BankruptcyEstate
-│   │   ├── simulation.py     ← moteur (run_step, marché du crédit)
-│   │   ├── statistics.py     ← Collector, distributions, cascades
-│   │   ├── output.py         ← dossiers de sortie auto-labellisés
-│   │   ├── analysis.py       ← graphiques, log-binning
-│   │   └── main.py           ← point d'entrée
-│   └── tests/
-│       └── test_basic.py     ← 11 tests de validation
+├── simulation_lab/           ← interface locale + CLI + stockage
+├── modeles-systeme-physicoeconomique/
+│   ├── modele_sans_banque_wip/  ← modèle le plus abouti actuellement branché
+│   └── claude3_v2/              ← second modèle intégré
+├── archives/
+│   └── modeles/
+│       └── claude3-v3-27-mars/  ← archive complète de l'ancienne lignée 27 mars
 ├── claude/                   ← v1 monolithique (archive, ne pas modifier)
 ├── claude3-v2/               ← v2 modulaire stable (archive, ne pas modifier)
+├── docs/                     ← documentation de travail et audits
+├── recherche/                ← notes, visuels et analyses hors flux actif
 ├── arborescence_modeles/     ← symlinks organisateurs (ne pas modifier)
 ├── banque_versions_zip/      ← archives ZIP de versions supprimées
 ├── hooks/                    ← git hooks (pre-commit, commit-msg)
@@ -54,25 +52,25 @@ jupyter/
 ## Commands
 
 ```bash
-# Lancement simulation
-cd claude3-v3-27-mars/src
-/home/anatole/jupyter/.venv/bin/python3 main.py
+# Lancement interface locale
+cd /home/anatole/jupyter
+/home/anatole/jupyter/.venv/bin/python3 -m simulation_lab.cli gui --open-browser
 
-# Tests
-cd claude3-v3-27-mars
+# Lister les modèles branchés
+/home/anatole/jupyter/.venv/bin/python3 -m simulation_lab.cli list-models
+
+# Validation historique ciblée si nécessaire
+cd /home/anatole/jupyter/claude3-v2
 /home/anatole/jupyter/.venv/bin/python3 tests/test_basic.py
-
-# Format
-/home/anatole/jupyter/.venv/bin/black claude3-v3-27-mars/src/
 
 # Activer les git hooks
 git config core.hooksPath hooks
 
 # Vérifier la syntaxe d'un fichier
-/home/anatole/jupyter/.venv/bin/python3 -m py_compile claude3-v3-27-mars/src/<fichier>.py
+/home/anatole/jupyter/.venv/bin/python3 -m py_compile simulation_lab/<fichier>.py
 ```
 
-Résultats générés dans : `claude3-v3-27-mars/src/resultats/`
+Résultats générés dans : `simulation_lab_data/` et, pour les modèles historiques, dans leurs dossiers `resultats/`
 
 ---
 
@@ -93,7 +91,7 @@ Résultats générés dans : `claude3-v3-27-mars/src/resultats/`
 
 ## Working Rules for Claude
 
-- Lire `config.py` et `simulation.py` avant toute modification
+- Lire d'abord l'adaptateur WIP et `simulation_lab` avant toute modification
 - Ne pas modifier les versions archivées (`claude/`, `claude3-v2/`) sauf demande explicite
 - Proposer des changements petits et ciblés — un diff minimal par intention
 - Citer systématiquement les fichiers touchés (`fichier.py:ligne`)
@@ -119,10 +117,10 @@ En cas de doute sur un paramètre, un comportement ou une convention : lire le f
 
 ## Source of Truth
 
-- **Paramètres du modèle** → `claude3-v3-27-mars/src/config.py`
-- **Comportement de simulation** → `claude3-v3-27-mars/src/simulation.py`
-- **Version active** → `ORGANISATION_ACTIVE_27_MARS.md`
+- **Modèle WIP branché** → `modeles-systeme-physicoeconomique/modele_sans_banque_wip/model.py`
+- **Orchestration actuelle** → `simulation_lab/`
+- **Note historique 27 mars** → `docs/ORGANISATION_ACTIVE_27_MARS.md`
 - **Versions archivées** → `arborescence_modeles/INDEX_ARBORESCENCE.md`
 - **Archives ZIP** → `banque_versions_zip/INDEX_ZIP.md`
-- **Théorie du modèle** → `claude3-v3-27-mars/description_theorisation_modele.pdf`
+- **Théorie du modèle WIP** → `Modèle_sans_banque_wip/description_theorisation_modele.pdf`
 - En cas de contradiction entre mémoire et code : **le code fait foi**

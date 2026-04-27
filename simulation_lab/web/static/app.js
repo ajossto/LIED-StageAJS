@@ -114,6 +114,18 @@ async function loadModels() {
   renderModelForm();
 }
 
+async function loadSystemInfo() {
+  const info = await fetchJSON("/api/system");
+  const workerInput = document.getElementById("batch-workers");
+  const cpuHint = document.getElementById("cpu-hint");
+  if (workerInput && Number(workerInput.value) === 0) {
+    workerInput.value = info.recommended_workers;
+  }
+  if (cpuHint) {
+    cpuHint.textContent = `Machine détectée: ${info.cpu_count} cœurs logiques. Recommandation par défaut: ${info.recommended_workers} workers, ${info.reserved_cores} cœurs laissés libres.`;
+  }
+}
+
 async function createSingleRun() {
   const payload = {
     model_id: state.selectedModelId,
@@ -316,6 +328,7 @@ function renderRunDetail(run) {
       <textarea id="annotation-comment" rows="5">${escapeHtml(run.comment || "")}</textarea>
       <div class="inline-actions">
         <button id="save-annotations">Enregistrer les annotations</button>
+        <button id="refresh-artifacts" class="secondary">Rafraîchir les artéfacts</button>
       </div>
     </div>
     ${renderRunActions(run)}
@@ -417,6 +430,14 @@ function bindAnnotationSave(run) {
     await refreshRuns();
     await loadRunDetail();
   });
+  document.getElementById("refresh-artifacts").addEventListener("click", async () => {
+    await fetchJSON(`/api/runs/${encodeURIComponent(run.run_id)}/refresh-artifacts`, {
+      method: "POST",
+      body: JSON.stringify({}),
+    });
+    await refreshRuns();
+    await loadRunDetail();
+  });
 }
 
 function renderArtifacts(run) {
@@ -435,6 +456,7 @@ function renderArtifacts(run) {
 
 async function initLaunchPage() {
   await loadModels();
+  await loadSystemInfo();
   document.getElementById("run-single").addEventListener("click", createSingleRun);
   document.getElementById("run-batch").addEventListener("click", createBatch);
 }

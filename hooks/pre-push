@@ -24,7 +24,7 @@ warn() { echo -e "${YELLOW}⚠${NC} $*"; }
 fail() { echo -e "${RED}✗${NC} $*"; exit 1; }
 
 VENV="/home/anatole/jupyter/.venv/bin/activate"
-SRC="claude3-v3-27-mars/src"
+SRC="archives/modeles/claude3-v3-27-mars/src"
 
 echo "[pre-push] Test de non-régression (seed=42, 200 pas)..."
 
@@ -39,7 +39,7 @@ fi
 
 result=$(python3 - <<'EOF'
 import sys, os
-sys.path.insert(0, "claude3-v3-27-mars/src")
+sys.path.insert(0, "archives/modeles/claude3-v3-27-mars/src")
 
 try:
     from config import SimulationConfig

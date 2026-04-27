@@ -7,6 +7,14 @@ __pycache__/
 .virtual_documents/
 Untitled.ipynb
 
+# LaTeX / documents générés
+*.aux
+*.bbl
+*.blg
+*.log
+*.out
+*.toc
+
 # Résultats de simulation (regénérables)
 **/resultats/
 

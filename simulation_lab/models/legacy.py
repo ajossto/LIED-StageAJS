@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib.util
 import sys
+import threading
 from contextlib import redirect_stderr, redirect_stdout
 from contextlib import contextmanager
 from dataclasses import MISSING, fields, is_dataclass
@@ -11,6 +12,9 @@ from typing import Any
 
 from simulation_lab.progress import emit_progress, ensure_not_cancelled
 from simulation_lab.contracts import BaseSimulationModel, ParameterSpec, SimulationResult, collect_artifacts
+
+
+_LEGACY_EXECUTION_LOCK = threading.Lock()
 
 
 @contextmanager
@@ -103,23 +107,24 @@ class LegacyModuleModel(BaseSimulationModel):
         output_dir.mkdir(parents=True, exist_ok=True)
         legacy_root = output_dir / "legacy_output"
         log_path = output_dir / "legacy_execution.log"
-        with _prepend_sys_path(self.source_dir):
-            run_and_save = getattr(output_module, "run_and_save")
-            with log_path.open("w", encoding="utf-8") as log_handle:
-                stream = _ProgressLogStream(log_handle)
-                with redirect_stdout(stream), redirect_stderr(stream):
-                    _, folder = run_and_save(
-                        config=config,
-                        label=run_label or self.model_id,
-                        notes="Run lancé via Simulation Lab",
-                        root=str(legacy_root),
-                        verbose=True,
-                    )
-                    if analysis_module and hasattr(analysis_module, "analyze_folder"):
-                        try:
-                            analysis_module.analyze_folder(folder)
-                        except Exception:
-                            pass
+        with _LEGACY_EXECUTION_LOCK:
+            with _prepend_sys_path(self.source_dir):
+                run_and_save = getattr(output_module, "run_and_save")
+                with log_path.open("w", encoding="utf-8") as log_handle:
+                    stream = _ProgressLogStream(log_handle)
+                    with redirect_stdout(stream), redirect_stderr(stream):
+                        _, folder = run_and_save(
+                            config=config,
+                            label=run_label or self.model_id,
+                            notes="Run lancé via Simulation Lab",
+                            root=str(legacy_root),
+                            verbose=True,
+                        )
+                        if analysis_module and hasattr(analysis_module, "analyze_folder"):
+                            try:
+                                analysis_module.analyze_folder(folder)
+                            except Exception:
+                                pass
         summary = {}
         meta_path = Path(folder) / "meta.json"
         if meta_path.exists():

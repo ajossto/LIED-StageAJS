@@ -219,6 +219,17 @@ class RunStorage:
         self._open_path(path)
         return {"run_id": run_id, "path": str(path)}
 
+    def refresh_artifacts(self, run_id: str) -> dict[str, Any]:
+        if run_id.startswith("external__"):
+            return self.read_metadata(run_id)
+        run_dir = self._managed_run_dir(run_id)
+        metadata = json.loads((run_dir / "run.json").read_text(encoding="utf-8"))
+        metadata["artifacts"] = [artifact.to_dict() for artifact in collect_artifacts(run_dir)]
+        metadata["preview_artifact"] = (_select_preview_artifact(metadata["artifacts"]) or {}).get("relative_path")
+        metadata["updated_at"] = utc_now()
+        self.write_metadata(run_dir, metadata)
+        return self.read_metadata(run_id)
+
     def empty_trash(self) -> dict[str, Any]:
         count = 0
         for path in list(BASKET_DIR.glob("*")):

@@ -11,7 +11,7 @@
 
 set -euo pipefail
 
-SRC_DIR="claude3-v3-27-mars/src"
+SRC_DIR="archives/modeles/claude3-v3-27-mars/src"
 VENV="/home/anatole/jupyter/.venv/bin/activate"
 
 # Couleurs
@@ -65,7 +65,7 @@ if echo "$staged_py" | grep -q "simulation.py"; then
     result=$(python3 - <<'EOF'
 import ast, sys
 
-with open("claude3-v3-27-mars/src/simulation.py") as f:
+with open("archives/modeles/claude3-v3-27-mars/src/simulation.py") as f:
     tree = ast.parse(f.read())
 
 for node in ast.walk(tree):
@@ -91,7 +91,7 @@ EOF
     result=$(python3 - <<'EOF'
 import ast, sys
 
-with open("claude3-v3-27-mars/src/simulation.py") as f:
+with open("archives/modeles/claude3-v3-27-mars/src/simulation.py") as f:
     src = f.read()
     tree = ast.parse(src)
     lines = src.splitlines()
