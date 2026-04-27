@@ -51,6 +51,8 @@
 
     <section class="panel">
       <h2>Suivi d’exécution</h2>
+      <p class="help">Toutes les simulations lancées depuis ce serveur restent visibles ici, même si vous allez aux résultats puis revenez.</p>
+      <div id="jobs-list" class="jobs-list"></div>
       <div id="job-status-card" class="status-card">
         <div class="muted">Aucun lancement en cours.</div>
       </div>
@@ -64,6 +66,17 @@
       <div class="inline-actions">
         <a class="button-link" href="/results">Afficher les résultats</a>
       </div>
+    </section>
+
+    <section class="panel wide-panel">
+      <div class="toolbar">
+        <div>
+          <h2>Simulations disponibles</h2>
+          <p class="help">Raccourci vers les runs gérés et historiques, classés par modèle.</p>
+        </div>
+        <button id="refresh-launch-runs" class="secondary">Rafraîchir</button>
+      </div>
+      <div id="runs-list" class="runs-list compact-runs" data-compact="true"></div>
     </section>
   </main>
   <script src="/static/app.js"></script>

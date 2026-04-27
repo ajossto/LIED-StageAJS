@@ -2,10 +2,73 @@ const state = {
   models: [],
   selectedModelId: null,
   runs: [],
+  jobs: [],
   selectedRunId: null,
   scope: "active",
   currentJobId: null,
+  jobPollTimer: null,
+  openRunGroups: new Set(),
+  runGroupsTouched: false,
 };
+
+const PARAMETER_HELP = {
+  alpha: "Coefficient de productivité de référence. Dans les WIP récents, les entités tirent surtout alpha dans [alpha_min, alpha_max].",
+  alpha_min: "Borne basse du tirage initial de productivité individuelle alpha.",
+  alpha_max: "Borne haute du tirage initial de productivité individuelle alpha.",
+  alpha_sigma_brownien: "Volatilité du choc temporel sur alpha. 0 = productivité individuelle fixe après la naissance.",
+  seuil_ratio_liquide_passif: "Seuil de liquidité L/P pour participer au marché du crédit et conserver une réserve avant prêt ou auto-investissement.",
+  theta: "Fraction de la demande optimale d'emprunt effectivement demandée. Plus theta est haut, plus le levier financier monte vite.",
+  mu: "Prime minimale exigée par l'emprunteur: l'emprunt doit améliorer le gain d'au moins mu par rapport à l'auto-investissement.",
+  seuil_ratio_endettement: "Plafond charges d'intérêts / revenus. 1 signifie que les intérêts dus ne doivent pas dépasser extraction + intérêts reçus.",
+  fraction_taux_emprunteur: "Paramètre f du taux de transaction: r = (1-f) r*_prêteur + f r*_emprunteur. Plus f est haut, plus le taux se rapproche du rendement marginal de l'emprunteur.",
+  taux_amortissement: "Part du principal remboursée à chaque pas. 0 = dette perpétuelle.",
+  n_entites_initiales: "Nombre d'entités créées à t=0.",
+  lambda_creation: "Intensité moyenne des naissances par pas de temps, tirée par une loi de Poisson.",
+  actif_liquide_initial: "Dotation liquide initiale L de chaque nouvelle entité.",
+  passif_inne_initial: "Passif inné B de chaque nouvelle entité; base minimale du bilan.",
+  taux_depreciation_liquide: "Dépréciation du liquide à chaque pas.",
+  taux_depreciation_endo: "Dépréciation du capital endogène issu de l'auto-investissement.",
+  taux_depreciation_exo: "Dépréciation du capital financé par crédit; sert aussi à réévaluer les créances.",
+  coefficient_reliquefaction: "Décote de conversion du capital endogène en liquide lors d'une contrainte de paiement.",
+  fraction_auto_investissement: "Part du surplus liquide convertie en capital endogène à la fin du pas.",
+  duree_simulation: "Nombre de pas de temps simulés.",
+  seed: "Graine aléatoire. Même seed et mêmes paramètres donnent une trajectoire reproductible.",
+  max_credit_iterations: "Limite de sécurité sur les tentatives du marché du crédit à chaque pas.",
+  n_candidats_pool: "Taille locale du pool de matching crédit. k=3 est le régime WIP critique; k bas stabilise, k haut densifie le réseau.",
+  epsilon: "Seuil numérique sous lequel un montant est considéré nul.",
+  log_events: "Active un journal détaillé des événements. Utile pour déboguer, coûteux sur longues simulations.",
+  freq_snapshot: "Fréquence des snapshots statistiques détaillés.",
+};
+
+const PARAMETER_SYMBOLS = {
+  theta: "θ",
+  fraction_taux_emprunteur: "f",
+  mu: "μ",
+  lambda_creation: "λ",
+  epsilon: "ε",
+  alpha: "α",
+  alpha_min: "α min",
+  alpha_max: "α max",
+  alpha_sigma_brownien: "σ(α)",
+};
+
+const KEY_PARAMETER_NAMES = [
+  "duree_simulation",
+  "seed",
+  "alpha_min",
+  "alpha_max",
+  "alpha_sigma_brownien",
+  "n_candidats_pool",
+  "theta",
+  "mu",
+  "fraction_taux_emprunteur",
+  "seuil_ratio_endettement",
+  "lambda_creation",
+  "fraction_auto_investissement",
+  "taux_depreciation_endo",
+  "taux_depreciation_exo",
+  "epsilon",
+];
 
 function page() {
   return document.body.dataset.page;
@@ -33,6 +96,10 @@ function currentModel() {
   return state.models.find((model) => model.model_id === state.selectedModelId);
 }
 
+function modelDisplayName(modelId) {
+  return state.models.find((model) => model.model_id === modelId)?.display_name || modelId || "Modèle inconnu";
+}
+
 function renderModelForm() {
   const model = currentModel();
   const form = document.getElementById("parameter-form");
@@ -57,16 +124,19 @@ function renderModelForm() {
 
 function renderParameterField(parameter) {
   const inputType = parameter.param_type === "bool" ? "checkbox" : parameter.param_type === "str" ? "text" : "number";
+  const symbol = PARAMETER_SYMBOLS[parameter.name];
+  const label = `${parameter.label || parameter.name}${symbol ? ` <span class="param-symbol">${symbol}</span>` : ""}`;
+  const help = PARAMETER_HELP[parameter.name] || parameter.description || "";
   if (parameter.param_type === "bool") {
-    return `<label>${parameter.label || parameter.name}</label>
-      <div class="help">${parameter.description || ""}</div>
+    return `<label>${label}</label>
+      <div class="help">${help}</div>
       <input data-param="${parameter.name}" type="checkbox" ${parameter.default ? "checked" : ""}>`;
   }
   const min = parameter.minimum !== null ? `min="${parameter.minimum}"` : "";
   const max = parameter.maximum !== null ? `max="${parameter.maximum}"` : "";
   const step = parameter.param_type === "int" ? "1" : "any";
-  return `<label>${parameter.label || parameter.name}</label>
-    <div class="help">${parameter.description || ""}</div>
+  return `<label>${label}</label>
+    <div class="help">${help}</div>
     <input data-param="${parameter.name}" type="${inputType}" value="${parameter.default ?? ""}" ${min} ${max} step="${step}">`;
 }
 
@@ -136,7 +206,7 @@ async function createSingleRun() {
   const job = await fetchJSON("/api/jobs/run", { method: "POST", body: JSON.stringify(payload) });
   state.currentJobId = job.job_id;
   setMessage("Job créé. Simulation en attente de démarrage.");
-  await pollJob();
+  await refreshJobs();
 }
 
 async function createBatch() {
@@ -151,24 +221,87 @@ async function createBatch() {
   const job = await fetchJSON("/api/jobs/batch", { method: "POST", body: JSON.stringify(payload) });
   state.currentJobId = job.job_id;
   setMessage("Batch créé.");
-  await pollJob();
+  await refreshJobs();
 }
 
-async function pollJob() {
-  if (!state.currentJobId) {
+async function refreshJobs() {
+  const container = document.getElementById("jobs-list");
+  if (!container) {
     return;
   }
-  const job = await fetchJSON(`/api/jobs/${encodeURIComponent(state.currentJobId)}`);
-  renderJob(job);
-  if (job.status === "running" || job.status === "queued") {
-    window.setTimeout(pollJob, 1000);
+  state.jobs = await fetchJSON("/api/jobs");
+  renderJobs();
+  const hasActive = state.jobs.some((job) => job.status === "running" || job.status === "queued");
+  if (state.jobPollTimer) {
+    window.clearTimeout(state.jobPollTimer);
+    state.jobPollTimer = null;
+  }
+  if (hasActive) {
+    state.jobPollTimer = window.setTimeout(refreshJobs, 1000);
+  }
+}
+
+function renderJobs() {
+  const list = document.getElementById("jobs-list");
+  const legacyCard = document.getElementById("job-status-card");
+  const legacyBar = document.getElementById("progress-bar");
+  if (!list) {
     return;
   }
-  if (job.status === "completed") {
-    setMessage(`${job.message}\n${job.logs.join("\n")}`);
-  } else if (job.status === "failed") {
-    setMessage(`${job.message}\n${job.error}\n${job.logs.join("\n")}`);
+  const jobs = state.jobs.slice(0, 12);
+  if (!jobs.length) {
+    list.innerHTML = `<div class="muted">Aucune simulation lancée depuis ce démarrage du serveur.</div>`;
+    if (legacyCard) legacyCard.innerHTML = `<div class="muted">Aucun lancement en cours.</div>`;
+    if (legacyBar) legacyBar.style.width = "0%";
+    return;
   }
+  list.innerHTML = jobs.map(renderJobCard).join("");
+  list.querySelectorAll("[data-cancel-job]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      await fetchJSON(`/api/jobs/${encodeURIComponent(button.dataset.cancelJob)}/cancel`, {
+        method: "POST",
+        body: JSON.stringify({}),
+      });
+      await refreshJobs();
+    });
+  });
+  list.querySelectorAll("[data-open-run]").forEach((button) => {
+    button.addEventListener("click", () => {
+      window.location.href = `/results?run=${encodeURIComponent(button.dataset.openRun)}`;
+    });
+  });
+
+  const current = state.currentJobId
+    ? state.jobs.find((job) => job.job_id === state.currentJobId)
+    : state.jobs[0];
+  if (current && legacyCard && legacyBar) {
+    renderJob(current);
+  }
+}
+
+function renderJobCard(job) {
+  const active = job.status === "running" || job.status === "queued";
+  const resultButtons = [
+    job.run_id ? `<button class="secondary compact-button" data-open-run="${job.run_id}">Voir le résultat</button>` : "",
+    ...(job.run_ids || []).slice(0, 3).map((runId) => `<button class="secondary compact-button" data-open-run="${runId}">Run ${runId.slice(-8)}</button>`),
+  ].join("");
+  return `
+    <article class="job-card ${active ? "active" : ""}">
+      <div class="job-head">
+        <strong>${modelDisplayName(job.model_id)}</strong>
+        <span class="pill ${job.status === "failed" ? "trash" : active ? "important" : "readonly"}">${job.status}</span>
+      </div>
+      <div class="run-meta">${job.label || job.job_type} | ${job.created_at}</div>
+      <div>${job.message || "-"}</div>
+      <div class="mini-progress"><span style="width:${job.progress || 0}%"></span></div>
+      <div class="run-meta">${Math.round(job.progress || 0)}%${job.error ? ` | ${escapeHtml(job.error)}` : ""}</div>
+      ${job.logs?.length ? `<details class="job-log"><summary>Derniers logs</summary><pre>${escapeHtml(job.logs.slice(-8).join("\n"))}</pre></details>` : ""}
+      <div class="inline-actions job-actions">
+        ${active ? `<button class="secondary compact-button" data-cancel-job="${job.job_id}" ${job.cancel_requested ? "disabled" : ""}>${job.cancel_requested ? "Annulation demandée" : "Avorter"}</button>` : ""}
+        ${resultButtons}
+      </div>
+    </article>
+  `;
 }
 
 function renderJob(job) {
@@ -189,7 +322,7 @@ function renderJob(job) {
         method: "POST",
         body: JSON.stringify({}),
       });
-      await pollJob();
+      await refreshJobs();
     };
   }
   card.innerHTML = `
@@ -214,14 +347,52 @@ function renderRuns() {
   if (trashActions) {
     trashActions.classList.toggle("hidden", state.scope !== "trash");
   }
-  list.innerHTML = state.runs.map((run) => `
-    <div class="run-card ${run.run_id === state.selectedRunId ? "active" : ""}" data-run-id="${run.run_id}">
-      <div class="run-card-actions">
-        <button class="icon-action ${run.trashed ? "is-active" : ""}" data-action="trash" data-run-id="${run.run_id}" title="Corbeille" ${run.origin === "external" || run.trashed ? "disabled" : ""}>x</button>
-        <button class="icon-action ${run.important ? "is-active" : ""}" data-action="important" data-run-id="${run.run_id}" title="Important">!!</button>
-        <button class="icon-action ${run.keep ? "is-active" : ""}" data-action="keep" data-run-id="${run.run_id}" title="À garder"><3</button>
+  list.innerHTML = renderRunsGrouped(state.runs, { compact: list.dataset.compact === "true" });
+  bindRunListInteractions(list);
+}
+
+function renderRunsGrouped(runs, { compact = false } = {}) {
+  if (!runs.length) {
+    return `<div class="muted">Aucune simulation dans ce périmètre.</div>`;
+  }
+  const groups = new Map();
+  for (const run of runs) {
+    const key = run.model_id || "external";
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(run);
+  }
+  return Array.from(groups.entries()).map(([modelId, items], index) => `
+    <details class="model-run-group" data-model-id="${escapeAttr(modelId)}" ${isRunGroupOpen(modelId, items, index) ? "open" : ""}>
+      <summary>
+        <span>${modelDisplayName(modelId)}</span>
+        <span class="run-count">${items.length}</span>
+      </summary>
+      <div class="model-run-items">
+        ${items.map((run) => renderRunCard(run, compact)).join("")}
       </div>
-      ${run.preview_artifact ? `<img class="run-thumb" src="/api/runs/${encodeURIComponent(run.run_id)}/artifact?path=${encodeURIComponent(run.preview_artifact)}" alt="preview">` : ""}
+    </details>
+  `).join("");
+}
+
+function isRunGroupOpen(modelId, runs, index) {
+  if (runs.some((run) => run.run_id === state.selectedRunId)) {
+    return true;
+  }
+  if (state.openRunGroups.has(modelId)) {
+    return true;
+  }
+  return !state.runGroupsTouched && index < 2;
+}
+
+function renderRunCard(run, compact = false) {
+  return `
+    <div class="run-card ${run.run_id === state.selectedRunId ? "active" : ""}" data-run-id="${escapeAttr(run.run_id)}" role="button" tabindex="0">
+      <div class="run-card-actions">
+        <button class="icon-action ${run.trashed ? "is-active" : ""}" data-action="trash" data-run-id="${escapeAttr(run.run_id)}" title="Corbeille" ${run.origin === "external" || run.trashed ? "disabled" : ""}>x</button>
+        <button class="icon-action ${run.important ? "is-active" : ""}" data-action="important" data-run-id="${escapeAttr(run.run_id)}" title="Important">!!</button>
+        <button class="icon-action ${run.keep ? "is-active" : ""}" data-action="keep" data-run-id="${escapeAttr(run.run_id)}" title="À garder"><3</button>
+      </div>
+      ${run.preview_artifact && !compact ? `<img class="run-thumb" src="/api/runs/${encodeURIComponent(run.run_id)}/artifact?path=${encodeURIComponent(run.preview_artifact)}" alt="preview">` : ""}
       <div class="pill-row">
         ${run.important ? `<span class="pill important">Importante</span>` : ""}
         ${run.trashed ? `<span class="pill trash">Corbeille</span>` : ""}
@@ -232,16 +403,46 @@ function renderRuns() {
       <div class="run-meta">Seed ${run.seed ?? "-"} | ${run.status}</div>
       <div class="run-meta">${run.created_at}</div>
     </div>
-  `).join("");
+  `;
+}
+
+function bindRunListInteractions(list) {
+  list.querySelectorAll(".model-run-group").forEach((group) => {
+    group.addEventListener("toggle", () => {
+      const modelId = group.dataset.modelId;
+      if (!modelId) {
+        return;
+      }
+      state.runGroupsTouched = true;
+      if (group.open) {
+        state.openRunGroups.add(modelId);
+      } else {
+        state.openRunGroups.delete(modelId);
+      }
+    });
+  });
   list.querySelectorAll(".run-card").forEach((card) => {
-    card.addEventListener("click", async () => {
+    const selectRun = async (event) => {
+      event.stopPropagation();
       if (card.dataset.ignoreClick === "true") {
         card.dataset.ignoreClick = "";
         return;
       }
       state.selectedRunId = card.dataset.runId;
-      renderRuns();
-      await loadRunDetail();
+      if (page() === "results") {
+        window.history.replaceState(null, "", `/results?run=${encodeURIComponent(state.selectedRunId)}`);
+        renderRuns();
+        await loadRunDetail();
+      } else {
+        window.location.href = `/results?run=${encodeURIComponent(state.selectedRunId)}`;
+      }
+    };
+    card.addEventListener("click", selectRun);
+    card.addEventListener("keydown", async (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        await selectRun(event);
+      }
     });
   });
   list.querySelectorAll(".icon-action").forEach((button) => {
@@ -310,17 +511,31 @@ function renderRunDetail(run) {
   }
   detail.classList.remove("muted");
   detail.innerHTML = `
-    <dl>
-      <dt>Run ID</dt><dd>${run.run_id}</dd>
-      <dt>Modèle</dt><dd>${run.model_id}</dd>
-      <dt>Origine</dt><dd>${run.origin}</dd>
-      <dt>Seed</dt><dd>${run.seed ?? "-"}</dd>
-      <dt>Statut</dt><dd>${run.status}</dd>
-      <dt>Importante</dt><dd>${run.important ? "oui" : "non"}</dd>
-      <dt>Corbeille</dt><dd>${run.trashed ? "oui" : "non"}</dd>
-      <dt>Commentaire</dt><dd><pre>${escapeHtml(run.comment || "")}</pre></dd>
-      <dt>Résumé</dt><dd><pre>${JSON.stringify(run.summary || {}, null, 2)}</pre></dd>
-    </dl>
+    <div class="detail-split">
+      <section>
+        <h3>Note rapide</h3>
+        ${renderRunQuickNote(run)}
+        <dl>
+          <dt>Run ID</dt><dd>${run.run_id}</dd>
+          <dt>Modèle</dt><dd>${run.model_id}</dd>
+          <dt>Origine</dt><dd>${run.origin}</dd>
+          <dt>Seed</dt><dd>${run.seed ?? "-"}</dd>
+          <dt>Statut</dt><dd>${run.status}</dd>
+          <dt>Importante</dt><dd>${run.important ? "oui" : "non"}</dd>
+          <dt>Corbeille</dt><dd>${run.trashed ? "oui" : "non"}</dd>
+          <dt>Commentaire</dt><dd><pre>${escapeHtml(run.comment || "")}</pre></dd>
+          <dt>Résumé</dt><dd><pre>${JSON.stringify(run.summary || {}, null, 2)}</pre></dd>
+        </dl>
+      </section>
+      <aside class="parameter-note">
+        <h3>Paramètres clés</h3>
+        ${renderParameterSummary(run.parameters || {}, true)}
+        <details>
+          <summary>Tous les paramètres</summary>
+          ${renderParameterSummary(run.parameters || {}, false)}
+        </details>
+      </aside>
+    </div>
     <div class="annotation-box">
       <label>Label</label>
       <input id="annotation-label" type="text" value="${escapeAttr(run.label || "")}">
@@ -336,6 +551,55 @@ function renderRunDetail(run) {
   bindRunActions(run);
   bindAnnotationSave(run);
   renderArtifacts(run);
+}
+
+function renderRunQuickNote(run) {
+  const params = run.parameters || {};
+  const items = [
+    ["Durée", params.duree_simulation ?? params.steps],
+    ["Seed", run.seed ?? params.seed],
+    ["α", formatAlphaRange(params)],
+    ["k", params.n_candidats_pool],
+    ["θ", params.theta],
+    ["f", params.fraction_taux_emprunteur],
+    ["λ", params.lambda_creation],
+  ].filter(([, value]) => value !== undefined && value !== null && value !== "");
+  return `<div class="quick-note">${items.map(([label, value]) => `
+    <div><span>${label}</span><strong>${escapeHtml(formatValue(value))}</strong></div>
+  `).join("")}</div>`;
+}
+
+function renderParameterSummary(parameters, keyOnly) {
+  const names = keyOnly
+    ? KEY_PARAMETER_NAMES.filter((name) => Object.prototype.hasOwnProperty.call(parameters, name))
+    : Object.keys(parameters).sort();
+  if (!names.length) {
+    return `<p class="muted">Aucun paramètre enregistré.</p>`;
+  }
+  return `<div class="parameter-summary">${names.map((name) => `
+    <div class="parameter-row" title="${escapeAttr(PARAMETER_HELP[name] || "")}">
+      <span>${escapeHtml(PARAMETER_SYMBOLS[name] || name)}</span>
+      <strong>${escapeHtml(formatValue(parameters[name]))}</strong>
+    </div>
+  `).join("")}</div>`;
+}
+
+function formatAlphaRange(parameters) {
+  if (parameters.alpha_min !== undefined && parameters.alpha_max !== undefined) {
+    const sigma = parameters.alpha_sigma_brownien !== undefined ? `; σ=${formatValue(parameters.alpha_sigma_brownien)}` : "";
+    return `[${formatValue(parameters.alpha_min)}, ${formatValue(parameters.alpha_max)}]${sigma}`;
+  }
+  return parameters.alpha;
+}
+
+function formatValue(value) {
+  if (typeof value === "number") {
+    if (Number.isInteger(value)) return String(value);
+    if (Math.abs(value) >= 1000 || Math.abs(value) < 0.001) return value.toExponential(2);
+    return String(Number(value.toFixed(5)));
+  }
+  if (typeof value === "boolean") return value ? "oui" : "non";
+  return String(value);
 }
 
 function renderRunActions(run) {
@@ -457,13 +721,24 @@ function renderArtifacts(run) {
 async function initLaunchPage() {
   await loadModels();
   await loadSystemInfo();
+  await refreshJobs();
+  await refreshRuns();
   document.getElementById("run-single").addEventListener("click", createSingleRun);
   document.getElementById("run-batch").addEventListener("click", createBatch);
+  document.getElementById("refresh-launch-runs").addEventListener("click", refreshRuns);
 }
 
 async function initResultsPage() {
+  await loadModels();
+  const params = new URLSearchParams(window.location.search);
+  state.selectedRunId = params.get("run");
+  await refreshJobs();
   await refreshRuns();
+  if (state.selectedRunId) {
+    await loadRunDetail();
+  }
   document.getElementById("refresh-runs").addEventListener("click", async () => {
+    await refreshJobs();
     await refreshRuns();
     await loadRunDetail();
   });

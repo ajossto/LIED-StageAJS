@@ -1,0 +1,89 @@
+# Profil sauvé dans : /home/anatole/jupyter/modele-27-04-WIP/profiling/run.prof
+# Simulation : target=wip, n_steps=500, seed=42
+
+
+============================================================
+  TOP 30 par cumulative
+============================================================
+         42258034 function calls (42258030 primitive calls) in 137.968 seconds
+
+   Ordered by: cumulative time
+   List reduced from 101 to 30 due to restriction <30>
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+        1    0.002    0.002  138.011  138.011 simulation.py:1292(run)
+      500    0.051    0.000  138.009    0.276 simulation.py:1245(run_step)
+      500    3.230    0.006   47.341    0.095 simulation.py:270(pay_interest_phase)
+      500    0.970    0.002   41.279    0.083 simulation.py:745(credit_market_iteration)
+  1863756   15.261    0.000   38.568    0.000 simulation.py:284(_pay_single_interest)
+    14356   16.424    0.001   33.616    0.002 simulation.py:570(_select_active_credit_entities)
+     7818   11.628    0.001   25.935    0.003 {built-in method builtins.sum}
+ 10181037   16.270    0.000   16.270    0.000 models.py:106(ratio_liquide_passif)
+      500    0.583    0.001   15.683    0.031 statistics.py:277(record_step)
+      500    0.221    0.000   14.133    0.028 statistics.py:318(_compute_indicators)
+      500    0.556    0.001   11.654    0.023 simulation.py:1190(_collect_light_stats)
+      500    1.165    0.002    9.562    0.019 simulation.py:1041(resolve_cascades)
+  1736201    5.997    0.000    9.111    0.000 simulation.py:298(_ensure_payment_capacity)
+  1736201    5.911    0.000    8.483    0.000 simulation.py:487(_route_interest_to_lender)
+    14916    2.925    0.000    6.272    0.000 {built-in method builtins.sorted}
+  3620197    5.332    0.000    5.332    0.000 simulation.py:122(get_entity)
+      500    0.982    0.002    4.449    0.009 simulation.py:1171(_update_alphas)
+  2388922    4.008    0.000    4.008    0.000 {built-in method builtins.max}
+   441495    2.046    0.000    3.454    0.000 simulation.py:126(compute_internal_rate)
+      500    0.009    0.000    3.327    0.007 simulation.py:904(_capture_system_state)
+  1784734    3.216    0.000    3.216    0.000 {built-in method builtins.min}
+      500    1.724    0.003    3.153    0.006 simulation.py:499(apply_depreciation)
+   400367    1.771    0.000    3.075    0.000 simulation.py:901(is_bankrupt)
+   279366    1.775    0.000    3.024    0.000 random.py:551(gauss)
+  1863756    2.985    0.000    2.985    0.000 models.py:148(interest_due)
+      500    1.114    0.002    2.900    0.006 simulation.py:869(auto_invest_end_of_turn)
+  1876004    2.751    0.000    2.751    0.000 simulation.py:1230(<genexpr>)
+  1876004    2.722    0.000    2.722    0.000 statistics.py:330(<genexpr>)
+  1863756    2.643    0.000    2.643    0.000 simulation.py:280(<lambda>)
+  1538425    2.609    0.000    2.609    0.000 models.py:92(actif_total)
+
+
+
+
+============================================================
+  TOP 30 par tottime
+============================================================
+         42258034 function calls (42258030 primitive calls) in 137.968 seconds
+
+   Ordered by: internal time
+   List reduced from 101 to 30 due to restriction <30>
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+    14356   16.424    0.001   33.616    0.002 simulation.py:570(_select_active_credit_entities)
+ 10181037   16.270    0.000   16.270    0.000 models.py:106(ratio_liquide_passif)
+  1863756   15.261    0.000   38.568    0.000 simulation.py:284(_pay_single_interest)
+     7818   11.628    0.001   25.935    0.003 {built-in method builtins.sum}
+  1736201    5.997    0.000    9.111    0.000 simulation.py:298(_ensure_payment_capacity)
+  1736201    5.911    0.000    8.483    0.000 simulation.py:487(_route_interest_to_lender)
+  3620197    5.332    0.000    5.332    0.000 simulation.py:122(get_entity)
+  2388922    4.008    0.000    4.008    0.000 {built-in method builtins.max}
+      500    3.230    0.006   47.341    0.095 simulation.py:270(pay_interest_phase)
+  1784734    3.216    0.000    3.216    0.000 {built-in method builtins.min}
+  1863756    2.985    0.000    2.985    0.000 models.py:148(interest_due)
+    14916    2.925    0.000    6.272    0.000 {built-in method builtins.sorted}
+  1876004    2.751    0.000    2.751    0.000 simulation.py:1230(<genexpr>)
+  1876004    2.722    0.000    2.722    0.000 statistics.py:330(<genexpr>)
+  1863756    2.643    0.000    2.643    0.000 simulation.py:280(<lambda>)
+  1538425    2.609    0.000    2.609    0.000 models.py:92(actif_total)
+  1876004    2.606    0.000    2.606    0.000 statistics.py:340(<genexpr>)
+   441495    2.046    0.000    3.454    0.000 simulation.py:126(compute_internal_rate)
+   279366    1.775    0.000    3.024    0.000 random.py:551(gauss)
+   400367    1.771    0.000    3.075    0.000 simulation.py:901(is_bankrupt)
+      500    1.724    0.003    3.153    0.006 simulation.py:499(apply_depreciation)
+   996395    1.442    0.000    1.442    0.000 {built-in method math.sqrt}
+     2457    1.294    0.001    1.299    0.001 simulation.py:118(active_loans)
+      500    1.165    0.002    9.562    0.019 simulation.py:1041(resolve_cascades)
+   380697    1.157    0.000    1.802    0.000 simulation.py:593(_liquidity_reserve)
+    18508    1.116    0.000    1.150    0.000 simulation.py:114(active_entities)
+      500    1.114    0.002    2.900    0.006 simulation.py:869(auto_invest_end_of_turn)
+      500    0.982    0.002    4.449    0.009 simulation.py:1171(_update_alphas)
+      500    0.979    0.002    1.870    0.004 simulation.py:248(extract_from_nature)
+      500    0.970    0.002   41.279    0.083 simulation.py:745(credit_market_iteration)
+
+
+

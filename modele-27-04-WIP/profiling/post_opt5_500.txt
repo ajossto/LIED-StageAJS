@@ -1,0 +1,69 @@
+# Profil sauvé dans : modele-27-04-WIP/profiling/post_opt5.prof
+# Simulation : target=wip, n_steps=500, seed=42
+
+
+============================================================
+  TOP 20 par cumulative
+============================================================
+         25181838 function calls (25181834 primitive calls) in 82.524 seconds
+
+   Ordered by: cumulative time
+   List reduced from 88 to 20 due to restriction <20>
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+        1    0.002    0.002   82.566   82.566 simulation.py:1453(run)
+      500    0.038    0.000   82.565    0.165 simulation.py:1406(run_step)
+      500    0.956    0.002   38.797    0.078 simulation.py:856(credit_market_iteration)
+    14356   16.841    0.001   31.100    0.002 simulation.py:673(_select_active_credit_entities)
+      500    3.185    0.006   19.110    0.038 simulation.py:337(pay_interest_phase)
+  1863756    7.003    0.000   15.754    0.000 simulation.py:357(_pay_single_interest)
+ 10184023   14.244    0.000   14.244    0.000 {method 'append' of 'list' objects}
+  1736201    5.763    0.000    8.751    0.000 simulation.py:387(_ensure_payment_capacity)
+      500    1.109    0.002    5.972    0.012 simulation.py:1177(resolve_cascades)
+      500    0.940    0.002    4.260    0.009 simulation.py:1309(_update_alphas)
+      500    1.192    0.002    4.002    0.008 simulation.py:1328(_collect_light_stats)
+  2388922    3.951    0.000    3.951    0.000 {built-in method builtins.max}
+   441495    2.012    0.000    3.401    0.000 simulation.py:191(compute_internal_rate)
+  1784734    3.088    0.000    3.088    0.000 {built-in method builtins.min}
+      500    1.678    0.003    3.048    0.006 simulation.py:602(apply_depreciation)
+   400367    1.693    0.000    2.931    0.000 simulation.py:1012(is_bankrupt)
+   279366    1.702    0.000    2.905    0.000 random.py:551(gauss)
+      500    1.089    0.002    2.810    0.006 simulation.py:980(auto_invest_end_of_turn)
+      500    0.542    0.001    2.640    0.005 statistics.py:277(record_step)
+  1538425    2.513    0.000    2.513    0.000 models.py:92(actif_total)
+
+
+
+
+============================================================
+  TOP 20 par tottime
+============================================================
+         25181838 function calls (25181834 primitive calls) in 82.524 seconds
+
+   Ordered by: internal time
+   List reduced from 88 to 20 due to restriction <20>
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+    14356   16.841    0.001   31.100    0.002 simulation.py:673(_select_active_credit_entities)
+ 10184023   14.244    0.000   14.244    0.000 {method 'append' of 'list' objects}
+  1863756    7.003    0.000   15.754    0.000 simulation.py:357(_pay_single_interest)
+  1736201    5.763    0.000    8.751    0.000 simulation.py:387(_ensure_payment_capacity)
+  2388922    3.951    0.000    3.951    0.000 {built-in method builtins.max}
+      500    3.185    0.006   19.110    0.038 simulation.py:337(pay_interest_phase)
+  1784734    3.088    0.000    3.088    0.000 {built-in method builtins.min}
+  1538425    2.513    0.000    2.513    0.000 models.py:92(actif_total)
+   441495    2.012    0.000    3.401    0.000 simulation.py:191(compute_internal_rate)
+   279366    1.702    0.000    2.905    0.000 random.py:551(gauss)
+   400367    1.693    0.000    2.931    0.000 simulation.py:1012(is_bankrupt)
+      500    1.678    0.003    3.048    0.006 simulation.py:602(apply_depreciation)
+   996395    1.392    0.000    1.392    0.000 {built-in method math.sqrt}
+      500    1.192    0.002    4.002    0.008 simulation.py:1328(_collect_light_stats)
+   380697    1.123    0.000    1.760    0.000 simulation.py:704(_liquidity_reserve)
+      500    1.109    0.002    5.972    0.012 simulation.py:1177(resolve_cascades)
+      500    1.089    0.002    2.810    0.006 simulation.py:980(auto_invest_end_of_turn)
+      500    0.956    0.002   38.797    0.078 simulation.py:856(credit_market_iteration)
+      500    0.948    0.002    1.820    0.004 simulation.py:315(extract_from_nature)
+      500    0.940    0.002    4.260    0.009 simulation.py:1309(_update_alphas)
+
+
+

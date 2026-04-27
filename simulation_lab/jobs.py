@@ -1,20 +1,63 @@
 from __future__ import annotations
 
 import threading
+import time
 from collections import deque
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
+from multiprocessing import Event, Process, Queue
+from queue import Empty
 from typing import Any
 from uuid import uuid4
 
 from simulation_lab.models.discovery import ModelRegistry
 from simulation_lab.progress import CancelledByUser, progress_reporting
+from simulation_lab.contracts import Artifact, SimulationResult
 from simulation_lab.runs.executor import execute_batch, _effective_parameters, _run_model, generate_seeds
 from simulation_lab.runs.storage import RunStorage, _select_preview_artifact
 
 
 def _utc_now() -> str:
     return datetime.now(timezone.utc).isoformat()
+
+
+def _run_single_model_worker(
+    *,
+    model_id: str,
+    parameters: dict[str, Any],
+    seed: int,
+    run_dir: str,
+    run_label: str,
+    progress_queue: Queue,
+    cancel_event: Event,
+) -> None:
+    def callback(payload: dict) -> None:
+        progress_queue.put({"type": "progress", "payload": payload})
+
+    try:
+        with progress_reporting(callback, cancel_callback=cancel_event.is_set):
+            result = _run_model(
+                model_id=model_id,
+                parameters=parameters,
+                seed=seed,
+                run_dir=run_dir,
+                run_label=run_label,
+            )
+        progress_queue.put({"type": "result", "payload": result.to_dict()})
+    except CancelledByUser as exc:
+        progress_queue.put({"type": "cancelled", "error": str(exc)})
+    except Exception as exc:
+        progress_queue.put({"type": "error", "error": str(exc)})
+
+
+def _simulation_result_from_payload(payload: dict[str, Any]) -> SimulationResult:
+    return SimulationResult(
+        status=payload.get("status", "completed"),
+        summary=payload.get("summary", {}),
+        artifacts=[Artifact(**artifact) for artifact in payload.get("artifacts", [])],
+        message=payload.get("message", ""),
+        extra=payload.get("extra", {}),
+    )
 
 
 @dataclass
@@ -138,29 +181,84 @@ class JobManager:
         self.storage.mark_running(metadata["run_id"])
         self._update_job(job_id, run_id=metadata["run_id"], message="Simulation en cours", progress=5.0)
 
-        def callback(payload: dict) -> None:
-            if "log" in payload and payload["log"]:
-                self._append_log(job_id, payload["log"])
-            progress = payload.get("progress")
-            message = payload.get("message")
-            updates: dict[str, Any] = {}
-            if progress is not None:
-                updates["progress"] = progress
-            if message:
-                updates["message"] = message
-            if updates:
-                self._update_job(job_id, **updates)
+        progress_queue: Queue = Queue()
+        cancel_event: Event = Event()
+        process = Process(
+            target=_run_single_model_worker,
+            kwargs={
+                "model_id": model_id,
+                "parameters": effective_parameters,
+                "seed": seed,
+                "run_dir": str(self.storage.run_dir(metadata["run_id"])),
+                "run_label": label,
+                "progress_queue": progress_queue,
+                "cancel_event": cancel_event,
+            },
+        )
+        process.start()
 
         try:
-            with progress_reporting(callback, cancel_callback=lambda: self._is_cancel_requested(job_id)):
-                result = _run_model(
-                    model_id=model_id,
-                    parameters=effective_parameters,
-                    seed=seed,
-                    run_dir=str(self.storage.run_dir(metadata["run_id"])),
-                    run_label=label,
+            result_payload: dict[str, Any] | None = None
+            terminal_error: tuple[str, str] | None = None
+            cancel_started_at: float | None = None
+
+            while True:
+                if self._is_cancel_requested(job_id) and not cancel_event.is_set():
+                    cancel_event.set()
+                    cancel_started_at = time.monotonic()
+                    self._update_job(job_id, message="Annulation demandée")
+
+                if cancel_started_at is not None and process.is_alive() and time.monotonic() - cancel_started_at > 5.0:
+                    process.terminate()
+                    process.join(timeout=2.0)
+                    terminal_error = ("cancelled", "Simulation interrompue par l'utilisateur.")
+                    break
+
+                try:
+                    item = progress_queue.get(timeout=0.25)
+                except Empty:
+                    if not process.is_alive():
+                        break
+                    continue
+
+                item_type = item.get("type")
+                if item_type == "progress":
+                    self._apply_progress_payload(job_id, item.get("payload", {}))
+                elif item_type == "result":
+                    result_payload = item.get("payload", {})
+                    break
+                elif item_type == "cancelled":
+                    terminal_error = ("cancelled", item.get("error", "Simulation interrompue"))
+                    break
+                elif item_type == "error":
+                    terminal_error = ("failed", item.get("error", "Erreur inconnue"))
+                    break
+
+            process.join(timeout=2.0)
+            if process.is_alive():
+                process.terminate()
+                process.join(timeout=2.0)
+
+            if terminal_error is None and result_payload is None and process.exitcode not in (0, None):
+                terminal_error = ("failed", f"Processus de simulation arrêté avec code {process.exitcode}")
+
+            if terminal_error is not None:
+                status, message = terminal_error
+                self.storage.mark_failed(metadata["run_id"], message)
+                self._append_log(job_id, message)
+                self._update_job(
+                    job_id,
+                    status=status,
+                    error=message,
+                    message="Simulation interrompue" if status == "cancelled" else "Échec de la simulation",
+                    finished_at=_utc_now(),
                 )
-            finalized = self.storage.finalize_run(metadata["run_id"], result)
+                return
+
+            if result_payload is None:
+                raise RuntimeError("La simulation s'est terminée sans résultat.")
+
+            finalized = self.storage.finalize_run(metadata["run_id"], _simulation_result_from_payload(result_payload))
             finalized["origin"] = "managed"
             finalized["deletable"] = True
             finalized["keep_supported"] = True
@@ -173,17 +271,10 @@ class JobManager:
                 message="Simulation terminée",
                 finished_at=_utc_now(),
             )
-        except CancelledByUser as exc:
-            self.storage.mark_failed(metadata["run_id"], str(exc))
-            self._append_log(job_id, str(exc))
-            self._update_job(
-                job_id,
-                status="cancelled",
-                error=str(exc),
-                message="Simulation interrompue",
-                finished_at=_utc_now(),
-            )
         except Exception as exc:
+            if process.is_alive():
+                process.terminate()
+                process.join(timeout=2.0)
             self.storage.mark_failed(metadata["run_id"], str(exc))
             self._append_log(job_id, str(exc))
             self._update_job(
@@ -193,6 +284,19 @@ class JobManager:
                 message="Échec de la simulation",
                 finished_at=_utc_now(),
             )
+
+    def _apply_progress_payload(self, job_id: str, payload: dict) -> None:
+        if "log" in payload and payload["log"]:
+            self._append_log(job_id, payload["log"])
+        progress = payload.get("progress")
+        message = payload.get("message")
+        updates: dict[str, Any] = {}
+        if progress is not None:
+            updates["progress"] = progress
+        if message:
+            updates["message"] = message
+        if updates:
+            self._update_job(job_id, **updates)
 
     def _run_batch_job(
         self,

@@ -276,6 +276,8 @@ class RunStorage:
                 continue
             if RUNS_DIR in path.parents or BASKET_DIR in path.parents:
                 continue
+            if self._is_ignored_external_path(path):
+                continue
             if not self._looks_like_external_simulation(path, meta_path):
                 continue
             seen.add(path)
@@ -340,6 +342,10 @@ class RunStorage:
                 if root in path.parents:
                     return model_id
         return "external"
+
+    def _is_ignored_external_path(self, path: Path) -> bool:
+        ignored_dir_names = {"tmp_runs", "__pycache__"}
+        return any(part in ignored_dir_names for part in path.parts)
 
     def _managed_run_dir(self, run_id: str) -> Path:
         active = RUNS_DIR / run_id
