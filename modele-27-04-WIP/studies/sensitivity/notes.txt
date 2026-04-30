@@ -1,0 +1,617 @@
+==============================================================================
+NOTES DE TRAVAIL — Étude de sensibilité paramètres modele-27-04-WIP
+Date de début : 2026-04-27
+==============================================================================
+
+OBJECTIF
+--------
+Étude de sensibilité des paramètres du modèle (alpha_min=alpha_max=1, sigma=0)
+sur les critères :
+  1. Densité et taille du réseau de prêts / nombre d'entités
+  2. Taille du système (n_alive, actif_total)
+  3. Volatilité du système (CV de n_alive et actif_total)
+  4. Distribution des tailles d'entités (actif_total par entité)
+
+L'analyse est réalisée UNE FOIS le régime permanent atteint (si atteint).
+
+PARAMÈTRES DE BASE (alpha homogène)
+------------------------------------
+  alpha_min = alpha_max = 1.0 (homogénéité totale — pas de segmentation par productivité)
+  alpha_sigma_brownien = 0.0  (alpha statique)
+  taux_amortissement = 0      (exclus de l'étude)
+  Tous les autres : valeurs par défaut de config.py
+
+POINT CENTRAL (baseline de l'étude)
+-------------------------------------
+  theta = 0.35
+  mu = 0.05
+  lambda_creation = 2.0
+  n_candidats_pool = 3
+  fraction_taux_emprunteur = 0.2
+  seuil_ratio_endettement = 1.0
+  seuil_ratio_liquide_passif = 0.05
+  taux_depreciation_endo = 0.05
+  taux_depreciation_exo = 0.05
+  fraction_auto_investissement = 0.5
+  coefficient_reliquefaction = 0.5
+  actif_liquide_initial = 200.0 → passif_inne_initial = 190.0 (NW=10 maintenu)
+  n_entites_initiales = 100
+  n_steps = 1000, seeds = [42, 7, 123]
+
+DÉTECTION DU RÉGIME PERMANENT
+-------------------------------
+Critère principal : première descente significative de n_alive (< 75% du pic)
+  après les premiers 50 pas (phase transitoire).
+Critère secondaire : si ratio actif_total/interet_total ne décroît jamais,
+  le régime peut ne pas exister → flagué "no_regime".
+Fenêtre de mesure : [t_regime, t_regime + W] avec W = 200 pas si disponibles.
+Si aucune descente détectée : utiliser les 30 derniers % des pas.
+
+MÉTRIQUES RELEVÉES EN RÉGIME PERMANENT
+----------------------------------------
+  - n_alive_mean, n_alive_std, n_alive_cv (= std/mean)
+  - actif_mean, actif_std, actif_cv
+  - n_loans_mean, n_loans_std
+  - loan_density_mean = n_loans / n_alive
+  - densite_financiere_mean = volume_prets / actif_total
+  - gini_actif_mean  (Gini de la distribution des actifs)
+  - failure_rate_mean = mean(n_failures/pas)
+  - failure_lambda_ratio = failure_rate / lambda
+  - levier_mean = passif/actif
+  - Distribution shape params (power-law slope, log-normal fit quality)
+
+PHASE 1 — Études pilotes
+--------------------------
+Status : EN COURS
+  5 runs × 3 seeds = 15 simulations (1000 pas chacune)
+  Objectif : valider régime permanent, calibrer fenêtre de mesure,
+             vérifier corrélations entre métriques.
+
+PHASE 2 — OAT (One-at-a-time)
+-------------------------------
+Status : EN ATTENTE
+  12 paramètres × 7 valeurs × 3 seeds = 252 simulations
+  Paramètres et ranges (voir oat_study.py)
+
+PHASE 3 — Couplages
+--------------------
+Status : EN ATTENTE
+  Top 5 paramètres sensibles identifiés après Phase 2.
+  Paires choisies selon pertinence théorique + corrélations OAT.
+
+RÉSULTATS CLÉS (à remplir au fil de l'analyse)
+------------------------------------------------
+[PHASE 1 EN COURS]
+
+HYPOTHÈSES À TESTER
+--------------------
+H1 : n_candidats_pool est le paramètre le plus bifurquant
+     (k=1: pas de cascade, k=2: stable, k=3: SOC → fort saut des métriques)
+H2 : theta contrôle principalement la densité financière (via levier)
+H3 : lambda_creation contrôle la taille (n_alive ≈ f(lambda))
+H4 : les deux taux de dépréciation (endo/exo) jouent un rôle conjoint fort
+H5 : la distribution des tailles d'entités est log-normale en régime permanent
+     (hétérogénéité d'actifs malgré alpha homogène → par le réseau de prêts)
+H6 : le Gini augmente avec n_candidats_pool (concentration du réseau → inégalité)
+
+FICHIERS PRODUITS
+-----------------
+  studies/sensitivity/results/         ← JSON agrégés (tracked git)
+  studies/sensitivity/report/figures/  ← PDF figures (tracked git)
+  simulations étude de sensibilité paramètres/  ← données brutes (NON trackées)
+
+JOURNAL DES SESSIONS
+---------------------
+[2026-04-27] Initialisation : lecture du modèle, création de l'infrastructure.
+             Rédaction des scripts run_simulation.py, pilot.py, oat_study.py.
+             Lancement des simulations pilotes.
+
+[2026-04-27, reprise Codex] Point de reprise :
+             - Dossier confirmé : studies/sensitivity.
+             - Changements hors scope observés dans le dépôt, non touchés.
+             - Correction de pilot.py : import math avant usage et vraie figure
+               de distribution à partir du dernier snapshot brut en régime.
+             - Optimisation de compute_distribution_stats : Gini en O(n) au lieu
+               de O(n^2), nécessaire avant les centaines de simulations.
+             - run_and_collect conserve maintenant dist_values_regime en mémoire
+               pour les diagnostics pilotes, mais save_results ne l'écrit pas
+               dans le JSON compact.
+             Prochaine étape : compiler les scripts, lancer le pilote baseline,
+             puis ajouter/valider le script OAT parallèle si absent.
+
+[2026-04-27, pilote baseline] Pilote exécuté avec /home/anatole/jupyter/.venv/bin/python.
+             5 seeds, 1000 pas, alpha_min=alpha_max=1, sigma=0.
+             Résultat critique : 0/5 convergences selon le critère de première
+             descente ; tous les runs utilisent le fallback t_regime=700.
+             Moyennes sur la fenêtre fallback :
+               n_alive_mean=1781.78, actif_mean=1.380e6,
+               loan_density_mean=0.7675, densite_fin_mean=0.0513,
+               gini_actif_mean=0.1095, failure_rate_mean=0.004/pas.
+             Interprétation provisoire : à 1000 pas, le point central n'est pas
+             en régime permanent au sens demandé par l'utilisateur. Il faut donc
+             faire un diagnostic long baseline avant de considérer les métriques
+             OAT comme "régime permanent" plutôt que comme fin de fenêtre.
+             Figures produites :
+               report/figures/pilot_trajectoires.pdf
+               report/figures/pilot_distributions.pdf
+               report/figures/pilot_correlations.pdf
+
+[2026-04-27, simulation_lab] Demande utilisateur : repartir des simulations du
+             simulation_lab qui atteignent effectivement un régime permanent.
+             Ajout du script studies/sensitivity/analyze_simulation_lab.py.
+             Critère lab utilisé : chute conjointe après pic, avec n_alive <
+             75% de son pic et actif_total < 85% de son pic courant, puis
+             fenêtre de mesure à partir de t_drop+100.
+             Scan des runs complétés :
+               - modele_27_04_wip serious_graphs_2000 : REGIME, k=3,
+                 alpha_min=0.8 alpha_max=1.2 sigma=0.005, epsilon=1e-6,
+                 t_drop=729, n_alive_regime~644, loan/alive~37.85,
+                 densite_fin~0.436.
+               - modele_27_04_wip alpha homogène sigma=0, k=4,
+                 epsilon=0.001 : REGIME, t_drop=678,
+                 loan/alive~23.32, densite_fin~0.410.
+               - modele_27_04_wip alpha homogène sigma=0.01, k=4,
+                 epsilon=0.001 : REGIME, t_drop=553,
+                 loan/alive~25.11, densite_fin~0.462.
+               - alpha homogène avec sigma=0.05 ou 0.1, k=4 : pas de chute
+                 conjointe selon ce critère dans 2000 pas.
+             Réflexion provisoire :
+               1) Le point central imposé alpha_min=alpha_max=1, k=3, epsilon
+                  par défaut n'est pas un bon point de départ empirique pour
+                  une étude "en régime", car le pilote WIP donne 0/5 régimes.
+               2) Le volume intéressant semble se situer près d'une surface de
+                  transition : k, alpha_sigma/heterogeneite, et possiblement
+                  epsilon/max_credit_iterations contrôlent l'apparition du
+                  réseau dense et de la descente.
+               3) Il faut séparer les paramètres économiques des paramètres
+                  numériques : epsilon=0.001 apparaît dans les runs lab qui
+                  convergent en alpha homogène k=4, mais ce n'est pas encore
+                  une causalité.
+             Artefacts produits :
+               results/simulation_lab_regime_scan.json
+               results/simulation_lab_regime_scan.csv
+               report/figures/simulation_lab_regime_examples.pdf
+
+[2026-04-27, sonde guidee lab] Script studies/sensitivity/lab_guided_probe.py,
+             6 cas, 2000 pas, seed=42.
+             Résultats :
+               - hom_k3_eps1e-6 : PAS DE REGIME, n_alive~3509,
+                 loan/alive~0.627, densite_fin~0.044.
+               - hom_k3_eps1e-3 : PAS DE REGIME, n_alive~3460,
+                 loan/alive~0.713, densite_fin~0.051.
+               - hom_k4_eps1e-6 : REGIME, t_joint=691,
+                 n_alive~406, loan/alive~69.82, densite_fin~0.410.
+               - hom_k4_eps1e-3 : REGIME, t_joint=718,
+                 n_alive~417, loan/alive~21.98, densite_fin~0.404.
+               - het_k3_eps1e-6 : REGIME, t_joint=729,
+                 n_alive~644, loan/alive~37.85, densite_fin~0.436.
+               - het_k3_eps1e-3 : REGIME, t_joint=809,
+                 n_alive~633, loan/alive~15.67, densite_fin~0.431.
+             Conclusion forte :
+               k est un paramètre de bifurcation. A alpha homogène, la frontière
+               est entre k=3 et k=4 pour les paramètres centraux. L'hétérogénéité
+               d'alpha déplace cette frontière vers k=3. epsilon change beaucoup
+               n_loans/n_alive mais peu densite_fin, ce qui suggère un effet de
+               granularité numérique sur le nombre de contrats plus que sur le
+               volume financier total.
+             Suggestion utilisateur intégrée : tester k à grandes valeurs pour
+             chercher un plateau. Méthode retenue : balayage dense de k près de
+             la transition, puis valeurs espacées à grand k ; mesurer séparément
+             loan_density (contrats/entité) et densite_fin (volume/actif).
+
+[2026-04-27, epsilon] Suggestion utilisateur : epsilon plus grand pourrait
+             accélérer fortement sans changer le comportement. Test ajouté :
+             studies/sensitivity/epsilon_runtime_probe.py.
+             Cas testés : hom_k4 et het_k3, seed=42, 1000 et 1500 pas,
+             epsilon ∈ {1e-6, 1e-5, 1e-4, 1e-3, 1e-2}.
+             Résultat :
+               - epsilon=1e-2 casse le régime : pas de joint_drop, densite_fin
+                 ~0.006-0.009, donc exclu.
+               - epsilon=1e-3 conserve le régime et densite_fin :
+                   hom_k4 1500 : densite_fin 0.392 vs 0.399 à 1e-6,
+                   het_k3 1500 : densite_fin 0.428 vs 0.436 à 1e-6.
+               - epsilon=1e-3 accélère nettement :
+                   hom_k4 1500 : 62.6s vs 103.9s,
+                   het_k3 1500 : 63.4s vs 104.5s.
+               - n_loans/n_alive baisse beaucoup avec epsilon (effet de
+                 granularité des micro-prêts), donc la métrique "nombre de
+                 contrats par entité" dépend de la résolution numérique.
+             Décision provisoire :
+               utiliser epsilon=1e-3 pour cartographier vite le volume de
+               paramètres en régime et densite_fin ; refaire ensuite quelques
+               points de référence à epsilon=1e-6 pour calibrer le biais sur
+               loan_density.
+             Workers : utilisateur autorise 6 workers, adopté par défaut dans
+             k_sweep.py et epsilon_runtime_probe.py.
+
+[2026-04-27, sweep k seed=42] Script studies/sensitivity/k_sweep.py,
+             epsilon=1e-3, 1500 pas, seed=42, k ∈
+             {1,2,3,4,5,6,8,10,15,20,30,50}.
+             Homogène alpha=1 :
+               k=1..3 : pas de régime, densite_fin 0.004, 0.015, 0.059.
+               k=4 : bascule nette, densite_fin 0.392.
+               k=5..50 : plateau, densite_fin ~0.373-0.414, n_alive ~300-345
+                         sauf k=4 encore ~444.
+             Hétérogène alpha∈[0.8,1.2], sigma=0.005 :
+               k=1..2 : pas de régime, densite_fin 0.007, 0.088.
+               k=3 : régime, densite_fin 0.428.
+               k=5..20 : plateau haut, densite_fin ~0.479-0.508.
+               k=30..50 : baisse apparente du plateau, densite_fin 0.457 puis
+                          0.429 ; à confirmer par seeds.
+             Interprétation provisoire :
+               - La suggestion d'un plateau à grand k est confirmée pour le
+                 volume financier relatif.
+               - k ne contrôle pas seulement "plus de connexions" ; il déclenche
+                 une phase dense, puis l'effet marginal devient faible.
+               - L'hétérogénéité d'alpha déplace la transition vers k plus bas
+                 et relève le plateau de densité financière.
+             Prochaine étape lancée/prévue : seeds supplémentaires 7 et 123
+             sur k={2,3,4,5,8,20,50} pour robustesse transition + plateau.
+
+[2026-04-27, sweep k robustesse] Ajout seeds 7 et 123 sur
+             k={2,3,4,5,8,20,50}, epsilon=1e-3, 1500 pas.
+             Agrégats principaux :
+               Homogène :
+                 k=2 : 0/3 régimes, densite_fin=0.015±0.000.
+                 k=3 : 0/3 régimes, densite_fin=0.049±0.008.
+                 k=4 : 3/3 régimes, densite_fin=0.399±0.005,
+                       loan/alive=21.27, n_alive~415.
+                 k=5 : 3/3 régimes, densite_fin=0.411±0.005.
+                 k=8 : 3/3 régimes, densite_fin=0.381±0.004.
+                 k=20: 3/3 régimes, densite_fin=0.380±0.002.
+                 k=50: 3/3 régimes, densite_fin=0.375±0.000.
+               Hétérogène :
+                 k=2 : 0/3 régimes, densite_fin=0.092±0.017.
+                 k=3 : 3/3 régimes, densite_fin=0.429±0.003.
+                 k=4 : 2/3 régimes, densite_fin=0.464±0.002.
+                 k=5 : 3/3 régimes, densite_fin=0.477±0.002.
+                 k=8 : 3/3 régimes, densite_fin=0.501±0.004.
+                 k=20: 3/3 régimes, densite_fin=0.509±0.006.
+                 k=50: 1/3 régimes, densite_fin=0.446±0.016.
+             Conclusion robuste :
+               - Pour alpha homogène imposé par l'utilisateur, k=3 est hors
+                 régime dans 1500 pas ; k=4 est le premier régime robuste.
+               - Le plateau grand k homogène est très stable autour de
+                 densite_fin~0.38-0.41.
+               - Hétérogène : transition plus basse (k=3), plateau plus haut
+                 (~0.48-0.51 jusque k=20), puis possible dégradation à k=50.
+             Artefacts :
+               results/k_sweep_steps1500_eps0.001.json
+               results/k_sweep_steps1500_eps0.001_aggregate.json
+               report/figures/k_sweep_steps1500_eps0.001.pdf
+
+[2026-04-27, rapport preliminaire] Rapport LaTeX préliminaire rédigé et
+             compilé :
+               report/rapport_preliminaire_sensibilite.tex
+               report/rapport_preliminaire_sensibilite.pdf
+             Il documente le statut provisoire, le choix epsilon=1e-3, le
+             résultat de bifurcation sur k, le plateau grand k, et la stratégie
+             proposée pour la suite : deux centres d'étude, k=3 sous-critique
+             et k=4 en régime.
+
+[2026-04-28, correction régime permanent] L'utilisateur précise que le régime
+             permanent ne doit pas être défini par une chute forte de 25% :
+             une chute de 5% peut suffire, et le vrai critère est plutôt
+             l'existence d'une plage finie après un temps fini. Il faut aussi
+             regarder si les faillites montent encore lentement.
+             Modifications :
+               - run_simulation.py ajoute detect_regime_diagnostics :
+                 drop_5, tail_start, bounded_tail, pentes relatives de queue
+                 pour n_alive/actif/densite_fin, pente des faillites, et
+                 corrélations de queue n_alive-actif-prêts-faillites.
+               - Ajout des métriques de cascades en fenêtre de mesure :
+                 cascade_event_rate, cascade_size_mean/max,
+                 cascade_ratio_destruction_mean, cascade_ratio_contagion_mean.
+             Point important : le run lab 20260427_145524_ff4328fa était un
+             faux négatif de l'ancien critère no_joint_drop. Il est en régime
+             borné mais avec décorrélation entre n_alive et actif.
+
+[2026-04-28, alpha_sigma homogène] Clarification utilisateur : analyse seulement
+             pour alpha_min=alpha_max=1, MAIS alpha_sigma_brownien doit varier.
+             Ajout et exécution de alpha_sigma_sweep.py :
+               k={3,4}, sigma={0,0.001,0.003,0.005,0.01,0.02,0.05,0.1},
+               seeds={42,7,123}, epsilon=1e-3, 1500 pas.
+             Résultats principaux :
+               k=3 : sigma 0..0.003 hors régime dense ; fenêtre active
+                     0.005..0.02 avec densite_fin 0.348, 0.429, 0.489 ;
+                     sigma 0.05 et 0.1 détruisent le volume financier.
+               k=4 : régime déjà présent à sigma=0 (densite_fin 0.401) ;
+                     densité monte jusqu'à sigma=0.02 (0.520) ; à sigma=0.05
+                     le nombre de prêts/entité explose (~94) mais le volume
+                     retombe (0.131), signe de fragmentation en micro-crédits.
+             Ajout de parameter_metric_correlations.py et figure :
+               report/figures/parameter_metric_correlations.pdf.
+             Rapport préliminaire mis à jour avec sections seuil k, epsilon,
+             cas témoin de décorrélation, alpha_sigma, corrélations.
+
+[2026-04-28, export Simulation Lab] Demande utilisateur : rendre les nombreuses
+             simulations de l'étude visibles dans Simulation Lab avec leurs
+             graphiques.
+             Ajout du script studies/sensitivity/export_to_simulation_lab.py.
+             Exécution :
+               /home/anatole/jupyter/.venv/bin/python \
+                 studies/sensitivity/export_to_simulation_lab.py --clean
+             Résultat :
+               - 137 entrées créées/mises à jour dans
+                 /home/anatole/jupyter/simulation_lab_data/runs/
+               - modèle/groupe lab : etude_sensibilite_27_04_wip
+               - run manifeste : sensitivity_manifest
+               - runs agrégés :
+                   sensitivity_pilot_aggregate
+                   sensitivity_k_sweep_aggregate
+                   sensitivity_epsilon_runtime_aggregate
+                   sensitivity_alpha_sigma_aggregate
+                   sensitivity_lab_guided_probe_aggregate
+               - chaque point simulé dispose d'un run.json, record.json et
+                 overview.png ; les agrégats ont records.json, overview.png et,
+                 quand disponible, les PDF du rapport/figures.
+             Vérification :
+               RunStorage().list_runs() voit 137 runs et l'API locale
+               http://127.0.0.1:8765/api/runs?scope=active aussi.
+               Le serveur Simulation Lab était déjà actif sur le port 8765.
+
+[2026-04-28, exigence figures completes] Nouvelle consigne utilisateur :
+             dorénavant, toutes les simulations utiles de l'étude doivent avoir
+             les mêmes graphiques que les runs Simulation Lab classiques. Les
+             CSV bruts sont jugés trop volumineux et peuvent être supprimés en
+             fin de simulation, après génération des figures.
+             Décision de workflow :
+               1) run complet via output.run_and_save + analysis.analyze_folder ;
+               2) extraction d'une trajectoire légère compact_timeseries.json ;
+               3) suppression des CSV bruts ;
+               4) affichage dans Simulation Lab via run.json + artefacts PNG/PDF.
+             Scripts ajoutés :
+               - populate_lab_full_graphs.py : enrichit les runs sensitivity_*
+                 avec les figures complètes ; nouvelle option --keep-csv si on
+                 veut exceptionnellement conserver les CSV. Par défaut, le script
+                 doit supprimer les CSV après avoir écrit compact_timeseries.json.
+               - build_important_case_figures.py : construit des planches
+                 comparatives type simulation_lab_regime_examples à partir des
+                 CSV ou de compact_timeseries.json.
+               - prompt_adaptation_simulation_lab.md : prompt prêt à donner à un
+                 autre agent pour adapter l'interface Simulation Lab à l'OAT.
+             Lot lancé pendant cette session : 15 cas importants seed=42 :
+               alpha_sigma k=3 sigma 0, 0.005, 0.02, 0.05 ;
+               alpha_sigma k=4 sigma 0, 0.02, 0.05, 0.1 ;
+               k_sweep homogène k=3,4,20,50 ;
+               epsilon hom_k4 eps=1e-6,1e-3,1e-2.
+             Le premier cas k=4 sigma=0.02 a été validé : figures complètes,
+             CSV et artefacts visibles dans le lab.
+             Fin de session :
+               - les 15 cas importants ont été enrichis sans échec ;
+               - chacun contient maintenant les figures complètes du modèle ;
+               - chacun contient compact_timeseries.json ;
+               - les CSV bruts de ces 15 runs ont été supprimés ;
+               - run lab ajouté : sensitivity_important_cases_figures ;
+               - figures comparatives produites :
+                   alpha_sigma_trajectoires.{png,pdf}
+                   k_threshold_trajectoires.{png,pdf}
+                   epsilon_trajectoires.{png,pdf}
+             Vérification :
+               - 15 compact_timeseries.json présents ;
+               - 0 CSV brut restant dans les runs sensitivity alpha/k/epsilon
+                 ciblés ;
+               - l'API locale du lab voit sensitivity_important_cases_figures
+                 et les previews macro_overview des runs enrichis.
+
+[2026-04-28, repartition Codex/Claude] L'utilisateur demande de preparer la
+             suite pour une remise a zero des memoires, avec partage des taches
+             entre Codex et Claude sans conflit.
+             Fichiers crees :
+               - prompt_codex_suite_sensibilite.md
+               - prompt_claude_suite_sensibilite.md
+             Repartition :
+               Codex = execution numerique, scripts, OAT/couplages,
+                       Simulation Lab, compact_timeseries, suppression CSV.
+               Claude = analyse statistique/theorique, critique des criteres,
+                        rapport final LaTeX, figures d'interpretation.
+             Regle de coordination :
+               Codex ne modifie pas les fichiers claude_analysis/ ni le rapport
+               final sauf demande explicite. Claude ne modifie pas les scripts
+               d'execution ni les runs lab sensitivity_*.
+
+==============================================================================
+
+[2026-04-28, adaptation Simulation Lab pour OAT] Adaptation de l'interface
+             simulation_lab pour integrer l'etude de sensibilite/OAT.
+             Fichiers modifies dans simulation_lab/ :
+               - runs/storage.py : ajout de clean_csv() et regen_graphs()
+               - web/app.py : routes POST /api/runs/{id}/clean-csv et
+                   /api/runs/{id}/regen-graphs
+               - web/static/app.js : filtre campagne OAT, sparklines
+                   compact_timeseries, boutons "Regener graphiques" et
+                   "Nettoyer CSV"
+               - web/static/app.css : styles sparklines et filtre etude
+               - web/templates/results.html : panneau filtre campagne OAT
+             Comportement ajoute :
+               - Dans /results, un panneau "Filtre campagne OAT" apparait
+                 des que des runs etude_sensibilite_27_04_wip sont presents.
+                 Il permet de filtrer par campagne (alpha_sigma, k_sweep,
+                 epsilon_runtime, pilot, lab_guided_probe), et par flags
+                 (bounded_tail, drop_5_detected, converged) lus dans summary.
+               - Pour chaque run sensitivity_* de type record (non aggregate),
+                 le menu "Actions etude OAT" propose :
+                   * "Regener graphiques complets" : lance populate_lab_full_graphs.py
+                     --run-id <id> en sous-processus ; rafraichir les artefacts
+                     apres quelques minutes.
+                   * "Nettoyer CSV" : supprime les CSV bruts apres verification
+                     que macro_overview.png (dans legacy_output) et
+                     compact_timeseries.json existent. Retourne 409 si
+                     les conditions ne sont pas remplies.
+               - Quand un run contient compact_timeseries.json, quatre sparklines
+                 SVG s'affichent dans le detail (n_alive, actif, densite_fin,
+                 Gini) sans dependance externe.
+             Contraintes respectees :
+               - Les runs non-etude ne sont pas affectes.
+               - Les CSV proteges (PNG, PDF, run.json, record.json,
+                 compact_timeseries.json, resume_analyse.txt, rapport)
+                 ne sont jamais touches par clean_csv().
+               - Le workflow est resumable : regen_graphs() n'efface pas les
+                 figures existantes sauf option --force passee manuellement.
+
+[2026-04-28, OAT Codex seed 42] Reprise Codex pendant que Claude est en pause.
+             L'utilisateur autorise Codex a faire une partie de la synthese si
+             necessaire, a condition de le noter ici pour que Claude lise cette
+             section avant de reprendre.
+             Script ajoute :
+               - oat_sweep.py
+             Campagne executee :
+               - 2 centres alpha homogenes, epsilon=1e-3, 1500 pas, seed=42 :
+                   * subcritical_k3 : k=3, sigma=0
+                   * regime_k4      : k=4, sigma=0
+               - 15 axes OAT, sans taux_amortissement.
+               - actif_liquide_initial varie avec passif_inne_initial ajuste
+                 pour garder une richesse nette initiale de 10.
+             Resultats produits :
+               - results/codex_oat_screen_steps1500_seeds42.json
+               - results/codex_oat_screen_steps1500_seeds42_aggregate.json
+               - results/codex_oat_screen_steps1500_seeds42_effects.json
+               - report/figures/codex_oat_screen_steps1500_seeds42.pdf
+               - results/codex_oat_lab_artifact_inventory.json
+             Resume quantitatif rapide, a verifier/nuancer par Claude :
+               - centre k=3 : 5/31 cas avec queue bornee ;
+               - centre k=4 : 17/31 cas avec queue bornee ;
+               - autour de k=3, les plus forts declencheurs de densite sont
+                 sigma=0.02, mu=0, taux_depreciation_endo=0.02,
+                 fraction_taux_emprunteur=0, actif initial=100, k=4,
+                 theta=0.5 et sigma=0.005 ;
+               - autour de k=4, les sorties de regime les plus nettes sont
+                 taux_depreciation_endo=0.1, epsilon=0.01,
+                 fraction_taux_emprunteur=0.5, actif initial=400,
+                 fraction_auto_investissement=0.25, theta=0.2,
+                 n_entites_initiales=200, mu=0.1, k=3 et
+                 lambda_creation=4.
+             Points ambigus pour Claude :
+               - plusieurs cas k=3 ont une forte densite financiere mais ne
+                 passent pas le flag bounded_tail sur 1500 pas ; ils peuvent
+                 etre des regimes en formation lente plutot que des regimes
+                 etablis ;
+               - taux_depreciation_endo=0.02 augmente fortement le volume mais
+                 n'est pas toujours classe queue bornee, surtout autour de k=4 ;
+               - epsilon=1e-6 confirme le volume du centre k=4 mais multiplie
+                 le nombre de contrats, donc ne pas interpreter loan_density
+                 sans rappeler la granularite numerique.
+
+[2026-04-28, OAT Codex Simulation Lab] Export et enrichissement complet des
+             62 runs OAT seed=42 dans Simulation Lab.
+             Scripts modifies/ajoutes :
+               - export_to_simulation_lab.py : detection automatique des jeux
+                 results/codex_oat_screen_*.json et export sans effacer les
+                 legacy_output deja produits.
+               - build_codex_oat_figures.py : planche comparative OAT depuis
+                 compact_timeseries.json.
+             Runs Simulation Lab :
+               - aggregate : sensitivity_codex_oat_steps1500_seeds42_aggregate
+               - planche  : sensitivity_codex_oat_key_figures
+               - 62 runs detail : prefixe
+                 sensitivity_codex_oat_steps1500_seeds42_*
+             Verification obligatoire effectuee :
+               - 62/62 runs avec compact_timeseries.json ;
+               - 62/62 runs avec figures/macro_overview.png ;
+               - 62/62 runs avec figures/loan_network_final.png ;
+               - 62/62 runs avec figures/lifespan_analysis.png ;
+               - inventaire detaille des artefacts :
+                 results/codex_oat_lab_artifact_inventory.json ;
+               - 0 CSV brut restant dans ces runs apres extraction compacte ;
+               - 0 full_graphs_error.log ;
+               - API locale Simulation Lab voit
+                 sensitivity_codex_oat_steps1500_seeds42_aggregate et
+                 sensitivity_codex_oat_key_figures.
+             Note troubleshooting :
+               les graphiques sont ceux de analysis.analyze_folder, comme pour
+               les simulations lancees directement dans le Lab. Pour les runs
+               sans cascade, le modele ne produit pas toujours
+               cascades_rank_size.png et affiche "Pas de donnees de cascade" ou
+               "Trop peu de cascades", comportement identique au workflow Lab.
+               Les CSV bruts ont ete supprimes conformement a la consigne ; les
+               trajectoires compactes restent disponibles pour comparaison.
+
+[2026-04-28 19:35 CEST, consignes utilisateur sauvegardees] Reprise apres
+             demande utilisateur repetee :
+               - ajouter l'heure dans les entrees du journal de bord ;
+               - ajouter l'heure dans les donnees/export des simulations pour
+                 qu'elle soit visible dans Simulation Lab ;
+               - ne pas oublier que lambda_creation, facteur de creation
+                 d'entites, est un reel et n'a pas a etre entier. Important
+                 pour les prochaines grilles fines, meme si les runs deja
+                 lances utilisaient surtout {1,2,4}.
+             Modifications faites :
+               - run_simulation.py ajoute maintenant executed_at_utc et
+                 executed_at_local dans chaque resultat de run_and_collect ;
+               - export_to_simulation_lab.py ajoute exported_at_local dans
+                 parameters/summary/extra, et expose aussi executed_at_local
+                 quand le resultat source le contient ;
+               - export_to_simulation_lab.py exporte maintenant aussi les
+                 resultats codex_long_probe_* vers Simulation Lab.
+             Etat courant :
+               - results/codex_predictive_summary.json produit ;
+               - report/figures/codex_predictive_importance.{pdf,png} produit ;
+               - report/figures/codex_phase_maps.{pdf,png} produit ;
+               - sonde longue 3000 pas terminee numeriquement sur 8 cas ;
+               - export Simulation Lab relance avec horodatage visible ;
+               - enrichissement complet Simulation Lab des 8 runs longs lance
+               via populate_lab_full_graphs.py --dataset codex_long_probe.
+
+[2026-04-28 19:51 CEST, reprise Codex terminee] Horodatage et integration
+             Simulation Lab verifies.
+             Modifications confirmees :
+               - run_simulation.py ajoute executed_at_utc et executed_at_local
+                 aux futurs resultats numeriques ;
+               - export_to_simulation_lab.py expose exported_at_local dans
+                 parameters, summary et extra de chaque run.json, et copie
+                 rapport_final_sensibilite.pdf dans les runs agreges ;
+               - le rapport final provisoire autonome a ete redige et compile :
+                 report/rapport_final_sensibilite.tex et
+                 report/rapport_final_sensibilite.pdf.
+             Simulation Lab :
+               - export rafraichi a 2026-04-28T19:51:52+02:00 ;
+               - aggregate long probe :
+                 sensitivity_codex_long_probe_steps3000_seeds42_aggregate ;
+               - 8/8 runs longs avec compact_timeseries.json ;
+               - 8/8 runs longs avec figures/macro_overview.png ;
+               - 8/8 runs longs avec figures/loan_network_final.png ;
+               - 8/8 runs longs avec figures/lifespan_analysis.png ;
+               - 0 CSV brut restant et 0 full_graphs_error.log.
+             Rapport :
+               - inclut pilot_correlations, balayages k/epsilon/sigma,
+                 OAT, sonde longue, importance predictive, cartes de phase ;
+               - documente 10 boucles autonomes d'analyse/decision ;
+               - principales zones encore ombragees : grille fine continue de
+                 lambda_creation, multi-seeds longs autour de k=3 sigma=0.02 et
+                 taux_depreciation_endo=0.02, distribution de taille/age des
+                 entites en regime.
+             Consigne sauvegardee pour la suite :
+               lambda_creation n'a pas a etre entier ; les prochaines grilles
+               doivent tester des valeurs intermediaires.
+
+==============================================================================
+
+[2026-04-30, analyse Claude — balayage lambda et robustesse OAT]
+  Deux campagnes complémentaires lancées et intégrées :
+
+  1) Balayage fin lambda (claude_analysis/lambda_fine_sweep.py)
+     k=4, lambda in {1.0,1.2,1.4,1.6,1.8,2.0,2.5,3.0,3.5,4.0,5.0},
+     seeds {42,7,123}, eps=1e-3, 1500 pas.
+     Résultat principal : frontière robuste k=4 entre lambda=2.0 (3/3 bornes)
+     et lambda=2.5 (1/3). La densité financière reste haute (0.38) jusqu'à
+     lambda=3.0 même sans queue bornée. Au-delà, effondrement progressif.
+     k=3 : 0/3 bornes pour TOUTES les valeurs de lambda testées. Le taux de
+     création ne suffit pas à déclencher le régime — il faut sigma_alpha>0 ou k>3.
+
+  2) Robustesse OAT seeds 7+123 (claude_analysis/oat_robustness_seeds.py)
+     8 paramètres les plus impactants, 2 centres, seeds 7 et 123.
+     Résultat principal : la quasi-totalité des effets seed=42 sont robustes.
+     EXCEPTION notable : delta_endo=0.02 et theta=0.5 (centre k=4) passent
+     1/3 seeds seulement — ces deux cas sont sur la frontière du régime.
+     Mu=0.0 est le seul paramètre de densification robuste à 3/3 seeds pour k=3.
+
+  Fichiers produits :
+    results/claude_lambda_fine_sweep.json
+    results/claude_lambda_fine_sweep_aggregate.json
+    results/claude_oat_robustness_seeds.json
+    results/claude_oat_robustness_aggregate.json
+    report/figures/claude_lambda_fine_sweep.pdf
+    report/figures/claude_oat_robustness.pdf
+    report/rapport_final_sensibilite.tex  (sections 11 et 12 ajoutées)
+    report/rapport_final_sensibilite.pdf  (recompilé, 13 pages)
+

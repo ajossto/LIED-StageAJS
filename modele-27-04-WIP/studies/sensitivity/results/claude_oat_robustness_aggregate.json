@@ -1,0 +1,450 @@
+[
+  {
+    "center": "regime_k4",
+    "parameter": "actif_liquide_initial",
+    "value": 100.0,
+    "n": 3,
+    "seeds": [
+      42,
+      7,
+      123
+    ],
+    "bounded_tail_share": 1.0,
+    "densite_fin_mean": 0.44626922749531833,
+    "densite_fin_std": 0.007352484241502763,
+    "n_alive_mean": 288.2894444444444,
+    "n_alive_std": 3.3864551370218536
+  },
+  {
+    "center": "regime_k4",
+    "parameter": "actif_liquide_initial",
+    "value": 400.0,
+    "n": 3,
+    "seeds": [
+      42,
+      7,
+      123
+    ],
+    "bounded_tail_share": 0.0,
+    "densite_fin_mean": 0.03094195107987305,
+    "densite_fin_std": 0.003531087115018743,
+    "n_alive_mean": 2529.736111111111,
+    "n_alive_std": 15.677008721983237
+  },
+  {
+    "center": "regime_k4",
+    "parameter": "alpha_sigma_brownien",
+    "value": 0.005,
+    "n": 3,
+    "seeds": [
+      42,
+      7,
+      123
+    ],
+    "bounded_tail_share": 1.0,
+    "densite_fin_mean": 0.4429919501901856,
+    "densite_fin_std": 0.0030943848242559993,
+    "n_alive_mean": 421.04055555555556,
+    "n_alive_std": 7.360107856160888
+  },
+  {
+    "center": "regime_k4",
+    "parameter": "alpha_sigma_brownien",
+    "value": 0.02,
+    "n": 3,
+    "seeds": [
+      42,
+      7,
+      123
+    ],
+    "bounded_tail_share": 1.0,
+    "densite_fin_mean": 0.52006966027463,
+    "densite_fin_std": 0.005461805721322938,
+    "n_alive_mean": 515.3255555555555,
+    "n_alive_std": 18.983301742893126
+  },
+  {
+    "center": "regime_k4",
+    "parameter": "epsilon",
+    "value": 1e-06,
+    "n": 3,
+    "seeds": [
+      42,
+      123,
+      7
+    ],
+    "bounded_tail_share": 1.0,
+    "densite_fin_mean": 0.4061166192690122,
+    "densite_fin_std": 0.0034083123543602882,
+    "n_alive_mean": 410.8238888888889,
+    "n_alive_std": 16.46488948649424
+  },
+  {
+    "center": "regime_k4",
+    "parameter": "epsilon",
+    "value": 0.01,
+    "n": 3,
+    "seeds": [
+      42,
+      123,
+      7
+    ],
+    "bounded_tail_share": 0.0,
+    "densite_fin_mean": 0.00694901459793329,
+    "densite_fin_std": 0.0004297129497632145,
+    "n_alive_mean": 2509.217777777778,
+    "n_alive_std": 38.00343586643599
+  },
+  {
+    "center": "regime_k4",
+    "parameter": "fraction_taux_emprunteur",
+    "value": 0.0,
+    "n": 3,
+    "seeds": [
+      42,
+      7,
+      123
+    ],
+    "bounded_tail_share": 1.0,
+    "densite_fin_mean": 0.4529441409112009,
+    "densite_fin_std": 0.00107789832626365,
+    "n_alive_mean": 375.4122222222222,
+    "n_alive_std": 10.890576654913328
+  },
+  {
+    "center": "regime_k4",
+    "parameter": "fraction_taux_emprunteur",
+    "value": 0.5,
+    "n": 3,
+    "seeds": [
+      42,
+      7,
+      123
+    ],
+    "bounded_tail_share": 0.0,
+    "densite_fin_mean": 0.011497923178056285,
+    "densite_fin_std": 0.0003054243158244152,
+    "n_alive_mean": 2513.805,
+    "n_alive_std": 21.14632780483714
+  },
+  {
+    "center": "regime_k4",
+    "parameter": "mu",
+    "value": 0.0,
+    "n": 3,
+    "seeds": [
+      42,
+      7,
+      123
+    ],
+    "bounded_tail_share": 1.0,
+    "densite_fin_mean": 0.4682817537115958,
+    "densite_fin_std": 0.00611517240060087,
+    "n_alive_mean": 310.74833333333333,
+    "n_alive_std": 3.6396965176702363
+  },
+  {
+    "center": "regime_k4",
+    "parameter": "mu",
+    "value": 0.1,
+    "n": 3,
+    "seeds": [
+      42,
+      7,
+      123
+    ],
+    "bounded_tail_share": 0.0,
+    "densite_fin_mean": 0.04594206644165616,
+    "densite_fin_std": 0.0007037350174878934,
+    "n_alive_mean": 2441.3349999999996,
+    "n_alive_std": 46.45519910703295
+  },
+  {
+    "center": "regime_k4",
+    "parameter": "taux_depreciation_endo",
+    "value": 0.02,
+    "n": 3,
+    "seeds": [
+      42,
+      7,
+      123
+    ],
+    "bounded_tail_share": 0.3333333333333333,
+    "densite_fin_mean": 0.4573911556639237,
+    "densite_fin_std": 0.0025881648550563885,
+    "n_alive_mean": 386.29833333333335,
+    "n_alive_std": 29.462580819040948
+  },
+  {
+    "center": "regime_k4",
+    "parameter": "taux_depreciation_endo",
+    "value": 0.1,
+    "n": 3,
+    "seeds": [
+      42,
+      7,
+      123
+    ],
+    "bounded_tail_share": 0.0,
+    "densite_fin_mean": 0.004964143485688021,
+    "densite_fin_std": 0.0001528434979108119,
+    "n_alive_mean": 2465.8088888888888,
+    "n_alive_std": 10.934901338555994
+  },
+  {
+    "center": "regime_k4",
+    "parameter": "theta",
+    "value": 0.2,
+    "n": 3,
+    "seeds": [
+      42,
+      7,
+      123
+    ],
+    "bounded_tail_share": 0.0,
+    "densite_fin_mean": 0.039506081907530056,
+    "densite_fin_std": 0.004224329009511576,
+    "n_alive_mean": 2493.3105555555558,
+    "n_alive_std": 60.933892021711365
+  },
+  {
+    "center": "regime_k4",
+    "parameter": "theta",
+    "value": 0.5,
+    "n": 3,
+    "seeds": [
+      42,
+      123,
+      7
+    ],
+    "bounded_tail_share": 0.3333333333333333,
+    "densite_fin_mean": 0.4319056358436975,
+    "densite_fin_std": 0.0052950876516837785,
+    "n_alive_mean": 373.7633333333333,
+    "n_alive_std": 3.755310560713632
+  },
+  {
+    "center": "subcritical_k3",
+    "parameter": "actif_liquide_initial",
+    "value": 100.0,
+    "n": 3,
+    "seeds": [
+      42,
+      7,
+      123
+    ],
+    "bounded_tail_share": 0.6666666666666666,
+    "densite_fin_mean": 0.40730081741119667,
+    "densite_fin_std": 0.007173381413658607,
+    "n_alive_mean": 389.58166666666665,
+    "n_alive_std": 13.384854694212601
+  },
+  {
+    "center": "subcritical_k3",
+    "parameter": "actif_liquide_initial",
+    "value": 400.0,
+    "n": 3,
+    "seeds": [
+      42,
+      7,
+      123
+    ],
+    "bounded_tail_share": 0.0,
+    "densite_fin_mean": 0.015878512567155643,
+    "densite_fin_std": 0.001074581664910713,
+    "n_alive_mean": 2494.4500000000003,
+    "n_alive_std": 35.6589066324562
+  },
+  {
+    "center": "subcritical_k3",
+    "parameter": "alpha_sigma_brownien",
+    "value": 0.005,
+    "n": 3,
+    "seeds": [
+      42,
+      7,
+      123
+    ],
+    "bounded_tail_share": 0.3333333333333333,
+    "densite_fin_mean": 0.34841851326015166,
+    "densite_fin_std": 0.026104411257570095,
+    "n_alive_mean": 1856.05,
+    "n_alive_std": 197.61393883585808
+  },
+  {
+    "center": "subcritical_k3",
+    "parameter": "alpha_sigma_brownien",
+    "value": 0.02,
+    "n": 3,
+    "seeds": [
+      42,
+      7,
+      123
+    ],
+    "bounded_tail_share": 0.6666666666666666,
+    "densite_fin_mean": 0.4887706490512905,
+    "densite_fin_std": 0.007882824764881462,
+    "n_alive_mean": 691.6077777777778,
+    "n_alive_std": 27.268175397451376
+  },
+  {
+    "center": "subcritical_k3",
+    "parameter": "epsilon",
+    "value": 1e-06,
+    "n": 3,
+    "seeds": [
+      42,
+      7,
+      123
+    ],
+    "bounded_tail_share": 0.0,
+    "densite_fin_mean": 0.04725400212049188,
+    "densite_fin_std": 0.004131799364475965,
+    "n_alive_mean": 2490.653888888889,
+    "n_alive_std": 35.056489660032284
+  },
+  {
+    "center": "subcritical_k3",
+    "parameter": "epsilon",
+    "value": 0.01,
+    "n": 3,
+    "seeds": [
+      42,
+      7,
+      123
+    ],
+    "bounded_tail_share": 0.0,
+    "densite_fin_mean": 0.004430950256269794,
+    "densite_fin_std": 0.00022839096009492045,
+    "n_alive_mean": 2494.1233333333334,
+    "n_alive_std": 78.86641452951152
+  },
+  {
+    "center": "subcritical_k3",
+    "parameter": "fraction_taux_emprunteur",
+    "value": 0.0,
+    "n": 3,
+    "seeds": [
+      42,
+      7,
+      123
+    ],
+    "bounded_tail_share": 0.0,
+    "densite_fin_mean": 0.41458888829802865,
+    "densite_fin_std": 0.005753402314716419,
+    "n_alive_mean": 664.4587413429837,
+    "n_alive_std": 1.99666140145555
+  },
+  {
+    "center": "subcritical_k3",
+    "parameter": "fraction_taux_emprunteur",
+    "value": 0.5,
+    "n": 3,
+    "seeds": [
+      42,
+      7,
+      123
+    ],
+    "bounded_tail_share": 0.0,
+    "densite_fin_mean": 0.007379546175235303,
+    "densite_fin_std": 0.00037506963999109436,
+    "n_alive_mean": 2471.163888888889,
+    "n_alive_std": 22.171841723954625
+  },
+  {
+    "center": "subcritical_k3",
+    "parameter": "mu",
+    "value": 0.0,
+    "n": 3,
+    "seeds": [
+      42,
+      7,
+      123
+    ],
+    "bounded_tail_share": 1.0,
+    "densite_fin_mean": 0.4785860009254392,
+    "densite_fin_std": 0.0019451148468155812,
+    "n_alive_mean": 360.08,
+    "n_alive_std": 12.753067677432966
+  },
+  {
+    "center": "subcritical_k3",
+    "parameter": "mu",
+    "value": 0.1,
+    "n": 3,
+    "seeds": [
+      42,
+      7,
+      123
+    ],
+    "bounded_tail_share": 0.0,
+    "densite_fin_mean": 0.020625895349781383,
+    "densite_fin_std": 0.0004986622277941424,
+    "n_alive_mean": 2482.883888888889,
+    "n_alive_std": 24.53336399203002
+  },
+  {
+    "center": "subcritical_k3",
+    "parameter": "taux_depreciation_endo",
+    "value": 0.02,
+    "n": 3,
+    "seeds": [
+      42,
+      7,
+      123
+    ],
+    "bounded_tail_share": 0.6666666666666666,
+    "densite_fin_mean": 0.4400603112025387,
+    "densite_fin_std": 0.005282870196765081,
+    "n_alive_mean": 601.2033333333333,
+    "n_alive_std": 27.713419533183238
+  },
+  {
+    "center": "subcritical_k3",
+    "parameter": "taux_depreciation_endo",
+    "value": 0.1,
+    "n": 3,
+    "seeds": [
+      42,
+      7,
+      123
+    ],
+    "bounded_tail_share": 0.0,
+    "densite_fin_mean": 0.0027404109143929502,
+    "densite_fin_std": 0.00021111118144912476,
+    "n_alive_mean": 2504.876111111111,
+    "n_alive_std": 64.39106350943861
+  },
+  {
+    "center": "subcritical_k3",
+    "parameter": "theta",
+    "value": 0.2,
+    "n": 3,
+    "seeds": [
+      42,
+      7,
+      123
+    ],
+    "bounded_tail_share": 0.0,
+    "densite_fin_mean": 0.015999306937596987,
+    "densite_fin_std": 0.0011468003837978248,
+    "n_alive_mean": 2506.556111111111,
+    "n_alive_std": 30.32122506605183
+  },
+  {
+    "center": "subcritical_k3",
+    "parameter": "theta",
+    "value": 0.5,
+    "n": 3,
+    "seeds": [
+      42,
+      7,
+      123
+    ],
+    "bounded_tail_share": 0.3333333333333333,
+    "densite_fin_mean": 0.2302745634889203,
+    "densite_fin_std": 0.0738118441718789,
+    "n_alive_mean": 2071.655,
+    "n_alive_std": 222.48506247403233
+  }
+]

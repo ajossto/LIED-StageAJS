@@ -323,24 +323,165 @@ Cette section explicite les boucles de decision realisees pendant l'etude.
 \bottomrule
 \end{longtable}
 
+\section{Balayage fin de \(\lambda\) comme variable continue}
+\label{sec:lambda-fin}
+
+Le parametre \(\lambda=\texttt{lambda\_creation}\) n'avait ete teste qu'aux
+valeurs discretes \(\{1, 2, 4\}\). La sonde longue montrait que \(\lambda=4\)
+reste en croissance a 3000 pas, mais la frontiere n'etait pas localisee. Un
+balayage fin a ete conduit avec
+\(\lambda\in\{1.0, 1.2, 1.4, 1.6, 1.8, 2.0, 2.5, 3.0, 3.5, 4.0, 5.0\}\),
+trois seeds (42, 7, 123), \(\epsilon=10^{-3}\), 1500 pas, pour les deux centres
+\(k=3\) et \(k=4\).
+
+\subsection*{Resultats pour \(k=4\)}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{rrrrrr}
+\toprule
+\(\lambda\) & seeds bornes & densite financiere & \(n_{\mathrm{alive}}\) & note \\
+\midrule
+1.0 & 1/3 & \(0.423\pm0.009\) & 188 & transition \\
+1.2 & 2/3 & \(0.411\pm0.001\) & 249 & transition \\
+1.4 & 3/3 & \(0.406\pm0.004\) & 279 & \textbf{robuste} \\
+1.6 & 3/3 & \(0.402\pm0.007\) & 318 & robuste \\
+1.8 & 3/3 & \(0.403\pm0.010\) & 366 & robuste \\
+2.0 & 3/3 & \(0.401\pm0.006\) & 405 & robuste \\
+2.5 & 1/3 & \(0.393\pm0.002\) & 605 & instable \\
+3.0 & 0/3 & \(0.384\pm0.002\) & 1105 & non borne, df encore eleve \\
+3.5 & 0/3 & \(0.254\pm0.091\) & 3184 & effondrement partiel \\
+4.0 & 0/3 & \(0.128\pm0.047\) & 4609 & effondrement \\
+5.0 & 0/3 & \(0.051\pm0.003\) & 6114 & quasi-effondrement \\
+\bottomrule
+\end{tabular}
+\caption{Balayage fin de \(\lambda\), centre \(k=4\), 1500 pas, 3 seeds.}
+\end{table}
+
+La frontiere robuste pour \(k=4\) se situe entre \(\lambda=2.0\) (3/3 bornes)
+et \(\lambda=2.5\) (1/3 borne). La densite financiere reste elevee jusqu'a
+\(\lambda=3.0\) (\(D\approx0.38\)) meme si la queue n'est plus bornee, ce
+qui signifie que le reseau de credit se forme encore mais que le nombre
+d'entites continue de croitre sans faillites compensatrices suffisantes.
+Au-dela de \(\lambda\approx3.5\), la densite s'effondre : la croissance de
+population est si forte que le reseau ne se densifie plus.
+
+Un point notable : \(\lambda=1.0\) a 1/3 seeds bornes et une densite de 0.42.
+Le systeme peut donc entrer en regime a tres faible taux de creation, mais la
+petite population initiale le rend plus sensible aux fluctuations de seed.
+
+\subsection*{Resultats pour \(k=3\)}
+
+Aucune valeur de \(\lambda\) testee (\(1.0\) a \(5.0\)) ne produit de queue
+bornee en homogene \(\sigma_\alpha=0\). La densite financiere decline
+monotonement avec \(\lambda\) (\(0.20\) a \(\lambda=1.0\) en moyenne, mais
+tres disperse, jusqu'a \(0.015\) a \(\lambda=5.0\)). Cela confirme que pour
+\(k=3\) statique, la transition vers le regime ne se fait pas en reduisant
+\(\lambda\), mais en introduisant de la volatilite \(\sigma_\alpha\) ou en
+augmentant \(k\). Le taux de creation ne suffit pas seul a declencher le
+regime.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.98\linewidth]{figures/claude_lambda_fine_sweep.pdf}
+  \caption{Balayage fin de \(\lambda\) pour \(k=4\) (bleu) et \(k=3\) (orange).
+  Colonnes : densite financiere avec barres d'erreur inter-seeds, taille
+  \(n_{\mathrm{alive}}\) en echelle log, nombre de seeds a queue bornee.
+  La frontiere de regime pour \(k=4\) se situe entre \(\lambda=2.0\) et
+  \(\lambda=2.5\).}
+\end{figure}
+
+\section{Robustesse OAT : validation sur seeds 7 et 123}
+\label{sec:oat-robustesse}
+
+La campagne OAT initiale de Codex n'utilisait qu'un seul seed (42). Les 8
+parametres les plus impactants ont ete revalides a seeds 7 et 123. Les ecarts-
+types inter-seeds mesurent la robustesse de chaque effet.
+
+\subsection*{Effets robustes sur le centre \(k=4\)}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lrrrr}
+\toprule
+Parametre (valeur) & B.T. 3s & densite financiere & note \\
+\midrule
+\(\alpha_\sigma=0.02\) & 3/3 & \(0.520\pm0.005\) & densification robuste \\
+\(\mu=0.0\) & 3/3 & \(0.468\pm0.006\) & densification robuste \\
+\(f=0.0\) (emprunteur) & 3/3 & \(0.453\pm0.001\) & densification robuste \\
+actif initial 100 & 3/3 & \(0.446\pm0.007\) & densification robuste \\
+\(\alpha_\sigma=0.005\) & 3/3 & \(0.443\pm0.003\) & densification robuste \\
+\(\delta_{\mathrm{endo}}=0.02\) & 1/3 & \(0.457\pm0.003\) & \textbf{instable inter-seeds} \\
+\(\theta=0.5\) & 1/3 & \(0.432\pm0.005\) & \textbf{instable inter-seeds} \\
+\(\theta=0.2\) & 0/3 & \(0.040\pm0.004\) & destruction robuste \\
+\(\mu=0.1\) & 0/3 & \(0.046\pm0.001\) & destruction robuste \\
+\(\epsilon=10^{-2}\) & 0/3 & \(0.007\pm0.000\) & destruction robuste \\
+\(f=0.5\) (emprunteur) & 0/3 & \(0.011\pm0.000\) & destruction robuste \\
+actif initial 400 & 0/3 & \(0.031\pm0.004\) & destruction robuste \\
+\(\delta_{\mathrm{endo}}=0.1\) & 0/3 & \(0.005\pm0.000\) & destruction robuste \\
+\bottomrule
+\end{tabular}
+\caption{Robustesse OAT centre \(k=4\), 3 seeds. B.T.~3s = nombre de seeds a
+queue bornee sur 3.}
+\end{table}
+
+Un resultat notable : \(\delta_{\mathrm{endo}}=0.02\) et \(\theta=0.5\)
+etaient declares bornes sur seed=42 par Codex, mais ils ne passent le critere
+que sur 1/3 seeds. Ces deux cas sont donc des \emph{effets vrais mais fragiles}
+: la perturbation pousse le systeme vers la frontiere du regime plutot qu'au
+centre. Ils ne doivent pas etre interpretes comme des effets robustes.
+
+\subsection*{Effets robustes sur le centre \(k=3\)}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lrrrr}
+\toprule
+Parametre (valeur) & B.T. 3s & densite financiere & note \\
+\midrule
+\(\mu=0.0\) & 3/3 & \(0.479\pm0.002\) & entree robuste en regime \\
+actif initial 100 & 2/3 & \(0.407\pm0.007\) & entree partielle en regime \\
+\(\alpha_\sigma=0.02\) & 2/3 & \(0.489\pm0.008\) & entree partielle en regime \\
+\(\delta_{\mathrm{endo}}=0.02\) & 2/3 & \(0.440\pm0.005\) & entree partielle en regime \\
+\(\theta=0.5\) & 1/3 & \(0.230\pm0.074\) & tres dispersee, instable \\
+\midrule
+\(\theta=0.2\) & 0/3 & \(0.016\pm0.001\) & destruction robuste \\
+\(\mu=0.1\) & 0/3 & \(0.021\pm0.000\) & destruction robuste \\
+\(\epsilon=10^{-2}\) & 0/3 & \(0.004\pm0.000\) & destruction robuste \\
+\(f=0.5\) (emprunteur) & 0/3 & \(0.007\pm0.000\) & destruction robuste \\
+actif initial 400 & 0/3 & \(0.016\pm0.001\) & destruction robuste \\
+\(\delta_{\mathrm{endo}}=0.1\) & 0/3 & \(0.003\pm0.000\) & destruction robuste \\
+\bottomrule
+\end{tabular}
+\caption{Robustesse OAT centre \(k=3\), 3 seeds.}
+\end{table}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.98\linewidth]{figures/claude_oat_robustness.pdf}
+  \caption{Effets OAT robustes (3 seeds). Les barres d'erreur representent
+  l'ecart-type inter-seeds. Vert = queue bornee sur \(\ge 2/3\) seeds,
+  rouge = bornee sur \(\le 1/3\), jaune = 1/3 ou 2/3.}
+\end{figure}
+
 \section{Ce qui reste a eclairer}
 
-Trois zones meritent encore des simulations ciblees.
+Deux zones demeurent ouvertes apres ces simulations complementaires.
 
-Premierement, \(\lambda\) doit etre balaye finement comme variable continue, par
-exemple \(\lambda\in[1,4]\) avec des valeurs intermediaires. Les premiers
-resultats montrent que \(\lambda=4\) impose une croissance non compensee, mais
-la frontiere n'est pas localisee.
+Premierement, \(\delta_{\mathrm{endo}}=0.02\) et \(\theta=0.5\) du centre
+\(k=4\) sont instables inter-seeds : ils demandent 10 a 20 seeds
+supplementaires pour situer la probabilite de regime et la frontiere de
+parametre. Ces deux cas se trouvent probablement sur la frontiere de la
+surface de regime.
 
-Deuxiemement, les cas \(k=3,\sigma_\alpha=0.02\) et
-\(\delta_{\mathrm{endo}}=0.02\) produisent des densites fortes avec des queues
-parfois lentes. Ils demandent des horizons plus longs ou des seeds multiples
-pour separer regime lent et derive persistante.
-
-Troisiemement, la distribution des tailles d'entites en regime permanent doit
-etre analysee plus directement. Les metriques Gini et snapshots existent, mais
-une comparaison lognormale / Pareto / melange de regimes demanderait une
-extraction dediee des distributions finales des runs bornes.
+Deuxiemement, la distribution des tailles d'entites en regime permanent
+n'a pas ete analysee en detail. Les metriques Gini et snapshots existent dans
+les runs Simulation Lab, mais une comparaison lognormale / Pareto / melange
+de regimes demanderait une extraction dediee des distributions finales des
+runs bornes.
 
 \section{Conclusion}
 
