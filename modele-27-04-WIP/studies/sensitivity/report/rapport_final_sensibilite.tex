@@ -14,7 +14,7 @@
 
 \title{Etude de sensibilite du modele sans banque\\Rapport final provisoire et autonome}
 \author{modele-27-04-WIP / studies/sensitivity}
-\date{28 avril 2026, 19:51 CEST}
+\date{30 avril 2026 -- mise a jour couplages et probabilites}
 
 \begin{document}
 \maketitle
@@ -320,6 +320,13 @@ Cette section explicite les boucles de decision realisees pendant l'etude.
 8 & Sorties de regime & \(\theta=0.2\), actif initial 400 et \(\lambda=4\) restent en croissance a 3000 pas. \\
 9 & Prediction globale & Forets aleatoires : regime predictible a 0.84 balanced accuracy. \\
 10 & Parametre continu \(\lambda\) & Note ajoutee : \(\lambda\) doit etre traite comme reel dans les prochaines grilles fines. \\
+11 & Couplage \(\lambda \times k\) & Carte de phase : \(k \le 3\) jamais borne en homogene ; fenetre k=4 a \(\lambda\approx2.0\). \\
+12 & Couplage \(k \times \mu\) & \(\mu=0\) debloque le regime pour \(k=2\) et \(k=3\). Seuil de phase cree par \(\mu\). \\
+13 & Couplage \(\sigma_\alpha \times k\) & Fenetre active [0.01, 0.02] confirmee pour k=3 ; \(\sigma=0.05\) destructeur universel. \\
+14 & Couplage \(\theta \times \delta_\mathrm{endo}\) & \(\delta=0.10\) toujours destructeur ; \(\delta=0.02\) frontiere stochastique. \\
+15 & Probabilites limites & 13 seeds extra : k4\_depr002 est a 0.15, k4\_theta05 a 0.92. \\
+16 & Long run k3s005 & Croissance explosive : 2096 entites, 11551 prets a 1400 pas. Non-convergence confirmee. \\
+17 & Parametres faibles & coefficient\_reliquefaction et seuil\_ratio\_liquide\_passif : effet nul mesure. \\
 \bottomrule
 \end{longtable}
 
@@ -467,17 +474,224 @@ actif initial 400 & 0/3 & \(0.016\pm0.001\) & destruction robuste \\
   rouge = bornee sur \(\le 1/3\), jaune = 1/3 ou 2/3.}
 \end{figure}
 
+\section{Cartes de phase : couplages systematiques}
+\label{sec:couplages}
+
+Quatre couplages a deux parametres ont ete simules (1500 pas, 3 seeds, grille
+complete, \(\epsilon=10^{-3}\)), produisant chacun une carte de phase
+\texttt{bounded\_share} moyennee sur les seeds.
+
+\subsection*{Carte \(\lambda \times k\)}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{rllllll}
+\toprule
+\(k\) \textbackslash{} \(\lambda\) & 1.0 & 1.5 & 2.0 & 2.5 & 3.0 & 4.0 \\
+\midrule
+2 & 0   & 0   & 0   & 0   & 0   & 0 \\
+3 & 0   & 0   & 0   & 0   & 0   & 0 \\
+4 & 0.3 & 0.3 & \textbf{1.0} & 0.3 & 0 & 0 \\
+5 & 0   & 0.7 & 0.7 & \textbf{1.0} & \textbf{1.0} & \textbf{1.0} \\
+6 & 0   & \textbf{1.0} & \textbf{1.0} & \textbf{1.0} & \textbf{1.0} & \textbf{1.0} \\
+\bottomrule
+\end{tabular}
+\caption{Fraction de seeds a queue bornee, carte \(\lambda \times k\).
+\(k \le 3\) ne forme jamais de regime en homogene (\(\sigma_\alpha=0\)).
+La fenetre optimale de \(k=4\) est \(\lambda \approx 2.0\).}
+\end{table}
+
+\(k\) est le facteur dominant. L'augmentation de \(k\) abaisse le seuil
+effectif en \(\lambda\) : a \(k=5\), le regime reste robuste jusqu'a
+\(\lambda=4.0\), alors que \(k=4\) deja sorti du regime a cette valeur.
+
+\subsection*{Carte \(k \times \mu\)}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{rrrrrr}
+\toprule
+\(k\) \textbackslash{} \(\mu\) & 0.00 & 0.01 & 0.03 & 0.05 & 0.10 \\
+\midrule
+2 & \textbf{1.00} & 0    & 0    & 0    & 0 \\
+3 & \textbf{1.00} & 0.67 & 0    & 0    & 0 \\
+4 & \textbf{1.00} & 1.00 & 1.00 & 1.00 & 0 \\
+5 & 0.67 & 1.00 & 1.00 & 0.67 & 0 \\
+\bottomrule
+\end{tabular}
+\caption{Fraction de seeds a queue bornee, carte \(k \times \mu\).
+\(\mu = \texttt{mu}\) est la prime de rendement minimal a l'emprunt.}
+\end{table}
+
+\textbf{Resultat majeur.} \(\mu=0\) debloque le regime meme pour \(k=2\)
+et \(k=3\) (fraction 1.00). La valeur par defaut \(\mu=0.05\) empeche \(k \le 3\)
+d'entrer en regime : c'est la prime minimale qui cree a elle seule le seuil de
+phase pour les petits \(k\). Au dela de \(\mu=0.10\), aucun \(k\) ne forme de
+regime borne. Ceci signifie que l'interpretation physique de \(k\) comme
+\emph{seuil absolu} depend du choix de \(\mu\).
+
+\subsection*{Carte \(\sigma_\alpha \times k\)}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{rrrrrr}
+\toprule
+\(k\) \textbackslash{} \(\sigma_\alpha\) & 0.000 & 0.003 & 0.010 & 0.020 & 0.050 \\
+\midrule
+2 & 0    & 0    & 0    & 0    & 0 \\
+3 & 0    & 0    & 0.67 & 0.67 & 0 \\
+4 & 1.00 & 1.00 & 0.67 & 1.00 & 0 \\
+5 & 0.67 & 0.67 & 0.33 & 1.00 & 0 \\
+\bottomrule
+\end{tabular}
+\caption{Fraction de seeds a queue bornee, carte \(\sigma_\alpha \times k\).}
+\end{table}
+
+La volatilite \(\sigma_\alpha\) ouvre une fenetre de regime pour \(k=3\)
+autour de \([0.01, 0.02]\), confirmant le balayage precedent. A
+\(\sigma_\alpha=0.05\), tous les regimes disparaissent quelle que soit \(k\) :
+la volatilite excessive fragmente le reseau.
+
+\subsection*{Carte \(\theta \times \delta_{\mathrm{endo}}\)}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{rrrr}
+\toprule
+\(\theta\) \textbackslash{} \(\delta_{\mathrm{endo}}\) & 0.02 & 0.05 & 0.10 \\
+\midrule
+\multicolumn{4}{l}{\emph{Centre \(k=3\)}} \\
+0.20 & 0.7 & 0.0 & 0.0 \\
+0.35 & 0.7 & 0.0 & 0.0 \\
+0.50 & 0.7 & 0.3 & 0.0 \\
+\midrule
+\multicolumn{4}{l}{\emph{Centre \(k=4\)}} \\
+0.20 & 0.7 & 0.0 & 0.0 \\
+0.35 & 0.3 & 1.0 & 0.0 \\
+0.50 & 0.3 & 0.3 & 0.0 \\
+\bottomrule
+\end{tabular}
+\caption{Fraction de seeds a queue bornee, carte \(\theta \times
+\delta_{\mathrm{endo}}\), lignes selectives (table abregee).
+\(\theta\) est la part du gain extraite,
+\(\delta_{\mathrm{endo}}\) le taux de depreciation endogene.}
+\end{table}
+
+\(\delta_{\mathrm{endo}}=0.10\) detruit systematiquement le regime pour
+tout \(\theta\) et tout \(k\). A \(\delta_{\mathrm{endo}}=0.02\),
+les resultats sont stochastiques : le systeme se trouve pres de la frontiere.
+Pour \(k=4\), \(\delta_{\mathrm{endo}}=0.05\) avec \(\theta=0.35\) donne
+paradoxalement 1.00, ce qui suggere une interaction non monotone entre
+extraction et depreciation.
+
+\section{Probabilites de regime : cas limites multi-seeds}
+\label{sec:multirun}
+
+Les cas classes comme \emph{instables inter-seeds} dans la campagne OAT
+(section~\ref{sec:oat-robustesse}) ont ete simules avec 13 seeds
+supplementaires (200--212) pour estimer la probabilite de regime bornee.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lrrrl}
+\toprule
+Cas & bornés / seeds & \(p_{\mathrm{regime}}\) & IC 95\% & interpretation \\
+\midrule
+\texttt{k4\_theta05} & 12/13 & 0.92 & $\pm$0.15 & robuste \\
+\texttt{k3\_sigma020} & 12/13 & 0.92 & $\pm$0.15 & robuste \\
+\texttt{k3\_actif100} & 9/13  & 0.69 & $\pm$0.25 & probable \\
+\texttt{k4\_lam120}   & 6/13  & 0.46 & $\pm$0.27 & frontiere \\
+\texttt{k4\_lam100}   & 4/13  & 0.31 & $\pm$0.25 & improbable \\
+\texttt{k3\_sigma005} & 3/13  & 0.23 & $\pm$0.23 & improbable \\
+\texttt{k4\_depr002}  & 2/13  & 0.15 & $\pm$0.20 & tres improbable \\
+\bottomrule
+\end{tabular}
+\caption{Probabilites de regime estimees sur 13 seeds extra.
+\texttt{k4\_depr002} et \texttt{k3\_sigma005} sont structurellement
+peu susceptibles d'atteindre le regime a 1500 pas.
+\texttt{k4\_theta05} etait 1/3 sur seed 42 par malchance.}
+\end{table}
+
+Ces resultats corrigent deux lectures de la campagne OAT :
+\begin{itemize}
+  \item \texttt{k4\_depr002} (\(\delta_{\mathrm{endo}}=0.02\)) etait compte
+  comme un effet densifiant. En realite sa probabilite de regime est 0.15 :
+  la perturbation place le systeme tres pres de la frontiere, pas au centre ;
+  \item \texttt{k4\_theta05} semblait fragile (1/3 seeds) mais est en fait
+  robuste (0.92) : le seed 42 etait un cas defavorable isolee.
+\end{itemize}
+
+\section{Croissance explosive de \(k=3, \sigma_\alpha=0.005\)}
+\label{sec:explosion-k3}
+
+La sonde longue de la section precedente indiquait que \(k=3, \sigma_\alpha=0.005\)
+restait non borne a 3000 pas. Une simulation etendue a 5000 pas revele un
+comportement qualitatif different : la population ne converge pas lentement,
+elle \emph{explose}.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{rrrrl}
+\toprule
+Seed & Pas realises & \(n_{\mathrm{alive}}\) final & Prets actifs & Note \\
+\midrule
+42 & 1401 & 2096 & 11551 & arret watchdog (417 ms/pas) \\
+7  & 5000 & ---  & ---   & en cours \\
+\bottomrule
+\end{tabular}
+\caption{Long run \(k=3, \sigma_\alpha=0.005\), seuil 300 ms/pas.
+Seed 42 : la population atteint 2096 entites et 11 551 prets actifs a l'arret.}
+\end{table}
+
+La population double tous les \(\sim 700\) pas. Cette croissance explosive
+implique une complexite operationnelle en \(O(N_{\mathrm{loans}})\) qui
+dépasse rapidement le seuil de 300 ms/pas. Combine avec la probabilite de
+regime de seulement 0.23 (section~\ref{sec:multirun}), ce cas confirme que
+\(k=3, \sigma_\alpha=0.005\) est fondamentalement sous-critique : le reseau
+de credit reste trop peu dense pour produire assez de faillites compensatrices.
+
+\section{Parametres faibles : mecanismes candidats a la suppression}
+\label{sec:parametres-faibles}
+
+La campagne OAT avec 3 seeds et les couplages ont permis d'identifier deux
+parametres dont l'effet mesure est exactement nul sur \textbf{toutes} les
+metriques (densite financiere, \(n_{\mathrm{alive}}\), \texttt{bounded\_tail})
+dans les deux centres et les deux directions :
+
+\begin{itemize}
+  \item \texttt{coefficient\_reliquefaction} : decote a la cession forcee
+  lors de la liquidation. Valeur par defaut : 0.5. Aucun delta mesure ;
+  \item \texttt{seuil\_ratio\_liquide\_passif} : seuil de declenchement de
+  la reliquefaction. Valeur par defaut : 0.05. Aucun delta mesure.
+\end{itemize}
+
+Ces deux parametres decrivent le mecanisme de reliquefaction. Leur absence
+d'effet suggere que ce mecanisme n'est pas active sur les horizons et les
+regimes testes, ou qu'il est redondant avec d'autres voies de liquidation.
+Ils sont \textbf{candidats prioritaires a la suppression} pour simplifier
+le modele, sous reserve d'une verification analytique.
+
 \section{Ce qui reste a eclairer}
 
-Deux zones demeurent ouvertes apres ces simulations complementaires.
+Trois zones restent ouvertes apres les etudes de couplage.
 
-Premierement, \(\delta_{\mathrm{endo}}=0.02\) et \(\theta=0.5\) du centre
-\(k=4\) sont instables inter-seeds : ils demandent 10 a 20 seeds
-supplementaires pour situer la probabilite de regime et la frontiere de
-parametre. Ces deux cas se trouvent probablement sur la frontiere de la
-surface de regime.
+Premierement, la dynamique de \(k=3, \sigma_\alpha=0.005\) en croissance
+explosive merite une analyse qualitative : le reseau de credit se forme-t-il
+partiellement avant l'explosion ? La densite financiere en volume reste-t-elle
+elevee meme quand la population explose ?
 
-Deuxiemement, la distribution des tailles d'entites en regime permanent
+Deuxiemement, la zone d'interaction \(\theta \times \delta_{\mathrm{endo}}\)
+autour de \(k=4, \theta=0.35, \delta=0.05\) montre un comportement non monotone
+(\(\text{bounded\_share}=1.0\) alors que les voisins sont faibles). Ce point
+demande une verification supplementaire sur plus de seeds.
+
+Troisiemement, la distribution des tailles d'entites en regime permanent
 n'a pas ete analysee en detail. Les metriques Gini et snapshots existent dans
 les runs Simulation Lab, mais une comparaison lognormale / Pareto / melange
 de regimes demanderait une extraction dediee des distributions finales des
@@ -488,11 +702,28 @@ runs bornes.
 Le comportement du modele est predictible a gros traits depuis les parametres,
 mais pas par une loi lineaire simple. Les variables les plus structurantes sont
 des variables de seuil : \(k\), \(\sigma_\alpha\), \(\theta\), \(\mu\),
-\(\lambda\), les depreciations et la dotation initiale. Un regime dense demande
-un reseau de credit suffisamment actif pour produire des faillites endogenes,
-mais pas une fragmentation numerique excessive. Une population nombreuse n'est
-pas un signe de stabilite : dans plusieurs cas, elle signale au contraire que
-les creations ne sont pas compensees par les faillites. Pour predire finement
+\(\lambda\), les depreciations et la dotation initiale.
+
+Les etudes de couplage precisent la geometrie de la surface de regime.
+Le parametre \(\mu\) (prime minimale a l'emprunt) apparait comme un
+co-facteur de seuil independant : \(\mu=0\) permet au modele d'entrer en
+regime meme a \(k=2\), ce qui reinterpretes les resultats du balayage \(k\)
+comme dependant implicitement du choix \(\mu=0.05\). La frontiere
+\(k=3 \to k=4\) n'est pas absolue : c'est la combinaison \((k, \mu)\) qui
+determine si le marche du credit est suffisamment actif.
+
+La depreciation endogene \(\delta_{\mathrm{endo}}\) se revele etre un
+parametre destructeur fort : au-dela de 0.05, elle empeche systematiquement
+la formation du regime. Son seuil de danger est plus bas que ce que le seul
+balayage OAT suggere.
+
+Deux mecanismes du modele (reliquefaction) ont un effet nul mesure sur tous
+les horizons testes et sont candidats a la suppression pour simplifier le
+modele. Un regime dense demande un reseau de credit suffisamment actif pour
+produire des faillites endogenes, mais pas une fragmentation numerique
+excessive. Une population nombreuse n'est pas un signe de stabilite : dans
+plusieurs cas, notamment \(k=3, \sigma_\alpha=0.005\), elle signale une
+croissance explosive non compensee par les faillites. Pour predire finement
 une simulation, il faut donc predire conjointement : apparition du regime,
 densite financiere en volume, granularite du reseau, taille demographique,
 taille bilancielle et derive de queue.

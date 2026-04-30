@@ -1,0 +1,222 @@
+[
+  {
+    "k": 2,
+    "mu": 0.0,
+    "n": 3,
+    "bounded_share": 1.0,
+    "df_mean": 0.40002625309287326,
+    "df_std": 0.0010720504286646866,
+    "alive_mean": 745.3348148148149,
+    "failure_rate_mean": 1.9281481481481482,
+    "cascade_size_mean": 2.2797498896848274
+  },
+  {
+    "k": 2,
+    "mu": 0.01,
+    "n": 3,
+    "bounded_share": 0.0,
+    "df_mean": 0.04774008285776518,
+    "df_std": 0.00625148364464412,
+    "alive_mean": 2496.6444444444446,
+    "failure_rate_mean": 0.002777777777777778,
+    "cascade_size_mean": 1.0
+  },
+  {
+    "k": 2,
+    "mu": 0.03,
+    "n": 3,
+    "bounded_share": 0.0,
+    "df_mean": 0.017567053264303686,
+    "df_std": 0.0010248390184101805,
+    "alive_mean": 2474.1,
+    "failure_rate_mean": 0.0,
+    "cascade_size_mean": 0.0
+  },
+  {
+    "k": 2,
+    "mu": 0.05,
+    "n": 3,
+    "bounded_share": 0.0,
+    "df_mean": 0.015272623636184396,
+    "df_std": 0.00018295067623086436,
+    "alive_mean": 2473.543888888889,
+    "failure_rate_mean": 0.0,
+    "cascade_size_mean": 0.0
+  },
+  {
+    "k": 2,
+    "mu": 0.1,
+    "n": 3,
+    "bounded_share": 0.0,
+    "df_mean": 0.010515714695120101,
+    "df_std": 0.00041480290611711285,
+    "alive_mean": 2484.5455555555554,
+    "failure_rate_mean": 0.0,
+    "cascade_size_mean": 0.0
+  },
+  {
+    "k": 3,
+    "mu": 0.0,
+    "n": 3,
+    "bounded_share": 1.0,
+    "df_mean": 0.4785860009254392,
+    "df_std": 0.0019451148468155812,
+    "alive_mean": 360.08,
+    "failure_rate_mean": 2.0327777777777776,
+    "cascade_size_mean": 2.3449998961614664
+  },
+  {
+    "k": 3,
+    "mu": 0.01,
+    "n": 3,
+    "bounded_share": 0.6666666666666666,
+    "df_mean": 0.45009874120244736,
+    "df_std": 0.0031902847791359977,
+    "alive_mean": 404.61055555555555,
+    "failure_rate_mean": 2.017777777777778,
+    "cascade_size_mean": 2.3411805931939256
+  },
+  {
+    "k": 3,
+    "mu": 0.03,
+    "n": 3,
+    "bounded_share": 0.0,
+    "df_mean": 0.37333419862559936,
+    "df_std": 0.033343509129534626,
+    "alive_mean": 1108.4475741926942,
+    "failure_rate_mean": 3.469712498137941,
+    "cascade_size_mean": 3.617956882111708
+  },
+  {
+    "k": 3,
+    "mu": 0.05,
+    "n": 3,
+    "bounded_share": 0.0,
+    "df_mean": 0.05003832019398002,
+    "df_std": 0.007690359254077039,
+    "alive_mean": 2530.922777777778,
+    "failure_rate_mean": 0.007222222222222223,
+    "cascade_size_mean": 1.0
+  },
+  {
+    "k": 3,
+    "mu": 0.1,
+    "n": 3,
+    "bounded_share": 0.0,
+    "df_mean": 0.020625895349781383,
+    "df_std": 0.0004986622277941424,
+    "alive_mean": 2482.883888888889,
+    "failure_rate_mean": 0.0,
+    "cascade_size_mean": 0.0
+  },
+  {
+    "k": 4,
+    "mu": 0.0,
+    "n": 3,
+    "bounded_share": 1.0,
+    "df_mean": 0.4682817537115958,
+    "df_std": 0.00611517240060087,
+    "alive_mean": 310.74833333333333,
+    "failure_rate_mean": 2.051111111111111,
+    "cascade_size_mean": 2.341616835113415
+  },
+  {
+    "k": 4,
+    "mu": 0.01,
+    "n": 3,
+    "bounded_share": 1.0,
+    "df_mean": 0.45338282184876827,
+    "df_std": 0.0052803927745834495,
+    "alive_mean": 323.04055555555556,
+    "failure_rate_mean": 2.0144444444444445,
+    "cascade_size_mean": 2.3180058818204436
+  },
+  {
+    "k": 4,
+    "mu": 0.03,
+    "n": 3,
+    "bounded_share": 1.0,
+    "df_mean": 0.4293899202711004,
+    "df_std": 0.004492297394429348,
+    "alive_mean": 355.3333333333333,
+    "failure_rate_mean": 2.0011111111111113,
+    "cascade_size_mean": 2.326246320468108
+  },
+  {
+    "k": 4,
+    "mu": 0.05,
+    "n": 3,
+    "bounded_share": 1.0,
+    "df_mean": 0.4011908530925566,
+    "df_std": 0.005932725643730495,
+    "alive_mean": 404.66611111111115,
+    "failure_rate_mean": 2.066666666666667,
+    "cascade_size_mean": 2.3797439411667365
+  },
+  {
+    "k": 4,
+    "mu": 0.1,
+    "n": 3,
+    "bounded_share": 0.0,
+    "df_mean": 0.04594206644165616,
+    "df_std": 0.0007037350174878934,
+    "alive_mean": 2441.3349999999996,
+    "failure_rate_mean": 0.007222222222222223,
+    "cascade_size_mean": 1.0
+  },
+  {
+    "k": 5,
+    "mu": 0.0,
+    "n": 3,
+    "bounded_share": 0.6666666666666666,
+    "df_mean": 0.44793518394779275,
+    "df_std": 0.002700969390424737,
+    "alive_mean": 297.7866666666667,
+    "failure_rate_mean": 2.012222222222222,
+    "cascade_size_mean": 2.3337880181208237
+  },
+  {
+    "k": 5,
+    "mu": 0.01,
+    "n": 3,
+    "bounded_share": 1.0,
+    "df_mean": 0.4310204345164206,
+    "df_std": 0.009575184182023135,
+    "alive_mean": 301.17944444444447,
+    "failure_rate_mean": 1.9955555555555555,
+    "cascade_size_mean": 2.3048740989015966
+  },
+  {
+    "k": 5,
+    "mu": 0.03,
+    "n": 3,
+    "bounded_share": 1.0,
+    "df_mean": 0.42717079569100774,
+    "df_std": 0.004464852364901292,
+    "alive_mean": 326.01888888888885,
+    "failure_rate_mean": 2.046111111111111,
+    "cascade_size_mean": 2.389742663547873
+  },
+  {
+    "k": 5,
+    "mu": 0.05,
+    "n": 3,
+    "bounded_share": 0.6666666666666666,
+    "df_mean": 0.41663829914727474,
+    "df_std": 0.002698042194186814,
+    "alive_mean": 344.05277777777775,
+    "failure_rate_mean": 2.018333333333333,
+    "cascade_size_mean": 2.3332116277029775
+  },
+  {
+    "k": 5,
+    "mu": 0.1,
+    "n": 3,
+    "bounded_share": 0.0,
+    "df_mean": 0.3787569418949513,
+    "df_std": 0.003051716887267251,
+    "alive_mean": 543.6438715878509,
+    "failure_rate_mean": 2.7351480199923106,
+    "cascade_size_mean": 3.030598988141018
+  }
+]
