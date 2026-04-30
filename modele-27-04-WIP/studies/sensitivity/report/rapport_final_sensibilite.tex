@@ -1,0 +1,359 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[margin=2.25cm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[french]{babel}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{amsmath}
+\usepackage{float}
+\usepackage{longtable}
+\usepackage{placeins}
+\usepackage{tabularx}
+
+\title{Etude de sensibilite du modele sans banque\\Rapport final provisoire et autonome}
+\author{modele-27-04-WIP / studies/sensitivity}
+\date{28 avril 2026, 19:51 CEST}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Ce rapport documente l'etude de sensibilite numerique du modele
+\texttt{modele-27-04-WIP}. Le cadre principal est volontairement homogene :
+\(\alpha_{\min}=\alpha_{\max}=1\). La volatilite brownienne
+\(\sigma_\alpha=\texttt{alpha\_sigma\_brownien}\) varie en revanche comme un
+parametre dynamique. Le taux d'amortissement est exclu. Les resultats montrent
+que l'apparition d'un regime borne est principalement un phenomene de seuil :
+\(k=\texttt{n\_candidats\_pool}\), \(\sigma_\alpha\), \(\theta\), \(\mu\),
+les depreciations, la dotation initiale et \(\lambda=\texttt{lambda\_creation}\)
+peuvent faire basculer le systeme entre croissance peu financee, regime dense,
+et fragmentation numerique en micro-credits. L'objectif predictif est
+partiellement atteint : sur les 193 observations disponibles, un modele simple
+predit l'indicateur \texttt{bounded\_tail} avec une balanced accuracy de
+0.84, et explique environ 0.58 de la variance de la densite financiere et
+0.60 de la variance de \(\log(n_{\mathrm{alive}})\). Ces chiffres ne sont pas
+un resultat final de machine learning ; ils quantifient surtout que les
+parametres contiennent deja une information predictive forte.
+\end{abstract}
+
+\section{Perimetre et conventions}
+
+Le modele simule des entites productives qui investissent, pretent, empruntent
+et peuvent faire faillite par insolvabilite. Les grandeurs principales suivies
+sont :
+\begin{itemize}
+  \item \(n_{\mathrm{alive}}\), nombre d'entites vivantes ;
+  \item \(A\), actif total du systeme ;
+  \item \(L\), nombre de prets actifs ;
+  \item \(V\), volume financier des prets ;
+  \item \(D=V/A\), densite financiere en volume ;
+  \item \(L/n_{\mathrm{alive}}\), densite en nombre de contrats ;
+  \item le Gini des actifs, les cascades de faillites et les correlations de queue.
+\end{itemize}
+
+Le parametre \(\lambda=\texttt{lambda\_creation}\) est le taux du processus de
+creation d'entites. Il est reel : il n'a pas a etre entier. Les premieres
+grilles ont surtout utilise \(\lambda\in\{1,2,4\}\), mais les prochaines grilles
+fines devront utiliser des valeurs intermediaires.
+
+\section{Regime permanent : critere retenu}
+
+Le regime permanent ne se reduit pas a une chute forte de 25 \% du nombre
+d'entites. Une simulation utile peut avoir une chute faible, une stabilisation
+tardive ou meme une decorrelation entre \(n_{\mathrm{alive}}\) et l'actif. Les
+diagnostics utilises dans les scripts combinent donc :
+\begin{itemize}
+  \item la detection d'une chute de 5 \% de \(n_{\mathrm{alive}}\), qui sert de
+  repere visuel ;
+  \item une fenetre de queue apres un temps fini ;
+  \item les pentes relatives de \(n_{\mathrm{alive}}\), \(A\) et \(D\) sur cette
+  queue ;
+  \item la pente et le niveau des faillites ;
+  \item les correlations de queue entre \(n_{\mathrm{alive}}\), \(A\), le nombre
+  de prets et les faillites.
+\end{itemize}
+
+Le flag \texttt{bounded\_tail} n'est donc pas une preuve mathematique de
+stationnarite. C'est un critere operationnel : il signale que, sur l'horizon
+observe, les stocks ne continuent pas une derive de grande amplitude.
+
+\section{Lecture initiale : correlations pilotes}
+
+La figure \ref{fig:pilot-corr} reste utile parce qu'elle montre tres tot une
+propriete qui se confirme ensuite : les statistiques ne se resument pas a une
+seule dimension. Le nombre d'entites, l'actif, la densite financiere, les prets
+et les faillites ont des correlations conditionnelles fortes, mais ces
+correlations changent avec le regime.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.92\linewidth]{figures/pilot_correlations.pdf}
+  \caption{Correlations du pilote initial. Cette figure justifie de suivre
+  simultanement \(n_{\mathrm{alive}}\), actif total, prets, densite financiere,
+  faillites et Gini, plutot que de choisir une seule variable de taille.}
+  \label{fig:pilot-corr}
+\end{figure}
+
+\section{Seuil en \(k\) et plateau}
+
+Le parametre \(k=\texttt{n\_candidats\_pool}\) controle la rencontre sur le
+marche du credit. Dans le cas homogene statique
+\((\alpha_{\min}=\alpha_{\max}=1, \sigma_\alpha=0)\), \(k=3\) est
+sous-critique a 1500--3000 pas : le reseau reste trop peu dense ou entre trop
+tard dans une dynamique de faillites. \(k=4\) franchit un seuil et installe un
+regime dense. Aux grands \(k\), la densite financiere ne croit pas
+indefiniment : elle forme un plateau.
+
+\begin{table}[H]
+\centering
+\begin{tabular}{rrrr}
+\toprule
+\(k\) homogene & part regime & densite financiere & \(n_{\mathrm{alive}}\) moyen \\
+\midrule
+2  & 0/3 & 0.015 & croissance forte \\
+3  & 0/3 & 0.049 & croissance forte \\
+4  & 3/3 & 0.399 & \(\approx 415\) \\
+5  & 3/3 & 0.411 & \(\approx 330\) \\
+20 & 3/3 & 0.380 & \(\approx 300\) \\
+50 & 3/3 & 0.375 & \(\approx 325\) \\
+\bottomrule
+\end{tabular}
+\caption{Lecture compacte du balayage \(k\), \(\epsilon=10^{-3}\), 1500 pas.}
+\end{table}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.95\linewidth]{figures/k_sweep_steps1500_eps0.001.pdf}
+  \caption{Transition et plateau lorsque \(k\) augmente.}
+\end{figure}
+
+\section{Resolution numerique \(\epsilon\)}
+
+\(\epsilon\) est un parametre numerique, mais il agit fortement sur le nombre de
+contrats. La conclusion robuste est double :
+\begin{itemize}
+  \item \(\epsilon=10^{-3}\) conserve les volumes financiers dans les points de
+  reference tout en accelerant les campagnes ;
+  \item \(\epsilon=10^{-2}\) change qualitativement le modele : le reseau dense
+  disparait et la densite financiere tombe vers zero.
+\end{itemize}
+
+La densite en nombre de prets est donc une metrique mixte : elle decrit a la
+fois la topologie economique et la resolution des micro-credits. Le volume
+financier \(V/A\) est plus robuste.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.95\linewidth]{figures/epsilon_runtime_probe.pdf}
+  \caption{Compromis cout / stabilite des metriques lorsque \(\epsilon\) varie.}
+\end{figure}
+
+\section{Volatilite brownienne de \(\alpha\)}
+
+Le cas principal reste homogene a la naissance :
+\(\alpha_{\min}=\alpha_{\max}=1\). En revanche, \(\sigma_\alpha\) introduit une
+dispersion dynamique. Elle joue un role de declencheur quand \(k=3\). Pour
+\(k=3\), une fenetre active \(\sigma_\alpha\approx0.005\)--0.02 cree un reseau
+dense. Une volatilite trop forte, \(\sigma_\alpha=0.05\) ou 0.1, detruit a
+nouveau le volume financier. Pour \(k=4\), le regime existe deja a
+\(\sigma_\alpha=0\), puis la densite augmente jusqu'a environ 0.02 avant de se
+fragmenter.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.95\linewidth]{figures/alpha_sigma_sweep_steps1500_eps0.001.pdf}
+  \caption{Fenetre active de volatilite brownienne en alpha homogene.}
+\end{figure}
+
+\section{OAT autour de deux centres}
+
+La campagne OAT Codex utilise deux centres :
+\begin{itemize}
+  \item \texttt{subcritical\_k3} : \(k=3\), \(\sigma_\alpha=0\), \(\epsilon=10^{-3}\) ;
+  \item \texttt{regime\_k4} : \(k=4\), \(\sigma_\alpha=0\), \(\epsilon=10^{-3}\).
+\end{itemize}
+
+Quinze axes ont ete explores, hors amortissement. Pour
+\texttt{actif\_liquide\_initial}, le passif inne initial a ete ajuste afin de
+conserver une richesse nette initiale coherente de 10.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.98\linewidth]{figures/codex_oat_screen_steps1500_seeds42.pdf}
+  \caption{Effets OAT autour des deux centres. Les barres mesurent les deltas
+  par rapport au centre du meme groupe.}
+\end{figure}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabularx}{\linewidth}{lXX}
+\toprule
+Centre & Parametres qui densifient & Parametres qui detruisent ou retardent \\
+\midrule
+\(k=3\) & \(\sigma_\alpha=0.02\), \(\mu=0\), \(\delta_{\mathrm{endo}}=0.02\),
+\(f=0\), actif initial 100, \(k=4\), \(\theta=0.5\)
+& \(\epsilon=10^{-2}\), \(\delta_{\mathrm{endo}}=0.1\), \(\theta=0.2\),
+\(\mu=0.1\) \\
+\(k=4\) & \(\sigma_\alpha=0.02\), \(\mu=0\), actif initial 100,
+\(f=0\), \(k=5\)
+& \(\delta_{\mathrm{endo}}=0.1\), \(\epsilon=10^{-2}\), \(f=0.5\),
+actif initial 400, \(\phi=0.25\), \(\theta=0.2\), \(\lambda=4\) \\
+\bottomrule
+\end{tabularx}
+\caption{Lecture qualitative de l'OAT seed 42. \(f\) est
+\texttt{fraction\_taux\_emprunteur} et \(\phi\) est
+\texttt{fraction\_auto\_investissement}.}
+\end{table}
+
+\section{Sonde longue : ce qui etait trop court a 1500 pas}
+
+Plusieurs simulations a 1500 pas etaient ambigues. La sonde longue a relance
+8 cas a 3000 pas. Elle montre que certains cas entraient seulement dans une
+phase dense, sans etre encore bornes.
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lrrrr}
+\toprule
+Cas & queue bornee & densite & \(n_{\mathrm{alive}}\) & pente relative \(n\) \\
+\midrule
+\texttt{k3\_sigma0005} & non & 0.404 & 716 & +0.295 \\
+\texttt{k3\_sigma002} & non & 0.494 & 722 & +0.041 \\
+\texttt{k3\_theta05} & oui & 0.387 & 598 & -0.154 \\
+\texttt{k3\_mu0} & oui & 0.508 & 382 & +0.139 \\
+\texttt{k4\_depr\_endo002} & oui & 0.488 & 444 & +0.033 \\
+\texttt{k4\_theta02} & non & 0.022 & 5010 & +0.494 \\
+\texttt{k4\_actif400} & non & 0.017 & 4898 & +0.484 \\
+\texttt{k4\_lambda4} & non & 0.079 & 9424 & +0.507 \\
+\bottomrule
+\end{tabular}
+\caption{Sonde longue 3000 pas, seed 42. La ligne \(k=3,\sigma=0.005\) confirme
+que l'entree visible vers 1200 pas n'etait pas encore un regime etabli.}
+\end{table}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.98\linewidth]{figures/codex_long_probe_steps3000_seeds42.pdf}
+  \caption{Trajectoires longues des cas ambigus. La ligne verticale indique le
+  debut de la fenetre de mesure souple.}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.98\linewidth]{figures/codex_oat_key_trajectories.pdf}
+  \caption{Planches comparatives OAT visibles dans Simulation Lab.}
+\end{figure}
+
+\section{Prediction depuis les parametres}
+
+Un test predictif simple a ete fait sur 193 observations issues des pilotes,
+sweeps \(k\), sweeps \(\sigma_\alpha\), benchmark \(\epsilon\), sonde guidee et
+OAT. Les variables explicatives sont les parametres de simulation, incluant
+\(k\), \(\sigma_\alpha\), \(\theta\), \(\mu\), \(\lambda\), les depreciations,
+la dotation initiale, \(\epsilon\) et l'ecart \(\alpha_{\max}-\alpha_{\min}\).
+
+Les resultats en validation croisee sont :
+\begin{itemize}
+  \item prediction de \texttt{bounded\_tail} : accuracy 0.845, balanced accuracy
+  0.840 ;
+  \item prediction de la densite financiere : \(R^2=0.584\), RMSE 0.122 ;
+  \item prediction de \(\log(1+n_{\mathrm{alive}})\) : \(R^2=0.605\), RMSE 0.548.
+\end{itemize}
+
+La classification du regime est donc deja assez predictable. Les regressions
+restent plus difficiles car les effets sont non lineaires, avec seuils et
+plateaux.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.98\linewidth]{figures/codex_predictive_importance.pdf}
+  \caption{Importance predictive des parametres par permutation.}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.98\linewidth]{figures/codex_phase_maps.pdf}
+  \caption{Cartes de phase empiriques. Les marqueurs ronds sont les cas a queue
+  bornee ; les croix les cas non bornes. La couleur indique la densite
+  financiere.}
+\end{figure}
+
+\section{Decorrelation \(n_{\mathrm{alive}}\) / actif}
+
+Le nombre d'entites et l'actif total ne mesurent pas la meme chose. Dans une
+croissance non financee, ils montent souvent ensemble : les correlations de
+queue peuvent etre proches de 1, mais ce n'est pas un signe de regime. Dans un
+regime dense, les faillites peuvent stabiliser \(n_{\mathrm{alive}}\) alors que
+l'actif moyen des survivants continue de se reorganiser. Le cas historique
+\(k=4, \sigma_\alpha=0.05, \epsilon=10^{-3}\) illustre cette decorrelation :
+\(n_{\mathrm{alive}}\) peut rester borne alors que l'actif et le volume de prets
+portent encore une derive ou une fragmentation en micro-credits.
+
+L'interpretation pratique est la suivante :
+\begin{itemize}
+  \item une forte correlation positive \(n/A\) en queue peut signaler une
+  croissance commune non stabilisee ;
+  \item une correlation faible ou negative n'est pas necessairement une
+  anomalie : elle peut signaler une population stabilisee mais une composition
+  du bilan encore mobile ;
+  \item il faut donc predire au moins deux sorties : la taille demographique et
+  la taille bilancielle.
+\end{itemize}
+
+\section{Boucles autonomes effectuees}
+
+Cette section explicite les boucles de decision realisees pendant l'etude.
+\begin{longtable}{p{0.06\linewidth}p{0.25\linewidth}p{0.62\linewidth}}
+\toprule
+\# & Zone ombragee & Action et conclusion \\
+\midrule
+1 & Critere de regime & Remplacement du critere de chute 25 \% par des diagnostics de queue. \\
+2 & Seuil \(k\) & Sweep \(k\) : seuil homogene entre 3 et 4, plateau ensuite. \\
+3 & Resolution \(\epsilon\) & Benchmark : \(10^{-3}\) conserve les volumes, \(10^{-2}\) detruit le regime. \\
+4 & Volatilite \(\alpha\) & Sweep \(\sigma_\alpha\) : fenetre active autour de 0.005--0.02. \\
+5 & Deux centres OAT & Construction des centres \(k=3\) et \(k=4\), puis 62 simulations OAT. \\
+6 & Observabilite Lab & Les 62 runs OAT ont les graphes complets, compact timeseries, 0 CSV brut. \\
+7 & Entrees tardives & Sonde longue 3000 pas : \(k=3,\sigma=0.005\) reste non borne. \\
+8 & Sorties de regime & \(\theta=0.2\), actif initial 400 et \(\lambda=4\) restent en croissance a 3000 pas. \\
+9 & Prediction globale & Forets aleatoires : regime predictible a 0.84 balanced accuracy. \\
+10 & Parametre continu \(\lambda\) & Note ajoutee : \(\lambda\) doit etre traite comme reel dans les prochaines grilles fines. \\
+\bottomrule
+\end{longtable}
+
+\section{Ce qui reste a eclairer}
+
+Trois zones meritent encore des simulations ciblees.
+
+Premierement, \(\lambda\) doit etre balaye finement comme variable continue, par
+exemple \(\lambda\in[1,4]\) avec des valeurs intermediaires. Les premiers
+resultats montrent que \(\lambda=4\) impose une croissance non compensee, mais
+la frontiere n'est pas localisee.
+
+Deuxiemement, les cas \(k=3,\sigma_\alpha=0.02\) et
+\(\delta_{\mathrm{endo}}=0.02\) produisent des densites fortes avec des queues
+parfois lentes. Ils demandent des horizons plus longs ou des seeds multiples
+pour separer regime lent et derive persistante.
+
+Troisiemement, la distribution des tailles d'entites en regime permanent doit
+etre analysee plus directement. Les metriques Gini et snapshots existent, mais
+une comparaison lognormale / Pareto / melange de regimes demanderait une
+extraction dediee des distributions finales des runs bornes.
+
+\section{Conclusion}
+
+Le comportement du modele est predictible a gros traits depuis les parametres,
+mais pas par une loi lineaire simple. Les variables les plus structurantes sont
+des variables de seuil : \(k\), \(\sigma_\alpha\), \(\theta\), \(\mu\),
+\(\lambda\), les depreciations et la dotation initiale. Un regime dense demande
+un reseau de credit suffisamment actif pour produire des faillites endogenes,
+mais pas une fragmentation numerique excessive. Une population nombreuse n'est
+pas un signe de stabilite : dans plusieurs cas, elle signale au contraire que
+les creations ne sont pas compensees par les faillites. Pour predire finement
+une simulation, il faut donc predire conjointement : apparition du regime,
+densite financiere en volume, granularite du reseau, taille demographique,
+taille bilancielle et derive de queue.
+
+\end{document}
