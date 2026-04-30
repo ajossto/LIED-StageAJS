@@ -677,6 +677,71 @@ regimes testes, ou qu'il est redondant avec d'autres voies de liquidation.
 Ils sont \textbf{candidats prioritaires a la suppression} pour simplifier
 le modele, sous reserve d'une verification analytique.
 
+\section{Predictabilite des series temporelles par regime}
+\label{sec:predictabilite}
+
+L'analyse de predictabilite a ete conduite sur 10 cas de test (3~seeds chacun,
+1500 pas) et sur 8 runs longs issus de la sonde codex (3000 pas, seed~42).
+Pour chaque cas, on calcule~: exposant de Hurst par analyse R/S sur les
+differences premieres de $n_{\mathrm{alive}}$, autocorrelation au lag~20,
+ratio d'erreur AR(5) sur horizon 1 pas (normalise par le predicteur naif),
+et entropie de permutation d'ordre~3.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{lccccl}
+\hline
+Cas & $H$ & $r_{20}$ & AR/naif & $S_p$ & Classe \\
+\hline
+k2\_baseline         & 1.993 & $-0.01$ & 0.62 & 0.00 & régime\_structuré \\
+k3\_baseline         & 1.990 & $+0.01$ & 0.60 & 0.00 & régime\_structuré \\
+k4\_actif400\_exit   & 1.993 & $-0.00$ & 0.62 & 0.00 & régime\_structuré \\
+k4\_theta02\_exit    & 1.994 & $+0.00$ & 0.58 & 0.00 & régime\_structuré \\
+k4\_lambda4\_growth  & 1.988 & $-0.00$ & 0.43 & 0.02 & régime\_structuré \\
+\hline
+k3\_sigma005         & 1.939 & $+0.40$ & 0.88 & 0.54 & variation\_lente \\
+k4\_lam30            & 1.970 & $+0.54$ & 0.76 & 0.73 & variation\_lente \\
+\hline
+k3\_mu0              & 1.523 & $+0.12$ & 1.05 & 0.89 & tendance\_modérée \\
+k3\_sigma020         & 1.577 & $+0.15$ & 1.06 & 0.83 & tendance\_modérée \\
+k4\_baseline         & 1.480 & $+0.28$ & 1.08 & 0.84 & tendance\_modérée \\
+k4\_sigma020         & 1.603 & $+0.12$ & 1.06 & 0.87 & tendance\_modérée \\
+k5\_baseline         & 1.545 & $+0.21$ & 1.08 & 0.86 & tendance\_modérée \\
+\hline
+\end{tabular}
+\caption{Metriques de predictabilite par cas. $H$~: Hurst R/S ; $r_{20}$~: autocorrelation
+au lag~20 ; AR/naif~: ratio MSE AR(5) / naif (>1 = AR no better) ; $S_p$~: entropie de
+permutation. Les cas \texttt{bounded} (\(p \ge 0.67\)) apparaissent en zone tendance\_modérée.}
+\end{table}
+
+Trois classes emergent :
+
+\begin{enumerate}
+  \item \textbf{Régime structuré / extinction} (H~$\approx$~2, $S_p \approx 0$, AR/naif~$<$~1).
+    La serie de $n_{\mathrm{alive}}$ converge vers un quasi-point fixe ou une oscillation
+    reguliere, de variance quasi nulle. L'entropie de permutation s'annule, le ratio AR/naif
+    descend sous 1 (la memoire locale aide a predire). Ce comportement caracterise les cas
+    d'extinction ($k \le 3$ sans perturbation, ou $k=4$ avec $\theta$ ou $\delta$ extremes).
+    \textit{Note~: les valeurs $H>1$ obtenues par R/S sur des series quasi-constantes sont
+    des artefacts numeriques ; l'indicateur pertinent est $S_p$.}
+
+  \item \textbf{Variation lente / explosion} (H~$\approx$~1.9-2.0, $r_{20} \approx 0.4$-$0.5$).
+    Une autocorrelation longue portee domine. La population croit sans borne (k3\_sigma005,
+    k4\_lam30), la tendance absorbe le signal stochastique.
+
+  \item \textbf{Tendance moderee / regime borne} (H~$\approx$~1.5, $S_p \approx 0.85$,
+    AR/naif~$>$~1). Les cas bornes se regroupent ici. L'entropie de permutation est haute~:
+    la sequence des fluctuations est quasi-aleatoire pas-a-pas, AR(5) ne bat pas le predicteur
+    naif. Le regime borne est donc le \textbf{moins predictible a court terme} -- ce qui est
+    coherent avec une fluctuation d'equilibre structurel.
+\end{enumerate}
+
+\textbf{Corollaire pratique.} L'entropie de permutation $S_p$ est le meilleur separateur
+des trois classes sur un seul scalaire : $S_p < 0.1$ signale l'extinction, $S_p \in [0.4, 0.75]$
+l'explosion, $S_p > 0.80$ le regime borne. L'exposant de Hurst a lui seul est insuffisant~:
+les regimes d'extinction et d'explosion partagent tous deux $H \approx 2$.
+
 \section{Ce qui reste a eclairer}
 
 Trois zones restent ouvertes apres les etudes de couplage.

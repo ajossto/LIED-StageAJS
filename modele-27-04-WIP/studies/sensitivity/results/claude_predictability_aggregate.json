@@ -1,0 +1,182 @@
+[
+  {
+    "case": "k2_baseline",
+    "n_seeds": 3,
+    "hurst_mean": 1.993,
+    "ac20_mean": -0.01,
+    "ar5_ratio_mean": 0.619,
+    "perm_entropy_mean": 0.0,
+    "p_bounded": 0.0,
+    "dominant_class": "r\u00e9gime_structur\u00e9"
+  },
+  {
+    "case": "k3_baseline",
+    "n_seeds": 3,
+    "hurst_mean": 1.99,
+    "ac20_mean": 0.007,
+    "ar5_ratio_mean": 0.598,
+    "perm_entropy_mean": 0.002,
+    "p_bounded": 0.0,
+    "dominant_class": "r\u00e9gime_structur\u00e9"
+  },
+  {
+    "case": "k3_mu0",
+    "n_seeds": 3,
+    "hurst_mean": 1.523,
+    "ac20_mean": 0.124,
+    "ar5_ratio_mean": 1.053,
+    "perm_entropy_mean": 0.89,
+    "p_bounded": 1.0,
+    "dominant_class": "tendance_mod\u00e9r\u00e9e"
+  },
+  {
+    "case": "k3_sigma005",
+    "n_seeds": 3,
+    "hurst_mean": 1.939,
+    "ac20_mean": 0.397,
+    "ar5_ratio_mean": 0.88,
+    "perm_entropy_mean": 0.541,
+    "p_bounded": 0.33,
+    "dominant_class": "variation_lente"
+  },
+  {
+    "case": "k3_sigma020",
+    "n_seeds": 3,
+    "hurst_mean": 1.577,
+    "ac20_mean": 0.15,
+    "ar5_ratio_mean": 1.063,
+    "perm_entropy_mean": 0.83,
+    "p_bounded": 0.67,
+    "dominant_class": "tendance_mod\u00e9r\u00e9e"
+  },
+  {
+    "case": "k4_baseline",
+    "n_seeds": 3,
+    "hurst_mean": 1.48,
+    "ac20_mean": 0.283,
+    "ar5_ratio_mean": 1.077,
+    "perm_entropy_mean": 0.838,
+    "p_bounded": 1.0,
+    "dominant_class": "tendance_mod\u00e9r\u00e9e"
+  },
+  {
+    "case": "k4_lam15",
+    "n_seeds": 3,
+    "hurst_mean": 1.482,
+    "ac20_mean": 0.246,
+    "ar5_ratio_mean": 1.091,
+    "perm_entropy_mean": 0.823,
+    "p_bounded": 0.33,
+    "dominant_class": "tendance_mod\u00e9r\u00e9e"
+  },
+  {
+    "case": "k4_lam30",
+    "n_seeds": 3,
+    "hurst_mean": 1.97,
+    "ac20_mean": 0.54,
+    "ar5_ratio_mean": 0.76,
+    "perm_entropy_mean": 0.73,
+    "p_bounded": 0.0,
+    "dominant_class": "variation_lente"
+  },
+  {
+    "case": "k4_sigma020",
+    "n_seeds": 3,
+    "hurst_mean": 1.603,
+    "ac20_mean": 0.119,
+    "ar5_ratio_mean": 1.055,
+    "perm_entropy_mean": 0.867,
+    "p_bounded": 1.0,
+    "dominant_class": "tendance_mod\u00e9r\u00e9e"
+  },
+  {
+    "case": "k5_baseline",
+    "n_seeds": 3,
+    "hurst_mean": 1.545,
+    "ac20_mean": 0.206,
+    "ar5_ratio_mean": 1.076,
+    "perm_entropy_mean": 0.861,
+    "p_bounded": 0.67,
+    "dominant_class": "tendance_mod\u00e9r\u00e9e"
+  },
+  {
+    "case": "long_long|case=k3_mu0_dense|seed=42|steps=3000",
+    "n_seeds": 1,
+    "hurst_mean": 1.542,
+    "ac20_mean": 0.033,
+    "ar5_ratio_mean": 1.029,
+    "perm_entropy_mean": 0.914,
+    "p_bounded": 1.0,
+    "dominant_class": "tendance_mod\u00e9r\u00e9e"
+  },
+  {
+    "case": "long_long|case=k3_sigma0005_late_entry|seed=42|steps=3000",
+    "n_seeds": 1,
+    "hurst_mean": 1.914,
+    "ac20_mean": 0.424,
+    "ar5_ratio_mean": 1.038,
+    "perm_entropy_mean": 0.756,
+    "p_bounded": 0.0,
+    "dominant_class": "variation_lente"
+  },
+  {
+    "case": "long_long|case=k3_sigma002_dense_unbounded|seed=42|steps=3000",
+    "n_seeds": 1,
+    "hurst_mean": 1.649,
+    "ac20_mean": 0.079,
+    "ar5_ratio_mean": 1.033,
+    "perm_entropy_mean": 0.887,
+    "p_bounded": 0.0,
+    "dominant_class": "tendance_mod\u00e9r\u00e9e"
+  },
+  {
+    "case": "long_long|case=k3_theta05_dense|seed=42|steps=3000",
+    "n_seeds": 1,
+    "hurst_mean": 1.653,
+    "ac20_mean": 0.319,
+    "ar5_ratio_mean": 1.073,
+    "perm_entropy_mean": 0.825,
+    "p_bounded": 1.0,
+    "dominant_class": "tendance_mod\u00e9r\u00e9e"
+  },
+  {
+    "case": "long_long|case=k4_actif400_exit|seed=42|steps=3000",
+    "n_seeds": 1,
+    "hurst_mean": 1.993,
+    "ac20_mean": -0.004,
+    "ar5_ratio_mean": 0.622,
+    "perm_entropy_mean": 0.0,
+    "p_bounded": 0.0,
+    "dominant_class": "r\u00e9gime_structur\u00e9"
+  },
+  {
+    "case": "long_long|case=k4_depr_endo002_slow|seed=42|steps=3000",
+    "n_seeds": 1,
+    "hurst_mean": 1.442,
+    "ac20_mean": 0.052,
+    "ar5_ratio_mean": 1.035,
+    "perm_entropy_mean": 0.914,
+    "p_bounded": 1.0,
+    "dominant_class": "tendance_mod\u00e9r\u00e9e"
+  },
+  {
+    "case": "long_long|case=k4_lambda4_growth|seed=42|steps=3000",
+    "n_seeds": 1,
+    "hurst_mean": 1.988,
+    "ac20_mean": -0.003,
+    "ar5_ratio_mean": 0.428,
+    "perm_entropy_mean": 0.017,
+    "p_bounded": 0.0,
+    "dominant_class": "r\u00e9gime_structur\u00e9"
+  },
+  {
+    "case": "long_long|case=k4_theta02_exit|seed=42|steps=3000",
+    "n_seeds": 1,
+    "hurst_mean": 1.994,
+    "ac20_mean": 0.003,
+    "ar5_ratio_mean": 0.58,
+    "perm_entropy_mean": 0.0,
+    "p_bounded": 0.0,
+    "dominant_class": "r\u00e9gime_structur\u00e9"
+  }
+]
