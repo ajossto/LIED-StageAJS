@@ -38,6 +38,57 @@
         <button class="secondary" data-scope="active">Actives</button>
         <button class="secondary" data-scope="trash">Corbeille</button>
       </div>
+      <div id="study-filter" class="study-filter hidden">
+        <strong>Filtre étude de sensibilité</strong>
+        <div class="study-filter-row">
+          <label>Groupe</label>
+          <select id="study-group">
+            <option value="">Tous les groupes</option>
+            <option value="exploratoire">Exploration initiale</option>
+            <option value="oat">OAT (One-at-a-time)</option>
+            <option value="couplages">Couplages 2D</option>
+            <option value="multirun">Multi-seeds probabiliste</option>
+            <option value="predictabilite">Prédictabilité</option>
+            <option value="long_runs">Long runs</option>
+            <option value="direct">Simulations directes</option>
+          </select>
+        </div>
+        <div class="study-filter-row">
+          <label>Campagne</label>
+          <select id="study-campaign">
+            <option value="">Toutes campagnes</option>
+            <optgroup label="Exploration">
+              <option value="alpha_sigma">alpha_sigma</option>
+              <option value="k_sweep">k_sweep</option>
+              <option value="epsilon_runtime">epsilon_runtime</option>
+              <option value="pilot">pilot</option>
+              <option value="lab_guided_probe">lab_guided_probe</option>
+            </optgroup>
+            <optgroup label="OAT">
+              <option value="codex_oat_steps1500_seeds42">OAT Codex seed=42</option>
+              <option value="claude_oat_robustness">OAT robustesse seeds 7+123</option>
+              <option value="claude_lambda_fine_sweep">Balayage fin lambda</option>
+            </optgroup>
+            <optgroup label="Couplages 2D">
+              <option value="claude_coupling_lambda_k">λ × k</option>
+              <option value="claude_coupling_k_mu">k × μ</option>
+              <option value="claude_coupling_sigma_k">σ × k</option>
+              <option value="claude_coupling_theta_depr">θ × δ_endo</option>
+            </optgroup>
+            <optgroup label="Autres">
+              <option value="claude_multirun_limits">Multi-seeds probabiliste</option>
+              <option value="claude_predictability">Prédictabilité</option>
+              <option value="claude_long_run_k3sigma0005">Long run k3σ=0.005</option>
+              <option value="codex_long_probe_steps3000_seeds42">Sonde longue Codex</option>
+            </optgroup>
+          </select>
+        </div>
+        <div class="study-filter-row">
+          <label><input type="checkbox" id="study-filter-bounded"> Queue bornée</label>
+          <label><input type="checkbox" id="study-filter-drop5"> Drop 5%</label>
+          <label><input type="checkbox" id="study-filter-converged"> Régime strict</label>
+        </div>
+      </div>
       <div id="runs-list" class="runs-list"></div>
       <div id="trash-actions" class="inline-actions hidden">
         <button id="empty-trash" class="secondary">Vider la corbeille</button>

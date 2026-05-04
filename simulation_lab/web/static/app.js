@@ -9,6 +9,11 @@ const state = {
   jobPollTimer: null,
   openRunGroups: new Set(),
   runGroupsTouched: false,
+  studyCampaign: "",
+  studyGroup: "",
+  studyBounded: false,
+  studyDrop5: false,
+  studyConverged: false,
 };
 
 const PARAMETER_HELP = {
@@ -347,31 +352,197 @@ function renderRuns() {
   if (trashActions) {
     trashActions.classList.toggle("hidden", state.scope !== "trash");
   }
-  list.innerHTML = renderRunsGrouped(state.runs, { compact: list.dataset.compact === "true" });
+  const hasStudy = state.runs.some((r) => r.model_id === "etude_sensibilite_27_04_wip");
+  document.getElementById("study-filter")?.classList.toggle("hidden", !hasStudy);
+  const visibleRuns = filterStudyRuns(state.runs);
+  list.innerHTML = renderRunsGrouped(visibleRuns, { compact: list.dataset.compact === "true" });
   bindRunListInteractions(list);
+}
+
+function studyGroupOf(run) {
+  const sg = run.study_group;
+  if (sg) return sg;
+  const id = run.run_id || "";
+  if (id.includes("_coupling_")) return "couplages";
+  if (id.includes("_multirun_")) return "multirun";
+  if (id.includes("_predictab")) return "predictabilite";
+  if (id.includes("_long_run_") || id.includes("_long_probe_")) return "long_runs";
+  if (id.includes("_oat_") || id.includes("_robustness_") || id.includes("_lambda_fine_")) return "oat";
+  if (id.includes("sensitivity_")) return "exploratoire";
+  return "direct";
+}
+
+const STUDY_GROUP_ORDER = ["exploratoire", "oat", "couplages", "multirun", "predictabilite", "long_runs", "direct"];
+const STUDY_GROUP_LABELS = {
+  exploratoire: "Exploration initiale",
+  oat: "OAT (One-at-a-time)",
+  couplages: "Couplages 2D",
+  multirun: "Multi-seeds probabiliste",
+  predictabilite: "Prédictabilité",
+  long_runs: "Long runs",
+  direct: "Simulations directes",
+};
+
+function filterStudyRuns(runs) {
+  const { studyCampaign, studyGroup, studyBounded, studyDrop5, studyConverged } = state;
+  if (!studyCampaign && !studyGroup && !studyBounded && !studyDrop5 && !studyConverged) return runs;
+  return runs.filter((run) => {
+    if (run.model_id !== "etude_sensibilite_27_04_wip") return true;
+    if (studyGroup) {
+      if (studyGroupOf(run) !== studyGroup) return false;
+    }
+    if (studyCampaign) {
+      const prefix = `sensitivity_${studyCampaign}_`;
+      const exact = `sensitivity_${studyCampaign}`;
+      if (!run.run_id.startsWith(prefix) && run.run_id !== exact) return false;
+    }
+    const s = run.summary || {};
+    if (studyBounded && !s.bounded_tail) return false;
+    if (studyDrop5 && !s.drop_5_detected) return false;
+    if (studyConverged && !s.converged) return false;
+    return true;
+  });
+}
+
+function isStudyRecord(run) {
+  return (
+    run.model_id === "etude_sensibilite_27_04_wip" &&
+    !run.run_id.endsWith("_aggregate") &&
+    run.run_id !== "sensitivity_manifest" &&
+    run.run_id !== "sensitivity_important_cases_figures"
+  );
+}
+
+function renderStudyActions(run) {
+  if (!isStudyRecord(run)) return "";
+  const artifacts = run.artifacts || [];
+  const hasMacro = artifacts.some((a) => a.label === "macro_overview.png" && a.relative_path.includes("legacy_output"));
+  const hasCompact = artifacts.some((a) => a.label === "compact_timeseries.json");
+  const csvCount = artifacts.filter((a) => a.kind === "csv").length;
+  const regenBtn = `<button id="regen-graphs">Régénérer graphiques complets</button>`;
+  let cleanPart = "";
+  if (hasMacro && hasCompact && csvCount > 0) {
+    cleanPart = `<button id="clean-csv" class="secondary">Nettoyer CSV (${csvCount} fichier${csvCount > 1 ? "s" : ""})</button>`;
+  } else if (hasMacro && hasCompact) {
+    cleanPart = `<span class="muted">CSV déjà supprimés.</span>`;
+  }
+  return `
+    <details class="action-menu">
+      <summary>Actions étude OAT</summary>
+      <div class="action-list">
+        ${regenBtn}
+        ${cleanPart}
+      </div>
+    </details>`;
+}
+
+function makeSpark(values, W, H, color) {
+  if (values.length < 2) return "";
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const range = max - min || 1;
+  const pad = 3;
+  const pts = values
+    .map((v, i) => {
+      const x = pad + (i / (values.length - 1)) * (W - 2 * pad);
+      const y = H - pad - ((v - min) / range) * (H - 2 * pad);
+      return `${x.toFixed(1)},${y.toFixed(1)}`;
+    })
+    .join(" ");
+  return `<polyline points="${pts}" fill="none" stroke="${escapeAttr(color)}" stroke-width="1.5" stroke-linejoin="round"/>`;
+}
+
+async function renderCompactTimeseries(run) {
+  const artifact = (run.artifacts || []).find((a) => a.label === "compact_timeseries.json");
+  const container = document.getElementById("compact-timeseries-chart");
+  if (!artifact || !container) return;
+  const url = `/api/runs/${encodeURIComponent(run.run_id)}/artifact?path=${encodeURIComponent(artifact.relative_path)}`;
+  try {
+    const data = await fetchJSON(url);
+    const rows = data.rows || [];
+    if (!rows.length) return;
+    const SERIES = [
+      { key: "alive", label: "n_alive", color: "#4e9af1" },
+      { key: "actif", label: "actif", color: "#57a64b" },
+      { key: "densite_fin", label: "densité fin.", color: "#e07b39" },
+      { key: "gini", label: "Gini", color: "#b07aa1" },
+    ];
+    const W = 160, H = 50;
+    const cells = SERIES.map(({ key, label, color }) => {
+      const vals = rows.map((r) => r[key] ?? 0);
+      return `<div class="sparkline-cell"><svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">${makeSpark(vals, W, H, color)}</svg><div class="sparkline-label">${escapeHtml(label)}</div></div>`;
+    });
+    container.innerHTML = `<div class="sparklines-header">Trajectoire compacte (${rows.length} pas)</div><div class="sparklines-row">${cells.join("")}</div>`;
+  } catch (_) {
+    // silently ignore if fetch fails
+  }
 }
 
 function renderRunsGrouped(runs, { compact = false } = {}) {
   if (!runs.length) {
     return `<div class="muted">Aucune simulation dans ce périmètre.</div>`;
   }
-  const groups = new Map();
+  const modelGroups = new Map();
   for (const run of runs) {
     const key = run.model_id || "external";
-    if (!groups.has(key)) groups.set(key, []);
-    groups.get(key).push(run);
+    if (!modelGroups.has(key)) modelGroups.set(key, []);
+    modelGroups.get(key).push(run);
   }
-  return Array.from(groups.entries()).map(([modelId, items], index) => `
-    <details class="model-run-group" data-model-id="${escapeAttr(modelId)}" ${isRunGroupOpen(modelId, items, index) ? "open" : ""}>
+  return Array.from(modelGroups.entries()).map(([modelId, items], index) => {
+    if (modelId === "etude_sensibilite_27_04_wip") {
+      return renderStudyModelGroup(modelId, items, index, compact);
+    }
+    return `
+      <details class="model-run-group" data-model-id="${escapeAttr(modelId)}" ${isRunGroupOpen(modelId, items, index) ? "open" : ""}>
+        <summary>
+          <span>${modelDisplayName(modelId)}</span>
+          <span class="run-count">${items.length}</span>
+        </summary>
+        <div class="model-run-items">
+          ${items.map((run) => renderRunCard(run, compact)).join("")}
+        </div>
+      </details>
+    `;
+  }).join("");
+}
+
+function renderStudyModelGroup(modelId, items, index, compact) {
+  const sgGroups = new Map();
+  for (const run of items) {
+    const sg = studyGroupOf(run);
+    if (!sgGroups.has(sg)) sgGroups.set(sg, []);
+    sgGroups.get(sg).push(run);
+  }
+  const subGroupHtml = STUDY_GROUP_ORDER
+    .filter((sg) => sgGroups.has(sg))
+    .map((sg) => {
+      const sgRuns = sgGroups.get(sg);
+      const sgKey = `${modelId}__${sg}`;
+      const isOpen = sgRuns.some((r) => r.run_id === state.selectedRunId) || state.openRunGroups.has(sgKey);
+      return `
+        <details class="model-run-group study-subgroup" data-model-id="${escapeAttr(sgKey)}" ${isOpen ? "open" : ""}>
+          <summary>
+            <span>${escapeHtml(STUDY_GROUP_LABELS[sg] || sg)}</span>
+            <span class="run-count">${sgRuns.length}</span>
+          </summary>
+          <div class="model-run-items">
+            ${sgRuns.map((run) => renderRunCard(run, compact)).join("")}
+          </div>
+        </details>
+      `;
+    }).join("");
+  const open = isRunGroupOpen(modelId, items, index);
+  return `
+    <details class="model-run-group" data-model-id="${escapeAttr(modelId)}" ${open ? "open" : ""}>
       <summary>
         <span>${modelDisplayName(modelId)}</span>
         <span class="run-count">${items.length}</span>
       </summary>
-      <div class="model-run-items">
-        ${items.map((run) => renderRunCard(run, compact)).join("")}
+      <div class="model-run-items study-subgroups">
+        ${subGroupHtml}
       </div>
     </details>
-  `).join("");
+  `;
 }
 
 function isRunGroupOpen(modelId, runs, index) {
@@ -547,10 +718,12 @@ function renderRunDetail(run) {
       </div>
     </div>
     ${renderRunActions(run)}
+    <div id="compact-timeseries-chart"></div>
   `;
   bindRunActions(run);
   bindAnnotationSave(run);
   renderArtifacts(run);
+  renderCompactTimeseries(run);
 }
 
 function renderRunQuickNote(run) {
@@ -623,7 +796,7 @@ function renderRunActions(run) {
       </div>
     `;
   }
-  return baseMenu + (run.origin === "external" ? `<p class="muted">Simulation historique : annotations persistantes autorisées, suppression désactivée.</p>` : "");
+  return baseMenu + (run.origin === "external" ? `<p class="muted">Simulation historique : annotations persistantes autorisées, suppression désactivée.</p>` : "") + renderStudyActions(run);
 }
 
 function bindRunActions(run) {
@@ -678,6 +851,41 @@ function bindRunActions(run) {
       state.selectedRunId = null;
       await refreshRuns();
       renderRunDetail(null);
+    });
+  }
+  const regenButton = document.getElementById("regen-graphs");
+  if (regenButton) {
+    regenButton.addEventListener("click", async () => {
+      regenButton.disabled = true;
+      regenButton.textContent = "Lancement…";
+      try {
+        const result = await fetchJSON(`/api/runs/${encodeURIComponent(run.run_id)}/regen-graphs`, {
+          method: "POST",
+          body: JSON.stringify({}),
+        });
+        regenButton.textContent = result.message || "Lancé — rafraîchir les artefacts dans quelques minutes.";
+      } catch (exc) {
+        regenButton.textContent = `Erreur : ${exc.message}`;
+        regenButton.disabled = false;
+      }
+    });
+  }
+  const cleanCsvButton = document.getElementById("clean-csv");
+  if (cleanCsvButton) {
+    cleanCsvButton.addEventListener("click", async () => {
+      cleanCsvButton.disabled = true;
+      try {
+        const result = await fetchJSON(`/api/runs/${encodeURIComponent(run.run_id)}/clean-csv`, {
+          method: "POST",
+          body: JSON.stringify({}),
+        });
+        cleanCsvButton.textContent = `${result.deleted_csv} CSV supprimé${result.deleted_csv > 1 ? "s" : ""}.`;
+        await refreshRuns();
+        await loadRunDetail();
+      } catch (exc) {
+        cleanCsvButton.textContent = `Erreur : ${exc.message}`;
+        cleanCsvButton.disabled = false;
+      }
     });
   }
 }
@@ -755,6 +963,31 @@ async function initResultsPage() {
     state.selectedRunId = null;
     await refreshRuns();
     renderRunDetail(null);
+  });
+  const groupSelect = document.getElementById("study-group");
+  if (groupSelect) {
+    groupSelect.addEventListener("change", () => {
+      state.studyGroup = groupSelect.value;
+      renderRuns();
+    });
+  }
+  const campaignSelect = document.getElementById("study-campaign");
+  if (campaignSelect) {
+    campaignSelect.addEventListener("change", () => {
+      state.studyCampaign = campaignSelect.value;
+      renderRuns();
+    });
+  }
+  ["study-filter-bounded", "study-filter-drop5", "study-filter-converged"].forEach((id) => {
+    const cb = document.getElementById(id);
+    if (cb) {
+      cb.addEventListener("change", () => {
+        state.studyBounded = document.getElementById("study-filter-bounded")?.checked || false;
+        state.studyDrop5 = document.getElementById("study-filter-drop5")?.checked || false;
+        state.studyConverged = document.getElementById("study-filter-converged")?.checked || false;
+        renderRuns();
+      });
+    }
   });
 }
 

@@ -397,6 +397,47 @@ class RunStorage:
             return False
         return any(key in meta for key in ("config", "summary", "parametres", "resume"))
 
+    def clean_csv(self, run_id: str) -> dict[str, Any]:
+        """Supprime les CSV bruts d'un run d'étude après vérification des conditions."""
+        run_dir = self._managed_run_dir(run_id)
+        has_macro = any(run_dir.glob("legacy_output/*/figures/macro_overview.png"))
+        has_compact = (run_dir / "compact_timeseries.json").exists()
+        if not has_macro:
+            raise ValueError("Figures complètes manquantes. Lancer populate_lab_full_graphs.py d'abord.")
+        if not has_compact:
+            raise ValueError("compact_timeseries.json manquant. Lancer populate_lab_full_graphs.py d'abord.")
+        deleted = 0
+        for csv_path in run_dir.glob("legacy_output/*/csv/*.csv"):
+            csv_path.unlink(missing_ok=True)
+            deleted += 1
+        for csv_dir in run_dir.glob("legacy_output/*/csv"):
+            try:
+                csv_dir.rmdir()
+            except OSError:
+                pass
+        return {"deleted_csv": deleted, "run_id": run_id}
+
+    def regen_graphs(self, run_id: str) -> dict[str, Any]:
+        """Lance populate_lab_full_graphs.py en arrière-plan pour ce run."""
+        run_dir = self._managed_run_dir(run_id)
+        if not (run_dir / "record.json").exists():
+            raise ValueError("Ce run n'est pas un run d'étude de sensibilité (record.json absent).")
+        populate_script = ROOT_DIR / "modele-27-04-WIP" / "studies" / "sensitivity" / "populate_lab_full_graphs.py"
+        if not populate_script.exists():
+            raise FileNotFoundError(f"Script introuvable : {populate_script}")
+        python = ROOT_DIR / ".venv" / "bin" / "python3"
+        subprocess.Popen(
+            [str(python), str(populate_script), "--run-id", run_id],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            cwd=str(ROOT_DIR),
+        )
+        return {
+            "run_id": run_id,
+            "status": "started",
+            "message": "Régénération lancée en arrière-plan. Rafraîchir les artefacts dans quelques minutes.",
+        }
+
     def _open_path(self, path: Path) -> None:
         if os.name == "posix":
             if shutil.which("xdg-open"):

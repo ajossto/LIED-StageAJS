@@ -109,6 +109,22 @@ class SimulationLabHandler(BaseHTTPRequestHandler):
             run_id = unquote(parsed.path.split("/")[3])
             payload = self.server.storage.refresh_artifacts(run_id)
             return self._json_response(payload)
+        if parsed.path.startswith("/api/runs/") and parsed.path.endswith("/clean-csv"):
+            run_id = unquote(parsed.path.split("/")[3])
+            try:
+                payload = self.server.storage.clean_csv(run_id)
+                return self._json_response(payload)
+            except ValueError as exc:
+                self.send_error(HTTPStatus.CONFLICT, str(exc))
+                return
+        if parsed.path.startswith("/api/runs/") and parsed.path.endswith("/regen-graphs"):
+            run_id = unquote(parsed.path.split("/")[3])
+            try:
+                payload = self.server.storage.regen_graphs(run_id)
+                return self._json_response(payload, status=HTTPStatus.ACCEPTED)
+            except (ValueError, FileNotFoundError) as exc:
+                self.send_error(HTTPStatus.BAD_REQUEST, str(exc))
+                return
         if parsed.path.startswith("/api/runs/") and parsed.path.endswith("/locate"):
             run_id = unquote(parsed.path.split("/")[3])
             payload = self.server.storage.locate_run(run_id)

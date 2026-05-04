@@ -442,5 +442,373 @@
       "log_events": false,
       "freq_snapshot": 100
     }
+  },
+  {
+    "seed": 0,
+    "n_steps_requested": 5000,
+    "n_steps_done": 5000,
+    "stopped_early": false,
+    "total_wall_s": 390.55154070898425,
+    "avg_ms_per_step": 78.10532653266564,
+    "max_ms_per_step": 376.37398100923747,
+    "final_alive": 885,
+    "final_loans": 11597,
+    "final_densite_fin": 0.43969188718928387,
+    "final_gini": 0.39667978955787886,
+    "bounded_tail": null,
+    "alive_tail_slope_rel": null,
+    "probe": [
+      {
+        "step": 0,
+        "alive": 101,
+        "loans": 0,
+        "ms_per_step": 3.2415330060757697
+      },
+      {
+        "step": 200,
+        "alive": 519,
+        "loans": 541,
+        "ms_per_step": 13.47549498314038
+      },
+      {
+        "step": 400,
+        "alive": 909,
+        "loans": 1134,
+        "ms_per_step": 20.51206404576078
+      },
+      {
+        "step": 600,
+        "alive": 1328,
+        "loans": 1787,
+        "ms_per_step": 29.648658994119614
+      },
+      {
+        "step": 800,
+        "alive": 1708,
+        "loans": 2613,
+        "ms_per_step": 36.393217043951154
+      },
+      {
+        "step": 1000,
+        "alive": 2101,
+        "loans": 3642,
+        "ms_per_step": 45.40465399622917
+      },
+      {
+        "step": 1200,
+        "alive": 2482,
+        "loans": 4732,
+        "ms_per_step": 58.949293044861406
+      },
+      {
+        "step": 1400,
+        "alive": 2859,
+        "loans": 6301,
+        "ms_per_step": 67.14147696038708
+      },
+      {
+        "step": 1600,
+        "alive": 3181,
+        "loans": 8459,
+        "ms_per_step": 97.40921901538968
+      },
+      {
+        "step": 1800,
+        "alive": 3444,
+        "loans": 12724,
+        "ms_per_step": 121.21191597543657
+      },
+      {
+        "step": 2000,
+        "alive": 3394,
+        "loans": 17777,
+        "ms_per_step": 138.5051440447569
+      },
+      {
+        "step": 2200,
+        "alive": 2514,
+        "loans": 19407,
+        "ms_per_step": 185.73680700501427
+      },
+      {
+        "step": 2400,
+        "alive": 1397,
+        "loans": 14029,
+        "ms_per_step": 115.76817400055006
+      },
+      {
+        "step": 2600,
+        "alive": 949,
+        "loans": 13685,
+        "ms_per_step": 98.20765705080703
+      },
+      {
+        "step": 2800,
+        "alive": 681,
+        "loans": 11556,
+        "ms_per_step": 78.85924098081887
+      },
+      {
+        "step": 3000,
+        "alive": 600,
+        "loans": 12250,
+        "ms_per_step": 85.4571969830431
+      },
+      {
+        "step": 3200,
+        "alive": 675,
+        "loans": 10419,
+        "ms_per_step": 75.27904101880267
+      },
+      {
+        "step": 3400,
+        "alive": 805,
+        "loans": 8700,
+        "ms_per_step": 86.5535160410218
+      },
+      {
+        "step": 3600,
+        "alive": 979,
+        "loans": 8610,
+        "ms_per_step": 97.03430096851662
+      },
+      {
+        "step": 3800,
+        "alive": 1093,
+        "loans": 8402,
+        "ms_per_step": 90.19859897671267
+      },
+      {
+        "step": 4000,
+        "alive": 1156,
+        "loans": 9016,
+        "ms_per_step": 101.22359602246433
+      },
+      {
+        "step": 4200,
+        "alive": 1166,
+        "loans": 10430,
+        "ms_per_step": 113.88242099201307
+      },
+      {
+        "step": 4400,
+        "alive": 1046,
+        "loans": 11065,
+        "ms_per_step": 114.40072202822194
+      },
+      {
+        "step": 4600,
+        "alive": 963,
+        "loans": 10724,
+        "ms_per_step": 115.41734996717423
+      },
+      {
+        "step": 4800,
+        "alive": 878,
+        "loans": 11078,
+        "ms_per_step": 114.7992429905571
+      },
+      {
+        "step": 4999,
+        "alive": 885,
+        "loans": 11597,
+        "ms_per_step": 106.32734000682831
+      }
+    ],
+    "params": {
+      "alpha_min": 1.0,
+      "alpha_max": 1.0,
+      "alpha_sigma_brownien": 0.005,
+      "n_candidats_pool": 3,
+      "epsilon": 0.001,
+      "lambda_creation": 2.0,
+      "taux_amortissement": 0.0,
+      "log_events": false,
+      "freq_snapshot": 100
+    }
+  },
+  {
+    "seed": 1,
+    "n_steps_requested": 5000,
+    "n_steps_done": 5000,
+    "stopped_early": false,
+    "total_wall_s": 342.8380823059706,
+    "avg_ms_per_step": 68.56246915628435,
+    "max_ms_per_step": 251.6838819719851,
+    "final_alive": 1199,
+    "final_loans": 8560,
+    "final_densite_fin": 0.3699085344031663,
+    "final_gini": 0.3839611129672338,
+    "bounded_tail": null,
+    "alive_tail_slope_rel": null,
+    "probe": [
+      {
+        "step": 0,
+        "alive": 103,
+        "loans": 0,
+        "ms_per_step": 3.180280968081206
+      },
+      {
+        "step": 200,
+        "alive": 512,
+        "loans": 867,
+        "ms_per_step": 12.312197010032833
+      },
+      {
+        "step": 400,
+        "alive": 939,
+        "loans": 2246,
+        "ms_per_step": 23.624596011359245
+      },
+      {
+        "step": 600,
+        "alive": 1315,
+        "loans": 3993,
+        "ms_per_step": 36.28998599015176
+      },
+      {
+        "step": 800,
+        "alive": 1628,
+        "loans": 5486,
+        "ms_per_step": 47.30765102431178
+      },
+      {
+        "step": 1000,
+        "alive": 1860,
+        "loans": 8051,
+        "ms_per_step": 74.71128803445026
+      },
+      {
+        "step": 1200,
+        "alive": 1830,
+        "loans": 10109,
+        "ms_per_step": 106.58617597073317
+      },
+      {
+        "step": 1400,
+        "alive": 1440,
+        "loans": 12838,
+        "ms_per_step": 69.14183200569823
+      },
+      {
+        "step": 1600,
+        "alive": 878,
+        "loans": 10070,
+        "ms_per_step": 78.16444296622649
+      },
+      {
+        "step": 1800,
+        "alive": 656,
+        "loans": 9547,
+        "ms_per_step": 79.37034498900175
+      },
+      {
+        "step": 2000,
+        "alive": 592,
+        "loans": 10297,
+        "ms_per_step": 66.52259599650279
+      },
+      {
+        "step": 2200,
+        "alive": 621,
+        "loans": 10469,
+        "ms_per_step": 70.85248496150598
+      },
+      {
+        "step": 2400,
+        "alive": 739,
+        "loans": 8796,
+        "ms_per_step": 64.95602696668357
+      },
+      {
+        "step": 2600,
+        "alive": 920,
+        "loans": 8106,
+        "ms_per_step": 82.03909901203588
+      },
+      {
+        "step": 2800,
+        "alive": 1081,
+        "loans": 7896,
+        "ms_per_step": 75.06671600276604
+      },
+      {
+        "step": 3000,
+        "alive": 1195,
+        "loans": 8193,
+        "ms_per_step": 83.6413559736684
+      },
+      {
+        "step": 3200,
+        "alive": 1241,
+        "loans": 9069,
+        "ms_per_step": 115.94884900841862
+      },
+      {
+        "step": 3400,
+        "alive": 1169,
+        "loans": 10004,
+        "ms_per_step": 107.86631802329794
+      },
+      {
+        "step": 3600,
+        "alive": 1003,
+        "loans": 11042,
+        "ms_per_step": 107.41352895274758
+      },
+      {
+        "step": 3800,
+        "alive": 814,
+        "loans": 11636,
+        "ms_per_step": 111.67790601029992
+      },
+      {
+        "step": 4000,
+        "alive": 671,
+        "loans": 11850,
+        "ms_per_step": 104.0998479584232
+      },
+      {
+        "step": 4200,
+        "alive": 647,
+        "loans": 11048,
+        "ms_per_step": 108.42373099876568
+      },
+      {
+        "step": 4400,
+        "alive": 780,
+        "loans": 9289,
+        "ms_per_step": 96.61440103081986
+      },
+      {
+        "step": 4600,
+        "alive": 930,
+        "loans": 8327,
+        "ms_per_step": 101.30565596045926
+      },
+      {
+        "step": 4800,
+        "alive": 1080,
+        "loans": 8078,
+        "ms_per_step": 117.08811903372407
+      },
+      {
+        "step": 4999,
+        "alive": 1199,
+        "loans": 8560,
+        "ms_per_step": 100.71206401335075
+      }
+    ],
+    "params": {
+      "alpha_min": 1.0,
+      "alpha_max": 1.0,
+      "alpha_sigma_brownien": 0.005,
+      "n_candidats_pool": 3,
+      "epsilon": 0.001,
+      "lambda_creation": 2.0,
+      "taux_amortissement": 0.0,
+      "log_events": false,
+      "freq_snapshot": 100
+    }
   }
 ]

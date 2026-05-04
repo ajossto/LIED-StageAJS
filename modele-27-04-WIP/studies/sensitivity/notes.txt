@@ -586,7 +586,7 @@ JOURNAL DES SESSIONS
 
 ==============================================================================
 
-[2026-04-30, analyse Claude — balayage lambda et robustesse OAT]
+[2026-04-30 ~20:00 CEST, analyse Claude — balayage lambda et robustesse OAT]
   Deux campagnes complémentaires lancées et intégrées :
 
   1) Balayage fin lambda (claude_analysis/lambda_fine_sweep.py)
@@ -615,3 +615,191 @@ JOURNAL DES SESSIONS
     report/rapport_final_sensibilite.tex  (sections 11 et 12 ajoutées)
     report/rapport_final_sensibilite.pdf  (recompilé, 13 pages)
 
+[2026-04-30 ~22:00 CEST, phase couplages paramètriques]
+  Quatre cartes de phase 2D calculées par claude_analysis/ :
+
+  1) Couplage λ × k (coupling_lambda_k.py)
+     k ∈ {2,3,4,5,6}, λ ∈ {1.0,1.5,2.0,2.5,3.0,4.0}, seeds {42,7,123}.
+     Résultat principal : k est le facteur dominant.
+       k=2,3 : bounded_share=0 pour toute λ.
+       k=4 : fenêtre optimale λ ∈ [1.4, 2.0], bounded_share=1.0 à λ=2.0.
+       k=5,6 : robuste même à fort λ.
+     Fichiers : results/claude_coupling_lambda_k.json,
+                results/claude_coupling_lambda_k_aggregate.json,
+                report/figures/claude_coupling_lambda_k.pdf.
+
+  2) Couplage k × μ (coupling_k_mu.py)
+     k ∈ {2,3,4,5}, μ ∈ {0.00,0.01,0.03,0.05,0.10}, seeds {42,7,123}.
+     Découverte majeure : μ=0 débloque le régime pour k=2 et k=3,
+     qui ne l'atteignent jamais avec μ=0.05 (valeur par défaut).
+     La prime minimale μ est le vrai co-seuil de phase pour les petits k.
+     μ ≥ 0.10 détruit tout régime.
+     Fichiers : results/claude_coupling_k_mu.json,
+                results/claude_coupling_k_mu_aggregate.json,
+                report/figures/claude_coupling_k_mu.pdf.
+
+  3) Couplage σ × k (coupling_sigma_k.py)
+     k ∈ {2,3,4,5}, σ ∈ {0.000,0.003,0.010,0.020,0.050}, seeds {42,7,123}.
+     σ ouvre k=3 dans la fenêtre [0.01, 0.02] (bounded_share 0.67).
+     σ=0.05 détruit tous les régimes.
+     Fichiers : results/claude_coupling_sigma_k.json,
+                results/claude_coupling_sigma_k_aggregate.json,
+                report/figures/claude_coupling_sigma_k.pdf.
+
+  4) Couplage θ × δ_endo (coupling_theta_depr.py)
+     θ ∈ {0.20,0.28,0.35,0.42,0.50}, δ_endo ∈ {0.02,0.05,0.10},
+     k ∈ {3,4}, seeds {42,7,123}.
+     δ_endo=0.10 : régime impossible (k=3 et k=4).
+     δ_endo=0.05 : quasi-impossible sauf θ ∈ [0.28–0.42] pour k=4.
+     δ_endo=0.02 : possible mais stochastique (0.3–1.0 selon θ, k).
+     Fichiers : results/claude_coupling_theta_depr.json,
+                results/claude_coupling_theta_depr_aggregate.json,
+                report/figures/claude_coupling_theta_depr.pdf.
+
+  Rapport mis à jour avec sections couplages (§8–§10 env.),
+  recompilé.
+
+[2026-05-01 ~12:00 CEST, étude multi-runs probabiliste]
+  Campagne multirun_limits.py : 7 cas limites × 13 seeds chacun.
+  Objectif : estimer p_borné ± IC95% pour les cas sur la frontière
+  (seed=42 y classait 1/3 ou 2/3 — résultats potentiellement dus au hasard).
+
+  Résultats principaux :
+    k4_theta05   : p_borné = 0.92 ± 0.15  → régime très probable (était 1/3)
+    k3_sigma020  : p_borné = 0.92 ± 0.15  → régime très probable
+    k3_actif100  : p_borné = 0.69 ± 0.25  → probable
+    k4_lam120    : p_borné = 0.46 ± 0.27  → frontière réelle
+    k4_lam100    : p_borné = 0.31 ± 0.25  → frontière
+    k3_sigma005  : p_borné = 0.23 ± 0.23  → sous-critique
+    k4_depr002   : p_borné = 0.15 ± 0.20  → structurellement peu probable
+                                            (était 1/3 sur seed=42 par chance)
+
+  Conclusion : les instabilités inter-seeds OAT de θ=0.5 et δ_endo=0.02
+  ne signifient pas que ces paramètres sont "fragiles" — ils ont des
+  probabilités asymétriques : θ=0.5 est robustement dans le régime,
+  δ_endo=0.02 est structurellement hors régime.
+
+  Fichiers : results/claude_multirun_limits.json,
+             results/claude_multirun_limits_aggregate.json,
+             report/figures/claude_multirun_limits.pdf.
+
+[2026-05-01 ~14:00 CEST, long run k3σ=0.005 seeds supplémentaires]
+  Script claude_analysis/long_run_k3sigma0005.py relancé pour
+  seeds {7, 123, 0, 1} (seed=42 déjà fait, skip).
+  5000 pas de sonde + 10000 pas visés.
+
+  Tous les seeds montrent le même comportement :
+    - Croissance explosive jusqu'à ~1500–2000 entités vers le pas 1400,
+      puis effondrement partiel suivi d'oscillations en palier (~600–1200
+      entités, 8000–12000 prêts).
+    - bounded_tail = None (pas de détection de queue bornée).
+    - Aucun seed ne converge vers le régime en 5000 pas.
+    - Complexité CPU ~67–103 ms/pas à cette densité.
+
+  Résumé (sonde 5000 pas) :
+    seed=7  : alive=878,  loans=8720,  avg=67ms/pas
+    seed=123: alive=1184, loans=8863,  avg=68ms/pas
+    seed=0  : alive=885,  loans=11597, avg=78ms/pas
+    seed=1  : alive=1199, loans=8560,  avg=69ms/pas
+
+  Conclusion confirmée : k=3, σ=0.005 est structurellement sous-critique.
+  La population oscille avec une dynamique de croissance-effondrement sans
+  jamais atteindre un régime borné.
+
+  Fichier mis à jour : results/claude_long_run_k3sigma0005.json.
+
+[2026-05-01 ~16:00 CEST, analyse de prédictabilité]
+  Script claude_analysis/predictability_analysis.py :
+  10 cas × 3 seeds (1500 pas) + 8 long runs issus de la sonde codex
+  (3000 pas, seed=42). Pour chaque série n_alive, calcul de :
+    - Exposant de Hurst par analyse R/S sur les différences premières
+    - Autocorrélation aux lags 1, 5, 20, 50
+    - Ratio MSE AR(5) / prédicteur naïf (horizon 1 pas)
+    - Entropie de permutation d'ordre 3
+
+  Trois classes dynamiques émergent :
+    1. régime_structuré (extinction) :
+         H ≈ 2 (artefact de série quasi-constante), Sp ≈ 0, AR/naïf < 1.
+    2. variation_lente (explosion) :
+         H ≈ 1.9–2.0, r20 ≈ 0.4–0.5, Sp ∈ [0.5, 0.75].
+    3. tendance_modérée (régime borné) :
+         H ≈ 1.5, Sp ≈ 0.85–0.90, AR/naïf > 1.
+       Résultat contre-intuitif : le régime borné est le MOINS prédictible
+       à court terme. Fluctuations quasi-aléatoires pas-à-pas malgré la
+       stabilité macroscopique → cohérent avec un équilibre de fluctuation
+       structurel, non avec une trajectoire déterministe.
+
+  Sp est le meilleur séparateur scalaire unique :
+    Sp < 0.10 → extinction, Sp ∈ [0.40, 0.75] → explosion, Sp > 0.80 → borné.
+
+  Fichiers : results/claude_predictability.json,
+             results/claude_predictability_aggregate.json.
+  Implémentation : stdlib uniquement (pas de numpy), ProcessPoolExecutor N_WORKERS=4.
+
+[2026-05-04 ~11:00 CEST, section prédictabilité et push rapport final]
+  Section §"Prédictabilité des séries temporelles par régime" ajoutée
+  au rapport final (rapport_final_sensibilite.tex).
+  Tableau de 18 lignes (10 cas test + 8 long runs codex) avec H, r20,
+  AR/naïf, Sp, classe.
+  Note explicite sur les artefacts H>1 pour séries quasi-constantes.
+  Rapport recompilé : 17 pages.
+
+  Fichiers committés : rapport_final_sensibilite.{tex,pdf},
+                       claude_predictability.json,
+                       claude_predictability_aggregate.json.
+  Commit : 6f256324 — push réussi sur github.com:ajossto/LIED-StageAJS,
+  branche main.
+
+[2026-05-04 11:48 CEST, note Codex pour Claude — point Simulation Lab]
+  Fait observé : beaucoup de runs de sensibilité ont bien les graphes complets
+  physiquement présents dans legacy_output/*/figures/ et aucun CSV brut ne
+  reste. En revanche, les run.json échantillonnés ne listent pas ces PNG dans
+  artifacts : Simulation Lab risque donc de ne pas les afficher comme les runs
+  lancés manuellement.
+
+  Comptage d'audit : 211 runs sensitivity_* ; 85 avec
+  legacy_output/*/figures/macro_overview.png ; 0 CSV brut ; 85/85 runs avec
+  graphes complets mais macro_overview.png absent de run.json.artifacts.
+  Les campagnes Claude récentes semblent surtout présentes dans results/ et
+  report/figures, pas comme runs Simulation Lab complets observables.
+
+  Action prioritaire demandée avant nouvelles conclusions : rafraîchir ou
+  reconstruire les run.json pour que tous les PNG/PDF de legacy_output soient
+  visibles dans Simulation Lab, puis exporter/enrichir les campagnes Claude
+  utiles selon le workflow obligatoire : simulation conservée -> graphes
+  complets via analysis.analyze_folder -> compact_timeseries.json -> suppression
+  des CSV bruts -> run.json à jour.
+
+  Merci de ne pas relancer massivement de simulations pour corriger ce point :
+  commencer par réparer la visibilité des artefacts déjà présents.
+
+[2026-05-04 11:49 CEST, note Codex pour Claude — lecture externe scientifique]
+  Résultats robustes scientifiquement :
+    - mu est un co-seuil majeur : mu=0 débloque même k=2/k=3, tandis que
+      mu>=0.10 détruit les régimes testés.
+    - sigma_alpha a une fenêtre utile autour de 0.01--0.02 pour k=3 ;
+      sigma_alpha=0.05 est destructeur dans les cartes testées.
+    - lambda_creation doit être traité comme continu ; pour k=4, la fenêtre
+      robuste observée est environ lambda=1.4--2.0.
+    - epsilon=1e-3 reste le compromis numérique ; epsilon=1e-2 change
+      qualitativement le modèle.
+    - k=3, sigma_alpha=0.005 est maintenant plutôt une dynamique
+      croissance/effondrement sous-critique qu'une entrée tardive fiable en
+      régime.
+
+  Points faibles ou incohérences à corriger :
+    - Le rapport final contient encore une section long run k3 sigma=0.005
+      partiellement périmée : elle mentionne seed 7 "en cours" alors que les
+      seeds 7, 123, 0, 1 ont terminé à 5000 pas dans
+      results/claude_long_run_k3sigma0005.json.
+    - Les notes annoncent des figures de couplage Claude, mais report/figures
+      ne contient pas les PDF correspondants ; le rapport a surtout des tables
+      pour ces couplages.
+    - L'analyse prédictive est utile mais probablement optimiste si la
+      validation croisée mélange des lignes très corrélées d'une même grille ;
+      préférer ensuite une validation leave-one-grid/case-out.
+    - La conclusion "reliquefaction candidate à la suppression" est trop forte
+      sans mesure explicite de l'activation du mécanisme ; vérifier avant de
+      proposer une suppression.
+    - Le point non monotone theta x depreciation_endo autour de k=4,
+      theta=0.35, delta_endo=0.05 reste à vérifier sur plus de seeds.

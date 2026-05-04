@@ -491,6 +491,86 @@ button.secondary {
 
 .hidden { display: none; }
 
+.study-filter {
+  padding: 10px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 0.85rem;
+  border-top: 1px solid #e0dbd0;
+  margin-top: 8px;
+}
+
+.study-filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.study-filter-row > label:first-child {
+  min-width: 60px;
+  font-weight: 500;
+  color: #666;
+}
+
+.study-filter select {
+  font-size: 0.85rem;
+  padding: 3px 6px;
+}
+
+.study-filter label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+
+.study-subgroup > summary {
+  padding-left: 16px;
+  font-size: 0.88rem;
+  background: #f7f5f0;
+}
+
+.study-subgroups {
+  padding-left: 4px;
+  border-left: 2px solid #e0dbd0;
+  margin-left: 4px;
+}
+
+.sparklines-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 6px;
+}
+
+.sparkline-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.sparkline-cell svg {
+  background: #f7f4ee;
+  border-radius: 4px;
+}
+
+.sparkline-label {
+  font-size: 0.72rem;
+  color: #888;
+  text-align: center;
+}
+
+.sparklines-header {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #555;
+  margin-top: 16px;
+  margin-bottom: 4px;
+}
+
 .action-menu {
   margin-top: 14px;
 }
