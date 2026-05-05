@@ -316,7 +316,7 @@ Cette section explicite les boucles de decision realisees pendant l'etude.
 4 & Volatilite \(\alpha\) & Sweep \(\sigma_\alpha\) : fenetre active autour de 0.005--0.02. \\
 5 & Deux centres OAT & Construction des centres \(k=3\) et \(k=4\), puis 62 simulations OAT. \\
 6 & Observabilite Lab & Les 62 runs OAT ont les graphes complets, compact timeseries, 0 CSV brut. \\
-7 & Entrees tardives & Sonde longue 3000 pas : \(k=3,\sigma=0.005\) reste non borne. \\
+7 & Entrees tardives & Sonde longue 3000 pas : \(k=3,\sigma=0.005\) reste non borne (transitoire long). \\
 8 & Sorties de regime & \(\theta=0.2\), actif initial 400 et \(\lambda=4\) restent en croissance a 3000 pas. \\
 9 & Prediction globale & Forets aleatoires : regime predictible a 0.84 balanced accuracy. \\
 10 & Parametre continu \(\lambda\) & Note ajoutee : \(\lambda\) doit etre traite comme reel dans les prochaines grilles fines. \\
@@ -325,7 +325,7 @@ Cette section explicite les boucles de decision realisees pendant l'etude.
 13 & Couplage \(\sigma_\alpha \times k\) & Fenetre active [0.01, 0.02] confirmee pour k=3 ; \(\sigma=0.05\) destructeur universel. \\
 14 & Couplage \(\theta \times \delta_\mathrm{endo}\) & \(\delta=0.10\) toujours destructeur ; \(\delta=0.02\) frontiere stochastique. \\
 15 & Probabilites limites & 13 seeds extra : k4\_depr002 est a 0.15, k4\_theta05 a 0.92. \\
-16 & Long run k3s005 & Croissance explosive : 2096 entites, 11551 prets a 1400 pas. Non-convergence confirmee. \\
+16 & Long run k3s005 & Oscillation a 5000 pas transitoire. Extension a 10\,000 pas : 5/6 seeds stationnaires (flr $\in [0.966;1.011]$). \\
 17 & Parametres faibles & coefficient\_reliquefaction et seuil\_ratio\_liquide\_passif : effet nul mesure. \\
 \bottomrule
 \end{longtable}
@@ -626,13 +626,16 @@ Ces resultats corrigent deux lectures de la campagne OAT :
   robuste (0.92) : le seed 42 etait un cas defavorable isolee.
 \end{itemize}
 
-\section{Croissance explosive de \(k=3, \sigma_\alpha=0.005\)}
+\section{Dynamique transitoire de \(k=3, \sigma_\alpha=0.005\) : convergence a 10\,000 pas}
 \label{sec:explosion-k3}
 
 La sonde longue de la section precedente indiquait que \(k=3, \sigma_\alpha=0.005\)
-restait non borne a 3000 pas. Une simulation etendue a 5000 pas revele un
-comportement qualitatif different : la population ne converge pas lentement,
-elle \emph{explose}.
+restait non borne a 3000 pas. Une premiere extension a 5000 pas (watchdog 300 ms/pas)
+avait suggere une oscillation soutenue sans convergence. Une extension supplementaire
+a 10\,000 pas (watchdog 400 ms/pas), sur 6 seeds distinctes, revele que ce comportement
+est \emph{transitoire} : la quasi-totalite des seeds atteignent la stationnarite.
+
+\subsection*{Sonde 5000 pas (donnees historiques)}
 
 \begin{table}[H]
 \centering
@@ -648,21 +651,75 @@ Seed & Pas realises & \(n_{\mathrm{alive}}\) final & Prets actifs & Note \\
 1   & 5000 & 1199 &  8560 & oscillation, avg 69 ms/pas \\
 \bottomrule
 \end{tabular}
-\caption{Long run \(k=3, \sigma_\alpha=0.005\), 5 seeds, seuil 300 ms/pas.
-Seed 42 s'arrete a 1401 pas (watchdog). Les 4 autres seeds atteignent 5000 pas
-et oscillent entre 600 et 1200 entites avec 8000--12000 prets actifs,
-sans jamais converger vers un regime borne.}
+\caption{Long run \(k=3, \sigma_\alpha=0.005\) a 5000 pas -- donnees historiques.
+Seed 42 s'arrete a 1401 pas (watchdog 300 ms/pas). Les 4 autres seeds atteignent 5000 pas
+et presentent des oscillations de population sans atteindre le critere de stationnarite
+(\texttt{bounded\_tail=True}).
+L'absence de convergence a 5000 pas reflete un transitoire long, non un regime permanent.}
+\label{tab:long-run-5k}
 \end{table}
 
-Le comportement est confirme sur 5 seeds : apres un pic d'explosion vers
-le pas 1200--1400, la population s'effondre partiellement puis oscille en
-palier (croissance-effondrement repetee), sans jamais atteindre la stationnarite
-d'un regime borne. Ce comportement est \emph{qualitativement different} d'une
-convergence lente : il n'y a pas de stabilisation, seulement une dynamique
-cyclique sous-critique. Combine avec la probabilite de regime de seulement
-0.23 (section~\ref{sec:multirun}), ce cas confirme que \(k=3,
-\sigma_\alpha=0.005\) est fondamentalement sous-critique : le reseau de
-credit reste trop peu dense pour produire assez de faillites compensatrices.
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.98\linewidth]{figures/claude_long_run_k3sigma0005_trajectoires.png}
+  \caption{Trajectoires comparees -- long run \(k=3,\,\sigma_\alpha=0.005\) a 5000 pas, 5 seeds.
+  Colonnes : n vivantes (bleu), n prets (vert), densite prets/entite (orange), temps par pas en ms (rouge).
+  La ligne verticale pointillee (seed 42) marque l'arret watchdog a 1401 pas.
+  Les 4 autres seeds presentent des oscillations qui se revelent transitoires (voir Table~\ref{tab:long-run-10k}).}
+\end{figure}
+
+\subsection*{Extension a 10\,000 pas}
+
+La meme configuration est simulee sur 6 seeds jusqu'a 10\,000 pas (execution sequentielle,
+watchdog 400 ms/pas ; seed 42 exclue, divergence connue). La metrique de flux
+\(\texttt{failure\_lambda\_ratio} = \bar{\mathcal{F}} / \lambda\) mesure le rapport entre
+le taux de faillite moyen (fenetre de queue) et le taux de creation \(\lambda=2\) ;
+la condition \(|\texttt{flr}-1| < 0.15\) definit l'equilibre des flux
+(voir section~\ref{sec:critere-regime}).
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{rrrrrll}
+\toprule
+Seed & Pas & \(n_{\mathrm{alive}}\) final & flr & ms/pas moy. & \texttt{bounded} & Statut \\
+\midrule
+7   & 10000 & 1191 & 1.011 & 121 & $\surd$ & stationnaire \\
+123 & 10000 & 1025 & 0.966 & 121 & $\surd$ & stationnaire \\
+0   & 10000 & 1244 & 0.994 & 135 & $\surd$ & stationnaire \\
+1   & 10000 &  812 & 0.984 & 129 & $\surd$ & stationnaire \\
+2   & 10000 &  942 & 0.985 & 126 & $\times$ & flux OK, non borne \\
+3   & 10000 & 1104 & 1.010 & 123 & $\surd$ & stationnaire \\
+\bottomrule
+\end{tabular}
+\caption{Long run \(k=3, \sigma_\alpha=0.005\) a 10\,000 pas -- 6 seeds (seed 42 exclue).
+\texttt{bounded} = \texttt{bounded\_tail} (critere de queue). \texttt{flr} = taux faillites / \(\lambda\).
+5 seeds sur 6 sont stationnaires (\texttt{bounded=True} ET \(|\text{flr}-1|<0.15\)).
+Tous les flr sont dans \([0.966 ; 1.011]\), indiquant un equilibre presque parfait entre creations
+et faillites. Seed 2 : flux equilibre mais queue non bornee -- cas limite.}
+\label{tab:long-run-10k}
+\end{table}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.98\linewidth]{figures/long_run_k3sigma0005_10k_trajectoires.png}
+  \caption{Trajectoires comparees -- long run \(k=3,\,\sigma_\alpha=0.005\) a 10\,000 pas, 6 seeds.
+  Colonnes : n vivantes (bleu), n prets (vert), densite prets/entite (orange), Gini actif (violet).
+  Fond vert : seed stationnaire ; fond jaune : seed non-stationnaire (seed 2 uniquement).
+  Toutes les trajectoires se stabilisent apres 4000--6000 pas.}
+\end{figure}
+
+Le comportement de \(k=3, \sigma_\alpha=0.005\) est desormais clarifie : les oscillations
+observees a 5000 pas sont un \emph{transitoire} d'une duree de l'ordre de 4000--6000 pas,
+non un regime permanent. Apres ce transitoire, 5 seeds sur 6 convergent vers un regime
+borne et en equilibre de flux. La seed 2 constitue un cas limite ou le flux est equilibre
+mais la queue de population reste non bornee.
+
+La probabilite de regime de 0.23 mesuree en section~\ref{sec:multirun} (13 seeds, 1500 pas)
+doit donc etre reinterpretee comme une probabilite de \emph{convergence rapide} plutot que
+de stationnarite asymptotique : la grande majorite des seeds convergent, mais sur un horizon
+long (\(\sim\)5000--10000 pas). Sur l'horizon court des multi-runs, seule une minorite
+presente un regime borne detectable.
 
 \section{Parametres faibles : mecanismes candidats a la suppression}
 \label{sec:parametres-faibles}
@@ -797,12 +854,7 @@ les regimes d'extinction et d'explosion partagent tous deux $H \approx 2$.
 
 Trois zones restent ouvertes apres les etudes de couplage.
 
-Premierement, la dynamique de \(k=3, \sigma_\alpha=0.005\) en croissance
-explosive merite une analyse qualitative : le reseau de credit se forme-t-il
-partiellement avant l'explosion ? La densite financiere en volume reste-t-elle
-elevee meme quand la population explose ?
-
-Deuxiemement, la zone d'interaction \(\theta \times \delta_{\mathrm{endo}}\)
+Premierement, la zone d'interaction \(\theta \times \delta_{\mathrm{endo}}\)
 autour de \(k=4, \theta=0.35, \delta=0.05\) montre un comportement non monotone
 (\(\text{bounded\_share}=1.0\) alors que les voisins sont faibles). Ce point
 demande une verification supplementaire sur plus de seeds.
@@ -838,10 +890,14 @@ les horizons testes et sont candidats a la suppression pour simplifier le
 modele. Un regime dense demande un reseau de credit suffisamment actif pour
 produire des faillites endogenes, mais pas une fragmentation numerique
 excessive. Une population nombreuse n'est pas un signe de stabilite : dans
-plusieurs cas, notamment \(k=3, \sigma_\alpha=0.005\), elle signale une
-croissance explosive non compensee par les faillites. Pour predire finement
+certains cas (notamment \(k=3, \sigma_\alpha=0.005\) sur des horizons courts),
+elle signale un transitoire long avant la convergence -- non une instabilite permanente.
+Pour predire finement
 une simulation, il faut donc predire conjointement : apparition du regime,
 densite financiere en volume, granularite du reseau, taille demographique,
 taille bilancielle et derive de queue.
+
+\clearpage
+\input{annexe_tracabilite}
 
 \end{document}

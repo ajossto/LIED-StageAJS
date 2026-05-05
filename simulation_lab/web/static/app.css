@@ -491,6 +491,122 @@ button.secondary {
 
 .hidden { display: none; }
 
+.search-bar {
+  margin: 8px 0 4px;
+}
+
+.search-bar input {
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--panel-border);
+  background: #fff;
+  font-size: 0.9rem;
+}
+
+.flag-filter {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.flag-filter input[type="checkbox"] {
+  width: auto;
+  padding: 0;
+  margin: 0;
+}
+
+button.active-mode {
+  background: linear-gradient(135deg, var(--accent-2), #d4893f);
+}
+
+.multiseed-group {
+  border: 1px solid var(--panel-border);
+  border-radius: 14px;
+  background: #fffdf9;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+
+.multiseed-summary {
+  cursor: pointer;
+  padding: 10px 12px;
+  background: linear-gradient(135deg, rgba(41,76,96,0.06), rgba(193,102,48,0.06));
+}
+
+.multiseed-summary-main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.multiseed-params {
+  font-size: 0.8rem;
+  margin-top: 3px;
+}
+
+.convergence-badge {
+  font-size: 0.75rem;
+  padding: 3px 7px;
+  border-radius: 999px;
+  font-weight: 700;
+}
+
+.conv-good { background: #c8e6c9; color: #2e7d32; }
+.conv-low  { background: #ffecb3; color: #7b5800; }
+
+.multiseed-body {
+  padding: 10px;
+  display: grid;
+  gap: 10px;
+}
+
+.multiseed-seed-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.multiseed-seed-item {
+  padding: 5px 10px;
+  border: 1px solid var(--panel-border);
+  border-radius: 10px;
+  background: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.85rem;
+}
+
+.multiseed-seed-item:hover { border-color: var(--accent); }
+.multiseed-seed-item.active { border-color: var(--accent); background: rgba(41,76,96,0.07); }
+
+.multiseed-overlay-chart {
+  background: #f7f4ee;
+  border-radius: 10px;
+  padding: 10px;
+  min-height: 40px;
+}
+
+.multiseed-convergence-header {
+  font-size: 0.85rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.multiseed-legend {
+  margin-top: 6px;
+  font-size: 0.78rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .study-filter {
   padding: 10px 0;
   display: flex;

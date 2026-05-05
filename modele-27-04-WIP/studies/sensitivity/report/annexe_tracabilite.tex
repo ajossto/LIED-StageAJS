@@ -1,0 +1,263 @@
+% Annexe de traçabilité — généré automatiquement le 2026-05-04
+% Toute simulation mentionnée dans le rapport est listée ici avec son run_id.
+% Le run_id permet de retrouver la simulation dans Simulation Lab.
+
+\section*{Annexe~A — Traçabilité des simulations}
+\addcontentsline{toc}{section}{Annexe A — Traçabilité des simulations}
+
+Cette annexe recense toutes les simulations utilisées dans le présent rapport,
+classées par usage. Chaque simulation est identifiée par son \texttt{run\_id}
+unique dans Simulation Lab (\texttt{simulation\_lab\_data/runs/<run\_id>/run.json}).
+
+Pour retrouver une simulation : ouvrir Simulation Lab, utiliser la barre de
+recherche et saisir le hash (ou un préfixe).
+
+\subsection*{A.1 Figures}
+
+\begin{longtable}{p{0.22\linewidth}p{0.13\linewidth}p{0.34\linewidth}p{0.22\linewidth}}
+\hline
+\textbf{Figure} & \textbf{Seeds} & \textbf{Batch / Run ID (préfixe)} & \textbf{Statut} \\
+\hline
+\endfirsthead
+\hline
+\textbf{Figure} & \textbf{Seeds} & \textbf{Batch / Run ID (préfixe)} & \textbf{Statut} \\
+\hline
+\endhead
+\hline
+\endfoot
+
+Fig.~1 — Corrélations pilote
+ & 42 & \texttt{sensitivity\_lab\_guided\_probe} & external (meta.json) \\
+
+Fig.~2 — Balayage $k$
+ & 42 & \texttt{sensitivity\_k\_sweep\_*} (batch \texttt{k\_sweep}) & external \\
+
+Fig.~3 — Compromis $\epsilon$
+ & 42 & \texttt{sensitivity\_epsilon\_runtime\_*} & external \\
+
+Fig.~4 — Fenêtre $\sigma_\alpha$
+ & 42, 7, 123 & \texttt{sensitivity\_alpha\_sigma\_hom\_*} & external \\
+
+Fig.~5 — OAT screen $k=4$, $k=3$
+ & 42 & \texttt{sensitivity\_codex\_oat\_steps1500\_seeds42\_*} & external \\
+
+Fig.~6 — Sonde longue 3000 pas
+ & 42 & \texttt{sensitivity\_codex\_long\_probe\_steps3000\_seeds42\_*} & external \\
+
+Fig.~7 — Planches OAT (Simulation Lab)
+ & 42 & \texttt{sensitivity\_codex\_oat\_key\_figures} + batch \texttt{codex\_oat} & external \\
+
+Fig.~8 — Importance prédictive
+ & 42 & dérivé de \texttt{codex\_oat\_steps1500\_seeds42} (calcul ML) & calculé \\
+
+Fig.~9 — Cartes de phase empiriques
+ & 42 & dérivé des résultats OAT Codex & calculé \\
+
+Fig.~10 — Balayage fin $\lambda$
+ & 42, 7, 123 & \texttt{sensitivity\_claude\_lambda\_fine\_sweep\_*} & managed \\
+
+Fig.~11 — Robustesse OAT
+ & 42, 7, 123 & \texttt{sensitivity\_claude\_oat\_robustness\_*} & managed \\
+
+\hline
+\end{longtable}
+
+\subsection*{A.2 Tables}
+
+\begin{longtable}{p{0.18\linewidth}p{0.13\linewidth}p{0.38\linewidth}p{0.22\linewidth}}
+\hline
+\textbf{Table} & \textbf{Seeds} & \textbf{Batch / Run ID (préfixe)} & \textbf{Statut} \\
+\hline
+\endfirsthead
+\hline
+\textbf{Table} & \textbf{Seeds} & \textbf{Batch / Run ID (préfixe)} & \textbf{Statut} \\
+\hline
+\endhead
+\hline
+\endfoot
+
+Table~1 — Balayage $k$
+ & 42 & \texttt{sensitivity\_k\_sweep\_*} & external \\
+
+Table~2 — OAT $k=4$ (effets bruts)
+ & 42 & \texttt{sensitivity\_codex\_oat\_steps1500\_seeds42\_*} & external \\
+
+Table~3 — Sonde longue 3000 pas
+ & 42 & \texttt{sensitivity\_codex\_long\_probe\_steps3000\_seeds42\_*} & external \\
+
+Table~4 — Balayage fin $\lambda$
+ & 42, 7, 123 & \texttt{sensitivity\_claude\_lambda\_fine\_sweep\_*} & managed \\
+
+Table~5 — Robustesse OAT centre $k=4$
+ & 42, 7, 123 & \texttt{sensitivity\_claude\_oat\_robustness\_seed*} & managed \\
+
+Table~6 — Robustesse OAT centre $k=3$
+ & 42, 7, 123 & \texttt{sensitivity\_claude\_oat\_robustness\_seed*} & managed \\
+
+Table~7 — Couplage $\lambda \times k$
+ & 42, 7, 123 & \texttt{sensitivity\_ts\_coupling\_lambda\_k\_*} ou \texttt{sensitivity\_*\_coupling\_lambda\_k\_*} & managed \\
+
+Table~8 — Couplage $k \times \mu$
+ & 42, 7, 123 & \texttt{sensitivity\_ts\_coupling\_k\_mu\_*} & managed \\
+
+Table~9 — Couplage $\sigma_\alpha \times k$
+ & 42, 7, 123 & \texttt{sensitivity\_ts\_coupling\_sigma\_k\_*} & managed \\
+
+Table~10 — Couplage $\theta \times \delta_{\mathrm{endo}}$
+ & 42, 7, 123 & \texttt{sensitivity\_ts\_coupling\_theta\_depr\_*} & managed \\
+
+Table~11 — Probabilités de régime (multi-seeds)
+ & 13 seeds (42…12) & \texttt{sensitivity\_claude\_multirun\_limits\_*} & managed \\
+
+Table~12 — Prédictabilité
+ & 42 & \texttt{sensitivity\_codex\_oat\_steps1500\_seeds42\_*} + dérivé & calculé \\
+
+Table~13 (5k) — Long run $k=3$, $\sigma_\alpha=0.005$, 5 seeds
+ & 42, 7, 123, 0, 1 & \texttt{sensitivity\_claude\_long\_run\_k3sigma0005\_seed*} & managed \\
+
+Table~13 (10k) — Long run $k=3$, $\sigma_\alpha=0.005$, 6 seeds à 10\,000 pas
+ & 7, 123, 0, 1, 2, 3 & \texttt{sensitivity\_claude\_long\_run\_k3sigma0005\_10k\_seed*} & managed \\
+
+\hline
+\end{longtable}
+
+\subsection*{A.3 Simulations de référence citées dans le texte}
+
+\begin{longtable}{p{0.30\linewidth}p{0.10\linewidth}p{0.40\linewidth}p{0.12\linewidth}}
+\hline
+\textbf{Rôle / section} & \textbf{Paramètres clés} & \textbf{Run ID exact} & \textbf{Stat.} \\
+\hline
+\endfirsthead
+\hline
+\textbf{Rôle / section} & \textbf{Paramètres clés} & \textbf{Run ID exact} & \textbf{Stat.} \\
+\hline
+\endhead
+\hline
+\endfoot
+
+Sonde longue — $k=3$, $\sigma=0.005$, seed 42 (Fig.~6, Table~13)
+ & $k=3$, $\sigma=0.005$, seed=42
+ & \texttt{sensitivity\_claude\_long\_run\_k3sigma0005\_seed42\_000}
+ & stopped (1401 pas) \\
+
+Sonde longue 5k — $k=3$, $\sigma=0.005$, seed 7 (Table~13)
+ & $k=3$, $\sigma=0.005$, seed=7
+ & \texttt{sensitivity\_claude\_long\_run\_k3sigma0005\_seed7\_001}
+ & transitoire (non-stationnaire à 5k) \\
+
+Sonde longue 5k — $k=3$, $\sigma=0.005$, seed 123 (Table~13)
+ & $k=3$, $\sigma=0.005$, seed=123
+ & \texttt{sensitivity\_claude\_long\_run\_k3sigma0005\_seed123\_002}
+ & transitoire (non-stationnaire à 5k) \\
+
+Sonde longue 5k — $k=3$, $\sigma=0.005$, seed 0 (Table~13)
+ & $k=3$, $\sigma=0.005$, seed=0
+ & \texttt{sensitivity\_claude\_long\_run\_k3sigma0005\_seed0\_003}
+ & transitoire (non-stationnaire à 5k) \\
+
+Sonde longue 5k — $k=3$, $\sigma=0.005$, seed 1 (Table~13)
+ & $k=3$, $\sigma=0.005$, seed=1
+ & \texttt{sensitivity\_claude\_long\_run\_k3sigma0005\_seed1\_004}
+ & transitoire (non-stationnaire à 5k) \\
+
+Long run 10k — $k=3$, $\sigma=0.005$, seed 7
+ & $k=3$, $\sigma=0.005$, seed=7
+ & \texttt{sensitivity\_claude\_long\_run\_k3sigma0005\_10k\_seed7}
+ & stationnaire (flr=1.011) \\
+
+Long run 10k — $k=3$, $\sigma=0.005$, seed 123
+ & $k=3$, $\sigma=0.005$, seed=123
+ & \texttt{sensitivity\_claude\_long\_run\_k3sigma0005\_10k\_seed123}
+ & stationnaire (flr=0.966) \\
+
+Long run 10k — $k=3$, $\sigma=0.005$, seed 0
+ & $k=3$, $\sigma=0.005$, seed=0
+ & \texttt{sensitivity\_claude\_long\_run\_k3sigma0005\_10k\_seed0}
+ & stationnaire (flr=0.994) \\
+
+Long run 10k — $k=3$, $\sigma=0.005$, seed 1
+ & $k=3$, $\sigma=0.005$, seed=1
+ & \texttt{sensitivity\_claude\_long\_run\_k3sigma0005\_10k\_seed1}
+ & stationnaire (flr=0.984) \\
+
+Long run 10k — $k=3$, $\sigma=0.005$, seed 2
+ & $k=3$, $\sigma=0.005$, seed=2
+ & \texttt{sensitivity\_claude\_long\_run\_k3sigma0005\_10k\_seed2}
+ & flux OK, non borné (flr=0.985) \\
+
+Long run 10k — $k=3$, $\sigma=0.005$, seed 3
+ & $k=3$, $\sigma=0.005$, seed=3
+ & \texttt{sensitivity\_claude\_long\_run\_k3sigma0005\_10k\_seed3}
+ & stationnaire (flr=1.010) \\
+
+Multirun — k4\_theta05, cas limite (§~probabilités)
+ & $k=4$, $\theta=0.5$, 13 seeds
+ & \texttt{sensitivity\_claude\_multirun\_limits\_k4\_theta05\_006}
+ & $p=0.92$ \\
+
+Multirun — k3\_sigma005, cas limite (§~probabilités)
+ & $k=3$, $\sigma=0.005$, 13 seeds
+ & \texttt{sensitivity\_claude\_multirun\_limits\_k3\_sigma005\_001}
+ & $p=0.23$ \\
+
+Multirun — k4\_depr002, cas limite (§~probabilités)
+ & $k=4$, $\delta=0.02$, 13 seeds
+ & \texttt{sensitivity\_claude\_multirun\_limits\_k4\_depr002\_003}
+ & $p=0.15$ \\
+
+Couplage $k=4$, $\lambda=2.0$ — point central robuste
+ & $k=4$, $\lambda=2.0$, seeds 42/7/123
+ & \texttt{sensitivity\_ts\_coupling\_lambda\_k\_n\_ca4\_lamb2\_*}
+ & stationnaire \\
+
+Sonde Codex $k=3$, $\sigma=0.005$, seed 42 (Fig.~6)
+ & $k=3$, $\sigma=0.005$, seed=42
+ & \texttt{sensitivity\_codex\_long\_probe\_steps3000\_seeds42\_long\-casek3\_sigma0005\_late\_entry\_*}
+ & ambigu \\
+
+\hline
+\end{longtable}
+
+\subsection*{A.4 Simulations flaguées importantes dans Simulation Lab}
+
+Les simulations suivantes sont marquées \texttt{important=True} dans Simulation Lab
+(critère : effet remarquable ou cas limite).
+
+\begin{longtable}{p{0.50\linewidth}p{0.20\linewidth}p{0.22\linewidth}}
+\hline
+\textbf{Run ID} & \textbf{Paramètres clés} & \textbf{Note} \\
+\hline
+\endfirsthead
+\hline
+\textbf{Run ID} & \textbf{Paramètres clés} & \textbf{Note} \\
+\hline
+\endhead
+\hline
+\endfoot
+
+\texttt{sensitivity\_claude\_long\_run\_k3sigma0005\_seed*}
+ & $k=3$, $\sigma=0.005$, 5000 pas & Oscillation transitoire (convergence à 10k pas) \\
+
+\texttt{sensitivity\_claude\_long\_run\_k3sigma0005\_10k\_seed*}
+ & $k=3$, $\sigma=0.005$, 10000 pas & 5/6 stationnaires, flr $\in [0.966;1.011]$ \\
+
+\texttt{sensitivity\_claude\_multirun\_limits\_k4\_theta05\_006}
+ & $k=4$, $\theta=0.5$ & Probabilité élevée malgré seed=42 négatif \\
+
+\texttt{sensitivity\_claude\_multirun\_limits\_k3\_sigma020\_002}
+ & $k=3$, $\sigma=0.020$ & $p=0.92$, voisin actif de $\sigma=0.005$ \\
+
+\hline
+\end{longtable}
+
+\bigskip
+\noindent\textbf{Convention de statut :}
+\begin{itemize}
+  \item \emph{stationnaire} : \texttt{bounded\_tail=True} ET \texttt{flow\_balanced=True} ($|\text{faillites}/\lambda - 1| < 0.15$)
+  \item \emph{bounded only} : \texttt{bounded\_tail=True}, flux non équilibré
+  \item \emph{non-stationnaire} : population croissante ou décroissante sur toute la durée
+  \item \emph{stopped} : arrêt watchdog (trop lent)
+  \item \emph{external} : simulation historique (meta.json), non re-exécutable via Simulation Lab
+  \item \emph{managed} : run.json complet dans \texttt{simulation\_lab\_data/runs/}
+  \item \emph{calculé} : figure issue d'une analyse post-traitement, pas d'une simulation unique
+\end{itemize}

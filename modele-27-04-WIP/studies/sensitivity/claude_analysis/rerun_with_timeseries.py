@@ -27,11 +27,12 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 HERE = Path(__file__).resolve().parent.parent
+JUPYTER_DIR = HERE.parents[2]
 sys.path.insert(0, str(HERE))
+sys.path.insert(0, str(JUPYTER_DIR))
 from run_simulation import run_and_collect
 
 RESULTS_DIR = HERE / "results"
-JUPYTER_DIR = HERE.parents[2]
 LAB_RUNS_DIR = JUPYTER_DIR / "simulation_lab_data" / "runs"
 MODEL_ID = "etude_sensibilite_27_04_wip"
 
@@ -260,6 +261,9 @@ def _write_run_json(run_id: str, campaign: str, spec: dict, r: dict, run_dir: Pa
         "n_alive_mean": r.get("measure_n_alive_mean"),
         "t_regime": r.get("t_regime"),
         "has_timeseries": True,
+        "flow_balanced": r.get("flow_balanced", False),
+        "stationary": r.get("stationary", False),
+        "failure_lambda_ratio": r.get("measure_failure_lambda_ratio"),
     }
     meta = {
         "run_id": run_id,

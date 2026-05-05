@@ -14,6 +14,11 @@ const state = {
   studyBounded: false,
   studyDrop5: false,
   studyConverged: false,
+  searchQuery: "",
+  filterImportant: false,
+  filterKeep: false,
+  multiSeedMode: false,
+  selectedGroupKey: null,
 };
 
 const PARAMETER_HELP = {
@@ -354,9 +359,18 @@ function renderRuns() {
   }
   const hasStudy = state.runs.some((r) => r.model_id === "etude_sensibilite_27_04_wip");
   document.getElementById("study-filter")?.classList.toggle("hidden", !hasStudy);
-  const visibleRuns = filterStudyRuns(state.runs);
-  list.innerHTML = renderRunsGrouped(visibleRuns, { compact: list.dataset.compact === "true" });
-  bindRunListInteractions(list);
+
+  const afterStudyFilter = filterStudyRuns(state.runs);
+  const visibleRuns = filterAllRuns(afterStudyFilter);
+
+  if (state.multiSeedMode) {
+    const groups = buildMultiSeedGroups(visibleRuns);
+    list.innerHTML = renderMultiSeedGroups(groups);
+    bindMultiSeedInteractions(list);
+  } else {
+    list.innerHTML = renderRunsGrouped(visibleRuns, { compact: list.dataset.compact === "true" });
+    bindRunListInteractions(list);
+  }
 }
 
 function studyGroupOf(run) {
@@ -402,6 +416,59 @@ function filterStudyRuns(runs) {
     if (studyConverged && !s.converged) return false;
     return true;
   });
+}
+
+function filterAllRuns(runs) {
+  const { searchQuery, filterImportant, filterKeep } = state;
+  return runs.filter((run) => {
+    if (filterImportant && !run.important) return false;
+    if (filterKeep && !run.keep) return false;
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      const inId = run.run_id.toLowerCase().includes(q);
+      const inLabel = (run.label || "").toLowerCase().includes(q);
+      if (!inId && !inLabel) return false;
+    }
+    return true;
+  });
+}
+
+// Fingerprint d'un run pour le regroupement multi-seeds.
+// Exclut : seed (top-level), _campaign, exported_at_local, executed_at_local,
+// duree_simulation, log_events, freq_snapshot (non-déterministes ou hors modèle).
+const PARAM_FINGERPRINT_EXCLUDE = new Set([
+  "_campaign", "exported_at_local", "executed_at_local",
+  "duree_simulation", "log_events", "freq_snapshot",
+]);
+
+function computeParamFingerprint(run) {
+  const params = run.parameters || {};
+  const filtered = Object.fromEntries(
+    Object.entries(params)
+      .filter(([k]) => !PARAM_FINGERPRINT_EXCLUDE.has(k) && k !== "seed")
+      .map(([k, v]) => [k, typeof v === "number" ? Math.round(v * 1e9) / 1e9 : v])
+  );
+  const keys = Object.keys(filtered).sort();
+  const parts = keys.map((k) => `${k}=${JSON.stringify(filtered[k])}`);
+  return `${run.model_id}||${parts.join("|")}`;
+}
+
+function buildMultiSeedGroups(runs) {
+  const groups = new Map(); // fingerprint -> {fp, model_id, params_repr, runs[]}
+  for (const run of runs) {
+    const fp = computeParamFingerprint(run);
+    if (!groups.has(fp)) {
+      groups.set(fp, { fp, model_id: run.model_id, runs: [] });
+    }
+    groups.get(fp).runs.push(run);
+  }
+  // Keep only groups with ≥2 runs (otherwise not multi-seed)
+  const result = [];
+  for (const g of groups.values()) {
+    if (g.runs.length >= 2) result.push(g);
+  }
+  result.sort((a, b) => b.runs.length - a.runs.length);
+  return result;
 }
 
 function isStudyRecord(run) {
@@ -476,6 +543,138 @@ async function renderCompactTimeseries(run) {
   } catch (_) {
     // silently ignore if fetch fails
   }
+}
+
+function renderMultiSeedGroups(groups) {
+  if (!groups.length) {
+    return `<div class="muted">Aucun groupe multi-seeds trouvé avec les filtres actuels.</div>`;
+  }
+  return groups.map((g, i) => {
+    const isOpen = g.fp === state.selectedGroupKey || i === 0;
+    const seeds = g.runs.map((r) => r.seed ?? "?").join(", ");
+    const convergentCount = g.runs.filter((r) => (r.summary || {}).stationary).length;
+    const convergentPct = Math.round((convergentCount / g.runs.length) * 100);
+    const sampleParams = g.runs[0]?.parameters || {};
+    const keyParamStr = ["n_candidats_pool", "lambda_creation", "mu", "alpha_sigma_brownien", "theta", "taux_depreciation_endo"]
+      .filter((k) => k in sampleParams)
+      .map((k) => `${PARAMETER_SYMBOLS[k] || k}=${formatValue(sampleParams[k])}`)
+      .join(" | ");
+    const modelName = modelDisplayName(g.model_id);
+    return `
+      <details class="multiseed-group" data-fp="${escapeAttr(g.fp)}" ${isOpen ? "open" : ""}>
+        <summary class="multiseed-summary">
+          <div class="multiseed-summary-main">
+            <strong>${modelName}</strong>
+            <span class="run-count">${g.runs.length} seeds</span>
+            <span class="convergence-badge ${convergentPct >= 50 ? "conv-good" : "conv-low"}">${convergentPct}% stat.</span>
+          </div>
+          <div class="multiseed-params muted">${escapeHtml(keyParamStr)}</div>
+          <div class="muted" style="font-size:0.78rem">seeds : ${escapeHtml(seeds)}</div>
+        </summary>
+        <div class="multiseed-body">
+          <div class="multiseed-seed-list">
+            ${g.runs.map((r) => `
+              <div class="multiseed-seed-item ${r.run_id === state.selectedRunId ? "active" : ""}" data-run-id="${escapeAttr(r.run_id)}" data-fp="${escapeAttr(g.fp)}" role="button" tabindex="0">
+                <span>seed ${r.seed ?? "?"}</span>
+                ${(r.summary || {}).stationary ? `<span class="pill readonly">stat.</span>` : ""}
+                ${r.important ? `<span class="pill important">!!</span>` : ""}
+              </div>
+            `).join("")}
+          </div>
+          <div class="multiseed-overlay-chart" id="overlay-${escapeAttr(g.fp.slice(0, 32).replace(/[^a-z0-9]/gi, "_"))}">
+            <div class="muted" style="font-size:0.8rem">Cliquez sur un groupe pour charger les trajectoires superposées.</div>
+          </div>
+        </div>
+      </details>
+    `;
+  }).join("");
+}
+
+function bindMultiSeedInteractions(list) {
+  list.querySelectorAll(".multiseed-group").forEach((el) => {
+    el.addEventListener("toggle", async () => {
+      if (el.open) {
+        state.selectedGroupKey = el.dataset.fp;
+        const groups = buildMultiSeedGroups(filterAllRuns(filterStudyRuns(state.runs)));
+        const g = groups.find((g) => g.fp === el.dataset.fp);
+        if (g) await loadMultiSeedOverlay(g);
+      }
+    });
+  });
+  list.querySelectorAll(".multiseed-seed-item").forEach((item) => {
+    const select = async () => {
+      state.selectedRunId = item.dataset.runId;
+      window.history.replaceState(null, "", `/results?run=${encodeURIComponent(state.selectedRunId)}`);
+      renderRuns();
+      await loadRunDetail();
+    };
+    item.addEventListener("click", select);
+    item.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); select(); } });
+  });
+}
+
+const SEED_COLORS = ["#4e9af1", "#e07b39", "#57a64b", "#b07aa1", "#e05c5c", "#5cb8b0", "#c4a240", "#888888"];
+
+async function loadMultiSeedOverlay(group) {
+  const chartId = "overlay-" + group.fp.slice(0, 32).replace(/[^a-z0-9]/gi, "_");
+  const container = document.getElementById(chartId);
+  if (!container) return;
+  container.innerHTML = `<div class="muted">Chargement des trajectoires…</div>`;
+
+  const SERIES = [
+    { key: "alive",      label: "n vivantes",   W: 200, H: 60 },
+    { key: "actif",      label: "actif total",   W: 200, H: 60 },
+    { key: "loans",      label: "n prêts",       W: 200, H: 60 },
+    { key: "densite_fin", label: "densité fin.", W: 200, H: 60 },
+  ];
+
+  const runSeries = await Promise.all(group.runs.map(async (run) => {
+    const artifact = (run.artifacts || []).find((a) => a.label === "compact_timeseries.json");
+    if (!artifact) return { run, rows: [] };
+    try {
+      const url = `/api/runs/${encodeURIComponent(run.run_id)}/artifact?path=${encodeURIComponent(artifact.relative_path)}`;
+      const data = await fetchJSON(url);
+      return { run, rows: data.rows || [] };
+    } catch (_) {
+      return { run, rows: [] };
+    }
+  }));
+
+  const hasData = runSeries.some((rs) => rs.rows.length > 0);
+  if (!hasData) {
+    container.innerHTML = `<div class="muted">Pas de compact_timeseries.json disponible pour ce groupe.</div>`;
+    return;
+  }
+
+  const cells = SERIES.map(({ key, label, W, H }) => {
+    const sparklines = runSeries
+      .filter((rs) => rs.rows.length > 0)
+      .map((rs, i) => {
+        const vals = rs.rows.map((r) => r[key] ?? 0);
+        const color = SEED_COLORS[i % SEED_COLORS.length];
+        const spark = makeSpark(vals, W, H, color);
+        return spark ? `<g opacity="0.75">${spark}</g>` : "";
+      }).join("");
+    return `<div class="sparkline-cell">
+      <svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">${sparklines}</svg>
+      <div class="sparkline-label">${escapeHtml(label)}</div>
+    </div>`;
+  }).join("");
+
+  const convergentCount = group.runs.filter((r) => (r.summary || {}).stationary).length;
+  const legend = runSeries
+    .filter((rs) => rs.rows.length > 0)
+    .map((rs, i) => `<span style="color:${SEED_COLORS[i % SEED_COLORS.length]}">■ seed ${rs.run.seed ?? "?"} ${(rs.run.summary || {}).stationary ? "(stat.)" : ""}</span>`)
+    .join(" ");
+
+  container.innerHTML = `
+    <div class="multiseed-convergence-header">
+      ${convergentCount}/${group.runs.length} seeds stationnaires
+      <span class="muted" style="font-size:0.75rem;margin-left:8px">(bounded_tail + flux équilibré)</span>
+    </div>
+    <div class="sparklines-row">${cells}</div>
+    <div class="multiseed-legend">${legend}</div>
+  `;
 }
 
 function renderRunsGrouped(runs, { compact = false } = {}) {
@@ -989,6 +1188,46 @@ async function initResultsPage() {
       });
     }
   });
+
+  const searchInput = document.getElementById("search-runs");
+  if (searchInput) {
+    searchInput.addEventListener("input", () => {
+      state.searchQuery = searchInput.value.trim();
+      renderRuns();
+    });
+    // Initialiser depuis l'URL si hash passé
+    const params = new URLSearchParams(window.location.search);
+    const hashParam = params.get("search");
+    if (hashParam) {
+      searchInput.value = hashParam;
+      state.searchQuery = hashParam;
+    }
+  }
+
+  const filterImportantCb = document.getElementById("filter-important");
+  if (filterImportantCb) {
+    filterImportantCb.addEventListener("change", () => {
+      state.filterImportant = filterImportantCb.checked;
+      renderRuns();
+    });
+  }
+  const filterKeepCb = document.getElementById("filter-keep");
+  if (filterKeepCb) {
+    filterKeepCb.addEventListener("change", () => {
+      state.filterKeep = filterKeepCb.checked;
+      renderRuns();
+    });
+  }
+
+  const toggleMultiseed = document.getElementById("toggle-multiseed");
+  if (toggleMultiseed) {
+    toggleMultiseed.addEventListener("click", () => {
+      state.multiSeedMode = !state.multiSeedMode;
+      toggleMultiseed.classList.toggle("secondary", !state.multiSeedMode);
+      toggleMultiseed.classList.toggle("active-mode", state.multiSeedMode);
+      renderRuns();
+    });
+  }
 }
 
 function escapeHtml(value) {

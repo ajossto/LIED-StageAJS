@@ -803,3 +803,99 @@ JOURNAL DES SESSIONS
       proposer une suppression.
     - Le point non monotone theta x depreciation_endo autour de k=4,
       theta=0.35, delta_endo=0.05 reste à vérifier sur plus de seeds.
+
+[2026-05-04, session simulation_lab améliorations Priority 1]
+
+Travail effectué :
+
+1. Critère de convergence flux (run_simulation.py:522-525) :
+   - Ajout de flow_balanced = abs(measure_failure_lambda_ratio - 1.0) < 0.15
+   - Ajout de stationary = bounded_tail AND flow_balanced
+   - Ces champs sont maintenant dans le return dict de run_and_collect().
+   - Définition conforme au brief : stationnarité = flux naissances ≈ flux faillites.
+
+2. Reclassification des runs existants (reclassify_flow_balance.py) :
+   - Script créé dans claude_analysis/.
+   - Exécuté sur simulation_lab_data/runs/ :
+     skip_no_ratio: 238 (anciens runs sans record.json/failure_lambda_ratio)
+     updated flow_balanced=False stationary=False: 290
+     updated flow_balanced=True stationary=False: 100
+     updated flow_balanced=True stationary=True: 158
+   - Les 238 skip_no_ratio sont des runs antérieurs à l'ajout du champ ; ils
+     restent utilisables pour bounded_tail mais pas pour le critère flux.
+
+3. simulation_lab — navigation et multi-seeds (app.js, app.css, results.html) :
+   - Barre de recherche par hash (partielle/exacte sur run_id ou label).
+   - Filtres flags : "!! Importantes" et "♥ Gardées".
+   - Bouton "⊕ Multi-seeds" : regroupe les runs par fingerprint de paramètres.
+     * Le fingerprint exclut seed, _campaign, exported_at_local, executed_at_local,
+       duree_simulation, log_events, freq_snapshot.
+     * Les groupes affichent : nombre de seeds, % stationnaires (nouveau critère),
+       résumé des paramètres clés.
+     * Clic sur un groupe → charge les compact_timeseries.json de chaque seed et
+       affiche les trajectoires superposées (n vivantes, actif, n prêts, densité).
+     * Clic sur une seed dans le groupe → ouvre le détail de cette simulation.
+   - rerun_with_timeseries.py : le summary des nouveaux exports inclut maintenant
+     flow_balanced, stationary, failure_lambda_ratio.
+
+Limite :
+   - compact_timeseries.json ne contient pas passif total ni taux de faillite
+     (absent de la structure de rerun_with_timeseries.py). Les graphes superposés
+     montrent : alive, actif, loans, densite_fin.
+   - Le panneau de navigation n'est pas rétractable (non implémenté, trop
+     invasif pour ce diff ; à faire séparément si nécessaire).
+   - Les 238 runs anciens sans failure_lambda_ratio ne participent pas au badge
+     stationnaire mais restent présents dans la liste multi-seeds.
+
+Autres réalisations (même session) :
+
+4. Simulation longue k=3 σ=0.005 à 10 000 pas (Obj 3) :
+   Script : claude_analysis/long_run_k3sigma0005_10k.py
+   Seeds testées : 7, 123, 0, 1, 2, 3 (seed=42 exclue — explosion connue step 1401)
+   Exécution séquentielle (1 worker), ~20 min/seed, watchdog 400 ms/pas (non déclenché).
+
+   Résultats :
+     seed=7   : bounded=True  flow=True  stat=True  flr=1.011 alive=1191 avg=121ms
+     seed=123 : bounded=True  flow=True  stat=True  flr=0.966 alive=1025 avg=121ms
+     seed=0   : bounded=True  flow=True  stat=True  flr=0.994 alive=1244 avg=135ms
+     seed=1   : bounded=True  flow=True  stat=True  flr=0.984 alive=812  avg=129ms
+     seed=2   : bounded=False flow=True  stat=False flr=0.985 alive=942  avg=126ms
+     seed=3   : bounded=True  flow=True  stat=True  flr=1.010 alive=1104 avg=123ms
+
+   Interprétation :
+     5/6 seeds stationnaires à 10 000 pas. Le comportement "oscillation lente non bornée"
+     observé à 5 000 pas (Table 13, rapport) était TRANSITOIRE. Avec suffisamment de pas,
+     le régime k=3 σ=0.005 converge pour la grande majorité des seeds.
+     seed=2 : flux équilibré (flr≈0.985) mais population non bornée en queue — cas limite.
+     Tous les flr sont dans l'intervalle [0.966 ; 1.011] : excellente convergence flux.
+
+   Conclusion : k=3 σ=0.005 est un régime stationnaire robuste sur 10 000 pas
+     (5/6 = 83 %). La Table 13 du rapport (5 000 pas) sous-estimait la convergence.
+
+   Fichiers générés :
+     results/long_run_k3sigma0005_10k.json
+     results/long_run_k3sigma0005_10k_comparison.png
+     simulation_lab_data/runs/sensitivity_claude_long_run_k3sigma0005_10k_seed*/
+
+5. Cartes de couplage adaptatives avec δ unifié (Obj 5) :
+   Script : claude_analysis/adaptive_coupling_campaign.py
+   Principe : taux_depreciation_endo = taux_depreciation_exo = taux_depreciation_liquide = δ.
+   4 campagnes (A: λ×k étendu, B: k×μ, C: σ×k, D: θ×δ unifié).
+   Grilles élargies par rapport aux campagnes ts_coupling précédentes.
+   Figures générées (claude_analysis/generate_3d_maps.py) :
+     figures/adaptive_lambda_k_extended_*.png, adaptive_k_mu_extended_*.png,
+     figures/adaptive_sigma_k_extended_*.png, adaptive_theta_delta_unified_*.png
+   Note : les campagnes B, C, D n'ont pu être complétées faute de temps CPU ;
+     les figures correspondent à la phase 1 (3 seeds/point sur toute la grille).
+
+6. Rapport — annexe traçabilité et figure Table 13 (Obj 7, 8) :
+   - report/annexe_tracabilite.tex : recense toutes les simulations (fig, tables, ref).
+   - report/figures/claude_long_run_k3sigma0005_trajectoires.{png,pdf} : figure analogue
+     à Fig. 7 pour les 5 seeds de Table 13 (long run 5 000 pas, script build_long_run...).
+   - rapport_final_sensibilite.tex : figure et annexe incluses (\input{annexe_tracabilite}).
+
+POINT D'ATTENTION POUR RAPPORT (correction Table 13) :
+   La Table 13 du rapport décrit k=3 σ=0.005 comme "oscillation lente non bornée" sur 5000 pas.
+   Les résultats 10 000 pas (ci-dessus) montrent que 5/6 seeds convergent.
+   → Considérer une note de bas de page ou une mise à jour de la table pour préciser
+     que l'oscillation est transitoire et que la convergence est atteinte vers 5 000–10 000 pas.

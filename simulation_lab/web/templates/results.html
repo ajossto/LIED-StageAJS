@@ -32,11 +32,19 @@
     <section class="panel">
       <div class="toolbar">
         <h2>Simulations</h2>
-        <button id="refresh-runs">Rafraîchir</button>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <button id="toggle-multiseed" class="secondary compact-button" title="Vue groupes multi-seeds">⊕ Multi-seeds</button>
+          <button id="refresh-runs">Rafraîchir</button>
+        </div>
+      </div>
+      <div class="search-bar">
+        <input id="search-runs" type="search" placeholder="Rechercher par hash, label…" autocomplete="off">
       </div>
       <div class="filter-row">
         <button class="secondary" data-scope="active">Actives</button>
         <button class="secondary" data-scope="trash">Corbeille</button>
+        <label class="flag-filter"><input type="checkbox" id="filter-important"> !! Importantes</label>
+        <label class="flag-filter"><input type="checkbox" id="filter-keep"> ♥ Gardées</label>
       </div>
       <div id="study-filter" class="study-filter hidden">
         <strong>Filtre étude de sensibilité</strong>
