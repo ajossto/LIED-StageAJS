@@ -12,7 +12,7 @@ BASKET_DIR = DATA_DIR / "trash"
 BATCHES_DIR = DATA_DIR / "batches"
 CATALOG_FILE = DATA_DIR / "catalog.json"
 DEFAULT_HOST = "127.0.0.1"
-DEFAULT_PORT = 8765
+DEFAULT_PORT = 8777
 LEGACY_RESULT_SOURCES = {
     "modele_sans_banque_wip": [
         ROOT_DIR / "Modèle_sans_banque_wip" / "resultats",
