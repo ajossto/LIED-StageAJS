@@ -14,7 +14,7 @@
 
 \title{Etude de sensibilite du modele sans banque\\Rapport final provisoire et autonome}
 \author{modele-27-04-WIP / studies/sensitivity}
-\date{30 avril 2026 -- mise a jour couplages et probabilites}
+\date{Mai 2026 -- version integrant les campagnes adaptatives (1\,479 runs)}
 
 \begin{document}
 \maketitle
@@ -48,10 +48,39 @@ sont :
   \item \(A\), actif total du systeme ;
   \item \(L\), nombre de prets actifs ;
   \item \(V\), volume financier des prets ;
-  \item \(D=V/A\), densite financiere en volume ;
-  \item \(L/n_{\mathrm{alive}}\), densite en nombre de contrats ;
-  \item le Gini des actifs, les cascades de faillites et les correlations de queue.
+  \item \(d_f = V/A\), densite financiere en volume (\texttt{densite\_fin\_mean}) ;
+  \item \(\ell = L/n_{\mathrm{alive}}\), densite en nombre de contrats par entite ;
+  \item \(r_f = \bar{f}/\lambda\), ratio faillites/creation (\texttt{failure\_lambda\_ratio}) ;
+  \item \(G\), coefficient de Gini de l'actif entre entites ;
+  \item le critere operationnel \(\mathcal{B}\) (\texttt{bounded\_tail}) : voir section~\ref{sec:protocole}.
 \end{itemize}
+
+\paragraph{Notation canonique.}
+Le tableau suivant fixe la correspondance entre les symboles du rapport et
+les noms de code.
+
+\begin{center}
+\small
+\begin{tabular}{lll}
+\toprule
+Symbole & Code \texttt{snake\_case} & Signification \\
+\midrule
+\(k\) & \texttt{n\_candidats\_pool} & candidats evalues par emprunteur par pas \\
+\(\lambda\) & \texttt{lambda\_creation} & taux de creation d'entites (reel) \\
+\(\mu\) & \texttt{mu} & prime minimale de rendement a l'emprunt \\
+\(\theta\) & \texttt{theta} & part du gain extraite a chaque pas \\
+\(\delta\) & \texttt{taux\_depreciation\_endo} & taux de depreciation endogene \\
+\(\sigma_\alpha\) & \texttt{alpha\_sigma\_brownien} & volatilite brownienne du rendement \\
+\(f\) & \texttt{fraction\_taux\_emprunteur} & fraction du taux a charge de l'emprunteur \\
+\(\phi\) & \texttt{fraction\_auto\_investissement} & part du gain reinvesti \\
+\(\epsilon\) & \texttt{epsilon} & seuil de convergence numerique \\
+\(d_f\) & \texttt{densite\_fin\_mean} & densite financiere en volume \(V/A\) \\
+\(\ell\) & \texttt{loan\_density\_mean} & prets par entite vivante \(L/n_{\mathrm{alive}}\) \\
+\(r_f\) & \texttt{failure\_lambda\_ratio} & ratio faillites/creation \(\bar{f}/\lambda\) \\
+\(\mathcal{B}\) & \texttt{bounded\_tail} & critere de queue bornee (voir section~\ref{sec:protocole}) \\
+\bottomrule
+\end{tabular}
+\end{center}
 
 Le parametre \(\lambda=\texttt{lambda\_creation}\) est le taux du processus de
 creation d'entites. Il est reel : il n'a pas a etre entier. Les premieres
@@ -59,25 +88,114 @@ grilles ont surtout utilise \(\lambda\in\{1,2,4\}\), mais les prochaines grilles
 fines devront utiliser des valeurs intermediaires.
 
 \section{Regime permanent : critere retenu}
+\label{sec:critere-regime}
 
-Le regime permanent ne se reduit pas a une chute forte de 25 \% du nombre
+Le regime permanent ne se reduit pas a une chute forte de 25\,\% du nombre
 d'entites. Une simulation utile peut avoir une chute faible, une stabilisation
-tardive ou meme une decorrelation entre \(n_{\mathrm{alive}}\) et l'actif. Les
-diagnostics utilises dans les scripts combinent donc :
-\begin{itemize}
-  \item la detection d'une chute de 5 \% de \(n_{\mathrm{alive}}\), qui sert de
-  repere visuel ;
-  \item une fenetre de queue apres un temps fini ;
-  \item les pentes relatives de \(n_{\mathrm{alive}}\), \(A\) et \(D\) sur cette
-  queue ;
-  \item la pente et le niveau des faillites ;
-  \item les correlations de queue entre \(n_{\mathrm{alive}}\), \(A\), le nombre
-  de prets et les faillites.
-\end{itemize}
+tardive ou meme une decorrelation entre \(n_{\mathrm{alive}}\) et l'actif.
 
-Le flag \texttt{bounded\_tail} n'est donc pas une preuve mathematique de
-stationnarite. C'est un critere operationnel : il signale que, sur l'horizon
-observe, les stocks ne continuent pas une derive de grande amplitude.
+Le critere operationnel \(\mathcal{B}\) (\texttt{bounded\_tail}), calcule sur
+la fenetre de queue $[t_{\mathrm{mesure}}, T]$ ou
+$t_{\mathrm{mesure}} = \max(0.6\,T,\;t_{\mathrm{chute5}} + 100)$, est satisfait
+si et seulement si les quatre conditions suivantes sont reunies
+(voir \texttt{run\_simulation.py:detect\_regime\_diagnostics}) :
+\[
+  |\text{pente relative de }n_{\mathrm{alive}}| \le 0.20
+  \quad\text{ET}\quad
+  |\text{pente relative de }A| \le 0.20
+\]
+\[
+  \text{IQR relatif de }n_{\mathrm{alive}} \le 0.70
+  \quad\text{ET}\quad
+  \text{IQR relatif de }A \le 0.80.
+\]
+La pente relative est le coefficient de la regression lineaire sur la queue,
+divise par la valeur moyenne sur cette queue.
+L'IQR relatif est l'ecart interquartile divise par la mediane.
+
+Le critere \(\mathcal{B}\) n'est pas une preuve mathematique de stationnarite.
+C'est un critere operationnel : il signale que, sur l'horizon observe, les
+stocks ne continuent pas une derive de grande amplitude.
+
+Le critere dual de stationnarite complete ajoute l'equilibre des flux :
+$\mathcal{B} \wedge |r_f - 1| < 0.15$, ou $r_f = \bar{f}/\lambda$ est le
+ratio moyen faillites/creation sur la fenetre de queue.
+
+\section{Protocole experimental}
+\label{sec:protocole}
+
+\subsection*{Parametres du modele}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabularx}{\linewidth}{llXrr}
+\toprule
+Symbole & Code & Signification & Nominal $C_3$/$C_4$ & Plage testee \\
+\midrule
+$k$ & \texttt{n\_candidats\_pool} & candidats evalues par emprunteur par pas & 3 / 4 & 2--8 \\
+$\lambda$ & \texttt{lambda\_creation} & taux de creation d'entites (reel) & 2.0 & 0.5--6.0 \\
+$\mu$ & \texttt{mu} & prime minimale de rendement a l'emprunt & 0.05 & 0--0.15 \\
+$\theta$ & \texttt{theta} & part du gain extraite par pas & 0.35 & 0.15--0.55 \\
+$\delta$ & \texttt{taux\_depreciation\_endo} & taux de depreciation endogene & 0.05 & 0.01--0.15 \\
+$\sigma_\alpha$ & \texttt{alpha\_sigma\_brownien} & volatilite brownienne du rendement & 0.0 & 0--0.10 \\
+$f$ & \texttt{fraction\_taux\_emprunteur} & fraction du taux a charge emprunteur & 0.2 & 0.0--0.5 \\
+$\phi$ & \texttt{fraction\_auto\_investissement} & part du gain reinvesti & 0.5 & 0.25--0.5 \\
+$\epsilon$ & \texttt{epsilon} & seuil de convergence numerique & $10^{-3}$ & $10^{-6}$--$10^{-2}$ \\
+\bottomrule
+\end{tabularx}
+\caption{Parametres varies dans l'etude. La valeur nominale est celle des
+centres OAT. \texttt{taux\_amortissement} est fixe a 0 ; les parametres de
+reliquefaction (\texttt{coefficient\_reliquefaction}, \texttt{seuil\_ratio\_liquide\_passif})
+ont un effet nul mesure et sont exclus. Dans les campagnes
+\(\theta\times\delta\), \(\delta_{\mathrm{endo}} = \delta_{\mathrm{exo}} = \delta_{\mathrm{liquide}}\)
+(depreciation unifiee).}
+\end{table}
+
+\subsection*{Centres OAT}
+
+L'analyse OAT (\emph{One-At-a-Time}) consiste a partir d'un vecteur de
+parametres de reference (le \emph{centre}) et a faire varier un seul parametre
+a la fois, tous les autres restes a leur valeur nominale. L'effet mesure est
+le delta de metrique par rapport au resultat du centre.
+
+Deux centres sont utilises, partageant le meme vecteur de parametres
+sauf pour $k$ :
+
+\begin{description}
+  \item[$C_3$ (\texttt{subcritical\_k3})] :
+    $k=3$, $\theta=0.35$, $\mu=0.05$, $\lambda=2.0$, $f=0.2$, $\phi=0.5$,
+    $\delta_{\mathrm{endo}} = \delta_{\mathrm{exo}} = 0.05$,
+    actif liquide initial = 200, passif inne initial = 190
+    (richesse nette = 10), $n_0=100$ entites, $\sigma_\alpha=0$,
+    $\epsilon=10^{-3}$.
+  \item[$C_4$ (\texttt{regime\_k4})] : identique a $C_3$, mais $k=4$.
+\end{description}
+
+\subsection*{Terminologie}
+
+\paragraph{Sonde.}
+Une \emph{sonde} est une simulation unique ou un petit ensemble de simulations
+a duree allongee (3\,000 ou 10\,000 pas), destinee a verifier si un cas
+ambigu a 1\,500 pas est en transitoire ou en regime permanent. Elle differe
+d'une \emph{campagne} (grille systematique de parametres).
+
+\paragraph{Seed.}
+Un \emph{seed} est une valeur d'initialisation du generateur pseudo-aleatoire.
+Des seeds differents produisent des realisations independantes avec les memes
+parametres. La variation inter-seeds mesure la sensibilite aux fluctuations
+d'initialisation, non a la stochasticite parametrique.
+
+\paragraph{Campagne adaptative.}
+Le protocole adaptatif alloue 3 seeds dans les zones stables
+(\(\text{bounded\_rate} \le 0.1\) ou \(\ge 0.9\)) et jusqu'a 15 seeds
+sur les frontieres detectees (\(0.1 < \text{bounded\_rate} < 0.9\)).
+Les tables des campagnes adaptatives indiquent la fraction
+\(\mathcal{B}\) (bounded\_tail) sous la forme \textbf{convergé/total} (ex. 7/15)
+pour rendre l'echantillon visible.
+Pour $n=3$, l'intervalle de Wilson a 95\,\% d'une fraction 2/3 est
+$[0.19, 0.93]$ -- tres large. Pour $n=15$ avec 10/15, il est $[0.46, 0.87]$.
+Les fractions a $n=3$ dans les zones stables ne doivent pas etre sur-interpretees.
 
 \section{Lecture initiale : correlations pilotes}
 
@@ -110,7 +228,7 @@ indefiniment : elle forme un plateau.
 \centering
 \begin{tabular}{rrrr}
 \toprule
-\(k\) homogene & part regime & densite financiere & \(n_{\mathrm{alive}}\) moyen \\
+\(k\) & $\mathcal{B}$/3 seeds & $d_f$ moyen & \(n_{\mathrm{alive}}\) moyen \\
 \midrule
 2  & 0/3 & 0.015 & croissance forte \\
 3  & 0/3 & 0.049 & croissance forte \\
@@ -126,7 +244,13 @@ indefiniment : elle forme un plateau.
 \begin{figure}[H]
   \centering
   \includegraphics[width=0.95\linewidth]{figures/k_sweep_steps1500_eps0.001.pdf}
-  \caption{Transition et plateau lorsque \(k\) augmente.}
+  \caption{Transition et plateau lorsque \(k\) augmente.
+  Axe X : $k$ (\texttt{n\_candidats\_pool}), homogene statique
+  ($\sigma_\alpha = 0$, $\epsilon = 10^{-3}$, 1\,500 pas, 3 seeds).
+  Axe Y gauche : fraction de seeds a queue bornee (\(\mathcal{B}\)).
+  Axe Y droit : densite financiere moyenne \(d_f = V/A\).
+  La transition seuil $k=3\to4$ est nette ; la densite forme un plateau
+  pour $k\ge4$.}
 \end{figure}
 
 \section{Resolution numerique \(\epsilon\)}
@@ -182,8 +306,11 @@ conserver une richesse nette initiale coherente de 10.
 \begin{figure}[H]
   \centering
   \includegraphics[width=0.98\linewidth]{figures/codex_oat_screen_steps1500_seeds42.pdf}
-  \caption{Effets OAT autour des deux centres. Les barres mesurent les deltas
-  par rapport au centre du meme groupe.}
+  \caption{Effets OAT autour des deux centres (seed 42, 1\,500 pas,
+  $\epsilon=10^{-3}$). Chaque barre est un $\Delta d_f$ (delta de densite
+  financiere $V/A$) par rapport au centre $C_3$ (groupe gauche) ou $C_4$
+  (groupe droit). La couleur indique si la queue est bornee ($\mathcal{B}$)
+  ou non.}
 \end{figure}
 
 \begin{table}[H]
@@ -218,7 +345,7 @@ phase dense, sans etre encore bornes.
 \centering
 \begin{tabular}{lrrrr}
 \toprule
-Cas & queue bornee & densite & \(n_{\mathrm{alive}}\) & pente relative \(n\) \\
+Cas & $\mathcal{B}$ & $d_f$ & \(n_{\mathrm{alive}}\) & pente rel. \(n\) \\
 \midrule
 \texttt{k3\_sigma0005} & non & 0.404 & 716 & +0.295 \\
 \texttt{k3\_sigma002} & non & 0.494 & 722 & +0.041 \\
@@ -237,8 +364,16 @@ que l'entree visible vers 1200 pas n'etait pas encore un regime etabli.}
 \begin{figure}[H]
   \centering
   \includegraphics[width=0.98\linewidth]{figures/codex_long_probe_steps3000_seeds42.pdf}
-  \caption{Trajectoires longues des cas ambigus. La ligne verticale indique le
-  debut de la fenetre de mesure souple.}
+  \caption{Sonde longue 3\,000 pas, seed 42 -- trajectoires des 8 cas ambigus.
+  Quatre colonnes par cas :
+  (1) bleu : $n_{\mathrm{alive}}$ ;
+  (2) vert : actif total $A$ ;
+  (3) orange : densite financiere en volume $d_f = V/A$
+    (\texttt{densite\_fin}) ;
+  (4) rouge : densite contractuelle $\ell = L/n_{\mathrm{alive}}$
+    (\texttt{n\_prets/n\_alive}).
+  La ligne verticale indique le debut de la fenetre de mesure
+  (\(\approx 0.6 \times T\)).}
 \end{figure}
 
 \begin{figure}[H]
@@ -303,32 +438,40 @@ L'interpretation pratique est la suivante :
   la taille bilancielle.
 \end{itemize}
 
-\section{Boucles autonomes effectuees}
+\section{Iterations du protocole}
 
-Cette section explicite les boucles de decision realisees pendant l'etude.
-\begin{longtable}{p{0.06\linewidth}p{0.25\linewidth}p{0.62\linewidth}}
-\toprule
-\# & Zone ombragee & Action et conclusion \\
-\midrule
-1 & Critere de regime & Remplacement du critere de chute 25 \% par des diagnostics de queue. \\
-2 & Seuil \(k\) & Sweep \(k\) : seuil homogene entre 3 et 4, plateau ensuite. \\
-3 & Resolution \(\epsilon\) & Benchmark : \(10^{-3}\) conserve les volumes, \(10^{-2}\) detruit le regime. \\
-4 & Volatilite \(\alpha\) & Sweep \(\sigma_\alpha\) : fenetre active autour de 0.005--0.02. \\
-5 & Deux centres OAT & Construction des centres \(k=3\) et \(k=4\), puis 62 simulations OAT. \\
-6 & Observabilite Lab & Les 62 runs OAT ont les graphes complets, compact timeseries, 0 CSV brut. \\
-7 & Entrees tardives & Sonde longue 3000 pas : \(k=3,\sigma=0.005\) reste non borne (transitoire long). \\
-8 & Sorties de regime & \(\theta=0.2\), actif initial 400 et \(\lambda=4\) restent en croissance a 3000 pas. \\
-9 & Prediction globale & Forets aleatoires : regime predictible a 0.84 balanced accuracy. \\
-10 & Parametre continu \(\lambda\) & Note ajoutee : \(\lambda\) doit etre traite comme reel dans les prochaines grilles fines. \\
-11 & Couplage \(\lambda \times k\) & Carte de phase : \(k \le 3\) jamais borne en homogene ; fenetre k=4 a \(\lambda\approx2.0\). \\
-12 & Couplage \(k \times \mu\) & \(\mu=0\) debloque le regime pour \(k=2\) et \(k=3\). Seuil de phase cree par \(\mu\). \\
-13 & Couplage \(\sigma_\alpha \times k\) & Fenetre active [0.01, 0.02] confirmee pour k=3 ; \(\sigma=0.05\) destructeur universel. \\
-14 & Couplage \(\theta \times \delta_\mathrm{endo}\) & \(\delta=0.10\) toujours destructeur ; \(\delta=0.02\) frontiere stochastique. \\
-15 & Probabilites limites & 13 seeds extra : k4\_depr002 est a 0.15, k4\_theta05 a 0.92. \\
-16 & Long run k3s005 & Oscillation a 5000 pas transitoire. Extension a 10\,000 pas : 5/6 seeds stationnaires (flr $\in [0.966;1.011]$). \\
-17 & Parametres faibles & coefficient\_reliquefaction et seuil\_ratio\_liquide\_passif : effet nul mesure. \\
-\bottomrule
-\end{longtable}
+L'etude s'est deroulee en cinq grandes phases iteratives.
+
+\textbf{Phase 1 -- Pilote et criteres (boucles 1--4).}
+Le critere de convergence initial (chute de 25\,\% de \(n_{\mathrm{alive}}\))
+a ete remplace par des diagnostics de queue combinant pentes relatives et
+IQR (voir section~\ref{sec:critere-regime}). Le seuil en \(k\) (transition
+3$\to$4 en regime homogene) et la resolution numerique \(\epsilon\) ont ete
+identifies lors des premiers balayages 1D.
+
+\textbf{Phase 2 -- OAT a deux centres (boucles 5--10).}
+62 simulations OAT autour de $C_3$ et $C_4$, puis validation sur 3 seeds.
+Les parametres les plus impactants ont ete classes en effets robustes
+(meme sens sur tous les seeds) et effets fragiles (dependants du seed).
+
+\textbf{Phase 3 -- Couplages coarse (boucles 11--14).}
+Quatre cartes de phase 2D a grille grossiere (3 seeds, 1\,500 pas) :
+\(\lambda\times k\), \(k\times\mu\), \(\sigma_\alpha\times k\),
+\(\theta\times\delta_{\mathrm{endo}}\). Ces cartes ont identifie les
+interactions dominantes et les frontieres de regime.
+
+\textbf{Phase 4 -- Probabilites et sondes longues (boucles 15--17).}
+13 seeds supplementaires sur 7 cas limites ; extension de
+$k=3,\sigma_\alpha=0.005$ a 10\,000 pas (convergence tardive confirmee).
+Identification de deux parametres a effet nul (reliquefaction).
+
+\textbf{Phase 5 -- Campagnes adaptatives (boucles 18--21).}
+1\,479 runs au total sur quatre campagnes avec allocation adaptative
+(3 seeds en zones stables, 15 aux frontieres) :
+\(\lambda\times k\) (417), \(k\times\mu\) (327),
+\(\sigma_\alpha\times k\) (267), \(\theta\times\delta\) unifie (468).
+La campagne \(\theta\times\delta\) unifiee a mis en evidence un artefact
+d'extinction (\(\delta\ge0.12\) : queue bornee par zero, non par regime).
 
 \section{Balayage fin de \(\lambda\) comme variable continue}
 \label{sec:lambda-fin}
@@ -348,7 +491,7 @@ trois seeds (42, 7, 123), \(\epsilon=10^{-3}\), 1500 pas, pour les deux centres
 \small
 \begin{tabular}{rrrrrr}
 \toprule
-\(\lambda\) & seeds bornes & densite financiere & \(n_{\mathrm{alive}}\) & note \\
+\(\lambda\) & $\mathcal{B}$/3s & $d_f$ (moy.$\pm$std) & \(n_{\mathrm{alive}}\) & note \\
 \midrule
 1.0 & 1/3 & \(0.423\pm0.009\) & 188 & transition \\
 1.2 & 2/3 & \(0.411\pm0.001\) & 249 & transition \\
@@ -392,11 +535,14 @@ regime.
 \begin{figure}[H]
   \centering
   \includegraphics[width=0.98\linewidth]{figures/claude_lambda_fine_sweep.pdf}
-  \caption{Balayage fin de \(\lambda\) pour \(k=4\) (bleu) et \(k=3\) (orange).
-  Colonnes : densite financiere avec barres d'erreur inter-seeds, taille
-  \(n_{\mathrm{alive}}\) en echelle log, nombre de seeds a queue bornee.
-  La frontiere de regime pour \(k=4\) se situe entre \(\lambda=2.0\) et
-  \(\lambda=2.5\).}
+  \caption{Balayage fin de \(\lambda\) pour \(k=4\) (bleu) et \(k=3\) (orange),
+  $\epsilon=10^{-3}$, 1\,500 pas, 3 seeds (42, 7, 123).
+  De gauche a droite :
+  (1) densite financiere $d_f = V/A$ avec barres d'erreur inter-seeds ;
+  (2) $n_{\mathrm{alive}}$ final en echelle log ;
+  (3) nombre de seeds verifiant $\mathcal{B}$ (\texttt{bounded\_tail}).
+  La frontiere de regime pour \(k=4\) se situe entre \(\lambda=2.0\)
+  (3/3 bornes) et \(\lambda=2.5\) (1/3 bornee).}
 \end{figure}
 
 \section{Robustesse OAT : validation sur seeds 7 et 123}
@@ -413,7 +559,7 @@ types inter-seeds mesurent la robustesse de chaque effet.
 \small
 \begin{tabular}{lrrrr}
 \toprule
-Parametre (valeur) & B.T. 3s & densite financiere & note \\
+Parametre (valeur) & $\mathcal{B}$/3s & $d_f$ (moy.$\pm$std) & note \\
 \midrule
 \(\alpha_\sigma=0.02\) & 3/3 & \(0.520\pm0.005\) & densification robuste \\
 \(\mu=0.0\) & 3/3 & \(0.468\pm0.006\) & densification robuste \\
@@ -447,7 +593,7 @@ centre. Ils ne doivent pas etre interpretes comme des effets robustes.
 \small
 \begin{tabular}{lrrrr}
 \toprule
-Parametre (valeur) & B.T. 3s & densite financiere & note \\
+Parametre (valeur) & $\mathcal{B}$/3s & $d_f$ (moy.$\pm$std) & note \\
 \midrule
 \(\mu=0.0\) & 3/3 & \(0.479\pm0.002\) & entree robuste en regime \\
 actif initial 100 & 2/3 & \(0.407\pm0.007\) & entree partielle en regime \\
@@ -506,6 +652,16 @@ La fenetre optimale de \(k=4\) est \(\lambda \approx 2.0\).}
 effectif en \(\lambda\) : a \(k=5\), le regime reste robuste jusqu'a
 \(\lambda=4.0\), alors que \(k=4\) deja sorti du regime a cette valeur.
 
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.80\linewidth]{figures/claude_surface_3d_lambda_k.png}
+  \caption{Surface 3D de la carte coarse \(\lambda \times k\) : fraction de
+  seeds a queue bornee (\(\mathcal{B}\)). Axe Z et couleur (viridis) : fraction
+  $\in[0,1]$. Chaque point represente une cellule de grille (3 seeds).
+  \(k \le 3\) ne forme jamais de regime en homogene (\(\sigma_\alpha=0\)).
+  La fenetre optimale de \(k=4\) est \(\lambda\approx2.0\).}
+\end{figure}
+
 \subsection*{Carte \(k \times \mu\)}
 
 \begin{table}[H]
@@ -532,6 +688,16 @@ phase pour les petits \(k\). Au dela de \(\mu=0.10\), aucun \(k\) ne forme de
 regime borne. Ceci signifie que l'interpretation physique de \(k\) comme
 \emph{seuil absolu} depend du choix de \(\mu\).
 
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.80\linewidth]{figures/claude_surface_3d_k_mu.png}
+  \caption{Surface 3D de la carte coarse \(k \times \mu\) : fraction de
+  seeds a queue bornee (\(\mathcal{B}\)). Axe Z et couleur (viridis) : fraction
+  $\in[0,1]$. Grille 4 valeurs de $k$ \(\times\) 5 valeurs de $\mu$, 3 seeds.
+  Le role de porte de phase de \(\mu\) est visible :
+  \(\mu > 0.10\) detruit tous les regimes.}
+\end{figure}
+
 \subsection*{Carte \(\sigma_\alpha \times k\)}
 
 \begin{table}[H]
@@ -554,6 +720,17 @@ La volatilite \(\sigma_\alpha\) ouvre une fenetre de regime pour \(k=3\)
 autour de \([0.01, 0.02]\), confirmant le balayage precedent. A
 \(\sigma_\alpha=0.05\), tous les regimes disparaissent quelle que soit \(k\) :
 la volatilite excessive fragmente le reseau.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.80\linewidth]{figures/claude_surface_3d_sigma_k.png}
+  \caption{Surface 3D de la carte coarse \(\sigma_\alpha \times k\) : fraction
+  de seeds a queue bornee (\(\mathcal{B}\)). Axe Z et couleur (viridis) :
+  fraction $\in[0,1]$. Grille 5 valeurs de $\sigma_\alpha$
+  $\times$ 4 valeurs de $k$, 3 seeds.
+  La fenetre active $\sigma_\alpha\in[0.01, 0.02]$ pour $k=3$ est etroite ;
+  $\sigma_\alpha=0.05$ est destructeur universel.}
+\end{figure}
 
 \subsection*{Carte \(\theta \times \delta_{\mathrm{endo}}\)}
 
@@ -587,6 +764,329 @@ les resultats sont stochastiques : le systeme se trouve pres de la frontiere.
 Pour \(k=4\), \(\delta_{\mathrm{endo}}=0.05\) avec \(\theta=0.35\) donne
 paradoxalement 1.00, ce qui suggere une interaction non monotone entre
 extraction et depreciation.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.80\linewidth]{figures/claude_surface_3d_theta_delta.png}
+  \caption{Surface 3D de la carte coarse \(\theta \times \delta_{\mathrm{endo}}\) :
+  fraction de seeds a queue bornee (\(\mathcal{B}\)). Axe Z et couleur (viridis) :
+  fraction $\in[0,1]$. Grille 3 valeurs de $\theta$
+  $\times$ 3 valeurs de $\delta_{\mathrm{endo}}$, 3 seeds, deux centres
+  ($k=3$ et $k=4$).
+  \(\delta_{\mathrm{endo}}=0.10\) detruit systematiquement le regime.}
+\end{figure}
+
+\section{Campagnes adaptatives : cartes de phase denses}
+\label{sec:campagnes-adaptatives}
+
+Les cartes de phase de la section precedente reposaient sur des grilles grossieres
+(3--6 valeurs par axe, 3 seeds). Quatre campagnes a echantillonnage adaptatif
+ont ete ensuite conduites pour densifier ces cartes.
+Le protocole adaptatif alloue 3 seeds dans les zones stables, jusqu'a 15 seeds
+sur les frontieres detectees (\(0.1 < \mathcal{B}\text{-rate} < 0.9\)).
+Les fractions presentees dans les tables ci-dessous sont la fraction de seeds
+verifiant \(\mathcal{B}\) (\texttt{bounded\_tail = True}), notees sous
+la forme \textbf{bornes/total} (ex. : 7/15). Le critere de stationnarite
+dual --- \(\mathcal{B} \wedge |r_f - 1| < 0.15\) --- est utilise pour
+la classification interne des cellules mais n'est pas repris dans les tables.
+Les parametres de depreciation sont \emph{unifies} (\(\delta_{\mathrm{endo}} = \delta_{\mathrm{exo}} = \delta_{\mathrm{liquide}} = \delta\))
+dans la campagne \(\theta \times \delta\), supprimant un degre de liberte
+parasite de la campagne coarse.
+\smallskip
+
+\noindent\textit{Note sur l'incertitude :}
+$n=3$ dans les zones stables (fraction 0 ou 1 confirmee) ;
+$n=15$ aux frontieres detectees ($0 < \mathcal{B}\text{-rate} < 1$).
+Pour $n=3$, l'IC Wilson 95\,\% d'une fraction $2/3$ est $[0.19, 0.93]$ ;
+pour $n=15$ avec $10/15$, il est $[0.46, 0.87]$. Ne pas sur-interpreter
+les fractions intermediaires a $n=3$.
+
+\paragraph{Volume total.}
+1\,479 runs au total (417 + 327 + 267 + 468), executes entre avril et mai 2026.
+
+\subsection*{Campagne \(\lambda \times k\) etendue (417 runs)}
+
+\begin{table}[H]
+\centering
+\footnotesize
+\begin{tabular}{r|rrrrrrr}
+\toprule
+\(\lambda \backslash k\) & 2 & 3 & 4 & 5 & 6 & 7 & 8 \\
+\midrule
+0.5 & 2/15 & 6/15 & 9/15 & 0/3 & 0/3 & 1/15 & 0/3 \\
+1.0 & 0/3 & 0/3 & \textbf{3/3} & 10/15 & 0/3 & 0/3 & 6/15 \\
+1.5 & 0/3 & 7/15 & 13/15 & 12/15 & 4/15 & 0/3 & 0/3 \\
+2.0 & 0/3 & 0/3 & 13/15 & \textbf{3/3} & 6/15 & 4/15 & 0/3 \\
+2.5 & 0/3 & 0/3 & \textbf{3/3} & \textbf{3/3} & 11/15 & 6/15 & \textbf{3/3} \\
+3.0 & 0/3 & 0/3 & \textbf{3/3} & \textbf{3/3} & \textbf{3/3} & 11/15 & \textbf{3/3} \\
+4.0 & 0/3 & 0/3 & 11/15 & \textbf{3/3} & \textbf{3/3} & \textbf{3/3} & 12/15 \\
+5.0 & 0/3 & 0/3 & 8/15 & \textbf{3/3} & \textbf{3/3} & \textbf{3/3} & \textbf{3/3} \\
+6.0 & 0/3 & 0/3 & 0/3 & \textbf{3/3} & \textbf{3/3} & \textbf{3/3} & \textbf{3/3} \\
+\bottomrule
+\end{tabular}
+\caption{Seeds bornes / total par cellule (\(\mathcal{B}\) = \texttt{bounded\_tail}),
+carte \(\lambda \times k\) adaptative (417 runs, grille fine).
+\textbf{Gras} = fraction \(\ge 0.9\).
+$n=3$ dans les zones stables (fraction 0 ou 1), $n=15$ aux frontieres.
+\(\lambda = \texttt{lambda\_creation}\), \(k = \texttt{n\_candidats\_pool}\).}
+\end{table}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\linewidth]{figures/map_lambda_k_3d.png}
+  \caption{Cartes 3D adaptatives \(\lambda \times k\) (417 runs, 1500 pas) en
+  disposition 2\(\times\)2 : fraction bornee \(\mathcal{B}\) (haut-gauche),
+  taux stationnarite \(\mathcal{B}\wedge r_f\) (haut-droit),
+  \(\bar{n}_{\mathrm{alive}}\) en regime (bas-gauche),
+  Gini actif (bas-droit).
+  Surface interpolee (scipy linaire) sur grille \(9\times 7\).
+  Points superposes : couleur = valeur locale, \textbf{taille} $\propto$
+  demi-IC Wilson 95\% (grand = incertain, i.e.\ $n=3$ seeds~; petit = $n=15$).
+  Le seuil \(k\ge 4\) et la zone robuste \(\lambda \in [1.5, 3.0]\) sont confirmes.}
+\end{figure}
+
+\textbf{Resultats robustes.}
+Le seuil \(k=4\) comme minimum de regime est confirme : \(k \le 3\) donne toujours
+0 sauf \(\lambda=0.5\) ou \(k=3\) (\(0.47\)) et \(\lambda=1.5\).
+Au-dela de \(k \ge 5\), le regime est robuste sur une plage etendue de \(\lambda\)
+(jusqu'a \(\lambda=5.0\) a \(k=5, 6, 7, 8\)).
+La densite financiere dans les runs converges est stable :
+\(\bar{d}_f = 0.236 \pm 0.023\), confirmant son role de \emph{parametre de reponse}
+peu sensible a \((\lambda, k)\) dans la zone de regime.
+Le nombre de prets par entite est lui aussi remarquablement stable : $\approx 10.4 \pm 1.8$.
+En revanche, $n_{\mathrm{alive}}$ est tres variable dans la zone convergee
+(61 a 913), signalant que la taille demographique depend fortement de \(\lambda\).
+
+\subsection*{Campagne \(k \times \mu\) etendue (327 runs)}
+
+\begin{table}[H]
+\centering
+\footnotesize
+\begin{tabular}{r|rrrrrrrrr}
+\toprule
+\(k \backslash \mu\) & 0.00 & 0.01 & 0.02 & 0.03 & 0.05 & 0.07 & 0.10 & 0.13 & 0.15 \\
+\midrule
+2 & 10/15 & 4/15 & 0/3 & 0/3 & 0/3 & 0/3 & 0/3 & 0/3 & 0/3 \\
+3 & 8/15 & 0/3 & 7/15 & 6/15 & 0/3 & 0/3 & 0/3 & 0/3 & 0/3 \\
+4 & \textbf{3/3} & \textbf{3/3} & 12/15 & \textbf{3/3} & 13/15 & 7/15 & 0/3 & 0/3 & 0/3 \\
+5 & \textbf{3/3} & 8/15 & 8/15 & 12/15 & \textbf{3/3} & \textbf{3/3} & 8/15 & 0/3 & 0/3 \\
+6 & 11/15 & \textbf{3/3} & 7/15 & 3/15 & 6/15 & \textbf{3/3} & \textbf{3/3} & 0/3 & 0/3 \\
+\bottomrule
+\end{tabular}
+\caption{Seeds bornes / total par cellule (\(\mathcal{B}\)), carte
+\(k \times \mu\) adaptative (327 runs).
+\textbf{Gras} = fraction \(\ge 0.9\).
+$n=3$ dans les zones stables, $n=15$ aux frontieres.
+\(\mu = \texttt{mu}\) : prime minimale au rendement de l'emprunt.}
+\end{table}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\linewidth]{figures/map_k_mu_3d.png}
+  \caption{Cartes 3D adaptatives \(k \times \mu\) (327 runs, 1500 pas) en
+  disposition 2\(\times\)2.
+  Axes \(k\) et \(\mu\) inverses (origine au coin arriere) pour degager la zone
+  de regime actif. Points superposes : taille $\propto$ demi-IC Wilson 95\%
+  (grand = $n=3$, incertain ; petit = $n=15$, robuste).
+  La porte de phase \(\mu > 0.10\) est visible sur toutes les vues.}
+\end{figure}
+
+\textbf{Resultats robustes.}
+\(\mu\) agit comme une \emph{porte de phase} independante : au-dela de \(\mu = 0.10\),
+aucun \(k\) ne produit de regime borne.
+\(\mu = 0\) debloque \(k=2\) (0.67) et \(k=3\) (0.53), montrant que le seuil
+apparent \(k=4\) de la campagne coarse est artefacte par le choix \(\mu=0.05\).
+La densite financiere dans les runs converges est tres stable :
+\(\bar{d}_f = 0.243 \pm 0.022\), range \([0.195, 0.288]\).
+Le taux de faillite est egalement tres stable : \(2.06 \pm 0.09\),
+suggerant que le regime borne a une \emph{structure interne robuste}
+independamment de \((k, \mu)\) dans sa zone d'existence.
+
+\textbf{Mise en garde.} Les cartes \(k \times \mu\) montrent des zones de
+non-monotonie marquee (par exemple \(k=3\) : fraction 0.53 a \(\mu=0\), 0.00
+a \(\mu=0.01\), 0.47 a \(\mu=0.02\)). Ces fluctuations refleteront soit des
+effets de front de phase, soit des artefacts du petit nombre de seeds aux
+frontieres. Elles ne doivent pas etre interpretees comme des resonances.
+
+\subsection*{Campagne \(\sigma_\alpha \times k\) etendue (267 runs)}
+
+\begin{table}[H]
+\centering
+\footnotesize
+\begin{tabular}{r|rrrrr}
+\toprule
+\(\sigma_\alpha \backslash k\) & 2 & 3 & 4 & 5 & 6 \\
+\midrule
+0.000 & 0/3 & 0/3 & 13/15 & \textbf{3/3} & 6/15 \\
+0.003 & 0/3 & 0/3 & \textbf{3/3} & \textbf{3/3} & \textbf{3/3} \\
+0.007 & 0/3 & 0/3 & 8/15 & 9/15 & \textbf{3/3} \\
+0.010 & 0/3 & 4/15 & 5/15 & 12/15 & \textbf{3/3} \\
+0.020 & 0/3 & 2/15 & 2/15 & 5/15 & 7/15 \\
+0.035 & 0/3 & 0/3 & 0/3 & 0/3 & 0/3 \\
+0.050 & 0/3 & 0/3 & 0/3 & 0/3 & 0/3 \\
+0.075 & 0/3 & 0/3 & 0/3 & 0/3 & 0/3 \\
+0.100 & 0/3 & 0/3 & 0/3 & 0/3 & 0/3 \\
+\bottomrule
+\end{tabular}
+\caption{Seeds bornes / total par cellule (\(\mathcal{B}\)), carte
+\(\sigma_\alpha \times k\) adaptative (267 runs).
+\textbf{Gras} = fraction \(\ge 0.9\).
+$n=3$ dans les zones stables, $n=15$ aux frontieres.
+La destruction universelle a \(\sigma_\alpha \ge 0.035\) est confirmee pour
+toutes les valeurs de \(k\) testees.
+\(\sigma_\alpha = \texttt{alpha\_sigma\_brownien}\).}
+\end{table}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\linewidth]{figures/map_sigma_k_3d.png}
+  \caption{Cartes 3D adaptatives \(\sigma_\alpha \times k\) (267 runs, 1500 pas) en
+  disposition 2\(\times\)2.
+  Points superposes : taille $\propto$ demi-IC Wilson 95\%.
+  La coupure nette a \(\sigma_\alpha = 0.035\) (seuil destructeur universel) est
+  visible sur les quatre vues. \(k=6\) est le plus resilient au bruit Brownien.}
+\end{figure}
+
+\textbf{Resultats robustes.}
+Le seuil \(\sigma_\alpha = 0.035\) est un \emph{destructeur universel} :
+aucun run n'est borne au-dessus, pour tout \(k\) teste.
+La fenetre de regime pour \(k=3\) est etroite et fragile : fraction 0.13--0.27
+autour de \(\sigma_\alpha = 0.01\)--\(0.02\), soit tres sensible au seed.
+\(k=6\) est le plus resilient : fraction 1.00 pour \(\sigma_\alpha \in [0.003, 0.010]\).
+La densite financiere dans les runs converges est legere-ment plus elevee qu'en
+regime statique : \(\bar{d}_f = 0.272 \pm 0.034\), et la concentration en actif
+(Gini) est plus forte : \(\bar{G} = 0.31\), suggerant que la volatilite du rendement
+produit une \emph{stratification} plus marquee des bilans.
+Ce resultat est plausible mais fragile sur les 91 runs converges disponibles.
+
+\subsection*{Campagne \(\theta \times \delta\) unifiee (468 runs)}
+
+\paragraph{Contrainte de la campagne.}
+Dans cette campagne, \(\delta_{\mathrm{endo}} = \delta_{\mathrm{exo}} = \delta_{\mathrm{liquide}} = \delta\)
+(depreciation unifiee). Les deux degres de liberte parasites de la campagne
+coarse sont supprimes.
+
+\begin{table}[H]
+\centering
+\footnotesize
+\begin{tabular}{r|rrrrrrrr}
+\toprule
+\(\theta \backslash \delta\) & 0.01 & 0.02 & 0.03 & 0.05 & 0.07 & 0.10 & 0.12$^\dagger$ & 0.15$^\dagger$ \\
+\midrule
+0.15 & 0/3 & 10/15 & 10/15 & 0/3 & 0/3 & 0/3 & \textbf{3/3} & \textbf{3/3} \\
+0.20 & 0/3 & 0/3 & 10/15 & 0/3 & 0/3 & 0/3 & \textbf{3/3} & \textbf{3/3} \\
+0.25 & 0/3 & 8/15 & 9/15 & 0/3 & 0/3 & 0/3 & \textbf{3/3} & \textbf{3/3} \\
+0.28 & 0/3 & 11/15 & 6/15 & 0/3 & 0/3 & 0/3 & \textbf{3/3} & \textbf{3/3} \\
+0.32 & 0/3 & 10/15 & 7/15 & 0/3 & 0/3 & 0/3 & \textbf{3/3} & \textbf{3/3} \\
+0.35 & 0/3 & \textbf{3/3} & 4/15 & 0/3 & 0/3 & 0/3 & \textbf{3/3} & \textbf{3/3} \\
+0.40 & 0/3 & \textbf{3/3} & 6/15 & 10/15 & 0/3 & 0/3 & \textbf{3/3} & \textbf{3/3} \\
+0.45 & 0/3 & 10/15 & 4/15 & 6/15 & 0/3 & 0/3 & \textbf{3/3} & \textbf{3/3} \\
+0.50 & 0/3 & 13/15 & 4/15 & 0/3 & 0/3 & 0/3 & \textbf{3/3} & \textbf{3/3} \\
+0.55 & 0/3 & \textbf{3/3} & 5/15 & 1/15 & 0/3 & 0/3 & \textbf{3/3} & \textbf{3/3} \\
+\bottomrule
+\end{tabular}
+\caption{Seeds bornes / total par cellule (\(\mathcal{B}\)), carte
+\(\theta \times \delta\) unifiee (468 runs).
+\textbf{Gras} = fraction \(\ge 0.9\).
+$n=3$ dans les zones stables, $n=15$ aux frontieres.
+$\dagger$ = colonnes d'extinction (\(n_{\mathrm{alive}} \approx 0\), artefact --
+ne pas interpreter comme regime actif ; voir texte).
+\(\theta = \texttt{theta}\) : part du gain extraite ;
+\(\delta = \texttt{taux\_depreciation\_endo} = \texttt{taux\_depreciation\_exo}\)
+(unifie dans cette campagne).}
+\end{table}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\linewidth]{figures/map_theta_delta_3d.png}
+  \caption{Cartes 3D adaptatives \(\theta \times \delta\) unifie (468 runs, 1500 pas)
+  en disposition 2\(\times\)2.
+  Points superposes : taille $\propto$ demi-IC Wilson 95\%.
+  \textbf{Attention :} les points a \(\delta \ge 0.12\) (fraction 1.00 dans les
+  panneaux \(\mathcal{B}\) et stationnarite) sont un \emph{artefact d'extinction}
+  (\(n_{\mathrm{alive}} \approx 0\), variance nulle) et non un regime actif.
+  Le veritable regime actif est restreint a \(\delta \in \{0.02, 0.03\}\),
+  visible dans les panneaux \(\bar{n}_{\mathrm{alive}}\) et Gini (bas).}
+\end{figure}
+
+\textbf{Mise en garde critique : le motif haute-\(\delta\) est un artefact d'extinction.}
+La table montre un motif non-monotone frappant : pour \(\delta \ge 0.12\),
+la fraction converge est 1.00 pour tout \(\theta\), alors qu'elle est nulle ou
+faible a \(\delta = 0.05\)--\(0.10\).
+L'inspection directe des runs \(\delta \ge 0.12\) revele \(n_{\mathrm{alive}} \approx 0\)
+et \(\texttt{densite\_fin} \approx 0\) : le systeme s'effondre rapidement.
+La criterion \texttt{bounded\_tail} est satisfaite parce que la serie de population
+est quasi constante a zero (variance nulle), non parce qu'il y a un regime actif.
+Le critere dual (equilibre de flux) ne filtre pas cet artefact car le flux de faillites
+est aussi proche de zero dans un systeme depopule.
+
+\textbf{Il faut donc distinguer deux regions de la carte \(\theta \times \delta\) :}
+\begin{itemize}
+  \item \emph{Regime actif} : \(\delta \in [0.02, 0.03]\), fraction 0.27--1.00 selon \(\theta\).
+    \(n_{\mathrm{alive}} \in [400, 1130]\), \(d_f \in [0.35, 0.43]\),
+    loans/entite \(\approx 40\)--\(73\).
+    C'est le veritable regime economique ; les frontieres sont stochastiques.
+  \item \emph{Extinction rapide} : \(\delta \ge 0.12\), fraction 1.00.
+    \(n_{\mathrm{alive}} \approx 0\), reseau absent.
+    La queue est bornee par zero, non par un regime.
+    \textbf{Ne pas interpreter comme un regime}.
+\end{itemize}
+
+\textbf{Resultats robustes du regime actif.}
+La fenetre du regime actif est etroite en \(\delta\) : entre 0.02 et 0.03.
+\(\delta = 0.01\) (tres faible friction) empeche la formation du regime pour tout \(\theta\),
+et \(\delta = 0.05\)--\(0.10\) le detruit.
+\(\theta\) a un effet modere dans la fenetre active : la frontiere
+\(\theta\)-optimale se situe autour de 0.28--0.40 (\(\delta=0.02\)),
+avec une fraction 0.67--1.00.
+Ce resultat suggere une contrainte conjointe : le systeme a besoin d'une
+friction moderee pour stabiliser les faillites, mais pas d'une friction trop
+elevee qui epuise les bilans avant la formation du reseau.
+
+\subsection*{Synthese des campagnes adaptatives}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lrrrrrr}
+\toprule
+Campagne & Runs & Converges & \(\bar{d}_f\) & \(\bar{n}_{\mathrm{alive}}\) & \(\overline{\mathrm{loan}/n}\) & \(\bar{G}\) \\
+\midrule
+\(\lambda \times k\) & 417 & 212 (51\%) & 0.236 & 368 & 10.4 & 0.226 \\
+\(k \times \mu\)     & 327 & 157 (48\%) & 0.243 & 292 & 19.2 & 0.230 \\
+\(\sigma_\alpha \times k\) & 267 & 91 (34\%) & 0.272 & 280 & 16.1 & 0.309 \\
+\(\theta \times \delta\) (actif seul., \(\delta\in\{0.02,0.03\}\)) & 468 & 136 actifs & 0.387 & 706 & 55.0 & 0.432 \\
+\bottomrule
+\end{tabular}
+\caption{Statistiques agregees des runs bornes dans les campagnes adaptatives.
+$\bar{d}_f = \overline{V/A}$ = densite financiere en volume, moyenne sur les
+runs bornes de la campagne.
+$\bar{n}_{\mathrm{alive}}$ = population moyenne.
+$\overline{\mathrm{loan}/n}$ = prets par entite vivante (\(\ell\)).
+$\bar{G}$ = coefficient de Gini de l'actif entre entites, moyenne sur les runs
+bornes.
+La ligne \(\theta \times \delta\) exclut les extinctions (\(\delta \ge 0.12\))
+et ne retient que les 136 runs bornes du regime actif (\(\delta \in \{0.02, 0.03\}\),
+seules valeurs de \(\delta\) produisant des regimes bornes dans cette campagne).}
+\end{table}
+
+\textbf{Observations transversales.}
+\begin{itemize}
+  \item La densite financiere \(d_f\) est stable entre 0.24 et 0.27 dans les trois
+    premieres campagnes, suggerant qu'elle est une \emph{propriete emergente robuste}
+    du regime borne, peu sensible aux parametres de connectivite ou a \(\mu\).
+    Elle est plus elevee dans la campagne \(\theta\times\delta\) active (0.39),
+    possiblement parce que \(\delta\) faible limite la depreciation de l'actif et
+    augmente le ratio.
+  \item Le coefficient de Gini est significativement plus eleve dans la campagne
+    \(\sigma_\alpha \times k\) (0.31 vs. 0.22--0.23 ailleurs), suggerant que
+    la volatilite du rendement produit une concentration plus marquee.
+    Ce resultat est fragile (91 runs seulement).
+  \item Le taux de faillite est remarquablement stable autour de \(2.0\)--\(2.8\)
+    dans toutes les campagnes, ce qui est coherent avec l'equilibre de flux :
+    dans le regime borne, le nombre de faillites par pas egale approximativement
+    \(\lambda_{\mathrm{creation}}\) (taux de naissance des nouvelles entites).
+\end{itemize}
 
 \section{Probabilites de regime : cas limites multi-seeds}
 \label{sec:multirun}
@@ -674,7 +1174,7 @@ La meme configuration est simulee sur 6 seeds jusqu'a 10\,000 pas (execution seq
 watchdog 400 ms/pas ; seed 42 exclue, divergence connue). La metrique de flux
 \(\texttt{failure\_lambda\_ratio} = \bar{\mathcal{F}} / \lambda\) mesure le rapport entre
 le taux de faillite moyen (fenetre de queue) et le taux de creation \(\lambda=2\) ;
-la condition \(|\texttt{flr}-1| < 0.15\) definit l'equilibre des flux
+la condition \(|r_f - 1| < 0.15\) (\texttt{failure\_lambda\_ratio}) definit l'equilibre des flux
 (voir section~\ref{sec:critere-regime}).
 
 \begin{table}[H]
@@ -682,7 +1182,7 @@ la condition \(|\texttt{flr}-1| < 0.15\) definit l'equilibre des flux
 \small
 \begin{tabular}{rrrrrll}
 \toprule
-Seed & Pas & \(n_{\mathrm{alive}}\) final & flr & ms/pas moy. & \texttt{bounded} & Statut \\
+Seed & Pas & \(n_{\mathrm{alive}}\) final & $r_f$ & ms/pas moy. & $\mathcal{B}$ & Statut \\
 \midrule
 7   & 10000 & 1191 & 1.011 & 121 & $\surd$ & stationnaire \\
 123 & 10000 & 1025 & 0.966 & 121 & $\surd$ & stationnaire \\
@@ -693,9 +1193,10 @@ Seed & Pas & \(n_{\mathrm{alive}}\) final & flr & ms/pas moy. & \texttt{bounded}
 \bottomrule
 \end{tabular}
 \caption{Long run \(k=3, \sigma_\alpha=0.005\) a 10\,000 pas -- 6 seeds (seed 42 exclue).
-\texttt{bounded} = \texttt{bounded\_tail} (critere de queue). \texttt{flr} = taux faillites / \(\lambda\).
-5 seeds sur 6 sont stationnaires (\texttt{bounded=True} ET \(|\text{flr}-1|<0.15\)).
-Tous les flr sont dans \([0.966 ; 1.011]\), indiquant un equilibre presque parfait entre creations
+$\mathcal{B}$ = \texttt{bounded\_tail} (critere de queue).
+$r_f = \bar{f}/\lambda$ = taux faillites / creation (\texttt{failure\_lambda\_ratio}).
+5 seeds sur 6 sont stationnaires (\(\mathcal{B}\) ET \(|r_f-1|<0.15\)).
+Tous les $r_f$ sont dans \([0.966 ; 1.011]\), indiquant un equilibre presque parfait entre creations
 et faillites. Seed 2 : flux equilibre mais queue non bornee -- cas limite.}
 \label{tab:long-run-10k}
 \end{table}
@@ -852,12 +1353,19 @@ les regimes d'extinction et d'explosion partagent tous deux $H \approx 2$.
 
 \section{Ce qui reste a eclairer}
 
-Trois zones restent ouvertes apres les etudes de couplage.
+Plusieurs zones restent ouvertes apres les campagnes adaptatives.
 
-Premierement, la zone d'interaction \(\theta \times \delta_{\mathrm{endo}}\)
-autour de \(k=4, \theta=0.35, \delta=0.05\) montre un comportement non monotone
-(\(\text{bounded\_share}=1.0\) alors que les voisins sont faibles). Ce point
-demande une verification supplementaire sur plus de seeds.
+Premierement, les fluctuations non-monotones dans les cartes \(k\times\mu\)
+et \(\sigma_\alpha\times k\) (zones de fraction alternant 0.00 et 0.40--0.67
+dans des ranges contigus) peuvent refleter des effets de front de phase ou des
+artefacts du petit echantillon aux frontieres. Un echantillon supplementaire
+ciblant ces cellules (au moins 15 seeds) permettrait de trancher.
+
+Deuxiemement, la campagne \(\theta\times\delta\) unifiee montre que le regime
+actif est limite a \(\delta \in [0.02, 0.03]\). La frontiere basse (\(\delta=0.01\)
+toujours non borne) n'a pas de mecanisme interprete : pourquoi une friction trop
+faible empeche-t-elle la formation du regime ? Une analyse de la dynamique de
+creation/destruction a \(\delta=0.01\) serait utile.
 
 Troisiemement, la distribution des tailles d'entites en regime permanent
 n'a pas ete analysee en detail. Les metriques Gini et snapshots existent dans
@@ -872,18 +1380,29 @@ mais pas par une loi lineaire simple. Les variables les plus structurantes sont
 des variables de seuil : \(k\), \(\sigma_\alpha\), \(\theta\), \(\mu\),
 \(\lambda\), les depreciations et la dotation initiale.
 
-Les etudes de couplage precisent la geometrie de la surface de regime.
-Le parametre \(\mu\) (prime minimale a l'emprunt) apparait comme un
-co-facteur de seuil independant : \(\mu=0\) permet au modele d'entrer en
-regime meme a \(k=2\), ce qui reinterpretes les resultats du balayage \(k\)
-comme dependant implicitement du choix \(\mu=0.05\). La frontiere
-\(k=3 \to k=4\) n'est pas absolue : c'est la combinaison \((k, \mu)\) qui
-determine si le marche du credit est suffisamment actif.
+Les campagnes adaptatives (1\,479 runs au total) confirment et precisent
+la geometrie de la surface de regime.
+\(\mu\) (prime minimale a l'emprunt) apparait comme un co-facteur de seuil
+independant : \(\mu=0\) permet au modele d'entrer en regime meme a \(k=2\),
+ce qui reinterprete les resultats du balayage \(k\) comme dependant implicitement
+du choix \(\mu=0.05\). La frontiere \(k=3 \to k=4\) n'est pas absolue :
+c'est la combinaison \((k, \mu)\) qui determine si le marche du credit est
+suffisamment actif.
 
-La depreciation endogene \(\delta_{\mathrm{endo}}\) se revele etre un
-parametre destructeur fort : au-dela de 0.05, elle empeche systematiquement
-la formation du regime. Son seuil de danger est plus bas que ce que le seul
-balayage OAT suggere.
+La depreciation unifiee \(\delta\) se revele etre un parametre a double effet :
+dans la fenetre \([0.02, 0.03]\), elle stabilise le regime en fournissant une
+friction moderee ; au-dela de 0.05, elle empeche systematiquement la formation
+du regime ; au-dela de 0.12, elle provoque une extinction rapide qui satisfait
+trivialement le critere de queue bornee. Ce troisieme regime (extinction) est
+un artefact du critere de convergence et ne doit pas etre interprete comme
+un regime economique.
+
+\textbf{Propriete emergente robuste.}
+La densite financiere en volume (\(d_f = \texttt{volume\_prets}/\texttt{actif\_total}\))
+est stable a \(0.24 \pm 0.02\) dans les regimes actifs des campagnes \(\lambda\times k\)
+et \(k\times\mu\), independamment des parametres de connectivite. Cette stabilite
+suggere que \(d_f\) est une propriete emergente du regime, non un effet direct
+des parametres.
 
 Deux mecanismes du modele (reliquefaction) ont un effet nul mesure sur tous
 les horizons testes et sont candidats a la suppression pour simplifier le
@@ -892,10 +1411,9 @@ produire des faillites endogenes, mais pas une fragmentation numerique
 excessive. Une population nombreuse n'est pas un signe de stabilite : dans
 certains cas (notamment \(k=3, \sigma_\alpha=0.005\) sur des horizons courts),
 elle signale un transitoire long avant la convergence -- non une instabilite permanente.
-Pour predire finement
-une simulation, il faut donc predire conjointement : apparition du regime,
-densite financiere en volume, granularite du reseau, taille demographique,
-taille bilancielle et derive de queue.
+Pour predire finement une simulation, il faut donc predire conjointement :
+apparition du regime, densite financiere en volume, granularite du reseau,
+taille demographique, taille bilancielle et derive de queue.
 
 \clearpage
 \input{annexe_tracabilite}

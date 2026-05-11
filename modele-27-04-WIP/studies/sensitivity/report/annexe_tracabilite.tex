@@ -248,6 +248,46 @@ Les simulations suivantes sont marquées \texttt{important=True} dans Simulation
  & $k=3$, $\sigma=0.020$ & $p=0.92$, voisin actif de $\sigma=0.005$ \\
 
 \hline
+\multicolumn{3}{|l|}{\textbf{Campagnes adaptatives (Section \ref{sec:campagnes-adaptatives})}} \\
+\hline
+
+\texttt{adaptive\_lambda\_k\_extended.json}
+ & $\lambda \in [0.5,5.0]$, $k \in [2,8]$, jusqu'à 15 seeds, 1500 pas
+ & 417 runs ; 212 converges (51\%) ; $\bar{d}_f=0.236$ \\
+
+\texttt{adaptive\_k\_mu\_extended.json}
+ & $k \in [2,6]$, $\mu \in [0,0.15]$, jusqu'à 15 seeds, 1500 pas
+ & 327 runs ; 157 converges (48\%) ; $\mu>0.10$ destructeur \\
+
+\texttt{adaptive\_sigma\_k\_extended.json}
+ & $\sigma_\alpha \in [0,0.1]$, $k \in [2,6]$, jusqu'à 15 seeds, 1500 pas
+ & 267 runs ; 91 converges (34\%) ; $\sigma_\alpha\ge0.035$ destructeur \\
+
+\texttt{adaptive\_theta\_delta\_unified.json}
+ & $\theta \in [0.15,0.55]$, $\delta \in [0.01,0.15]$ unifié, jusqu'à 15 seeds, 1500 pas
+ & 468 runs ; 136 régimes actifs ($\delta\le0.05$) + 60 extinctions ($\delta\ge0.12$) \\
+
+\hline
+\multicolumn{3}{|l|}{\textbf{Figures de cartes de phase (heatmaps adaptatives)}} \\
+\hline
+
+\texttt{figures/map\_lambda\_k\_heatmap.png}
+ & Issu de \texttt{adaptive\_lambda\_k\_extended.json}
+ & Figure campagne adaptative $\lambda\times k$ \\
+
+\texttt{figures/map\_k\_mu\_heatmap.png}
+ & Issu de \texttt{adaptive\_k\_mu\_extended.json}
+ & Figure campagne adaptative $k\times\mu$ \\
+
+\texttt{figures/map\_sigma\_k\_heatmap.png}
+ & Issu de \texttt{adaptive\_sigma\_k\_extended.json}
+ & Figure campagne adaptative $\sigma_\alpha\times k$ \\
+
+\texttt{figures/map\_theta\_delta\_heatmap.png}
+ & Issu de \texttt{adaptive\_theta\_delta\_unified.json}
+ & Figure campagne adaptative $\theta\times\delta$ \\
+
+\hline
 \end{longtable}
 
 \bigskip
