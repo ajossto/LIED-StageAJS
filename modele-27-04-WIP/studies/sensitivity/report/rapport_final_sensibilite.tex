@@ -11,6 +11,7 @@
 \usepackage{longtable}
 \usepackage{placeins}
 \usepackage{tabularx}
+\usepackage{pdflscape}
 
 \title{Etude de sensibilite du modele sans banque\\Rapport final provisoire et autonome}
 \author{modele-27-04-WIP / studies/sensitivity}
@@ -1416,6 +1417,10 @@ apparition du regime, densite financiere en volume, granularite du reseau,
 taille demographique, taille bilancielle et derive de queue.
 
 \clearpage
+\newgeometry{landscape, top=1.8cm, bottom=1.8cm, left=2cm, right=2cm}
+\begin{landscape}
 \input{annexe_tracabilite}
+\end{landscape}
+\restoregeometry
 
 \end{document}
