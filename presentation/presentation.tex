@@ -307,8 +307,8 @@
 					\item<1-> Grains déposés aléatoirement — seuil critique : \textbf{4}
 					\item<4-> Colonne $\geq 4$ : \alert{\textbf{topple\,!}} — redistribution
 					aux 4 voisins
-					\item<7-> Cascade si un voisin atteint le seuil : \textbf{avalanche}
-					\item<8-> État critique : avalanches de \textbf{toutes tailles}
+%					\item<7-> Cascade si un voisin atteint le seuil : \textbf{avalanche}
+%					\item<8-> État critique : avalanches de \textbf{toutes tailles}
 				\end{itemize}
 			\end{column}
 		\end{columns}
@@ -360,7 +360,7 @@
 		% ── Bandereau — position absolue (non affectée par shrink) ─────────────
 		\begin{tikzpicture}[remember picture, overlay]
 			\node[anchor=north west, inner sep=0pt] at
-				([xshift=2mm, yshift=-12mm]current page.north west) {%
+				([xshift=2mm, yshift=-18mm]current page.north west) {%
 				\imgcell[2cm]{placed_images/Miniature1}%
 				\hspace{2pt}\imgcell[2cm]{placed_images/Miniature2}%
 				\hspace{2pt}\imgcell[2cm]{placed_images/Miniature3}%
@@ -369,7 +369,7 @@
 				\only<23->{\hspace{2pt}\imgcell[2cm]{placed_images/Miniature6}}%
 			};
 		\end{tikzpicture}%
-		\vspace*{2.4cm}%
+		\vspace*{2.2cm}%
 		
 		% ── SOC grand (overlay 1 = retour parenthèse) ────────────────────────────
 		\only<1>{%
@@ -418,7 +418,7 @@
 		\only<6-22>{%
 			\begin{tikzpicture}[remember picture, overlay]
 				\node[anchor=center] at
-				([xshift=-0.28\paperwidth, yshift=-0.15\paperheight]current page.center) {%
+				([xshift=-0.28\paperwidth, yshift=-0.05\paperheight]current page.center) {%
 					\scalebox{1.5}{%
 						\begin{tikzpicture}[
 							ent/.style    ={circle,draw=mainred,fill=red!15,
