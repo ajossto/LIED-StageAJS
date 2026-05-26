@@ -357,15 +357,19 @@
 	% ─────────────────────────────────────────────────────────────────────────
 	\begin{frame}[t,shrink=20]{Stage LIED : Effet Rebond — Métabolisme Urbain}
 		
-		% ── Bandereau (ER+Pub+SOC+P(s) toujours visibles ; Ana/Rés/Net progressifs)
-		\noindent%
-		\imgcell[2cm]{placed_images/Miniature1}%
-		\hspace{2pt}\imgcell[2cm]{placed_images/Miniature2}%
-		\hspace{2pt}\imgcell[2cm]{placed_images/Miniature3}%
-		\hspace{2pt}\imgcell[2cm]{placed_images/Miniature4}%
-		\only<7->{\hspace{2pt}\imgcell[2cm]{placed_images/Miniature5}}%
-		\only<23->{\hspace{2pt}\imgcell[2cm]{placed_images/Miniature6}}%
-		\par\vspace{0.3em}%
+		% ── Bandereau — position absolue (non affectée par shrink) ─────────────
+		\begin{tikzpicture}[remember picture, overlay]
+			\node[anchor=north west, inner sep=0pt] at
+				([xshift=2mm, yshift=-12mm]current page.north west) {%
+				\imgcell[2cm]{placed_images/Miniature1}%
+				\hspace{2pt}\imgcell[2cm]{placed_images/Miniature2}%
+				\hspace{2pt}\imgcell[2cm]{placed_images/Miniature3}%
+				\hspace{2pt}\imgcell[2cm]{placed_images/Miniature4}%
+				\only<7->{\hspace{2pt}\imgcell[2cm]{placed_images/Miniature5}}%
+				\only<23->{\hspace{2pt}\imgcell[2cm]{placed_images/Miniature6}}%
+			};
+		\end{tikzpicture}%
+		\vspace*{2.4cm}%
 		
 		% ── SOC grand (overlay 1 = retour parenthèse) ────────────────────────────
 		\only<1>{%
