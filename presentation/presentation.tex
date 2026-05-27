@@ -95,12 +95,12 @@
 	\section{Parcours}
 	
 	% ══════════════════════════════════════════════════════════════════════════
-	% FRAME "Parcours"  SLIDES 2–28  (27 overlays — overlay N = slide N+1)
+	% FRAME "Parcours"  SLIDES 2–26  (25 overlays — overlay N = slide N+1)
 	% shrink=45 (réel ~49 %)
 	% ══════════════════════════════════════════════════════════════════════════
 	\begin{frame}[t,shrink=45]{Parcours}
 		\vspace{0.2em}
-		% ── Frise (slides 2–28 : frise_0X change à chaque groupe d'overlays) ────
+		% ── Frise (slides 2–26 : frise_0X change à chaque groupe d'overlays) ────
 		\begin{center}%
 			\only<1>{\includegraphics[width=0.75\linewidth]{frise/frise_01}}%  % slide 2
 			\only<2>{\includegraphics[width=0.75\linewidth]{frise/frise_02}}%  % slide 3
@@ -159,8 +159,8 @@
 				\end{column}
 		\end{columns}}%
 		%
-		% ── Temps libre — images  slides 18–23  (overlays 17–22) ────────────────
-		\only<17-22>{%
+		% ── Temps libre — images  slides 18–21  (overlays 17–20) ────────────────
+		\only<17-20>{%
 			\vspace{0.2em}%
 			\begin{center}%
 				\only<17->{\imgcell[3cm]{placed_images/temps_monnaie}}%
@@ -169,17 +169,17 @@
 				\only<20->{\hspace{4pt}\imgcell[3cm]{placed_images/temps_societe}}%
 		\end{center}}%
 		%
-		% ── Stages — images  slides 24–28  (overlays 23–27) ─────────────────────
-		% overlay 26 = slide 27 : stage LIED taille normale
-		% overlay 27 = slide 28 : stage LIED zoomé 6cm (dernière slide Parcours)
-		\only<23->{%
+		% ── Stages — images  slides 22–26  (overlays 21–25) ─────────────────────
+		% overlay 24 = slide 25 : stage LIED taille normale
+		% overlay 25 = slide 26 : stage LIED zoomé 6cm (dernière slide Parcours)
+		\only<21->{%
 			\vspace{0.1em}%
 			\begin{center}%
-				\only<23->{\imgcell[3cm]{placed_images/stage_prof}}%
-				\only<24->{\hspace{4pt}\imgcell[3cm]{placed_images/stage_cao}}%
-				\only<25->{\hspace{4pt}\imgcell[3cm]{placed_images/stage_rd}}%
-				\only<26>{\hspace{4pt}\imgcell[3cm]{placed_images/stage_lied}}%
-				\only<27->{\hspace{4pt}\imgcell[6cm]{placed_images/stage_lied}}%
+				\only<21->{\imgcell[3cm]{placed_images/stage_prof}}%
+				\only<22->{\hspace{4pt}\imgcell[3cm]{placed_images/stage_cao}}%
+				\only<23->{\hspace{4pt}\imgcell[3cm]{placed_images/stage_rd}}%
+				\only<24>{\hspace{4pt}\imgcell[3cm]{placed_images/stage_lied}}%
+				\only<25->{\hspace{4pt}\imgcell[6cm]{placed_images/stage_lied}}%
 		\end{center}}%
 	\end{frame}
 	
@@ -187,14 +187,14 @@
 	\section{Recherche au LIED}
 	
 	% ══════════════════════════════════════════════════════════════════════════
-	% FRAME 4A  SLIDES 29–41  (13 overlays — overlay N = slide 28+N)
+	% FRAME 4A  SLIDES 27–39  (13 overlays — overlay N = slide 26+N)
 	% PAS de shrink — bandereau INLINE (positionné dans le flot normal)
-	% overlay 1=29 | 2=30 | 3=31 | 4=32 | 5=33 | 6=34 | 7=35 | 8=36
-	% overlay 9=37 | 10=38 | 11=39 | 12=40 | 13=41
+	% overlay 1=27 | 2=28 | 3=29 | 4=30 | 5=31 | 6=32 | 7=33 | 8=34
+	% overlay 9=35 | 10=36 | 11=37 | 12=38 | 13=39
 	% ══════════════════════════════════════════════════════════════════════════
 	\begin{frame}[t]{Stage LIED : Effet Rebond — Métabolisme Urbain}
 
-		% ── Bandereau INLINE (slides 35–41 = overlays 7–13) ──────────────────────
+		% ── Bandereau INLINE (slides 33–39 = overlays 7–13) ──────────────────────
 		% Approche INLINE : le bandereau est dans le flot du texte, juste
 		% sous le frametitle.  Miniature1 dès overlay 7, Miniature2 dès overlay 12.
 		% PAS de TikZ overlay ici — contrairement à Frame 4B.
@@ -204,7 +204,7 @@
 			\only<12->{\hspace{2pt}\imgcell[2cm]{placed_images/Miniature2}}%
 			\par\vspace{0.3em}}%
 		
-		% ── Grille 2×2 moteurs / voitures  slides 30–34  (overlays 2–6) ────────
+		% ── Grille 2×2 moteurs / voitures  slides 28–32  (overlays 2–6) ────────
 		\only<2-6>{%
 			\begin{center}%
 				\begin{tikzpicture}
@@ -231,7 +231,7 @@
 				\end{tikzpicture}%
 		\end{center}}%
 		
-		% ── Publications éconophysique  slides 36–39  (overlays 8–11) ───────────
+		% ── Publications éconophysique  slides 34–37  (overlays 8–11) ───────────
 		\only<8-11>{%
 			\begin{columns}[T]
 				\begin{column}{0.60\textwidth}
@@ -270,7 +270,7 @@
 				\end{column}
 		\end{columns}}%
 		
-		% ── SOC texte  slide 41  (overlay 13 — parenthèse avalanche suit) ───────
+		% ── SOC texte  slide 39  (overlay 13 — parenthèse avalanche suit) ───────
 		\only<13>{%
 			\vspace{1.8em}%
 			\begin{center}%
@@ -281,7 +281,7 @@
 	\end{frame}
 	
 	% ══════════════════════════════════════════════════════════════════════════
-	% FRAME "SOC avalanche"  SLIDES 42–47  (6 overlays — overlay N = slide 41+N)
+	% FRAME "SOC avalanche"  SLIDES 40–45  (6 overlays — overlay N = slide 39+N)
 	% ══════════════════════════════════════════════════════════════════════════
 	\begin{frame}[t,shrink=8]{Système auto-critique — L'avalanche de sable}
 		\begin{columns}[T]
@@ -309,7 +309,7 @@
 	\end{frame}
 	
 	% ══════════════════════════════════════════════════════════════════════════
-	% FRAME "Avalanche petite/grande"  SLIDES 48–56  (9 overlays — overlay N = slide 47+N)
+	% FRAME "Avalanche petite/grande"  SLIDES 46–54  (9 overlays — overlay N = slide 45+N)
 	% ══════════════════════════════════════════════════════════════════════════
 	\begin{frame}[t,shrink=20]{Avalanche de sable — petite et grande}
 		\only<1-8>{%
@@ -346,24 +346,24 @@
 	\end{frame}
 	
 	% ══════════════════════════════════════════════════════════════════════════
-	% FRAME 4B  SLIDES 57–89  (33 overlays — overlay N = slide 56+N)
-	% shrink=20  (réel ~20 %, sauf slide 86 ≈ 36 % et slide 89 ≈ 30 %)
+	% FRAME 4B  SLIDES 55–87  (33 overlays — overlay N = slide 54+N)
+	% shrink=20  (réel ~20 %, sauf slide 84 ≈ 36 % et slide 87 ≈ 30 %)
 	%
-	%  overlay  1 = slide 57   overlay 12 = slide 68   overlay 23 = slide 79
-	%  overlay  2 = slide 58   overlay 13 = slide 69   overlay 24 = slide 80
-	%  overlay  3 = slide 59   overlay 14 = slide 70   overlay 25 = slide 81
-	%  overlay  4 = slide 60   overlay 15 = slide 71   overlay 26 = slide 82
-	%  overlay  5 = slide 61   overlay 16 = slide 72   overlay 27 = slide 83
-	%  overlay  6 = slide 62   overlay 17 = slide 73   overlay 28 = slide 84
-	%  overlay  7 = slide 63   overlay 18 = slide 74   overlay 29 = slide 85
-	%  overlay  8 = slide 64   overlay 19 = slide 75   overlay 30 = slide 86
-	%  overlay  9 = slide 65   overlay 20 = slide 76   overlay 31 = slide 87
-	%  overlay 10 = slide 66   overlay 21 = slide 77   overlay 32 = slide 88
-	%  overlay 11 = slide 67   overlay 22 = slide 78   overlay 33 = slide 89
+	%  overlay  1 = slide 55   overlay 12 = slide 66   overlay 23 = slide 77
+	%  overlay  2 = slide 56   overlay 13 = slide 67   overlay 24 = slide 78
+	%  overlay  3 = slide 57   overlay 14 = slide 68   overlay 25 = slide 79
+	%  overlay  4 = slide 58   overlay 15 = slide 69   overlay 26 = slide 80
+	%  overlay  5 = slide 59   overlay 16 = slide 70   overlay 27 = slide 81
+	%  overlay  6 = slide 60   overlay 17 = slide 71   overlay 28 = slide 82
+	%  overlay  7 = slide 61   overlay 18 = slide 72   overlay 29 = slide 83
+	%  overlay  8 = slide 62   overlay 19 = slide 73   overlay 30 = slide 84
+	%  overlay  9 = slide 63   overlay 20 = slide 74   overlay 31 = slide 85
+	%  overlay 10 = slide 64   overlay 21 = slide 75   overlay 32 = slide 86
+	%  overlay 11 = slide 65   overlay 22 = slide 76   overlay 33 = slide 87
 	% ══════════════════════════════════════════════════════════════════════════
 	\begin{frame}[t,shrink=20]{Stage LIED : Effet Rebond — Métabolisme Urbain}
 
-		% ── BANDEREAU  slides 57–89  (toujours présent dans ce frame) ───────────
+		% ── BANDEREAU  slides 55–87  (toujours présent dans ce frame) ───────────
 		% Approche INLINE (identique à frame 4A) : dans le flot normal,
 		% juste sous le frametitle.  Affiché sur tous les overlays.
 		% Miniature1–4 : toujours | Miniature5 : dès overlay 7 | Miniature6 : dès overlay 23
@@ -376,7 +376,7 @@
 		\only<23->{\hspace{2pt}\imgcell[2cm]{placed_images/Miniature6}}%
 		\par\vspace{0.3em}
 		
-		% ── SOC texte  slide 57  (overlay 1) ────────────────────────────────────
+		% ── SOC texte  slide 55  (overlay 1) ────────────────────────────────────
 		\only<1>{%
 			\vspace{1.8em}%
 			\begin{center}%
@@ -384,7 +384,7 @@
 				\normalsize\textit{Self-Organized Criticality} (SOC)%
 		\end{center}}%
 		
-		% ── SOC compact + analogies  slides 58–61  (overlays 2–5) ───────────────
+		% ── SOC compact + analogies  slides 56–59  (overlays 2–5) ───────────────
 		\only<2-5>{%
 			\vspace{0.4em}%
 			\begin{center}\small\textbf{Système Auto-Critique (SOC)}\end{center}%
@@ -407,7 +407,7 @@
 				\end{tikzpicture}%
 		\end{center}}%
 		
-		% ── Trois graphes orientés  slide 61  (overlay 5) ───────────────────────
+		% ── Trois graphes orientés  slide 59  (overlay 5) ───────────────────────
 		\only<5>{%
 			\begin{center}%
 				\scalebox{1.9}{\minigraph}\quad\large$\approx$\quad%
@@ -415,16 +415,18 @@
 				\scalebox{1.9}{\minigraph}%
 		\end{center}}%
 		
-		% ── Environnement + entités  slides 62–78  (overlays 6–22) ─────────────
-		% Figure TikZ overlay positionnée en absolu (non affectée par shrink).
-		% overlay 6=62 : boîte vide | 7–9=63–65 : e1/e2/e3 apparaissent
-		% overlay 10=66 : flèches extraction | 11=67 : e1 grossit
-		% overlay 12=68 : dissipation | 13=69 : -5% | 14=70 : -10%
-		% overlay 15=71 : retour | 16=72 : prêt | 17=73 : blink | 18=74 : rente
+		% ── Environnement + entités + résultats  slides 60–76  (overlays 6–22) ──────
+		% Approche INLINE : schéma colonne gauche, contenu colonne droite.
+		% overlay 6=60 : boîte vide | 7–9=61–63 : e1/e2/e3 apparaissent
+		% overlay 10=64 : flèches extraction | 11=65 : e1 grossit
+		% overlay 12=66 : dissipation | 13=67 : -5% | 14=68 : -10%
+		% overlay 15=69 : retour | 16=70 : prêt | 17=71 : blink | 18=72 : rente
+		% overlays 19–22=slides 73–76 : images résultats
 		\only<6-22>{%
-			\begin{tikzpicture}[remember picture, overlay]
-				\node[anchor=center] at
-				([xshift=-0.28\paperwidth, yshift=-0.05\paperheight]current page.center) {%
+			\begin{columns}[T]
+				% ── Colonne gauche : schéma SOC environnement (overlays 6–22) ────────
+				\begin{column}{0.56\textwidth}
+					\centering\vspace{0.3em}%
 					\scalebox{1.5}{%
 						\begin{tikzpicture}[
 							ent/.style    ={circle,draw=mainred,fill=red!15,
@@ -477,55 +479,48 @@
 								node[below right,font=\tiny]{1\,\%};}
 							\only<16-17>{\draw[->,darkred,line width=2pt,bend right=30](e1)to(e3);}
 							\only<18->  {\draw[->,darkred,dashed,bend right=30](e3)to(e1);}
-					\end{tikzpicture}}%
+						\end{tikzpicture}}%
+				\end{column}
+				% ── Colonne droite : items (overlays 7–18) ou images (overlays 19–22) ─
+				\begin{column}{0.40\textwidth}
+					% items overlays 7–18 (slides 61–72)
+					\only<7-18>{%
+						\footnotesize
+						\begin{itemize}\setlength\itemsep{5pt}
+							\item<7-> Entités apparaissent continuellement
+							\item<10-> Extraction de l'énergie de l'environnement
+							\item<11-> Puissance\,$\propto f_\text{concave}(\text{taille})$
+							\item<12-> Dissipation exponentielle de l'énergie
+							\item<16-> Prêt d'énergie entre entités
+							\item<18-> Rente permanente (\textit{charge})
+						\end{itemize}}%
+					% images résultats overlays 19–22 (slides 73–76)
+					\only<19-22>{%
+						\centering\vspace{0.5em}%
+						\only<19->{\includegraphics[width=\linewidth,height=0.43\textheight,keepaspectratio]{informations/images/macro_overview}\\[0.25em]}%
+						\only<20->{\includegraphics[width=\linewidth,height=0.43\textheight,keepaspectratio]{placed_images/ps_distribution_full}}%
+					}%
+				\end{column}
+			\end{columns}}%
+
+		% ── Flèche ⇒ symbolique  slide 75  (overlay 21) ────────────────────────────
+		% \resizebox force width/height → symbole ⇒ étiré, noir, décalé à droite.
+		\only<21>{%
+			\begin{tikzpicture}[remember picture, overlay]
+				\node[opacity=0.80] at ([xshift=28mm,yshift=-55mm]current page.north) {%
+					\textcolor{black}{\resizebox{0.44\paperwidth}{1.5cm}{$\Rightarrow$}}%
 				};
-		\end{tikzpicture}}%
-		
-		% ── Texte liste droite  slides 63–74  (overlays 7–18) ───────────────────
-		% Colonne vide 0.58 à gauche (pour laisser place à la figure environnement)
-		% + colonne 0.36 à droite avec la liste d'items.
-		\only<7-18>{%
-			\begin{columns}[T]
-				\begin{column}{0.58\textwidth}\end{column}
-				\begin{column}{0.36\textwidth}
-					\footnotesize
-					\begin{itemize}\setlength\itemsep{5pt}
-						\item<7-> Entités apparaissent continuellement
-						\item<10-> Extraction de l'énergie de l'environnement
-						\item<11-> Puissance\,$\propto f_\text{concave}(\text{taille})$
-						\item<12-> Dissipation exponentielle de l'énergie
-						\item<16-> Prêt d'énergie entre entités
-						\item<18-> Rente permanente (\textit{charge})
-					\end{itemize}
-				\end{column}
-		\end{columns}}%
-		
-		% ── Résultats images  slides 75–78  (overlays 19–22) ────────────────────
-		% Colonne 0.40 vide | colonne 0.12 flèche ⇒ (overlay 21=slide 77 seulement)
-		% colonne 0.50 images macro_overview + ps_distribution
-		\only<19-22>{%
-			\begin{columns}[T]
-				\begin{column}{0.40\textwidth}\end{column}
-				\begin{column}{0.12\textwidth}
-					\centering\vspace{3.2em}%
-					\only<21>{\scalebox{7}{$\Rightarrow$}}%
-				\end{column}
-				\begin{column}{0.5\textwidth}
-					\centering\vspace{-5em}%
-					\only<19->{\includegraphics[width=\linewidth,height=0.62\textheight,keepaspectratio]{informations/images/macro_overview}\\[0.25em]}%
-					\only<20->{\includegraphics[width=\linewidth,height=0.50\textheight,keepaspectratio]{placed_images/ps_distribution_full}}%
-				\end{column}
-		\end{columns}}%
-		
-		% ── Graphe centré tailles variables  slides 80–82, 84–86  (overlays 24–26,28–30)
-		% overlay 24=80, 25=81, 26=82 | overlay 27=83 logo EDPIF | overlay 28=84…30=86
-		\only<24-26,28-30>{%
+			\end{tikzpicture}}%
+
+		% ── Graphe centré tailles variables  slides 78–80, 82–83  (overlays 24–26,28–29)
+		% overlay 24=78, 25=79, 26=80 | overlay 27=81 logo EDPIF | overlay 28=82, 29=83
+		\only<24-26,28-29>{%
 			\begin{center}
 				\begin{tikzpicture}[scale=0.95,
 					entn/.style ={circle,draw=mainred,fill=red!15,minimum size=0.55cm,font=\tiny\bfseries},
 					entlg/.style={circle,draw=mainred,fill=red!28,minimum size=0.90cm,font=\tiny\bfseries},
 					entsm/.style={circle,draw=mainred,fill=red!8, minimum size=0.30cm,font=\tiny\bfseries}]
-					\only<24,29-30>{%
+					\only<24,29>{%
 						\node[entn](n1) at (-1.3, 0.7){$e_1$};
 						\node[entn](n2) at ( 0.0, 0.9){$e_2$};
 						\node[entn](n3) at ( 1.1, 0.5){$e_3$};
@@ -567,23 +562,44 @@
 						\draw[->,mainred!70](n5)--(n4);}%
 				\end{tikzpicture}
 			\end{center}%
-			\only<30>{%
-				\vspace{0.5em}%
-				\begin{center}%
-					\includegraphics[width=0.60\textwidth,height=0.44\textheight,keepaspectratio]{informations/images/macro_overview}%
-					\hspace{2em}%
-					\includegraphics[width=0.55\textwidth,height=0.55\textheight,keepaspectratio]{placed_images/ps_distribution_full}%
-			\end{center}}%
+		}%
+
+		% ── Graphe + résultats côte à côte  slide 84  (overlay 30) ─────────────
+		\only<30>{%
+			\begin{columns}[T]
+				\begin{column}{0.46\textwidth}
+					\centering\vspace{0.3em}%
+					\begin{tikzpicture}[scale=0.80,
+						entn/.style ={circle,draw=mainred,fill=red!15,minimum size=0.55cm,font=\tiny\bfseries},
+						entlg/.style={circle,draw=mainred,fill=red!28,minimum size=0.90cm,font=\tiny\bfseries},
+						entsm/.style={circle,draw=mainred,fill=red!8, minimum size=0.30cm,font=\tiny\bfseries}]
+						\node[entn](n1) at (-1.3, 0.7){$e_1$};
+						\node[entn](n2) at ( 0.0, 0.9){$e_2$};
+						\node[entn](n3) at ( 1.1, 0.5){$e_3$};
+						\node[entn](n4) at (-0.8,-0.6){$e_4$};
+						\node[entn](n5) at ( 0.8,-0.7){$e_5$};
+						\draw[->,mainred,thick](n1)--(n2);
+						\draw[->,mainred,thick](n2)--(n3);
+						\draw[->,mainred,thick](n3)--(n5);
+						\draw[->,mainred!70](n4)--(n1);%
+					\end{tikzpicture}
+				\end{column}
+				\begin{column}{0.50\textwidth}
+					\centering\vspace{0.3em}%
+					\includegraphics[width=\linewidth,height=0.36\textheight,keepaspectratio]{informations/images/macro_overview}\\[0.3em]%
+					\includegraphics[width=\linewidth,height=0.36\textheight,keepaspectratio]{placed_images/ps_distribution_full}%
+				\end{column}
+			\end{columns}%
 		}%
 		
-		% ── Logo EDPIF  slide 83  (overlay 27) ──────────────────────────────────
+		% ── Logo EDPIF  slide 81  (overlay 27) ──────────────────────────────────
 		\only<27>{%
 			\vspace{1.5em}%
 			\begin{center}%
 				\includegraphics[width=0.15\linewidth,keepaspectratio]{informations/logo-edpif}%
 		\end{center}}%
 		
-		% ── Graphe + labels Micro/Macro  slide 87  (overlay 31) ─────────────────
+		% ── Graphe + labels Micro/Macro  slide 85  (overlay 31) ─────────────────
 		\only<31>{%
 			\begin{columns}[T]
 				\begin{column}{0.70\textwidth}
@@ -600,9 +616,9 @@
 						\draw[->,mainred,thick](n3)--(n5);
 						\draw[->,mainred!70](n4)--(n1);
 					\end{tikzpicture}\\[0.5em]
-					\includegraphics[width=0.45\linewidth,height=0.40\textheight,keepaspectratio]{informations/images/macro_overview}%
+					\includegraphics[width=0.48\linewidth,height=0.46\textheight,keepaspectratio]{informations/images/macro_overview}%
 					\hspace{2em}%
-					\includegraphics[width=0.45\linewidth,height=0.40\textheight,keepaspectratio]{placed_images/ps_distribution_full}%
+					\includegraphics[width=0.48\linewidth,height=0.46\textheight,keepaspectratio]{placed_images/ps_distribution_full}%
 				\end{column}
 				\begin{column}{0.25\textwidth}
 					\raggedright\vspace{0.6em}%
@@ -611,8 +627,8 @@
 				\end{column}
 		\end{columns}}%
 		
-		% ── Physique Statistique + citation  slides 88–89  (overlays 32–33) ─────
-		% slide 89 (overlay 33) : shrink réel ≈ 30 % (contenu lourd)
+		% ── Physique Statistique + citation  slides 86–87  (overlays 32–33) ─────
+		% slide 87 (overlay 33) : shrink réel ≈ 30 % (contenu lourd)
 		\only<32-33>{%
 			\begin{center}
 				\Large\textbf{Physique Statistique}
