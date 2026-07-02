@@ -1,0 +1,403 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[french]{babel}
+\usepackage{lmodern}
+\usepackage{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{tabularx}
+\graphicspath{{./}{../figures/}}
+\usepackage{float}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\input{typo_francaise}
+\geometry{margin=2.6cm}
+\setlist[itemize]{leftmargin=*,nosep}
+\setlist[enumerate]{leftmargin=*,nosep}
+
+\newcommand{\modelrepo}{https://github.com/ajossto/LIED-StageAJS}
+
+\newcommand{\monimage}[4][0.95]{%
+  \begin{figure}[H]
+    \centering
+    \includegraphics[width=#1\linewidth]{#2}
+    \caption{#3}
+    \label{#4}
+  \end{figure}%
+}
+
+\newcommand{\monimagelarge}[4][0.95]{%
+  \begin{figure}[H]
+    \centering
+    \includegraphics[width=#1\textwidth]{#2}
+    \caption{#3}
+    \label{#4}
+  \end{figure}%
+}
+
+\title{Familles de lois pour la distribution en taille et en revenu\\
+de la population d'entités --- \texttt{modele-27-04-WIP}}
+\author{Note technique --- Claude Code, à la demande d'Anatole Joseph-Stouls}
+\date{2 juillet 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+On cherche la famille de lois (ou combinaison de lois) qui décrit le mieux, à
+un pas de temps stationnaire, la distribution en taille des entités
+(\texttt{actif\_total} / \texttt{passif\_total}) et la distribution de leurs
+revenus (\texttt{revenu\_total} = extraction $\alpha\sqrt{P}$ + intérêts
+reçus) dans les simulations du modèle \texttt{modele-27-04-WIP}. L'hypothèse
+de départ --- un mélange de deux lois log-normales, jugé insatisfaisant ---
+est testée contre une échelle de familles à 1 à 5 paramètres (exponentielle,
+Fisk, Singh-Maddala, GB2, mélanges). Le mélange à 2 log-normales gagne
+systématiquement au sens de l'AIC/BIC, sur 163 simulations stationnaires
+regroupées par régime physique. Mais l'origine du mélange n'est pas ce que
+l'hypothèse de départ supposait~: ses deux composantes correspondent à deux
+\emph{cohortes d'âge} (entités fondatrices créées à $t=0$ contre entités
+entrantes créées en continu), pas à deux types économiques distincts. Un
+test de dérive avec la durée simulée montre en outre que la queue de la
+distribution s'alourdit avec le temps~: ce n'est pas une loi d'échelle
+stable, mais un artefact transitoire lié au protocole d'amorçage.
+\end{abstract}
+
+\tableofcontents
+
+\section{Contexte et question posée}
+
+Le modèle \texttt{modele-27-04-WIP} (source dans
+\texttt{modele-27-04-WIP/src}) simule une population d'entités économiques
+créées en continu, empruntant et prêtant un actif unique (le joule), avec
+faillites possibles. La question posée~: quelle famille de lois décrit le
+mieux, pour un nombre de paramètres donné (1 à 5), la distribution
+transversale (à un instant donné, sur toutes les entités vivantes)
+\begin{itemize}
+  \item de la \textbf{taille} des entités (\texttt{actif\_total} ou
+  \texttt{passif\_total})~;
+  \item de leur \textbf{revenu} (\texttt{revenu\_total}, extraction
+  $\Pi = \alpha\sqrt{P}$ plus intérêts reçus)~?
+\end{itemize}
+
+L'ajustement actuellement utilisé dans \texttt{analysis.py}
+(\texttt{\_fit\_lognormal\_mixture}) est un mélange de deux lois
+log-normales, jugé peu satisfaisant par l'auteur, qui soupçonnait deux
+populations qui se chevauchent sans être certain de la nature de cette
+hétérogénéité.
+
+\section{Méthode}
+
+\subsection{Sélection des simulations}
+
+Sur les 805 simulations disponibles issues de ce modèle (13 lancées
+directement, 792 issues de l'étude de sensibilité
+\texttt{etude\_sensibilite\_27\_04\_wip}, même code source), \textbf{163
+seulement sont stationnaires} au sens déjà calculé par le harnais de
+sensibilité (\texttt{run\_simulation.py:detect\_regime\_diagnostics}) ---
+queue bornée (\texttt{bounded\_tail}) et flux de faillites en équilibre avec
+le flux de création (\texttt{flow\_balanced}). Ce filtrage est nécessaire~:
+le processus brownien géométrique sur $\alpha$ documenté dans
+\texttt{simulation.py} porte un \emph{drift positif} explicitement signalé
+comme problème dans le code source, et la majorité des simulations ne
+convergent jamais vers un régime stable.
+
+\subsection{Principe~: pas de pooling}
+
+Les valeurs ne sont \textbf{jamais regroupées} entre simulations ni entre
+pas de temps avant ajustement --- regrouper des runs à paramètres différents,
+ou des pas de temps différents d'une même trajectoire encore transitoire,
+fabrique artificiellement de la multimodalité qui n'existe dans aucune
+simulation individuelle. La méthode retenue est donc~: un ajustement par
+paramètres maximum de vraisemblance (MLE) sur \textbf{un seul instantané
+stationnaire par simulation}, puis agrégation des verdicts (famille
+gagnante, valeurs de paramètres) sur l'ensemble des simulations d'un même
+groupe.
+
+Les simulations sont regroupées par les leviers physiques du modèle~:
+\texttt{n\_candidats\_pool} ($k$, taille du pool de négociation crédit ---
+$k\le 2$ : régime stable, $k\ge 3$ : régime critique auto-organisé selon
+\texttt{config.py}), homogénéité de $\alpha$
+($\alpha_{\min}=\alpha_{\max}$~?) et $\sigma_\alpha$ (volatilité du
+brownien sur $\alpha$). Un regroupement par apprentissage non supervisé sur
+la forme des distributions aurait été circulaire (on aurait regroupé les
+runs sur l'objet même qu'on cherche à caractériser).
+
+L'instant de mesure retenu par simulation est le pas recommandé par le
+harnais (\texttt{t\_measure} / \texttt{tail\_start} / \texttt{t\_regime}
+selon le schéma disponible), ou à défaut le dernier instantané disponible.
+
+\subsection{Échelle de familles testées}
+
+Treize familles ont été ajustées par MLE sur les valeurs strictement
+positives, comparées par AIC et BIC~:
+
+\begin{center}
+\begin{tabularx}{\linewidth}{cX}
+\toprule
+Paramètres & Familles \\
+\midrule
+1 & Exponentielle, Pareto ($x_{\min}$ fixé au minimum observé) \\
+2 & Log-normale, Gamma, Weibull, Fisk (log-logistique) \\
+3 & Log-normale à 3 paramètres, Gamma généralisée, Singh-Maddala
+    (Burr~XII), Dagum (Burr~III) \\
+4 & GB2 (Generalized Beta of the Second Kind, McDonald 1984) --- ajustée
+    par MLE numérique (implémentation propre, pas disponible dans
+    \texttt{scipy}) \\
+5 & Mélange de 2 log-normales (méthode existante du dépôt), mélange
+    log-normale + queue de Pareto (méthode existante du dépôt) \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+Les familles à 2--4 paramètres forment une hiérarchie \emph{emboîtée}~: Fisk
+$\subset$ Singh-Maddala $\subset$ GB2 (Fisk = GB2 avec $p=q=1$,
+Singh-Maddala = GB2 avec $q=1$). C'est volontaire~: cela permet de savoir
+si ajouter un paramètre à une même famille structurelle suffit, ou s'il
+faut changer de structure (mélange).
+
+Le code complet est dans \texttt{scripts/} (\texttt{families.py} pour
+l'échelle de familles, \texttt{lib.py} pour le chargement des données,
+\texttt{batch\_run.py} pour l'exécution en parallèle, \texttt{aggregate.py}
+pour l'agrégation, \texttt{tail\_test.py} pour le test de queue). Les
+résultats bruts par simulation sont dans \texttt{results/} (JSON).
+
+\section{Résultat 1 --- l'origine du "mélange" est démographique, pas
+économique}
+\label{sec:cohortes}
+
+L'hypothèse de départ était que le mélange reflète deux populations
+d'entités économiquement distinctes. Les données ne le confirment pas~:
+elles pointent vers une origine \textbf{démographique}.
+
+Sur \texttt{entity\_final\_state.csv} (état final de toutes les entités,
+avec \texttt{creation\_step}), on calcule l'âge de chaque entité vivante en
+fin de simulation. La corrélation entre âge et $\log(\text{actif\_total})$
+est de \textbf{0,88 à 0,95} selon les groupes --- y compris dans les
+groupes à $\alpha$ \emph{hétérogène} ($\sigma_\alpha=0{,}02$), où l'âge
+domine toujours le type de productivité comme facteur explicatif de la
+taille.
+
+Plus frappant~: la distribution des âges elle-même est nettement bimodale,
+avec un \textbf{trou démographique} quasi total entre les deux modes
+(figure~\ref{fig:cohorte})~: une entité créée après $t=0$ soit fait faillite
+tôt (dans les premiers 10--15\,\% de la durée simulée), soit devient
+quasiment immortelle. Il n'existe presque aucune entité d'âge intermédiaire.
+Sur le groupe dominant ($k=4$, $\alpha$ homogène, $\sigma=0$, $n=54$
+simulations), la fraction de "fondateurs" (âge~$>85\,\%$ de la durée
+simulée) varie de 10 à 35\,\% selon la simulation, contre 0 à 11\,\%
+d'entités d'âge intermédiaire.
+
+\monimagelarge{age_cohorte.png}{Structure démographique de la population
+vivante en fin de simulation (run représentatif, $k=4$, $\alpha$ homogène,
+$\sigma=0$, $T=999$). À gauche~: taille en fonction de l'âge, échelle log
+en ordonnée --- corrélation 0,88. À droite~: distribution des âges, avec le
+trou démographique entre les entrants récents et les fondateurs
+survivants.}{fig:cohorte}
+
+Ce schéma s'explique par le protocole d'amorçage du modèle~: 100 entités
+sont créées \emph{simultanément} à $t=0$
+(\texttt{n\_entites\_initiales}), puis les entités suivantes arrivent en
+continu (processus de type Poisson, taux \texttt{lambda\_creation}). Les
+100 fondateurs, qui n'ont jamais été renouvelés, compoundent leur
+croissance sur toute la durée de la simulation sans jamais mourir une fois
+établis --- ils forment la queue lourde. Les entrants continus, eux,
+meurent presque tous rapidement~; les rares survivants forment le corps
+étroit de la distribution.
+
+\textbf{Conclusion~:} l'intuition de deux populations qui se chevauchent
+est correcte, mais ce sont deux \emph{cohortes d'âge} (fondateurs contre
+entrants), pas deux classes économiques différentes. C'est un artefact du
+protocole d'initialisation de la simulation, pas une loi structurelle de
+l'économie modélisée.
+
+\section{Résultat 2 --- hiérarchie des familles par nombre de paramètres}
+
+Le tableau~\ref{tab:hierarchie} donne la famille gagnante (au sens de
+l'AIC) pour chaque nombre de paramètres, sur les quatre groupes
+comportant au moins 15 simulations stationnaires (tous à $\alpha$
+homogène, $\sigma=0$)~; le résultat est identique pour
+\texttt{actif\_total} et \texttt{revenu\_total}, et remarquablement stable
+d'un groupe à l'autre.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ccllllc}
+\toprule
+$k$ & $n$ & 1p & 2p & 3p & 4p & 5p \\
+\midrule
+3 & 22 & Exponentielle & Fisk & Singh-Maddala & GB2 & Mélange log-log \\
+4 & 54 & Exponentielle & Fisk & Singh-Maddala & GB2 & Mélange log-log \\
+5 & 26 & Exponentielle & Fisk / log-nor. & Singh-Maddala & GB2 & Mélange log-log \\
+6 & 15 & Exponentielle & Fisk / log-nor. & Singh-Maddala & GB2 & Mélange log-log \\
+\bottomrule
+\end{tabular}
+\caption{Famille gagnante par nombre de paramètres, \texttt{actif\_total}
+et \texttt{revenu\_total} (résultat identique), pour chaque valeur de $k=$
+\texttt{n\_candidats\_pool} disposant d'au moins 15 simulations
+stationnaires. "Mélange log-log" = mélange de 2 log-normales.}
+\label{tab:hierarchie}
+\end{table}
+
+\textbf{Mise en garde sur le palier à 4 paramètres.} Le GB2 gagne l'AIC à
+4 paramètres, mais son optimum se trouve en pratique sur une forme
+\emph{dégénérée}~: le paramètre de forme $a$ vient buter sur la borne
+numérique imposée ($a=50$), ce qui produit une fonction de survie qui
+s'effondre presque verticalement (figure~\ref{fig:ccdf}, courbe verte
+pointillée) --- un ajustement en quasi-fonction-marche, pas une forme
+plausible. Autrement dit~: \emph{aucune famille lisse et unimodale ne
+parvient à représenter un corps étroit accolé à une queue lourde}. C'est
+précisément le signal qui justifie le saut vers un mélange explicite à 5
+paramètres, cohérent avec la structure à deux cohortes du
+résultat~\ref{sec:cohortes}. Le gain du mélange sur le GB2 est net
+(médiane $\Delta\mathrm{BIC} \approx -100$ à $-120$ selon la variable, sur
+le groupe $k=4$), donc ce n'est pas un artefact de sur-paramétrage~: c'est
+une amélioration structurelle réelle.
+
+\monimagelarge{ccdf_comparaison.png}{Fonction de survie empirique (points
+noirs, échelle log-log) contre les quatre meilleures familles à 2, 3, 4 et
+5 paramètres, pour \texttt{actif\_total} (gauche) et \texttt{revenu\_total}
+(droite), sur une simulation représentative du groupe $k=4$, $\alpha$
+homogène, $\sigma=0$.}{fig:ccdf}
+
+\subsection{Paramètres typiques du mélange gagnant}
+
+Sur le groupe dominant ($k=4$, $\alpha$ homogène, $\sigma=0$, $n=54$),
+médiane des paramètres ajustés (convention \texttt{scipy.stats.lognorm}~:
+$\mathrm{LN}(\mu,\sigma)$, échelle $=e^\mu$)~:
+
+\begin{center}
+\begin{tabular}{lcccc}
+\toprule
+Variable & $\lambda$ & Composante 1 (jeunes) & Composante 2 (fondateurs) & \\
+\midrule
+\texttt{actif\_total} & 0,51 & médiane 313 ($\sigma_1=0{,}060$) &
+médiane 515 ($\sigma_2=0{,}440$) & \\
+\texttt{revenu\_total} & 0,51 & médiane 17,6 ($\sigma_1=0{,}031$) &
+médiane 23,7 ($\sigma_2=0{,}256$) & \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+La composante~1 (entrants) est très resserrée ($\sigma_1 \approx
+0{,}03$--$0{,}06$, coefficient de variation $\approx$ quelques \%)~: elle
+correspond à une taille "typique" que les jeunes entités atteignent
+rapidement puis autour de laquelle elles stagnent avant de faire faillite
+ou d'être remplacées. La composante~2 (fondateurs) est beaucoup plus
+dispersée ($\sigma_2 \approx 0{,}26$--$0{,}44$), cohérent avec une
+croissance composée sur des durées très variables.
+
+\section{Résultat 3 --- la queue n'est pas une loi de puissance stable}
+
+La fonction de survie empirique décroche visiblement au-dessus de la
+prédiction du mélange dans la queue extrême (figure~\ref{fig:ccdf})~: la
+composante log-normale de queue décroît trop vite pour les plus grandes
+valeurs observées. C'est probablement ce que l'auteur perçoit comme un
+"mauvais ajustement" malgré un bon score AIC/BIC global (dominé par le
+corps de la distribution, où l'accord est bon~: écart de Kolmogorov-Smirnov
+médian de 0,04, sous le seuil critique à 5\,\% pour $n\approx 300$).
+
+Un test de type Clauset--Shalizi--Newman (recherche du seuil $x_{\min}$ par
+minimisation de la distance de Kolmogorov-Smirnov, puis test du rapport de
+vraisemblance loi de puissance contre log-normale sur la queue au-delà de
+$x_{\min}$) favorise la loi de puissance sur la log-normale dans la queue,
+de façon quasi systématique (rapport de vraisemblance positif dans 95 à
+100\,\% des simulations selon le groupe).
+
+\textbf{Mais il ne s'agit probablement pas d'une vraie loi d'échelle.} Le
+mécanisme identifié en section~\ref{sec:cohortes} --- une cohorte fixe de
+fondateurs qui compound indéfiniment sans jamais être renouvelée ni
+tuée --- est un mécanisme de \emph{diffusion log-normale}, pas le
+mécanisme de renouvellement/rescaling (processus de Kesten) qui produit
+usuellement les vraies lois de puissance en économie. Un test décisif~:
+une loi d'échelle véritable a un exposant de queue stable quelle que soit
+la durée simulée $T$~; un artefact transitoire dérive avec $T$.
+
+\monimagelarge{derive_T.png}{Poids de la cohorte de fondateurs (gauche) et
+exposant de queue estimé par la méthode Clauset--Shalizi--Newman (droite)
+en fonction de la durée simulée $T$. Points gris~: simulations
+individuelles~; losanges rouges~: médiane par palier de $T$.}{fig:derive}
+
+Les deux quantités \textbf{dérivent nettement avec $T$}
+(figure~\ref{fig:derive})~: la fraction de fondateurs passe de 34\,\% à
+$T\approx 1000$ à 23\,\% à $T\approx 1500$ puis 13\,\% à $T\approx 3000$~;
+l'exposant de queue passe de 5,4 à 5,0 puis 3,1 sur les mêmes paliers (plus
+l'exposant est petit, plus la queue est lourde). Une vraie loi d'échelle
+serait stable~; ici, la queue s'alourdit mécaniquement à mesure que les
+fondateurs ont plus de temps pour composer leur croissance.
+
+\textbf{Conclusion~:} le constat honnête n'est pas "la queue suit une loi
+de puissance d'exposant $\alpha\approx5$", mais \emph{"la queue empirique
+est systématiquement plus lourde que ne le prédit la composante
+log-normale du mélange, et une queue de type Pareto/Singh-Maddala
+l'approxime mieux localement --- sans que cela constitue une loi d'échelle
+stationnaire du système"}.
+
+\section{Recommandations pratiques}
+
+\begin{itemize}
+  \item Pour un usage descriptif courant (comparaison de scénarios,
+  résumé d'une distribution), le \textbf{mélange à 2 log-normales} reste
+  le meilleur choix "clé en main"~: il gagne l'AIC et le BIC dans la
+  quasi-totalité des simulations stationnaires testées, pour les deux
+  variables.
+  \item \textbf{Ne pas interpréter ses deux composantes comme deux types
+  économiques.} Elles correspondent à des cohortes d'âge, directement
+  vérifiables via \texttt{creation\_step} dans
+  \texttt{entity\_final\_state.csv}. Si une lecture par cohorte est
+  utile, il vaut mieux conditionner explicitement sur l'âge plutôt que de
+  laisser le mélange statistique jouer ce rôle par proxy.
+  \item \textbf{Ne pas extrapoler la queue du mélange} pour des usages
+  sensibles aux événements rares (risque systémique, taille de cascade
+  maximale)~: la composante log-normale de queue sous-estime
+  probablement les événements extrêmes. Un mélange log-normale + Pareto
+  (déjà implémenté dans le dépôt sous
+  \texttt{\_fit\_lognormal\_pareto}) est plus prudent pour ce type
+  d'usage, même s'il perd légèrement au score AIC/BIC global.
+  \item Le GB2 (4 paramètres) ne doit \textbf{pas} être utilisé tel quel
+  malgré son bon AIC~: son optimum numérique est dégénéré sur ces
+  données. Il a valeur de diagnostic (aucune famille lisse ne suffit),
+  pas de recommandation.
+\end{itemize}
+
+\section{Limites et pistes}
+
+\begin{itemize}
+  \item L'essentiel des 163 simulations stationnaires est à $\alpha$
+  \emph{homogène} ($\alpha_{\min}=\alpha_{\max}$)~; dans ce régime,
+  \texttt{revenu\_total} est presque une fonction déterministe de
+  \texttt{actif\_total} ($\Pi=\alpha\sqrt{P}$ à $\alpha$ constant), donc
+  l'accord entre les résultats "taille" et "revenu" n'est pas une
+  confirmation indépendante. Les groupes à $\sigma_\alpha>0$ seraient le
+  vrai test d'indépendance, mais trop peu de simulations y sont
+  stationnaires ($n\le 7$) pour trancher solidement.
+  \item Le drift positif documenté du brownien sur $\alpha$
+  (\texttt{simulation.py}, commentaire \textit{"GROS PROBLEME !!! DRIFT
+  POSITIF"}) explique pourquoi 80\,\% des simulations disponibles ne sont
+  pas stationnaires. Le corriger permettrait d'obtenir davantage de
+  simulations stationnaires à $\sigma_\alpha>0$, et donc un vrai test
+  indépendant taille/revenu.
+  \item Piste directe pour vérifier le résultat~\ref{sec:cohortes}~: fitter
+  séparément les deux sous-populations obtenues en conditionnant sur
+  l'âge (via \texttt{creation\_step}) et vérifier que la bimodalité
+  disparaît à l'intérieur de chaque cohorte.
+  \item L'échelle de familles testées est positive uniquement.
+  \texttt{revenu\_net} (revenu moins charges d'intérêts) peut être
+  négatif et n'a pas été traité ici~; il demanderait une famille adaptée
+  (normale asymétrique, ou décomposition explicite revenu brut moins
+  charges).
+\end{itemize}
+
+\section*{Reproductibilité}
+
+Le code d'ajustement (\texttt{scripts/families.py}), le chargement des
+données (\texttt{scripts/lib.py}), l'exécution parallèle
+(\texttt{scripts/batch\_run.py}), l'agrégation
+(\texttt{scripts/aggregate.py}) et le test de queue
+(\texttt{scripts/tail\_test.py}) sont fournis avec ce rapport, ainsi que
+les résultats bruts par simulation (\texttt{results/*.json}, 163
+fichiers). Dépôt~: \url{\modelrepo}.
+
+\end{document}
