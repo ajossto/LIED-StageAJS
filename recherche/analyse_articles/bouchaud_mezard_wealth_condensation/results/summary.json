@@ -1,0 +1,98 @@
+{
+  "seed": 20260701,
+  "figure1": {
+    "mu": 3.0,
+    "N": 5000,
+    "Y2": 0.00026211848264891453,
+    "largest_share": 0.0024704962490119564
+  },
+  "figure2": {
+    "mu": 0.5,
+    "N": 5000,
+    "Y2": 0.3632433721568928,
+    "largest_share": 0.5692212371528655
+  },
+  "mean_field": {
+    "checked_mu": [
+      1.2,
+      2.0,
+      4.0
+    ]
+  },
+  "figure3": [
+    {
+      "J_over_sigma2": 0.03,
+      "mu_hat": 0.6865173683834036,
+      "mu_std": 0.029512088692369435,
+      "Y2": 0.38715517984895687,
+      "mean_field_mu": 1.03
+    },
+    {
+      "J_over_sigma2": 0.06,
+      "mu_hat": 0.7202823134177819,
+      "mu_std": 0.038802118673227325,
+      "Y2": 0.06996403982563781,
+      "mean_field_mu": 1.06
+    },
+    {
+      "J_over_sigma2": 0.1,
+      "mu_hat": 0.9425523607430726,
+      "mu_std": 0.0632107384763331,
+      "Y2": 0.11551474641240668,
+      "mean_field_mu": 1.1
+    },
+    {
+      "J_over_sigma2": 0.2,
+      "mu_hat": 1.245402610652933,
+      "mu_std": 0.030996512005160865,
+      "Y2": 0.01200234510123331,
+      "mean_field_mu": 1.2
+    },
+    {
+      "J_over_sigma2": 0.3,
+      "mu_hat": 1.254286723900069,
+      "mu_std": 0.024086540804213147,
+      "Y2": 0.01829540050167263,
+      "mean_field_mu": 1.3
+    },
+    {
+      "J_over_sigma2": 0.5,
+      "mu_hat": 1.5015620283669997,
+      "mu_std": 0.11351095248312629,
+      "Y2": 0.007332298804364281,
+      "mean_field_mu": 1.5
+    },
+    {
+      "J_over_sigma2": 1.0,
+      "mu_hat": 1.971852253108938,
+      "mu_std": 0.0599743907879462,
+      "Y2": 0.0033797272841319657,
+      "mean_field_mu": 2.0
+    },
+    {
+      "J_over_sigma2": 2.0,
+      "mu_hat": 3.1807888247026757,
+      "mu_std": 0.2999183321932219,
+      "Y2": 0.001764775601942722,
+      "mean_field_mu": 3.0
+    },
+    {
+      "J_over_sigma2": 5.0,
+      "mu_hat": 4.636106615945124,
+      "mu_std": 0.7308987842609234,
+      "Y2": 0.0013546745980737925,
+      "mean_field_mu": 6.0
+    },
+    {
+      "J_over_sigma2": 10.0,
+      "mu_hat": 5.278112227794751,
+      "mu_std": 1.3554264787109866,
+      "Y2": 0.001238923738950627,
+      "mean_field_mu": 11.0
+    }
+  ],
+  "notes": [
+    "La figure 3 d\u00e9pend d'une discr\u00e9tisation Euler/renormalisation; l'article ne donne pas N, dt, dur\u00e9e ni m\u00e9thode d'estimation de mu.",
+    "L'estimateur de queue utilis\u00e9 est l'estimateur de Hill sur les 8% sup\u00e9rieurs."
+  ]
+}

@@ -1,0 +1,130 @@
+{
+  "class_workers_mean": 455.65,
+  "class_capitalists_mean": 43.4,
+  "class_unemployed_mean": 500.95,
+  "firm_size_alpha": 0.5791544833283919,
+  "demises_per_month_mean": 30.4375,
+  "lifespan_mean_months": 2.408903278025091,
+  "profit_rate_median": 16.109657865574345,
+  "log_gdp_mean": 10.964988513868425,
+  "gdp_growth_mean": -0.0009116181659946985,
+  "recessions": [
+    1,
+    2,
+    1,
+    3,
+    3,
+    2,
+    1,
+    1,
+    2,
+    3,
+    1,
+    2,
+    2,
+    1,
+    2,
+    1,
+    1,
+    1,
+    1,
+    2,
+    1,
+    1,
+    2,
+    1,
+    1,
+    4,
+    2,
+    1,
+    1,
+    2,
+    1,
+    2,
+    1,
+    1
+  ],
+  "wage_share_mean": 0.8205368550968973,
+  "wage_share_std": 0.07495627413134462,
+  "seed_sensitivity": [
+    {
+      "initial_expectation": 0.5,
+      "mean": 0.7502036555551548,
+      "std": 0.08195344355862384
+    },
+    {
+      "initial_expectation": 2.0,
+      "mean": 0.7497527454545146,
+      "std": 0.11938683167701528
+    },
+    {
+      "initial_expectation": 3.5,
+      "mean": 0.7280588888247909,
+      "std": 0.08786981671959007
+    },
+    {
+      "initial_expectation": 5.0,
+      "mean": 0.7342109821613994,
+      "std": 0.1009380263034451
+    },
+    {
+      "initial_expectation": 6.5,
+      "mean": 0.7314249363872127,
+      "std": 0.06239904717398809
+    },
+    {
+      "initial_expectation": 8.0,
+      "mean": 0.754102024090404,
+      "std": 0.07362666865439323
+    },
+    {
+      "initial_expectation": 9.5,
+      "mean": 0.7378378058729159,
+      "std": 0.11318015725043522
+    },
+    {
+      "initial_expectation": 11.0,
+      "mean": 0.7433105278038162,
+      "std": 0.08628992854476245
+    },
+    {
+      "initial_expectation": 12.5,
+      "mean": 0.7507762567314806,
+      "std": 0.09156070169835055
+    },
+    {
+      "initial_expectation": 14.0,
+      "mean": 0.7720011046582289,
+      "std": 0.1332122007628581
+    },
+    {
+      "initial_expectation": 15.5,
+      "mean": 0.7298173719692892,
+      "std": 0.07808586692704628
+    },
+    {
+      "initial_expectation": 17.0,
+      "mean": 0.7381182483410618,
+      "std": 0.10217889426654614
+    },
+    {
+      "initial_expectation": 18.5,
+      "mean": 0.7184599858079302,
+      "std": 0.054683595978981814
+    },
+    {
+      "initial_expectation": 20.0,
+      "mean": 0.7401209743299342,
+      "std": 0.08390366899804784
+    }
+  ],
+  "seed": 20260701,
+  "n": 1000,
+  "years": 130,
+  "burn_years": 30,
+  "notes": [
+    "Recodage bas\u00e9 sur l'appendice Mathematica.",
+    "Les ajustements sont graphiques/descriptifs, comme dans l'article.",
+    "La s\u00e9lection pond\u00e9r\u00e9e d'un employeur exclut l'agent actif pour respecter e_i != i, point implicite dans le texte."
+  ]
+}
