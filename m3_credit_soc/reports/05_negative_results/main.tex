@@ -1,0 +1,180 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[french]{babel}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb}
+\usepackage[margin=2.6cm]{geometry}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true,linkcolor=blue!50!black}
+
+\newcommand{\NW}{\mathrm{NW}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\code}[1]{\texttt{#1}}
+
+\title{Résultats négatifs, artefacts et échecs de protocole\\
+\large Livrable 05 du programme M3 (workspace \code{m3\_credit\_soc})}
+\author{Agent de recherche M3}
+\date{4 juillet 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Tout ce qui échoue, dans le modèle comme dans le protocole. Rien ici n'est
+dilué ailleurs : le rapport 04 renvoie à ce document. Les échecs sont de
+trois ordres : hypothèses scientifiques non soutenues (le crédit reste
+distributionnellement neutre ; Boltzmann--Gibbs échoue sur la variable même
+pour laquelle il était formulé ; aucune signature SOC critique), défauts de
+conception pré-enregistrée (l'ablation F éteint le marché au lieu de tester
+la topologie ; G1 confond corrélation et raréfaction du crédit ; le canal
+« défaut de liquidité », pièce maîtresse de M3, ne s'active dans aucun
+régime testé), et artefacts d'implémentation détectés puis corrigés (bug
+d'observation I8).
+\end{abstract}
+
+\section{Hypothèses scientifiques non soutenues}
+
+\subsection{Le crédit productif reste distributionnellement neutre
+(l'objectif central de M3 n'est pas atteint)}
+M3 a été construit pour donner au crédit un canal causal réel : conversion
+$L \to K$ exclusive, obligations exigibles en liquidité, actif illiquide.
+Résultat (10 seeds A vs 10 seeds B, mêmes seeds, $T{=}4000$) : les formes
+sont indiscernables — corps de $\NW$ Fisk des deux côtés, exposant de queue
+$2{,}69$ des deux côtés (égalité au centième), revenu dPlN 10/10 des deux
+côtés, $K$ lognormal, Gini et parts du top égaux. Le crédit modifie des
+\emph{niveaux démographiques} (population et espérance de vie $\times 0{,}5$,
+renouvellement accéléré) mais aucune \emph{forme}. La conclusion négative de
+M2 (« le crédit n'a pas d'effet distributionnel ») survit donc à un modèle
+conçu explicitement pour la renverser. Nuance importante : le critère causal
+pré-enregistré (deux signatures modifiées) est \emph{formellement} atteint —
+mais par des signatures redondantes entre elles (toutes des facettes de
+« vies plus courtes »). Si l'on avait voulu que ce critère mesure un effet
+distributionnel, il fallait l'écrire autrement : leçon de pré-enregistrement.
+
+\subsection{Boltzmann--Gibbs échoue sur $L$, sa propre variable}
+M2 avait testé l'exponentielle sur $\NW$ — transposition abusive dénoncée
+dans le rapport 01. M3 a introduit $L$ précisément pour poser la question
+correctement. Verdict : corps de $L$ Fisk (expon perd de $\sim 700$ points
+d'AIC ; $\mathrm{med/mean} = 0{,}93$ au lieu de $\ln 2 \approx 0{,}69$).
+Le diagnostic est structurel, pas paramétrique : l'injection $(1-s)P_i$ est
+hétérogène (proportionnelle à $\sqrt{K_i}$) et la fuite $cL$ multiplicative ;
+les échanges conservatifs (intérêts, $1{,}5\,\%$ de la production) sont
+négligeables devant ces flux. Dans toute cette classe de modèles
+production--consommation, l'hypothèse de conservation locale est violée par
+construction : le cadre YR n'y a \emph{pas de domaine d'application}. Tester
+« l'exponentielle de la monnaie » dans un modèle où la monnaie est
+essentiellement un flux de production recyclé n'a pas de sens — à retenir
+pour M4.
+
+\subsection{Le canal « défaut de liquidité » ne s'active jamais}
+La fragilité nominal/réel (défaut d'une entité solvable mais illiquide) est
+le mécanisme différenciant de M3. Il est implémenté, testé unitairement
+(50 tests), mesurable (comptage des racines par cause) — et \textbf{ne se
+déclenche dans aucun run} : 0 défaut de liquidité sur $\sim 200\,000$
+pas-entité$\times 10^3$ cumulés (baseline, B--J, chocs corrélés compris).
+Cause mesurée : la charge d'intérêts d'équilibre est trop faible
+($1{,}5\,\%$ de la production ; les emprunteuses convergent vite vers
+$K^*(\rho) \approx 23$ et leur afflux de liquidité couvre toujours le
+service). Verdict de la grille complète (45 cellules) : 4 événements en
+tout, uniquement à $s = 0{,}9$ (afflux de liquidité minimal), zéro partout
+ailleurs, chocs corrélés compris. Seule exception notable : l'ablation H
+($d_0 = 0$), où le levier relatif est bien plus élevé, en produit 71 —
+c'est un régime différent, pas un réglage de la baseline. Conclusion de
+conception pour M4 : un marché du crédit \emph{au taux marginal
+concurrentiel}, servi par une liquidité alimentée par la production
+courante, ne produit pas d'illiquidité ; il faudrait des taux
+hors-équilibre, du principal exigible (dette amortissable, pas
+perpétuelle), des appels de marge — ou le plancher endogène de H.
+
+\subsection{Aucune signature SOC critique}
+Avalanches causales (définition corrigée : composantes du graphe de pertes,
+pas les lots par pas de M2) : sous-Poisson en baseline (var/moy $0{,}06$,
+max 7), premières rafales sous chocs sectoriels G2 (max 36, var/moy
+$0{,}38$) mais toujours sous-critiques (singletons $> 98\,\%$, var/moy
+$< 1$). corr(concentration $\to$ faillites futures) systématiquement
+\emph{négative} ($-0{,}2$ à $-0{,}6$) : le signe même de
+l'accumulation--relaxation est absent — la concentration du crédit suit les
+périodes calmes, elle ne les précède pas. Le pouvoir prédictif individuel
+du réseau est réel mais modeste (AUC levier $\to$ mort $0{,}59$--$0{,}64$).
+
+\subsection{Sans renouvellement, extinction (ablation I)}
+$\lambda = 0$, cohorte initiale 1000 : extinction totale à $t \approx 1760$
+(2 seeds sur 3 ; le troisième à $N = 1$ à $T = 2000$). Le mécanisme
+démographique Reed n'est pas une composante de la distribution : c'est la
+condition d'existence du système. Corollaire : aucune « distribution
+stationnaire de M3 » n'existe indépendamment du flux de naissances.
+
+\section{Échecs de protocole pré-enregistré}
+
+\subsection{L'ablation F ne teste pas ce qu'elle devait tester}
+F (appariement entièrement aléatoire) devait isoler la topologie à bilans
+agrégés comparables. Mesure : volume $11{,}6$/pas contre $75{,}9$ en
+baseline, 452 contrats actifs contre $68\,608$ — la condition « bilans
+comparables » est massivement violée ; F reproduit B en éteignant le marché.
+La question « la topologie compte-t-elle ? » reste \emph{sans réponse
+confirmatoire} dans ce programme. Une variante F$''$ (emprunteuse
+assortative, prêteuse aléatoire parmi les faisables) est exécutée en
+exploratoire, clairement étiquetée post-hoc.
+
+\subsection{G1 confond corrélation macro et raréfaction du crédit}
+Le design pré-enregistré maintient $\sigma^2$ total constant ; la part macro
+réduit donc mécaniquement la dispersion idiosyncratique des $K$, qui est le
+moteur du gain à l'échange — le crédit s'étiole (656--3676 contrats contre
+$68\,608$). L'effet « chocs corrélés » et l'effet « moins de crédit » sont
+inséparables dans G1. G2 (sectoriel) souffre moins de ce biais (crédit
+intact) et porte seul le verdict sur la corrélation.
+
+\subsection{Population divergente hors de la colonne $c = 0{,}10$}
+La fenêtre démographique de M3 est plus étroite que prévu : sur les plages
+pré-enregistrées $s \in [0{,}5, 0{,}9] \times c \in [0{,}02, 0{,}10]$, seule
+la colonne $c = 0{,}10$ est viable (8 cellules sur 12 divergent,
+morts/naissances $0{,}34$--$0{,}72$). Tout stock stable ajouté à $\NW$
+amortit le plancher $d_0$ et éteint la mortalité — la même fragilité de
+fenêtre que M2 ($\sigma$), déplacée sur $c$. Le « sans réglage fin » reste
+donc partiel : la \emph{forme} est robuste, l'\emph{existence du régime}
+dépend d'un paramètre à un facteur 2 près.
+
+\section{Artefacts d'implémentation détectés et corrigés}
+
+\subsection{Observation non neutre (violation de I8)}
+La fonction d'instantané lisait les agrégats du carnet via \code{[]} sur des
+\code{defaultdict}, insérant des clés vides et modifiant l'ordre d'itération
+du service des intérêts : un run \emph{avec} snapshots divergeait au dernier
+ulp d'un run \emph{sans} (détecté par le test I8 strict, seed 9, dès
+$t = 54$). Corrigé (accès en lecture pure) ; I8 bit à bit rétabli. Leçon
+générique : sur un \code{defaultdict}, toute lecture par \code{[]} est une
+écriture ; les fonctions d'observation doivent être prouvées neutres, pas
+supposées telles.
+
+\subsection{Estimateur CSN dégénéré sur les tailles d'avalanches}
+\code{fit\_tail\_csn} divisait par zéro quand toutes les valeurs de queue
+égalent $x_{\min}$ (cas réel : ablation B, toutes les avalanches de taille
+1). Garde ajoutée (candidat écarté si le dénominateur log est nul). Par
+ailleurs les « ajustements de queue » sur des tailles d'avalanches presque
+toutes égales à 1 produisent des exposants absurdes ($\alpha \approx 50$) :
+ils ne sont \emph{pas} interprétés dans les rapports — seuls max, var/moy et
+fraction multi le sont.
+
+\subsection{Fragilité du sous-agent d'exécution}
+Anecdote de méthode, consignée pour la reproductibilité du flux de travail :
+la délégation de la surveillance des runs à un agent léger a échoué deux
+fois (l'agent « attendait » sans commande bloquante) ; les runs eux-mêmes,
+lancés par lui, étaient corrects. La surveillance a été reprise par le
+processus principal sans perte de calcul.
+
+\section{Ce que ces négatifs enseignent}
+Le noyau Reed (chocs multiplicatifs, plancher, réinjection) reste, comme en
+M2, le seul générateur des formes observées ; un crédit productif au taux
+marginal, servi en liquidité abondante, n'y ajoute qu'une accélération
+démographique. Pour qu'un M4 donne sa chance à la thèse
+accumulation--relaxation, il faudra au moins l'un de : dette amortissable
+(principal exigible, pas perpétuel), taux hors-équilibre ou spread de
+risque endogène, liquidité réellement rare (injection découplée de la
+production courante), ou levier avec appel de marge. Sans quoi le résultat
+« le crédit ne fait que raccourcir les vies » se répétera.
+
+\end{document}

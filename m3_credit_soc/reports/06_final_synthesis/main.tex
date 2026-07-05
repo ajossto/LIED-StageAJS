@@ -1,0 +1,246 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[french]{babel}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb}
+\usepackage[margin=2.4cm]{geometry}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true,linkcolor=blue!50!black}
+
+\newcommand{\NW}{\mathrm{NW}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\code}[1]{\texttt{#1}}
+
+\title{Synthèse finale du programme M3\\
+\large Livrable 06 (workspace \code{m3\_credit\_soc}) — réponses au protocole}
+\author{Agent de recherche M3}
+\date{5 juillet 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+M3 devait répondre à une question laissée ouverte par la double réplication
+de M2 : un crédit \emph{productif} (conversion exclusive de liquidité en
+capital), \emph{risqué} (pertes de stock et de flux) et \emph{topologique}
+(réseau de contrats nominaux servis en liquidité) fait-il passer le système
+d'un modèle démographique de renouvellement à un système
+accumulation--relaxation ? Réponse d'ensemble : \textbf{non pour les
+distributions, non pour la SOC — mais le crédit acquiert un rôle causal
+démographique net (il divise par deux l'espérance de vie et la population)
+et, découverte inattendue, il peut remplacer entièrement le plancher
+d'absorption exogène $d_0$} : sans $d_0$, la dette contractuelle devient
+l'unique mécanisme de mortalité et le système se borne quand même. Le
+noyau Reed reste le seul générateur des formes ; l'hypothèse
+Boltzmann--Gibbs échoue sur la liquidité elle-même ; le revenu est double
+Pareto-lognormal partout (45 cellules de grille sur 45, 20 runs A/B sur
+20). Chaque question du protocole reçoit ci-dessous une réponse explicite,
+avec son degré de certitude.
+\end{abstract}
+
+\section{Réponses aux questions du protocole}
+
+\subsection{Qu'est-ce qui est conservé / changé de M2 ?}
+Conservé et vérifié : naissances Poisson, absence de cohorte fondatrice,
+$d_0$, choc multiplicatif sans drift, extraction concave, dépréciation
+réelle asymétrique du seul réel, taux géométrique (constitutif), marché
+local par échantillons de taille $k$, cascade au point fixe,
+reproductibilité par seed, fusion des contrats par paire (désormais par
+défaut). Changé : état $(L, K)$ au lieu de $w$ ; partage de production
+$s$ ; consommation $cL$ ; intérêts exigibles en liquidité (service
+simultané au prorata) ; prêt $L_\ell \to K_b$ ; résidu de faillite en
+nature ; avalanches causales tracées ; chocs corrélables. L'ancrage est
+garanti par la propriété de réduction R1 (M3 dégénéré $=$ M2 bit à bit),
+testée automatiquement : aucun écart A/B n'est un artefact
+d'implémentation.
+
+\subsection{Le mécanisme Reed suffit-il encore à tout expliquer ?}
+\textbf{Oui, pour toutes les formes.} Corps de $\NW$ Fisk (9/10 baselines,
+36/37 cellules de grille), queue effective $\alpha \approx 2{,}7$ stable
+sur $20\,000$ pas, revenu double Pareto-lognormal \emph{partout} (10/10
+baselines, 37/37 validations de grille — la signature Reed par excellence :
+GBM $\times$ âges exponentiels), $K$ lognormal, réponse de $\alpha$ à
+$\sigma$ identique à M2 ($3{,}7 \to 2{,}2$ pour $\sigma$ de $0{,}15$ à
+$0{,}35$), insensibilité à $k$, $s$, $c$, $d_0$. L'ablation I le confirme
+par l'absurde : sans renouvellement, extinction totale en $\sim 15$
+espérances de vie — le mécanisme démographique est la condition
+d'existence, pas un ingrédient parmi d'autres.
+
+\subsection{La liquidité est-elle Boltzmann--Gibbs ?}
+\textbf{Non — et c'est le verdict le plus instructif du programme.} $L$
+est la variable pour laquelle l'argument de conservation locale était
+formulé ; son corps est Fisk (l'exponentielle perd $\sim 700$ points
+d'AIC ; $\mathrm{med/mean} = 0{,}93$ contre $\ln 2 = 0{,}69$ attendu),
+queue légère. Le drift du corps de $L$ est pourtant quasi nul — la
+dynamique est « équilibrée » — mais la forme n'est pas exponentielle,
+parce que l'injection $(1-s)\alpha\sqrt{K_i}$ est hétérogène entre entités
+et la fuite $cL$ multiplicative : les échanges conservatifs (intérêts,
+$1{,}5\,\%$ de la production) sont un bruit de fond. Conclusion : dans
+toute classe de modèles où la monnaie est un flux de production recyclé,
+les hypothèses de Yakovenko--Rosser sont violées par construction ; le
+cadre n'y est pas réfuté, il est \emph{sans domaine d'application}. La
+dépendance à la conservation locale est donc confirmée en creux : pour
+obtenir un corps exponentiel de $L$, il faudrait un régime dominé par les
+transferts (échanges, dettes, défauts) et non par l'injection productive.
+
+\subsection{$\NW$ a-t-il une structure à deux classes
+(corps thermique $+$ queue superthermique) ?}
+Non au sens de Yakovenko--Rosser. Le corps n'est ni exponentiel ni
+« thermique » : son drift est ascendant ($+1{,}8$/pas, fenêtre fixe,
+incréments à 1 pas), signature d'un régime de transport (réinjection en
+bas, absorption aux bords), identique au diagnostic M2. La queue est
+compatible Pareto à l'œil mais jamais identifiée face à la lognormale
+tronquée (LR corrigé négatif dans toutes les fenêtres, tous les runs) ;
+son exposant est stable mais il l'est \emph{aussi sans crédit}. La
+description honnête de $\NW$ reste : une seule population Fisk-like
+engendrée par le mélange démographique, sans frontière de classes.
+
+\subsection{$K$ est-il stratifiant ou seulement mécanistique ?}
+Mécanistique. Corps lognormal autour du point fixe
+$K^\dagger = (s(1-\delta)\alpha/\delta)^2$, dans 10/10 baselines et sur
+toute la grille ; le crédit ne le déforme pas (B identique), il ne change
+même pas $K$ par tête (161 vs 155). $K$ ne stratifie pas la population :
+c'est $\NW$ (via les créances/dettes et $L$) qui porte l'hétérogénéité, et
+elle reste unimodale.
+
+\subsection{Le crédit est-il causal ? (critère pré-enregistré)}
+\textbf{Formellement oui ; substantiellement, il est causal sur la
+démographie et neutre sur les distributions.} Le critère (deux signatures
+modifiées par B) est atteint : population stationnaire ($\times 0{,}5$,
+$> 20\sigma$), espérance de vie ($\times 0{,}5$), renouvellement du top
+($0{,}985$ vs $0{,}864$, $> 5\sigma$), existence d'avalanches
+multi-entités. Mais ces signatures sont les facettes d'un seul mécanisme —
+mesuré par les ablations : \textbf{le canal létal est nominal} (C, crédit
+non productif, reproduit tout l'effet : population $1055$ vs $1050$), les
+pertes de créances n'y contribuent pas (D $=$ A), la perte de flux
+d'intérêts pèse davantage (E récupère 40\,\% de l'écart), et l'effet
+productif est nul en agrégat par tête (production/tête $11{,}2$ vs
+$10{,}9$). Le crédit de M3 convertit de la liquidité sûre en capital
+risqué assorti d'obligations : il \emph{accélère l'horloge de Reed} (moitié
+moins de temps au-dessus du plancher) sans en changer la loi. Les
+distributions — revenu, $L$, $\NW$, $K$, Gini, parts du top, exposants —
+sont indiscernables de B (CCDF superposées, égalité des $\alpha$ au
+centième).
+
+\subsection{Le réseau compte-t-il au-delà du volume agrégé ?}
+\textbf{Aucune évidence que oui.} L'ablation pré-enregistrée F a échoué par
+conception (l'appariement aléatoire éteint le marché : volume $\div 6{,}5$
+— échec documenté au livrable 05). La variante exploratoire F$''$
+(prêteuse aléatoire, emprunteuse assortative) donne une population
+intermédiaire à volume intermédiaire : à travers les trois règles
+d'appariement, la population suit le \emph{volume} de façon monotone
+(volume $76/41/12 \to$ population $1150/1665/2120$). Le pouvoir prédictif
+individuel du réseau existe mais reste modeste (AUC levier $\to$ mort
+$0{,}59$--$0{,}64$) et la concentration des créances est \emph{négativement}
+corrélée aux faillites futures. Rien, dans ces données, ne nécessite la
+topologie comme variable explicative au-delà de l'exposition agrégée.
+
+\subsection{Les cascades sont-elles causales ou coïncidentes ?}
+Le programme a corrigé la mesure de M2 (avalanches $=$ composantes du
+graphe de pertes, racines classées par cause) : les cascades causales
+\emph{existent} (perte de créance $\to$ insolvabilité du créancier),
+mais elles sont petites (max 7 en baseline, $2\,\%$ des événements) et
+\emph{sous}-dispersées (var/moy $= 0{,}06$). Sous chocs sectoriels, elles
+grossissent (max 72 à $\rho_s = 0{,}8$) par synchronisation des défauts —
+c'est de la causalité réelle, mais \emph{forcée de l'extérieur} : la
+sur-dispersion suit la corrélation imposée continûment
+($0{,}07 \to 0{,}38 \to 0{,}84$) sans jamais franchir le seuil de Poisson.
+
+\subsection{Y a-t-il une signature SOC robuste ?}
+\textbf{Non, sur aucun des trois critères pré-enregistrés.} (i) Pas de
+dynamique accumulation--relaxation : la corrélation
+concentration $\to$ faillites futures est systématiquement négative
+($-0{,}2$ à $-0{,}6$) — la concentration suit les périodes calmes.
+(ii) Pas d'avalanches à queue non triviale : var/moy $< 1$ partout, y
+compris sous forçage corrélé maximal. (iii) Pas de zone critique sur la
+grille : toutes les réponses ($\alpha$, population, avalanches) sont
+monotones et lisses en $\sigma$, $k$, $s$, $c$, $d_0$, $\rho_s$ — aucune
+transition, aucun plateau. Le système amplifie proportionnellement le
+forçage qu'on lui impose ; il ne s'organise pas vers la criticité. Après
+M2 (SOC « sans objet ») et M3 (SOC « réfutée dans le régime accessible »),
+la charge de la preuve est écrasante : cette classe de modèles
+(dette perpétuelle au taux marginal, liquidité produite en continu)
+n'engendre pas d'auto-criticité.
+
+\subsection{Le canal de fragilité nominal/réel fonctionne-t-il ?}
+Il est implémenté et testé, mais \textbf{il ne s'active pratiquement
+jamais} : 0 défaut de liquidité en baseline et dans presque toute la
+grille ; 4 événements à $s = 0{,}9$ ; seule l'ablation H ($d_0 = 0$, levier
+relatif élevé) en produit en nombre (71). Cause structurelle : au taux
+marginal concurrentiel, le service de la dette coûte $\le 1{,}6\,\%$ de la
+production ; la liquidité, alimentée par la production courante, couvre
+toujours. La fragilité de type Minsky exige un ingrédient que M3 s'est
+interdit : principal exigible, taux hors-équilibre, ou liquidité rare.
+
+\subsection{Découverte positive : le plancher d'absorption peut être
+endogène (ablation H)}
+Sans $d_0$, seules les endettées peuvent mourir ($D >$ actifs) — et le
+système se borne quand même, quasi-stationnairement, à une population
+$\approx 5\times$ la baseline (morts/naissances $0{,}98$ ; réserve : un
+seed complet à la clôture, réplication en cours). Le crédit y est
+\emph{constitutif} de la démographie : c'est le seul régime du programme où
+retirer le crédit changerait qualitativement l'existence même du régime.
+Ce résultat n'était pas anticipé par le protocole et désigne le M4 le plus
+intéressant (cf. §3).
+
+\subsection{Ce qui, de M2, est validé / à abandonner}
+Validé et renforcé : le triplet générateur Reed, la prudence Pareto (le LR
+corrigé ne s'inverse jamais), l'outillage statistique corrigé, la fusion
+par paire, le taux géométrique constitutif, l'extensivité en $\lambda$
+($N^*/\lambda = 114$--$115$ pour $\lambda \in \{3, 10, 30\}$). À
+abandonner : l'espoir qu'un crédit comptablement actif suffise à créer de
+la structure distributionnelle ; l'identification de \emph{toute} variable
+de ces modèles à la variable Boltzmannienne ; l'ablation F par appariement
+aléatoire (design invalide) ; le maintien de $\sigma^2$ total constant
+comme seule convention pour les chocs corrélés (confond corrélation et
+raréfaction du crédit — G1 inexploitable).
+
+\section{Verdict d'ensemble}
+
+M3 est un résultat négatif propre sur sa question principale, avec deux
+acquis positifs nets : (1) le crédit a désormais un effet causal mesuré,
+quantifié et mécanistiquement décomposé (nominal $\gg$ flux $>$ stock ;
+productif $\approx 0$) — il raccourcit les vies sans changer les lois ;
+(2) le plancher d'absorption, ingrédient le plus artificiel du cadre Reed,
+peut être rendu endogène par la dette. La thèse Boltzmann--Pareto--SOC,
+elle, sort du programme affaiblie sur ses trois volets : pas de corps
+exponentiel (sur aucune variable, y compris la bonne), pas de Pareto
+identifiée (partout dominée par la lognormale tronquée), pas de SOC (ni
+accumulation-relaxation, ni avalanches critiques, ni zone robuste).
+
+\section{M4 minimal recommandé}
+
+Un seul changement structurel, dicté par H : \textbf{remplacer $d_0$ par
+une dette de subsistance contractée à la naissance auprès d'entités
+réelles} (pas d'un puits exogène), servie en liquidité. Le plancher
+devient un réseau de créances : chaque mort inflige une perte réelle à des
+créancières identifiées, le levier est élevé par construction (les
+nouveau-nées naissent au plancher), et les défauts de liquidité existent
+déjà dans ce régime (71 observés). Compléments optionnels si et seulement
+si le canal reste faible : principal amortissable (l'échéancier crée
+l'illiquidité), et le tampon $\beta_L$ comme variable de comportement.
+Tout le reste de M3 (noyau Reed, outillage, protocole d'ablation corrigé
+— F remplacée par une randomisation à volume contraint, G par corrélation
+à dispersion idiosyncratique constante) est conservé. Prédiction réfutable
+à pré-enregistrer pour M4 : dans le régime à plancher endogène, l'ablation
+du crédit doit changer non seulement les niveaux mais l'\emph{existence}
+du régime stationnaire ; si en outre les avalanches y restent
+sous-Poisson, la thèse SOC devra être abandonnée pour cette famille de
+modèles.
+
+\section{Traçabilité}
+
+50 tests verts (dont R1 : réduction bit à bit vers M2) ; 124 runs archivés
+avec configuration, séries, instantanés, réseau et journal d'avalanches ;
+\code{validation.json} par run, sans pooling inter-seed ; budget de
+simulation consommé $20{,}3$ h sur 48 à la clôture (dont H seed 0 :
+$3{,}2$ h ; réplication H en cours non comprise) ; journal de recherche
+\code{NOTES.md} (leçons et décisions datées). Rapports : 01 (synthèse M2), 02 (spécification pré-enregistrée),
+03 (implémentation), 04 (validation), 05 (résultats négatifs — aucun
+n'est dilué ailleurs), 06 (le présent document).
+
+\end{document}

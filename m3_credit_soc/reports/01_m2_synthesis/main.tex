@@ -1,0 +1,231 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[french]{babel}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb}
+\usepackage[margin=2.6cm]{geometry}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true,linkcolor=blue!50!black}
+
+\newcommand{\NW}{\mathrm{NW}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\code}[1]{\texttt{#1}}
+
+\title{Synthèse critique de M2 : ce qui est acquis, ce qui est mort,\\
+et ce que M3 doit en faire\\
+\large Livrable 01 du programme M3 (workspace \code{m3\_credit\_soc})}
+\author{Agent de recherche M3}
+\date{3 juillet 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+M2 a été répliqué deux fois indépendamment (\code{m2\_fable}, \code{m2\_codex}),
+avec des implémentations, des conventions de service d'intérêts et des outillages
+distincts. Les verdicts concordent sur tous les points de fond, ce qui leur donne
+un statut solide. Résultat central : M2 est un excellent générateur
+\emph{démographique} de distributions stationnaires à queue lourde et à classes
+dynamiques --- un processus de type Reed (croissance multiplicative individuelle
+$\times$ absorption au plancher $\times$ réinjection Poisson) --- mais le marché
+du crédit et les cascades, qui constituaient sa thèse (auto-organisation
+critique), n'y laissent aucune empreinte distributionnelle mesurable. M2 devient
+donc le \emph{modèle nul} de M3. Ce rapport fixe ce qui est validé, ce qui est
+réfuté, les artefacts d'outillage à ne pas reproduire, et les contraintes de
+conception qui en découlent pour M3.
+\end{abstract}
+
+\section{Statut épistémique : deux réplications convergentes}
+
+Les deux réplications diffèrent sur des choix non triviaux --- service des
+intérêts par ordre de création des contrats (\code{fable}) contre service
+simultané au prorata (\code{codex}) ; liquidation séquentielle par identifiant ;
+règles de résidu --- et aboutissent aux mêmes conclusions qualitatives et à des
+valeurs numériques compatibles (populations finales $\sim$1650--1680 à
+$\lambda=10$, exposants de queue de $\NW$ $\sim$2,5--3,0, corrélation
+âge--$\log\NW$ de 0,06 à 0,16, renouvellement du top décile de 86--95\,\% par
+1000 pas). La convergence malgré la variation des conventions est le meilleur
+argument de robustesse disponible : les résultats ci-dessous ne sont pas des
+artefacts d'une implémentation.
+
+\section{Ce que M2 établit positivement (à conserver en M3)}
+
+\begin{enumerate}[leftmargin=1.6em, itemsep=3pt]
+\item \textbf{Population bornée endogènement}, sans capacité de charge exogène :
+  quasi-plateau à $N^* \approx 166\lambda$, reproductible inter-seed, extensif en
+  $\lambda$ (vérifié à $\lambda = 10$ et $30$). Réserve honnête (\code{codex}) :
+  les pentes sur $[1000,2000]$ restent légèrement positives ; le bornage
+  \emph{asymptotique} n'est pas démontré, seulement le régime quasi stationnaire.
+\item \textbf{Mortalité endogène} par le couple choc multiplicatif $\sigma$ --
+  plancher $d_0$ : on meurt d'insolvabilité ($\NW < 0$), pas d'une règle d'âge.
+\item \textbf{Classes dynamiques, non démographiques} : le top décile n'est pas
+  une cohorte fondatrice ; il est presque entièrement renouvelé en 1000 pas ;
+  la corrélation âge--$\log\NW$ est faible. C'est le résultat le plus solide des
+  deux études.
+\item \textbf{Queue effective stable à long horizon} : exposant $\approx 2{,}7$
+  sans dérive sur 6000 pas (là où le WIP dérivait de 5,4 à 3,1).
+\item \textbf{Le triplet générateur} \{choc multiplicatif sans drift ;
+  extraction concave $\alpha\sqrt{w}$ $-$ dépréciation $\delta w$ ; plancher
+  $d_0$ + naissances Poisson\} suffit à produire tout cela. C'est un résultat
+  positif exploitable : un modèle nul Reed-like minimal, calibré, testé.
+\item \textbf{Protocole statistique corrigé} : MLE tronqués pour le corps,
+  LR Pareto/lognormale avec lognormale renormalisée à gauche, $x_{\min}$ commun
+  inter-fenêtres, bootstrap, jamais de pooling inter-seed. Acquis méthodologique
+  directement réutilisable.
+\end{enumerate}
+
+\section{Ce que M2 réfute (à ne pas ressusciter en M3)}
+
+\subsection{H1 --- le corps exponentiel de $\NW$ : réfuté}
+Fisk (log-logistique) gagne l'AIC du corps de $\NW$ sur les trois seeds de
+baseline et sur 35 cas de grille sur 36 ($\Delta$AIC de l'exponentielle :
+$+43$ à $+80$) ; lognormale sur revenu et $w$. Plus grave que la forme, le
+\emph{mécanisme} postulé est contredit : le drift mesuré du corps est
+\emph{ascendant} ($\E[\Delta\NW] \approx +4{,}15$/pas), incompatible avec
+l'image d'un équilibre de Boltzmann où un drift descendant vers le plancher
+serait équilibré par la diffusion. Le corps de M2 est un régime de
+\emph{transport} --- réinjecté en bas, absorbé aux bords --- pas un équilibre.
+La quasi-exponentialité visuelle ($\mathrm{med}/\mathrm{mean} \approx \ln 2$
+à $\sigma = 0{,}25$) est une coïncidence de forme propre à ce $\sigma$.
+
+\subsection{H2 --- stabilité de l'exposant par rétroaction SOC : sans support}
+La stabilité de la queue est réelle mais survit \emph{intégralement} à
+l'ablation du crédit : mêmes exposants, même absence de dérive, même
+renouvellement. Aucun maillon de la boucle SOC n'est observé : cascades
+$\approx$ Poisson étroit (max 21 faillites/pas), pas de corrélation
+concentration du crédit $\to$ faillites ($|r| < 0{,}11$), aucune transition en
+$k$. La thèse n'est pas réfutée dans l'absolu ; elle est \emph{sans objet dans
+le régime exploré} --- le phénomène qu'elle devait expliquer existe sans elle.
+
+\subsection{Prédiction « même exposant revenu / $\NW$ » : réfutée}
+$\alpha_Y \approx 4{,}1$--$4{,}7$ contre $\alpha_{\NW} \approx 2{,}5$--$3{,}0$,
+avec la relation mécanique $\alpha_Y \approx 2\alpha_w - 1$ : le revenu reste
+dominé par l'extraction $\sqrt{w}$ jusque dans le top décile. La
+financiarisation des hauts revenus (revenu dominé par les intérêts) ne se
+produit pas dans M2.
+
+\subsection{Queue de Pareto : compatible visuellement, jamais identifiée}
+Avec le LR corrigé (lognormale tronquée en MLE), la lognormale bat la Pareto
+dans 31 fenêtres sur 31. Limite symétrique à retenir : sur une Pareto pure, le
+test corrigé est quasi nul --- il est \emph{peu puissant} et ne peut pas
+« prouver » une Pareto, seulement rejeter (ou non) la lognormale. En M2 il ne
+la rejette jamais. Toute revendication de « queue de Pareto » en M3 devra donc
+s'appuyer sur un faisceau (stabilité par fenêtre et par seed à $x_{\min}$
+commun, comparaison multi-familles, prédiction hors échantillon), pas sur un
+seul test.
+
+\subsection{Robustesse « sans réglage fin » : partielle}
+La \emph{forme} est robuste dans la fenêtre de viabilité (insensible à
+$\varepsilon_0/w_0$ sur 0,05--0,5 et à $k$ sur 2--6 ; réponse monotone lisse à
+$\sigma$). Mais l'\emph{existence du régime} exige $\sigma$ dans une fenêtre
+étroite (facteur $<2$ : à $\sigma=0{,}15$ la mortalité s'éteint et la
+population diverge), et deux « conventions » se sont révélées porteuses (voir
+§\ref{sec:artefacts}). Conséquence pour M3 : vérifier tôt que la fenêtre de
+viabilité survit aux modifications structurelles, et déclarer honnêtement tout
+paramètre dont dépend l'existence du régime.
+
+\section{Pourquoi le crédit n'est pas causalement actif dans M2}
+\label{sec:credit}
+
+Le diagnostic mécanistique, décisif pour la conception de M3, tient en trois
+points.
+
+\begin{enumerate}[leftmargin=1.6em, itemsep=3pt]
+\item \textbf{Le crédit de M2 est comptablement presque neutre.} Un prêt y
+  déplace du capital réel $w$ (conservatif) et crée une paire créance/dette
+  nominale. Or $w$ productif est \emph{déjà} auto-suffisant : chaque entité
+  possède le canal $\alpha\sqrt{w}$ qui la ramène vers le point fixe. Le prêt
+  accélère marginalement la convergence de l'emprunteur mais ne donne accès à
+  aucun état inaccessible sans lui. Le système réel se comporte pareil avec ou
+  sans marché.
+\item \textbf{Les chocs i.i.d. étouffent les cascades.} Le risque de
+  portefeuille d'un créancier est moyenné par l'indépendance des chocs de ses
+  débiteurs ; les défauts corrélés nécessaires à une avalanche ne se produisent
+  pas. Les « cascades » observées sont des lots de faillites indépendantes du
+  même pas, pas des chaînes causales.
+\item \textbf{Une seule variable d'état réelle.} Sans distinction
+  liquidité/capital, il ne peut pas exister de défaut de liquidité d'une entité
+  solvable, ni de tension entre obligation nominale exigible et richesse réelle
+  illiquide --- précisément le canal par lequel le crédit déstabilise les
+  systèmes réels.
+\end{enumerate}
+
+C'est le cahier des charges en creux de M3 : séparer $L$ et $K$, rendre le
+crédit \emph{productif} (le prêt finance du $K$ que l'emprunteur n'aurait pas
+pu constituer seul à cette vitesse), rendre les intérêts exigibles \emph{en
+liquidité}, et tester des chocs corrélés. Chaque point correspond à une
+ablation pré-enregistrée (C, D/E, G) : si le crédit reste inerte même ainsi,
+ce sera une réfutation forte et propre, pas un accident de régime.
+
+\section{Erreurs et artefacts à ne pas reproduire}
+\label{sec:artefacts}
+
+\begin{enumerate}[leftmargin=1.6em, itemsep=3pt]
+\item \textbf{Identifier $\NW$ à la variable Boltzmannienne.} L'argument de
+  Yakovenko--Rosser (échanges additifs localement conservatifs $\to$ corps
+  exponentiel) porte sur la \emph{monnaie/liquidité}, pas sur la richesse
+  nette. $\NW$ agrège capital réel choqué multiplicativement, créances et
+  dettes nominales : rien n'y garantit des incréments additifs conservatifs.
+  M2 a testé l'hypothèse Boltzmann sur la mauvaise variable ; le corps Fisk
+  n'est donc pas une réfutation de Yakovenko--Rosser, mais d'une transposition
+  abusive. M3 introduit $L$ précisément pour poser la question à la bonne
+  variable --- et documente par variable la famille attendue et pourquoi.
+\item \textbf{LR Pareto/lognormale sans renormalisation de la troncature} :
+  le \code{tail\_test.py} historique concluait « Pareto, $p \approx 0$ » sur
+  des données lognormales pures ($R = +575$). Toute comparaison de familles
+  sur $x \ge x_{\min}$ doit se faire en MLE tronqué, sur le même domaine.
+\item \textbf{AIC du corps avec familles non tronquées} sur un corps tronqué
+  au quantile 95\,\% : biais anti-exponentiel ($\Delta$AIC $= 31$ contre une
+  exponentielle vraie, $n = 5000$). MLE tronqué obligatoire, et validation de
+  chaque estimateur sur données synthétiques \emph{avant} usage sur données
+  réelles.
+\item \textbf{Transfert prorata des créances en faillite} : croissance
+  combinatoire du carnet ($1244 \to 43\,977$ contrats entre $t=1000$ et $2000$
+  en baseline ; $12{,}4$ millions sur une case de grille). Correctif validé
+  par les deux réplications : fusion des contrats par paire
+  (prêteur, emprunteur) au taux moyen pondéré par le principal --- préserve
+  exactement $\NW$, créances/dettes, flux d'intérêts et prorata de faillite.
+  M3 l'adopte par défaut.
+\item \textbf{La moyenne géométrique des taux est constitutive, pas
+  conventionnelle} : en moyenne arithmétique le marché meurt (176 prêts en
+  2000 pas, tous mort-nés). Un choix classé « convention à figer » s'est révélé
+  condition d'existence du crédit. Leçon générale : tester les conventions par
+  ablation avant de les déclarer neutres.
+\item \textbf{Critère « mortalité instantanée du top décile » mal posé} : elle
+  est structurellement nulle (on ne meurt qu'insolvable, donc plus dans le
+  top). La mesure informative est le renouvellement entre fenêtres.
+\item \textbf{« Cascade » $\ne$ lot de faillites du même pas.} Les deux
+  réplications n'ont mesuré que des lots par pas, qui mélangent plusieurs
+  déclencheurs indépendants. M3 doit tracer les \emph{avalanches causales}
+  (qui entraîne qui, via quelles pertes de créances) pour que le diagnostic
+  SOC ait un sens.
+\end{enumerate}
+
+\section{Conséquences opérationnelles pour M3}
+
+\begin{itemize}[leftmargin=1.4em, itemsep=3pt]
+\item \textbf{M2 est le modèle nul.} L'ablation B (sans crédit) de M3 doit
+  retrouver le noyau Reed de M2 (population bornée, classes dynamiques, queue
+  effective stable) ; tout écart de B à M2 est un signal d'alerte sur
+  l'implémentation ou sur la calibration, à élucider avant d'interpréter A.
+\item \textbf{La charge de la preuve est inversée.} Après deux réplications
+  négatives, c'est à M3 d'exhiber un régime où le crédit produit un effet
+  \emph{distributionnel} détectable (au moins deux signatures majeures
+  modifiées par l'ablation B, critère pré-enregistré) --- pas seulement un
+  effet de niveau.
+\item \textbf{Préserver la fenêtre de viabilité démographique} : la séparation
+  $L$/$K$ modifie les flux qui alimentent le capital ; la calibration doit
+  vérifier tôt que la mortalité endogène et le régime quasi stationnaire de
+  population survivent, faute de quoi aucune comparaison distributionnelle
+  n'a de sens.
+\item \textbf{Ne conclure « Pareto » ou « exponentiel » que sur faisceau
+  d'indices}, avec les estimateurs corrigés, validés synthétiquement, sans
+  pooling inter-seed --- et rapporter les échecs avec le même relief que les
+  succès (livrable 05 dédié).
+\end{itemize}
+
+\end{document}

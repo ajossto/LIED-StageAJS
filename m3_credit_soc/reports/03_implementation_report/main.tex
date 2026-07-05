@@ -1,0 +1,204 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[french]{babel}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb}
+\usepackage[margin=2.6cm]{geometry}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true,linkcolor=blue!50!black}
+
+\newcommand{\NW}{\mathrm{NW}}
+\newcommand{\code}[1]{\texttt{#1}}
+
+\title{Rapport d'implémentation M3\\
+\large Livrable 03 du programme M3 (workspace \code{m3\_credit\_soc})}
+\author{Agent de recherche M3}
+\date{4 juillet 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Le modèle M3 spécifié dans le livrable 02 est implémenté dans
+\code{src/m3/} (11 modules, $\sim$1500 lignes), couvert par 50 tests
+(mécaniques, contrats et marché, faillites et avalanches causales,
+invariants I1--I9, propriété de réduction R1, estimateurs statistiques sur
+données synthétiques), tous verts. La propriété de réduction R1 --- M3 avec
+$s{=}1$, $c{=}0$, $L_0{=}0$ et crédit coupé reproduit \code{m2\_fable} bit à
+bit à seed égale --- est vérifiée exactement, ce qui ancre M3 sur le modèle
+nul M2 sans dérive d'implémentation. La calibration pré-enregistrée a figé
+$(s, c) = (0{,}75\,;\,0{,}10)$ ; la cellule provisoire $(0{,}75\,;\,0{,}05)$
+échoue au critère de régime --- résultat mécanistique en soi (le coussin de
+liquidité éteint la mortalité). Un bug d'observation non neutre (violation
+de I8 par mutation de \code{defaultdict}) a été détecté par les tests et
+corrigé.
+\end{abstract}
+
+\section{Architecture}
+
+\begin{center}
+\small
+\begin{tabular}{lp{9.6cm}}
+\toprule
+Module & Rôle \\
+\midrule
+\code{config.py} & \code{M3Config} gelée (dataclass \code{frozen}) ; toute
+variante expérimentale est un champ nommé ; assertions de domaine. \\
+\code{entities.py} & Population en structure de tableaux ($L$, $K$, vivante,
+naissance, secteur, flux du pas, rente E) ; ids jamais réutilisés. \\
+\code{contracts.py} & \code{LoanBook} : contrats nominaux perpétuels ;
+agrégats \code{claims}/\code{debts}/\code{due} maintenus incrémentalement
+(I2/I3) ; fusion par paire (\code{merge\_pairs}) au taux moyen pondéré ;
+\code{check\_consistency} de contrôle hors boucle. \\
+\code{production.py} & Choc multiplicatif (i.i.d. ou corrélé macro/sectoriel,
+chaque composante centrée à $-\mathrm{var}/2$), production--partage
+($K \mathrel{+}= sP$, $L \mathrel{+}= (1{-}s)P$), dépréciation et
+consommation. \\
+\code{market.py} & Marché local : liquidité prêtable
+$A = \max(0, L - \beta_L \cdot \mathrm{due})$, sélection assortative
+($\arg\max A$ / $\arg\min K$) ou aléatoire (ablation F), taux géométrique,
+cible $K^*(\rho)$, transfert $L_\ell \to K_b$ (ou $L_b$, ablation C). \\
+\code{bankruptcy.py} & Cascade au point fixe (I9) ; pertes de stock et de
+flux ; variantes D (indemnisation) et E (rente fantôme) ; arêtes causales de
+perte ; avalanches = composantes connexes du graphe de pertes entre faillies
+du même pas (union-find), profondeur = itération maximale, causes des
+racines (liquidité / insolvabilité / les deux). \\
+\code{simulation.py} & Boucle à 8 phases dans l'ordre pré-enregistré ;
+séries par pas (27 champs, dont bilan I4 : gain de choc, déprécié, consommé,
+détruit, injecté) ; instantanés individus + réseau ; RNG local
+\code{default\_rng(seed)} unique. \\
+\code{metrics.py} & Écriture/lecture des artefacts : \code{series.csv},
+\code{snap\_t*.npz}, \code{net\_t*.npz}, \code{avalanches.csv},
+\code{config.json}, \code{summary.json} (avec \code{wall\_seconds} pour le
+budget). \\
+\code{analysis.py} & Outillage statistique corrigé hérité de
+\code{m2\_fable} (MLE tronqués, LR renormalisé, $x_{\min}$ commun,
+bootstrap) + familles complètes (dont dPlN), Gini, HHI, parts du top,
+matrices de transition, AUC réseau$\to$défauts, distribution des tailles
+d'avalanches causales. \\
+\code{dpln.py} & Double Pareto-lognormale : log-pdf Normal-Laplace stable
+(\code{logcdf} + \code{logaddexp}), générateur, MLE multi-départs. \\
+\code{plots.py} & Figures générées depuis les fichiers de résultats
+uniquement. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Expériences sous \code{experiments/m3/} : \code{run\_calibration.py}
+(pré-enregistrée), \code{run\_baseline.py}, \code{run\_ablation.py} (B--J),
+\code{run\_grid.py}, \code{run\_long.py}, \code{run\_validation.py}
+(analyse d'un run $\to$ \code{validation.json}, jamais de pooling
+inter-seed), \code{aggregate\_results.py} (table comparative des signatures),
+\code{exp\_common.py} (exécution + comptabilité du budget 48 h).
+
+\section{Tests (50, tous verts)}
+
+\begin{itemize}[leftmargin=1.5em, itemsep=2pt]
+\item \textbf{Mécaniques} (8) : naissance et $\NW$ implicite, partage exact
+  de la production, absence de drift du choc (i.i.d., macro, sectoriel —
+  composante commune vérifiée à variance idiosyncratique nulle),
+  dépréciation/consommation exactes, non-dépréciation du nominal, mort.
+\item \textbf{Contrats et marché} (8) : agrégats incrémentaux, fusion par
+  paire (flux d'intérêts exactement préservé), I5, formules $q$, $r$,
+  $K^*(\rho)$ vérifiées contre l'implémentation, ablation C, tampon
+  $\beta_L$, marché aléatoire, \code{credit=False} inerte.
+\item \textbf{Faillites et cascades} (14) : service complet/partiel prorata,
+  défaut de liquidité d'une entité \emph{solvable} (cause « liquidity »),
+  pertes de stock et de flux, résidu en nature prorata/détruit, cascade à
+  deux niveaux (une avalanche, taille 2, profondeur 2, une racine), racines
+  indépendantes non agrégées, ablations D et E (rente versée au pas suivant,
+  éteinte à la mort), transfert/annulation des prêts de la faillie, aucun
+  contrat orphelin.
+\item \textbf{Invariants} (6) : I1 ; I4 --- bilan global vérifié pas à pas à
+  $10^{-6}$ relatif sur un run avec crédit ; I7 ; I8 strict (bit à bit) ;
+  I9 ; R1.
+\item \textbf{Estimateurs} (14) : chaque estimateur validé sur données
+  synthétiques à vérité connue avant tout usage réel --- dont le LR corrigé
+  ($R<0$ sur lognormale pure ; $|z|<2$ sur Pareto pure : test peu puissant,
+  documenté) et le MLE dPlN (recouvrement de $a$ et $b$).
+\end{itemize}
+
+\paragraph{La propriété de réduction R1, ancre anti-dérive.} M3 avec
+$s{=}1$, $c{=}0$, $L_0{=}0$, crédit coupé émet exactement la même séquence
+RNG et les mêmes opérations flottantes que \code{m2\_fable}
+(\code{credit=False}) : à $T{=}200$ et $T{=}300$, $\max_i |K_i - w_i| = 0.0$,
+vivantes et morts par pas identiques. Toute conclusion « B diffère de M2 »
+sera donc attribuable aux mécanismes nouveaux ($s<1$, $c>0$, $L_0>0$), pas à
+une divergence d'implémentation.
+
+\section{Bug détecté par les tests : observation non neutre (I8)}
+
+La version initiale de \code{snapshot()} lisait \code{book.claims[i]},
+\code{book.by\_borrower[i]}, etc. Or ces structures sont des
+\code{defaultdict} : l'accès par \code{[]} \emph{insère} une clé vide pour
+chaque vivante interrogée. La phase de service des intérêts itérant sur
+\code{book.by\_borrower.keys()} (ordre d'insertion), un run \emph{avec}
+instantanés servait les emprunteuses dans un autre ordre qu'un run
+\emph{sans} --- sommes flottantes réordonnées, divergence au dernier ulp dès
+$t{=}54$ (seed 9), potentiellement amplifiable par un seuil de faillite sur
+un run long. Correctif : accès en \code{.get()} (lecture pure) ; le test I8
+strict (identité bit à bit des séries) est rétabli et vert. Leçon
+générale consignée dans \code{NOTES.md} : toute fonction d'observation doit
+être en lecture pure ; sur un \code{defaultdict}, \code{[]} est une
+écriture.
+
+\section{Calibration pré-enregistrée : $(s, c)$ figés à $(0{,}75\,;\,0{,}10)$}
+
+Scan B (sans crédit) de $s \in \{0{,}5, 0{,}65, 0{,}75, 0{,}9\} \times
+c \in \{0{,}02, 0{,}05, 0{,}10\}$, $T{=}1500$, seed 0, critère du rapport 02
+§4. Résultat : \textbf{seule la colonne $c = 0{,}10$ est viable} (les quatre
+cellules ; croissance du dernier quart $\le 12\,\%$, morts/naissances
+$0{,}94$--$1{,}01$). À $c \le 0{,}05$, la population diverge
+(morts/naissances $0{,}34$--$0{,}44$, $N > 8000$ et croissant) : le stock
+stationnaire de liquidité $L^* \approx (1{-}s)\sqrt{K^*}/c$ forme un coussin
+au-dessus du plancher $d_0$ qui éteint la mortalité endogène. La cellule
+provisoire $(0{,}75\,;\,0{,}05)$ échoue donc ; la règle pré-enregistrée
+désigne $(0{,}75\,;\,0{,}10)$, figée dans \code{config.py} et non retouchée
+ensuite. Enseignement mécanistique (pour le rapport 06) : la mortalité de M2
+repose sur l'absence de tout actif stable amortisseur ; tout mécanisme
+ajoutant un stock sûr à $\NW$ referme la fenêtre démographique --- l'axe $c$
+de la grille est le levier de régime dominant, plus que $s$.
+
+\section{Limites numériques et performance}
+
+\begin{itemize}[leftmargin=1.5em, itemsep=2pt]
+\item Gardes : $q_{\min} = 10^{-9}$ (contrats), \code{w\_clamp} $= 10^{-12}$
+  (arrondi à zéro de $L$, $K$), \code{tol\_nw} $= 10^{-9}$ (faillite),
+  \code{pop\_max} $= 30\,000$ (arrêt, ne borne pas la dynamique),
+  plancher $10^{-9}$ dans les taux marginaux.
+\item \code{merge\_pairs} actif par défaut : carnet borné par le nombre de
+  paires actives (leçon M2 : le prorata pur explose combinatoirement).
+\item La rente fantôme (E) et l'indemnisation (D) sont des injections
+  \emph{délibérées}, mesurées dans la série (champ \code{injected}) et dans
+  le bilan I4.
+\item Coûts mesurés (1 cœur) : run B $T{=}1500$ : 10--30 s ; run A (crédit
+  actif) $T{=}600$, $N \approx 1100$ : 8 s. Boucles en listes Python comme
+  M2 (choix assumé : lisibilité et identité R1 plutôt que vectorisation).
+\item Suivi du budget 48 h : somme des \code{wall\_seconds} des
+  \code{summary.json} (\code{exp\_common.py}), journalisée dans
+  \code{NOTES.md}.
+\end{itemize}
+
+\section{Différences avec M2 (exhaustives)}
+
+(1) état $(L, K)$ au lieu de $w$ scalaire ; (2) production partagée
+$s$/$1{-}s$ au lieu d'entièrement retenue ; (3) consommation $cL$ (nouveau
+puits) ; (4) intérêts exigibles en liquidité seulement, service simultané au
+prorata par emprunteuse (M2 \code{fable} : ordre de création — convention
+codex adoptée, documentée) ; (5) prêt $L_\ell \to K_b$ au lieu de
+$w_\ell \to w_b$ ; (6) liquidité prêtable bornée par le tampon $\beta_L$ ;
+(7) résidu de faillite réparti en nature ($L$ et $K$ séparément) ;
+(8) défaut de liquidité distinct de l'insolvabilité, tracé par cause ;
+(9) avalanches causales (graphe de pertes) au lieu de lots par pas ;
+(10) chocs corrélables (G) ; (11) variantes D/E/F nouvelles ;
+(12) \code{merge\_pairs} par défaut (opt-in dans M2).
+Tout le reste (naissances Poisson, $d_0$, choc sans drift, extraction
+concave, dépréciation réelle, taux géométrique, cible $K^*(\rho)$,
+$k$-échantillonnage, cascade au point fixe, conventions de résidu) est
+conservé à l'identique --- garanti par R1.
+
+\end{document}

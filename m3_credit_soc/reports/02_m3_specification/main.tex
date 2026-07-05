@@ -1,0 +1,369 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[french]{babel}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true,linkcolor=blue!50!black}
+
+\newcommand{\NW}{\mathrm{NW}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\code}[1]{\texttt{#1}}
+
+\title{Spécification du modèle M3 : crédit productif, liquidité et fragilité
+nominale\\
+\large Livrable 02 du programme M3 (workspace \code{m3\_credit\_soc}) ---
+version pré-enregistrée}
+\author{Agent de recherche M3}
+\date{3 juillet 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+M3 étend le modèle nul démographique M2 en séparant la liquidité $L$ du
+capital productif $K$, en rendant le crédit \emph{productif} (le prêt convertit
+la liquidité du prêteur en capital de l'emprunteur) et les intérêts exigibles
+\emph{en liquidité seulement}. La question scientifique : cette asymétrie
+nominal/réel donne-t-elle enfin au crédit un effet distributionnel causal, voire
+une dynamique accumulation--relaxation, là où M2 n'en montrait aucun ? Ce
+document fixe, avant toute exécution : les variables, les équations, l'ordre
+exact d'un pas, les conventions comptables, les invariants, les paramètres et
+leurs valeurs, le protocole d'ablation A--J, et les critères d'acceptation.
+Toute déviation ultérieure sera documentée comme amendement, jamais réécrite.
+\end{abstract}
+
+\section{Principe de conception}
+
+Trois contraintes héritées du verdict M2 (livrable 01) :
+\begin{enumerate}[leftmargin=1.6em, itemsep=2pt]
+\item \textbf{Conserver le noyau Reed} : chocs multiplicatifs sans drift,
+  extraction concave, dépréciation réelle, plancher $d_0$, naissances Poisson,
+  population ouverte sans cohorte fondatrice. L'ablation B (sans crédit) doit
+  rester un modèle démographique viable, comparable à M2.
+\item \textbf{Donner au crédit un canal causal réel.} Dans M2, le prêt
+  déplaçait un capital qui savait déjà croître seul : neutralité de fait. Dans
+  M3, la production livre une part de son flux en liquidité \emph{stérile}
+  (elle ne produit rien et se consomme), et \textbf{le crédit est l'unique
+  canal de recyclage de la liquidité en capital productif entre entités}. Le
+  prêt a donc un effet réel : sans lui, une fraction $(1-s)$ du flux productif
+  sort définitivement de l'accumulation.
+\item \textbf{Créer la fragilité nominal/réel} : les intérêts sont dus en
+  liquidité ; le capital est illiquide (pas de conversion $K \to L$ hors
+  production). Une entité solvable ($\NW > 0$) mais illiquide peut faire
+  défaut. C'est le canal de déstabilisation absent de M2.
+\end{enumerate}
+
+Aucun mécanisme au-delà de ces trois points : pas de banques, pas de monnaie
+endogène, pas de prix. Deux paramètres nouveaux seulement, $s$ (part retenue de
+la production) et $c$ (taux de consommation de la liquidité), tous deux
+justifiés en §\ref{sec:justif}.
+
+\section{État d'une entité}
+
+Entité $i$ : identifiant (jamais réutilisé), date de naissance $t_i$,
+liquidité $L_i \ge 0$, capital productif $K_i \ge 0$, dette d'amorçage $d_0$
+(nominale, sans créancier, éteinte à la mort), contrats actifs. Agrégats tenus
+par le carnet : créances $C_i = \sum q$ (contrats où $i$ prête), dettes
+$D_i = \sum q$ (contrats où $i$ emprunte).
+\[
+\NW_i = L_i + K_i + C_i - D_i - d_0 .
+\]
+Flux enregistrés au pas courant : production $P_i = \alpha\sqrt{K_i}$
+(mesurée avant partage), intérêts reçus $\mathrm{II}_i$, intérêts payés
+$\mathrm{IO}_i$, revenu brut $Y_i = P_i + \mathrm{II}_i$, revenu net
+$Y^{\mathrm{net}}_i = Y_i - \mathrm{IO}_i$, indicateur de défaut de service.
+
+\textbf{Contrat de prêt} : $(\ell, b, q, r, t_c, \tau)$ --- prêteuse $\ell$,
+emprunteuse $b$, principal nominal $q$, taux $r$, date de création $t_c$, type
+$\tau \in \{\text{productif}, \text{liquidité}\}$. Nominal perpétuel : pas de
+remboursement du principal, service $rq$ par pas, ni principal ni taux ne se
+déprécient. Les contrats d'une même paire $(\ell, b)$ sont fusionnés au taux
+moyen pondéré par le principal (\code{merge\_pairs}, validé en M2 : préserve
+exactement $\NW$, créances/dettes, flux d'intérêts et prorata de faillite).
+
+\section{Séquence d'un pas (ordre fixé)}
+\label{sec:step}
+
+\begin{enumerate}[leftmargin=1.8em, itemsep=3pt]
+\item \textbf{Naissances.} $n_t \sim \mathrm{Poisson}(\lambda)$ ; chaque
+  nouveau-né reçoit $L = L_0$, $K = K_0$, dette d'amorçage $d_0$, aucun
+  contrat. $N(0) = 0$ : pas de cohorte fondatrice.
+\item \textbf{Choc multiplicatif sur le capital réel.}
+  $K_i \leftarrow K_i \, e^{\eta_i}$ avec, en baseline,
+  $\eta_i \sim \mathcal{N}(-\sigma^2/2, \sigma^2)$ i.i.d.
+  ($\E[e^{\eta}] = 1$ : pas de drift). Ni $L$, ni les contrats, ni $d_0$ ne
+  sont choqués. Variante G (chocs corrélés) :
+  $\eta_i = \eta^{\mathrm{m}} + \eta^{\mathrm{s}(i)} + \xi_i$, composantes
+  normales indépendantes de variances $\rho_{\mathrm{m}}\sigma^2$,
+  $\rho_{\mathrm{s}}\sigma^2$, $(1-\rho_{\mathrm{m}}-\rho_{\mathrm{s}})\sigma^2$,
+  chacune centrée à $-\tfrac{1}{2}(\text{sa variance})$ ; le secteur
+  $\mathrm{s}(i)$ est tiré uniformément dans $\{1,\dots,S\}$ à la naissance.
+\item \textbf{Production et partage.} $P_i = \alpha\sqrt{K_i}$ ;
+  $K_i \mathrel{+}= s\,P_i$ (part retenue, investie en nature) ;
+  $L_i \mathrel{+}= (1-s)\,P_i$ (part liquide).
+\item \textbf{Service des intérêts (en liquidité seulement).} Pour chaque
+  emprunteuse $b$ : montant dû $\Delta_b = \sum_{j \ni b} r_j q_j$. Si
+  $L_b \ge \Delta_b$ : paiement intégral, chaque prêteuse reçoit $r_j q_j$
+  dans sa liquidité. Sinon : \emph{paiement partiel simultané au prorata} ---
+  chaque contrat $j$ reçoit $L_b \, r_j q_j / \Delta_b$, $L_b \leftarrow 0$,
+  et $b$ est marquée \textbf{en défaut de service} (même si $\NW_b > 0$ :
+  défaut de liquidité). Convention prorata simultané (réplication codex) :
+  aucune priorité par ordre de création. Transferts conservatifs.
+\item \textbf{Dépréciation réelle et consommation.}
+  $K_i \leftarrow (1-\delta) K_i$ ; $L_i \leftarrow (1-c) L_i$ (consommation,
+  détruite). Dettes, créances et $d_0$ nominales : inchangées --- c'est
+  l'asymétrie nominal/réel, source de fragilité.
+\item \textbf{Marché du crédit (rencontres locales).} Pool : vivantes non en
+  défaut au pas courant. $\lfloor N_{\mathrm{pool}}/k \rfloor$ rounds ; par
+  round, échantillon uniforme sans remise de $k$ entités.
+  Liquidité prêtable : $A_i = \max(0,\, L_i - \beta_L \Delta_i)$ où $\Delta_i$
+  est le service dû par $i$ au prochain pas (prudence minimale : on ne prête
+  pas sa trésorerie de service). Prêteuse $\ell$ : $\arg\max A$ dans
+  l'échantillon ; emprunteuse $b$ : $\arg\min K$ (rendement marginal
+  $\alpha/(2\sqrt{K})$ maximal). Conditions : $\ell \ne b$, $A_\ell > 0$,
+  $K_\ell > K_b$ (gain à l'échange). Taux marginaux
+  $r_x = \alpha / (2\sqrt{\max(K_x, 10^{-9})})$ ; taux du contrat
+  $r = \sqrt{r_\ell r_b}$ (moyenne géométrique, constitutive d'après M2) ;
+  coût effectif $\rho = r + \delta$ ; cible
+  $K^*(\rho) = (\alpha/(2\rho))^2$ ; volume
+  $q = \min\!\big(A_\ell,\; \max(0, K^*(\rho) - K_b)\big)$, abandon si
+  $q < q_{\min}$. Exécution : $L_\ell \mathrel{-}= q$ ;
+  \textbf{$K_b \mathrel{+}= q$} (crédit productif, baseline) ou
+  $L_b \mathrel{+}= q$ (ablation C) ; création du contrat
+  $(\ell, b, q, r, t, \tau)$. Un prêt crée donc simultanément : un gain
+  productif réel chez $b$, une obligation nominale persistante $rq$/pas, et
+  une exposition risquée $q$ chez $\ell$.
+\item \textbf{Faillites en cascade.} Critère d'entrée : défaut de service au
+  pas courant \emph{ou} $\NW < -\mathrm{tol}$. Résolution itérée jusqu'à
+  stabilité, entités traitées par identifiant croissant au sein d'une
+  itération. À la faillite de $i$ :
+  \begin{enumerate}[leftmargin=1.4em, itemsep=1pt]
+  \item contrats où $i$ est \emph{emprunteuse} : annulés ; chaque prêteuse
+    perd sa créance (perte de stock) \emph{et} le flux $rq$ futur (perte de
+    flux) ; la perte est enregistrée comme arête causale $i \to \ell$ de
+    poids $q$ ;
+  \item contrats où $i$ est \emph{prêteuse} : transférés aux créancières
+    contractuelles de $i$ au prorata de leurs créances (règle M2, bornée par
+    \code{merge\_pairs}) ; part vers l'emprunteuse du contrat lui-même ou vers
+    une morte : annulée ; part $< q_{\min}$ : abandonnée ;
+  \item actifs résiduels : $L_i$ et $K_i$ répartis au prorata aux créancières
+    contractuelles vivantes ($L$ en liquidité, $K$ en capital --- en nature) ;
+    sans créancière vivante : détruits ; taux de recouvrement enregistré ;
+  \item $d_0$ éteinte (détenue par personne).
+  \end{enumerate}
+  \textbf{Avalanche causale} : toute faillite déclenchée à l'itération
+  $m \ge 2$ est rattachée par les arêtes de perte reçues pendant la cascade ;
+  une avalanche est une composante faiblement connexe du graphe de pertes
+  restreint aux faillies du pas ; on enregistre taille, profondeur (itération
+  maximale), nombre de racines, et cause initiale de chaque racine (défaut de
+  liquidité vs insolvabilité). Les lots de racines indépendantes ne sont
+  \emph{pas} agrégés en une seule « cascade » (correction du défaut de mesure
+  de M2).
+\item \textbf{Mesure.} Séries par pas, instantanés individuels et réseau aux
+  dates d'échantillonnage (sans effet sur la trajectoire), journal des
+  avalanches et des pertes.
+\end{enumerate}
+
+\section{Justification des choix constitutifs}
+\label{sec:justif}
+
+\paragraph{Pourquoi le partage $s$ plutôt qu'une décision d'investissement ?}
+Si les entités pouvaient convertir librement $L \to K$, le crédit redeviendrait
+neutre (chacun s'autofinance, comme dans M2 où c'était implicite) et l'ablation
+C serait vidée de sens (la liquidité empruntée serait investie au pas suivant).
+Le partage exogène $s$ est la façon la plus économe de créer une liquidité qui
+existe vraiment \emph{et} un rôle réel pour le crédit. Cas limite contrôlé :
+$s = 1$, $c = 0$, $L_0 = 0$, crédit coupé $\Rightarrow$ M3 se réduit
+\emph{exactement} à M2 sans crédit (propriété de réduction R1, testée
+automatiquement).
+
+\paragraph{Pourquoi la consommation $c L$ ?} Sans fuite sur $L$, toute
+créancière nette accumule de la liquidité sans borne : le haut de la
+distribution deviendrait une cohorte immortelle de thésauriseuses, détruisant
+le résultat anti-cohorte que M2 a établi et que M3 doit conserver. La fuite
+proportionnelle est l'analogue exact de $\delta$ pour le réel : elle donne à
+$L$ une dynamique stationnaire (afflux $(1-s)P$ + intérêts nets, fuite $cL$)
+sans introduire de seuil ni de décision. Les joules consommés sont détruits,
+comme ceux de la dépréciation.
+
+\paragraph{Pourquoi l'illiquidité stricte de $K$ ?} La conversion $K \to L$
+(vente d'actifs) supprimerait le défaut de liquidité et réduirait la faillite
+au seul critère $\NW < 0$, déjà exploré par M2. L'irréversibilité est la
+version minimale de l'illiquidité ; ses effets sont mesurables (défauts
+d'entités solvables, comptés séparément).
+
+\paragraph{Statut de $s$ et $c$.} Deux paramètres nouveaux, donc deux risques
+de réglage fin. Traitement pré-enregistré : (i) la baseline est choisie par une
+calibration courte sur le critère « régime démographique de M2 préservé dans
+l'ablation B » (population quasi stationnaire à $T = 2000$, mortalité endogène
+active, $0{,}5 \le \text{morts/naissances} \le 1{,}05$ sur le dernier quart),
+dans les plages $s \in [0{,}5, 0{,}9]$, $c \in [0{,}02, 0{,}10]$ ; (ii) la
+grille de validation balaie $s$ et $c$ autour de la baseline ; (iii) toute
+conclusion qui ne tient que dans une sous-fenêtre étroite de $(s, c)$ est
+rapportée comme telle dans le livrable 05.
+
+\section{Variables d'analyse et attendus par cadre théorique}
+
+\begin{itemize}[leftmargin=1.4em, itemsep=2pt]
+\item \textbf{$L$ (liquidité)} : variable Boltzmann--Gibbs \emph{candidate} :
+  échanges additifs localement conservatifs (intérêts, prêts), mais injection
+  $(1-s)P$ et fuite $cL$ non conservatives. Familles testées sur le corps :
+  exponentielle, gamma, lognormale, Fisk (MLE tronqués). L'attendu théorique
+  honnête est plutôt gamma (injection--fuite) que exponentielle pure ; le
+  verdict est laissé aux données.
+\item \textbf{$Y$ (revenu)} : variable Reed. Décomposé en $P$, intérêts reçus,
+  brut, net. Familles : lognormale, double Pareto-lognormale (dPlN), Fisk,
+  gamma, Pareto en queue. Question financiarisation : la part des intérêts
+  dans $Y$ du top 1\,\% / top 10\,\%.
+\item \textbf{$\NW$} : aucune famille présupposée (leçon M2 : ne pas
+  identifier $\NW$ à la variable Boltzmannienne). Familles : exponentielle,
+  gamma, lognormale, Fisk, Pareto tronquée au-dessus de $x_{\min}$, dPlN.
+\item \textbf{$K$} : variable mécanistique (point fixe déterministe
+  $K^\dagger = (s(1-\delta)\alpha/\delta)^2$, soit $\approx 203$ pour
+  $s = 0{,}75$) ; on teste si le crédit la déforme (comparaison A/B/C), sans
+  cible théorique imposée.
+\end{itemize}
+
+\section{Paramètres (baseline pré-enregistrée)}
+
+\begin{center}
+\begin{tabular}{llll}
+\toprule
+Param. & Valeur & Rôle & Statut \\
+\midrule
+$\alpha$ & 1 & unité de flux & convention, non réglé \\
+$\delta$ & 0,05 & dépréciation = horloge & hérité M2 \\
+$\lambda$ & 10 & naissances Poisson & hérité M2 ; ablation J \\
+$k$ & 6 & taille d'échantillon marché & hérité M2 ; grille \\
+$\sigma$ & 0,25 & choc multiplicatif & hérité M2 ; grille + G \\
+$w_0 = L_0 + K_0$ & 30 & dotation totale & hérité M2 \\
+$L_0$ & 5 & dotation liquide & nouveau ; grille \\
+$d_0$ & 28 & plancher d'absorption & hérité M2 ; ablation H \\
+$s$ & 0,75* & part retenue de la production & nouveau ; calibré puis grille \\
+$c$ & 0,05* & consommation de $L$ & nouveau ; calibré puis grille \\
+$\beta_L$ & 1 & tampon de service avant prêt & convention prudentielle \\
+taux & géom. & moyenne des taux marginaux & constitutif (M2) \\
+\code{merge\_pairs} & actif & fusion par paire & correctif validé (M2) \\
+tol, $q_{\min}$ & $10^{-9}$ & gardes numériques & hérité M2 \\
+$T$ & 2000 & horizon standard & runs longs à part \\
+\bottomrule
+\end{tabular}
+\end{center}
+\noindent *Valeurs provisoires ; fixées définitivement par la calibration
+pré-enregistrée (§\ref{sec:justif}) \emph{avant} la baseline multi-seed, et
+jamais retouchées ensuite.
+
+\section{Invariants et tests}
+
+\begin{itemize}[leftmargin=1.4em, itemsep=2pt]
+\item \textbf{I1} : $L_i \ge 0$, $K_i \ge 0$ pour toute vivante, à toute phase.
+\item \textbf{I2/I3} : agrégats $C_i$, $D_i$ tenus incrémentalement par le
+  carnet, reconstruction de contrôle hors boucle uniquement.
+\item \textbf{I4 (bilan global exact)} : à chaque pas,
+  $\Delta(\Sigma L + \Sigma K) = n_t (L_0 + K_0) + \Sigma (\text{chocs})
+  + \Sigma P - \delta \Sigma K^{\mathrm{pre}} - c \Sigma L^{\mathrm{pre}}
+  - \text{résidus détruits}$ ; transferts (intérêts, prêts, recouvrements)
+  strictement conservatifs.
+\item \textbf{I5} : $\sum_i C_i = \sum_i D_i$ (hors $d_0$).
+\item \textbf{I6} : aucun contrat impliquant une morte ; aucun auto-prêt ;
+  aucun contrat orphelin après cascade.
+\item \textbf{I7} : reproductibilité bit à bit par seed.
+\item \textbf{I8} : la cadence des instantanés n'affecte pas la trajectoire.
+\item \textbf{I9} : toute cascade atteint un point fixe en $\le N + 1$
+  itérations.
+\item \textbf{R1 (réduction à M2)} : $s = 1$, $c = 0$, $L_0 = 0$, crédit coupé
+  $\Rightarrow$ trajectoire identique à \code{m2\_fable} (\code{credit=False})
+  à seed égale, pas à pas.
+\end{itemize}
+Tests minimaux avant tout run long : mécaniques individuelles (naissance,
+comptes, production/partage, choc sans drift en moyenne, dépréciation,
+consommation, non-dépréciation du nominal) ; cycle de vie d'un contrat
+(création productive vs liquidité, conservation, service complet/partiel
+prorata, défaut de liquidité d'une entité solvable) ; faillite et cascade
+(perte de stock, perte de flux, recouvrement en nature, cascade à deux
+niveaux, avalanche causale vs racines indépendantes, fusion exacte, pas
+d'orphelin) ; invariants I1--I9 et R1 ; estimateurs statistiques
+(exponentielle, gamma, lognormale, Fisk, Pareto, dPlN) sur données
+synthétiques avec vérité connue.
+
+\section{Protocole d'ablation pré-enregistré}
+
+Toutes les ablations partagent la configuration baseline calibrée, seeds
+$\{0, 1, 2\}$ minimum, $T = 2000$ minimum (B : mêmes seeds et horizon que A).
+\begin{description}[leftmargin=1.8em, itemsep=2pt]
+\item[A.] M3 complet (baseline).
+\item[B.] \code{credit=False} --- le noyau Reed/démographique seul. Ablation
+  décisive : engagement causal en §\ref{sec:accept}.
+\item[C.] Crédit non productif : $q$ versé en $L_b$ au lieu de $K_b$ ---
+  isole l'effet productif du canal comptable.
+\item[D.] Pertes de créances désactivées : à la faillite de l'emprunteuse,
+  chaque prêteuse est indemnisée de $q$ en liquidité (injection, non
+  conservatif, marqué comme tel) --- teste si les cascades naissent de la
+  perte de stock.
+\item[E.] Perte de stock maintenue, flux futur maintenu : la créance est
+  perdue mais la prêteuse continue de recevoir $rq$ par pas (injection
+  « rente fantôme ») --- sépare perte de stock et perte de revenu.
+\item[F.] Topologie randomisée : dans chaque round de marché, prêteuse et
+  emprunteuse tirées uniformément dans l'échantillon (sous les mêmes
+  conditions de faisabilité), $q$ calculé identiquement --- teste si la
+  topologie compte au-delà du volume ; comparabilité des bilans agrégés
+  vérifiée ex post et rapportée.
+\item[G.] Chocs corrélés : G1 macro $\rho_{\mathrm{m}} \in \{0{,}25, 0{,}5\}$ ;
+  G2 sectoriel $S = 5$, $\rho_{\mathrm{s}} = 0{,}5$ --- lève l'étouffement
+  des cascades par la diversification i.i.d.
+\item[H.] $d_0 = 0$ (dotations inchangées) --- nécessité du plancher
+  d'absorption.
+\item[I.] Sans renouvellement : $\lambda = 0$, cohorte initiale
+  $N_0 = 1000$ à $t = 0$ --- ce qui subsiste sans mécanisme démographique.
+\item[J.] $\lambda \in \{3, 30\}$ --- extensivité et dépendance d'échelle.
+\end{description}
+
+\section{Mesures par run}
+
+Séries : $N$, $\Sigma L$, $\Sigma K$, $\Sigma \NW$, production, revenu,
+intérêts payés/reçus, prêts actifs et nouveaux, volume, défauts par cause
+(liquidité vs insolvabilité, initiaux vs descendants), morts, avalanches
+(taille, profondeur, racines), pertes de créances, taux de recouvrement,
+Gini($L, K, \NW, Y$), HHI des créances, parts top 1\,\%/10\,\%,
+itérations de cascade. Instantanés : vecteurs individuels ($L$, $K$, $C$,
+$D$, $\NW$, $P$, intérêts, âge, degrés) et liste d'arêtes du réseau.
+Diagnostics : âge vs $\log$ des variables, renouvellement du top décile,
+matrices de transition par quantile, centralité/exposition $\to$ défauts
+futurs (pouvoir prédictif du réseau), corrélation
+concentration $\to$ faillites.
+
+\section{Critères d'acceptation pré-enregistrés}
+\label{sec:accept}
+
+\begin{description}[leftmargin=1.8em, itemsep=3pt]
+\item[Crédit causal.] L'ablation B modifie au moins \textbf{deux} signatures
+  majeures parmi : distribution de $Y$ (famille ou exposant hors IC
+  bootstrap), de $L$, de $\NW$, de $K$ ; mortalité ; population
+  stationnaire ; renouvellement du top ; concentration (Gini/parts) ;
+  distribution des tailles d'avalanches ; pouvoir prédictif
+  réseau $\to$ défauts. Sinon : M3 reste démographique, la SOC n'est pas
+  soutenue, et cela sera rapporté tel quel.
+\item[Réseau.] F diffère de A sur au moins une signature ; et/ou les
+  centralités/expositions prédisent les défauts futurs mieux que le hasard
+  (AUC $> 0{,}6$ hors échantillon temporel).
+\item[SOC.] Dynamique accumulation--relaxation visible (montée de
+  concentration/fragilité avant les grandes avalanches) ; distribution des
+  tailles d'avalanches \emph{causales} à queue non triviale (non Poisson) ;
+  zone de paramètres où ces signatures tiennent sans réglage fin (robustesse
+  sur la grille $\sigma, k, \lambda, d_0, s, c$).
+\item[Par variable.] Réponse explicite : famille gagnante (AIC/BIC en MLE
+  tronqué), stabilité par seed et par fenêtre à $x_{\min}$ commun, origine
+  mécanistique (comparaison A/B/C/G) --- y compris si la réponse est « aucune
+  famille simple » ou « artefact ».
+\end{description}
+Budget de calcul total : 48 h de simulation, allocation décidée après un run
+de calibration, journalisée dans \code{NOTES.md} ; si la puissance
+statistique doit être réduite, cela sera dit dans le livrable 05.
+
+\end{document}

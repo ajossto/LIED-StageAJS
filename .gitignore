@@ -20,3 +20,8 @@ Untitled.ipynb
 
 # Données simulation lab (regénérables)
 simulation_lab_data/
+
+# M3 : artefacts LaTeX supplémentaires et résultats bruts (12 Go, régénérables par seed)
+*.fls
+*.fdb_latexmk
+m3_credit_soc/experiments/m3/results/
