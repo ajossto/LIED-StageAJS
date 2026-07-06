@@ -29,6 +29,13 @@ class M3Config:
 
     # --- variantes nommées (ablations A-J du rapport 02) ---
     credit: bool = True                  # B : False = sans marché
+    # Objectif de l'emprunteuse (mini-protocole X1, post-M3) :
+    # "wealth" : cible K*(r+delta) — richesse soutenable (baseline M3) ;
+    # "income" : cible K*(r) — maximisation myope du revenu net (la
+    # dépréciation érode la richesse, pas le revenu). Avec le taux en
+    # moyenne géométrique, K*(r) = sqrt(K_l * K_b) : égalisation des
+    # capitaux par le crédit, levier et service de dette accrus.
+    objective: str = "wealth"            # "wealth" | "income"
     loan_target: str = "K"               # "K" (productif) | "L" (ablation C)
     claim_loss: str = "on"               # "on" | "compensated" (ablation D)
     flow_loss: str = "on"                # "on" | "annuity" (ablation E)
@@ -67,6 +74,7 @@ class M3Config:
         assert self.market_selection in ("assortative", "random", "random_lender")
         assert 0.0 <= self.shock_rho_macro + self.shock_rho_sector <= 1.0
         assert self.rate_rule in ("geom", "arith")
+        assert self.objective in ("wealth", "income")
         assert self.fail_lender_loans in ("transfer", "cancel")
         assert self.fail_residual in ("prorata", "destroy")
 

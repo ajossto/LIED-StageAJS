@@ -112,6 +112,30 @@ def test_market_productive():
     assert book.check_consistency(pop.alive) == []
 
 
+def test_market_income_objective():
+    """Objectif « revenu » (X1) : rho = r sans delta, donc cible
+    K*(r) = (alpha/2r)^2 = sqrt(K_l * K_b) (taux en moyenne géométrique)."""
+    cfg = M3Config(k=2, objective="income")
+    pop = _two_agent_setup()
+    book = LoanBook()
+    rng = np.random.default_rng(0)
+    n_new, volume = run_market(pop, book, cfg, rng)
+    assert n_new == 1
+    r_l = cfg.alpha / (2.0 * math.sqrt(50.0))
+    r_b = cfg.alpha / (2.0 * math.sqrt(1.0))
+    r_exp = math.sqrt(r_l * r_b)
+    k_star = (cfg.alpha / (2.0 * r_exp)) ** 2
+    # identité analytique : K*(r) == sqrt(K_l * K_b)
+    assert abs(k_star - math.sqrt(50.0 * 1.0)) < 1e-9
+    q_exp = min(100.0, max(0.0, k_star - 1.0))
+    assert abs(volume - q_exp) < 1e-12
+    assert abs(pop.K[1] - (1.0 + q_exp)) < 1e-12
+    # la cible revenu est strictement plus grande que la cible richesse
+    k_star_wealth = (cfg.alpha / (2.0 * (r_exp + cfg.delta))) ** 2
+    assert k_star > k_star_wealth
+    assert book.check_consistency(pop.alive) == []
+
+
 def test_loan_target_L():
     """Ablation C : q va dans L_borrower, K_borrower inchangé."""
     cfg = M3Config(k=2, loan_target="L")

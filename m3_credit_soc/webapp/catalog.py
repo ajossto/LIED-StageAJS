@@ -152,6 +152,27 @@ GROUPS = [
         pattern=r"^grid_",
     ),
     dict(
+        id="x1",
+        title="X1. Règle de revenu — l'entité maximise son revenu net "
+              "(protocole dédié post-M3)",
+        question="Que devient le système si l'emprunteuse maximise son revenu "
+                 "net (cible K*(r), soit √(K_prêteuse·K_emprunteuse)) au lieu "
+                 "de viser la taille optimale K*(r+δ) ? La sur-accumulation "
+                 "myope réveille-t-elle le canal de fragilité nominale ?",
+        verdict="La règle de revenu (cible √(K_l·K_b) = égalisation des "
+                "capitaux par le crédit) transforme le régime : service de la "
+                "dette 6-14 % de la production (vs 1,5 %), défauts de "
+                "liquidité SYSTÉMATIQUES (jusqu'à 24 % des faillites à "
+                "s=0,9), espérance de vie ÷8, population ~150, Gini(NW) "
+                "0,62-0,69 (vs 0,56), intérêts = 9-22 % du revenu du top 1 %. "
+                "Le crédit devient distributionnellement ACTIF : la "
+                "neutralité conclue par M2/M3 est conditionnelle à la règle "
+                "comportementale. Toujours aucune SOC (avalanches "
+                "sous-Poisson partout). Ablation sans crédit ≡ B.",
+        report="07 (note dédiée)",
+        pattern=r"^x1_",
+    ),
+    dict(
         id="longs",
         title="Runs longs (T = 20 000, A et B)",
         question="La queue est-elle stable à long horizon ? Dérive-t-elle "
@@ -167,6 +188,7 @@ GROUPS = [
 # Champs de config qui diffèrent de la baseline → affichés comme « variante »
 _BASELINE_KEYS = dict(credit=True, loan_target="K", claim_loss="on",
                       flow_loss="on", market_selection="assortative",
+                      objective="wealth",
                       shock_rho_macro=0.0, shock_rho_sector=0.0, n_init=0,
                       lam=10.0, d0=28.0, s=0.75, c=0.10, sigma=0.25, k=6,
                       T=2000)

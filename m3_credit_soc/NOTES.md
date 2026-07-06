@@ -264,6 +264,28 @@ et la sur-dispersion des avalanches suit ρ_s continûment sans transition.**
 - Défauts de liquidité : toujours 0 dans F2/G2b/G2c (intérêts ≤ 1,1 % de la
   production partout).
 
+### 2026-07-06 — Mini-protocole X1 (règle de revenu) : la neutralité distributionnelle du crédit est CONDITIONNELLE à la règle comportementale
+
+**Résumé : remplacer la cible K*(r+δ) par K*(r) — maximisation myope du revenu
+net, un seul champ de config — suffit à rendre le crédit distributionnellement
+actif : Gini(NW) 0,62-0,69 (vs 0,56 pour A ET B), intérêts = 9-22 % du revenu
+du top 1 %, défauts de liquidité systématiques (24 % des faillites à s=0,9),
+service de dette 6-14 % de la production, espérance de vie ÷8. Toujours AUCUNE
+SOC (avalanches sous-Poisson, var/mean ≤ 0,11, dans les 6 cellules).**
+
+Résultat analytique : avec le taux géométrique, K*(r) = √(K_l·K_b) — la règle
+de revenu fait du crédit une dynamique d'égalisation des capitaux (levier
+mécaniquement démultiplié). Testé unitairement (51 tests).
+À σ=0,20 (divergent sous la règle richesse), X1 est borné : la mortalité par
+sur-levier remplace la mortalité par chocs et ÉLARGIT la fenêtre du régime.
+Réserves : populations ~150 → familles de corps non identifiables (lognorm/
+gamma/Fisk alternent), α à IC larges ; verdicts fermes = Gini, CCDF,
+financiarisation, canaux de mortalité. Protocole défini avant exécution
+(run_income_protocol.py) mais critères non pré-enregistrés — descriptif.
+Ablation sans crédit de X1 ≡ B exactement (objective inerte sans marché).
+Note LaTeX : reports/07_income_rule. Piste M4 consolidée : règle de revenu
+× plancher endogène (H) = le régime à haut levier pour le test SOC final.
+
 ### 2026-07-05 — H (d0=0) seed 0 complète : le plancher d'absorption peut être ENDOGÈNE — découverte positive majeure
 
 **Résumé : sans d0, le système se borne quand même (pop ≈ 5 570

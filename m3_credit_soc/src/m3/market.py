@@ -71,7 +71,9 @@ def run_market(pop, book, cfg, rng):
             r = math.sqrt(r_l * r_b)
         else:
             r = 0.5 * (r_l + r_b)
-        rho = r + delta
+        # coût effectif : r+delta (objectif richesse, baseline M3) ou r seul
+        # (objectif revenu, X1 — la dépréciation n'ampute pas le revenu)
+        rho = r + delta if cfg.objective == "wealth" else r
         k_star = (alpha / (2.0 * rho)) ** 2
         q = min(a_l, max(0.0, k_star - K[borrower]))
         if q < cfg.q_min:
