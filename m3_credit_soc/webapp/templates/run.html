@@ -4,7 +4,11 @@
 <meta charset="utf-8">
 <title>M3 — détail du run</title>
 <link rel="stylesheet" href="/static/style.css">
-<script src="https://cdn.plot.ly/plotly-2.27.0.min.js" charset="utf-8"></script>
+<style>
+.figure-bloc { margin: .6rem 0 1.2rem 0; }
+.figure-bloc img { width: 100%; height: auto; border: 1px solid var(--bord);
+                   border-radius: 6px; background: #fff; }
+</style>
 </head>
 <body>
 <div id="retour"><a href="/">← Retour à l'index du protocole</a></div>
@@ -13,62 +17,14 @@
 const runId = new URLSearchParams(location.search).get("id");
 const fmt = (x, d = 1) => x == null ? "—" :
   (typeof x === "number" && !Number.isInteger(x) ? x.toFixed(d) : x.toLocaleString("fr-FR"));
-const M = {t: 40, r: 12, b: 30, l: 55};
-const LAYOUT = {margin: M, font: {size: 11}, showlegend: true,
-                legend: {orientation: "h", y: -0.18, yanchor: "top"}};
 
-function plot(div, traces, layout) {
-  Plotly.newPlot(div, traces, Object.assign({}, LAYOUT, layout),
-                 {displayModeBar: false, responsive: true});
-}
-
-function seriesPlots(s) {
-  const t = s.data.t;
-  const tr = (col, name, extra) => Object.assign(
-    {x: t, y: s.data[col], name: name, mode: "lines", line: {width: 1.2}}, extra);
-  plot("p-pop", [tr("pop", "population"), tr("births", "naissances/pas", {yaxis: "y2", line: {width: .6}}),
-                 tr("deaths", "morts/pas", {yaxis: "y2", line: {width: .6}})],
-       {title: "Population et flux démographiques",
-        yaxis2: {overlaying: "y", side: "right", rangemode: "tozero"}});
-  plot("p-stocks", [tr("L_tot", "L total"), tr("K_tot", "K total"), tr("nw_tot", "NW total")],
-       {title: "Stocks réels et richesse nette"});
-  plot("p-credit", [tr("n_loans", "contrats actifs"),
-                    tr("loan_volume", "volume prêté/pas", {yaxis: "y2", line: {width: .6}}),
-                    tr("interest_paid", "intérêts payés/pas", {yaxis: "y2", line: {width: .6}})],
-       {title: "Marché du crédit",
-        yaxis2: {overlaying: "y", side: "right", rangemode: "tozero"}});
-  plot("p-defauts", [tr("roots_insolvency", "racines insolvabilité", {line: {width: .6}}),
-                     tr("roots_liquidity", "racines défaut de liquidité", {line: {width: .8}}),
-                     tr("max_avalanche", "avalanche max du pas", {yaxis: "y2", line: {width: .6}})],
-       {title: "Faillites par cause et avalanches",
-        yaxis2: {overlaying: "y", side: "right", rangemode: "tozero"}});
-}
-
-function ccdfPlot(dist) {
-  const noms = {nw: "NW", L: "L (liquidité)", K: "K (capital)", income: "revenu"};
-  const traces = Object.entries(dist.ccdf)
-    .filter(([_, c]) => c.x.length)
-    .map(([v, c]) => ({x: c.x, y: c.y, name: `${noms[v] || v} (n=${c.n})`,
-                       mode: "lines", line: {width: 1.4}}));
-  plot("p-ccdf", traces,
-       {title: `Distributions au dernier instantané (t = ${dist.t}, ${dist.n_alive} vivantes) — CCDF log-log`,
-        xaxis: {type: "log", title: "x"}, yaxis: {type: "log", title: "P(X > x)"}});
-}
-
-function avalanchePlot(av) {
-  if (!av.sizes) { document.getElementById("carte-aval").hidden = true; return; }
-  plot("p-aval", [{x: av.sizes, y: av.counts, mode: "markers", name: "occurrences"}],
-       {title: `Tailles d'avalanches causales (t ≥ ${av.t_min})`,
-        xaxis: {type: "log", title: "taille"}, yaxis: {type: "log", title: "nombre"},
-        showlegend: false});
-  document.getElementById("aval-stats").innerHTML =
-    `<span><b>${fmt(av.n)}</b> avalanches</span>
-     <span>moyenne <b>${fmt(av.mean, 3)}</b></span>
-     <span>max <b>${fmt(av.max)}</b></span>
-     <span>var/moyenne <b>${fmt(av.var_over_mean, 2)}</b>
-       <span class="note">(1 = Poisson ; &lt;1 = sous-dispersé)</span></span>
-     <span>multi-entités <b>${(100 * av.frac_multi).toFixed(1)} %</b></span>`;
-}
+const TITRES_FIGS = {
+  "macro_overview.png": "Vue macroscopique (population, stocks, crédit, faillites)",
+  "distributions_taille.png": "Distributions individuelles — histogrammes de densité (barres de Poisson)",
+  "rank_size.png": "Diagrammes rang-taille (NW, revenu) avec régression sur la queue",
+  "cascades_rank_size.png": "Avalanches causales — occurrences et rang-taille",
+  "ages_richesse.png": "Structure d'âge et diagnostic anti-cohorte",
+};
 
 function g(obj, ...keys) {
   for (const k of keys) { obj = obj?.[k]; }
@@ -91,8 +47,8 @@ function validationCard(v) {
       ${ligne("ΔAIC de l'exponentielle (NW)", fmt(g(nw, "body", "delta_aic_expon")))}
       ${ligne("Queue de NW : α (CSN)", g(nw, "tail_csn", "alpha")?.toFixed(2))}
       ${ligne("IC bootstrap 95 %", boot.alpha_lo ? `[${boot.alpha_lo.toFixed(2)} ; ${boot.alpha_hi.toFixed(2)}]` : null)}
-      ${ligne("LR Pareto vs lognormale (R, corrigé)", g(nw, "lr_pl_vs_ln", "R")?.toFixed(1) + " (R<0 : lognormale préférée)")}
-      ${ligne("Corps de L", g(L, "body", "best") + " — med/mean " + fmt(g(L, "body", "med_over_mean"), 2) + " (exponentielle : 0,69)")}
+      ${ligne("LR Pareto vs lognormale (R, corrigé)", g(nw, "lr_pl_vs_ln", "R") != null ? g(nw, "lr_pl_vs_ln", "R").toFixed(1) + " (R<0 : lognormale préférée)" : null)}
+      ${ligne("Corps de L", g(L, "body", "best") ? g(L, "body", "best") + " — med/mean " + fmt(g(L, "body", "med_over_mean"), 2) + " (exponentielle : 0,69)" : null)}
       ${ligne("Revenu, familles complètes", g(inc, "full_families", "best"))}
       ${ligne("Gini(NW) / top 10 %", nw.gini ? nw.gini.toFixed(3) + " / " + fmt(100 * g(nw, "top_shares", "top10")) + " %" : null)}
       ${ligne("corr(âge, log NW)", ageNW.corr_age_log?.toFixed(3))}
@@ -116,6 +72,11 @@ async function main() {
                 "beta_L", "credit", "loan_target", "claim_loss", "flow_loss",
                 "market_selection", "shock_rho_macro", "shock_rho_sector",
                 "n_init", "merge_pairs"];
+  const figs = (d.figures || []).map(f => `
+    <div class="figure-bloc">
+      <img src="/api/run/${encodeURIComponent(d.id)}/fig/${f}"
+           alt="${TITRES_FIGS[f] || f}" loading="lazy">
+    </div>`).join("");
   document.getElementById("contenu").innerHTML = `
     <section class="carte">
       <h2>${d.id} <span class="badge ${sm.status}">${sm.status}</span></h2>
@@ -130,25 +91,15 @@ async function main() {
         <dl class="config">${cles.map(k => `<dt>${k}</dt><dd>${cfg[k]}</dd>`).join("")}</dl>
       </details>
     </section>
-    <section class="carte"><h2>Séries temporelles</h2>
-      <div class="grille-plots">
-        <div class="plot" id="p-pop"></div>
-        <div class="plot" id="p-stocks"></div>
-        <div class="plot" id="p-credit"></div>
-        <div class="plot" id="p-defauts"></div>
-      </div>
-    </section>
-    <section class="carte"><h2>Distributions individuelles</h2>
-      <div class="plot" id="p-ccdf" style="min-height:380px"></div>
-    </section>
-    <section class="carte" id="carte-aval"><h2>Avalanches causales</h2>
-      <div class="stat-ligne" id="aval-stats"></div>
-      <div class="plot" id="p-aval" style="min-height:320px"></div>
+    <section class="carte"><h2>Figures
+      <span class="note">(matplotlib, style simulation_lab — cliquer pour ouvrir en taille réelle)</span></h2>
+      ${figs || `<p class="note">Pas de figures disponibles${d.figures_error ? " : " + d.figures_error : ""}.</p>`}
     </section>
     ${validationCard(d.validation)}`;
-  if (d.series.columns) seriesPlots(d.series);
-  if (d.distributions) ccdfPlot(d.distributions);
-  avalanchePlot(d.avalanches || {});
+  document.querySelectorAll(".figure-bloc img").forEach(img => {
+    img.style.cursor = "zoom-in";
+    img.onclick = () => window.open(img.src, "_blank");
+  });
   document.title = "M3 — " + d.id;
 }
 main();

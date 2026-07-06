@@ -1,13 +1,14 @@
 """Explorateur web des simulations M3 — lecture seule sur experiments/m3/results.
 
 Présente les 120+ runs archivés selon la structure du protocole de recherche
-(calibration → baseline → ablations → grille → runs longs), avec pour chaque
-run : séries temporelles (population, stocks, crédit, défauts, avalanches),
-distributions au dernier instantané (CCDF log-log de NW, L, K, revenu),
-distribution des tailles d'avalanches causales et extraits de validation.
+(calibration → baseline → ablations → grille → runs longs). Chaque run expose
+des figures MATPLOTLIB au style simulation_lab (mpl_figures.py : vue macro,
+histogrammes de densité avec barres de Poisson, rang-taille avec régression,
+avalanches causales, structure d'âge), générées à la demande dans
+<run>/figures/ et mises en cache, plus les extraits de validation statistique.
 
-Même architecture que simulation_lab (stdlib ThreadingHTTPServer + Plotly CDN),
-mais strictement en lecture : aucune simulation n'est lancée d'ici.
+Même architecture serveur que simulation_lab (stdlib ThreadingHTTPServer),
+strictement en lecture : aucune simulation n'est lancée d'ici.
 
 Usage :
   /home/anatole/jupyter/.venv/bin/python3 webapp/serve.py [--port 8791] [--open-browser]
@@ -15,7 +16,6 @@ Usage :
 from __future__ import annotations
 
 import argparse
-import csv
 import json
 import mimetypes
 import os
@@ -25,11 +25,10 @@ import webbrowser
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import parse_qs, unquote, urlparse
-
-import numpy as np
+from urllib.parse import unquote, urlparse
 
 from catalog import GROUPS, REPORTS, list_runs, run_paths  # noqa: E402
+from mpl_figures import FIGURES, ensure_figures  # noqa: E402
 
 HERE = Path(__file__).resolve().parent
 
@@ -39,79 +38,17 @@ _HEARTBEAT_TIMEOUT = 60
 
 # ------------------------------------------------------------------ données
 
-def _read_series(run_dir: Path) -> dict:
-    rows = []
-    with open(run_dir / "series.csv") as fh:
-        for row in csv.DictReader(fh):
-            rows.append({k: (int(v) if "." not in v and "e" not in v.lower()
-                             else float(v)) for k, v in row.items()})
-    if not rows:
-        return {}
-    cols = list(rows[0].keys())
-    return dict(columns=cols, data={k: [r[k] for r in rows] for k in cols})
-
-
-def _ccdf(values: np.ndarray, max_points: int = 1200) -> dict:
-    """CCDF des valeurs > 0, sous-échantillonnée (queue conservée exacte)."""
-    v = np.sort(values[values > 0])
-    n = len(v)
-    if n < 5:
-        return dict(x=[], y=[])
-    ccdf = 1.0 - np.arange(1, n + 1) / (n + 1.0)
-    if n > max_points:
-        keep_tail = min(300, n // 4)
-        body_idx = np.unique(np.linspace(0, n - keep_tail - 1,
-                                         max_points - keep_tail).astype(int))
-        idx = np.concatenate([body_idx, np.arange(n - keep_tail, n)])
-    else:
-        idx = np.arange(n)
-    return dict(x=v[idx].tolist(), y=ccdf[idx].tolist(), n=int(n))
-
-
-def _last_snapshot(run_dir: Path) -> tuple[int, dict] | None:
-    snaps = sorted(run_dir.glob("snap_t*.npz"))
-    if not snaps:
-        return None
-    p = snaps[-1]
-    t = int(p.stem.split("t")[-1])
-    with np.load(p) as z:
-        return t, {k: z[k].copy() for k in z.files}
-
-
-def _avalanche_histogram(run_dir: Path, t_min: int = 500) -> dict:
-    path = run_dir / "avalanches.csv"
-    if not path.exists():
-        return {}
-    sizes = []
-    with open(path) as fh:
-        for row in csv.DictReader(fh):
-            if int(row["t"]) >= t_min:
-                sizes.append(int(row["size"]))
-    if not sizes:
-        return {}
-    arr = np.asarray(sizes)
-    vals, counts = np.unique(arr, return_counts=True)
-    return dict(sizes=vals.tolist(), counts=counts.tolist(), n=len(sizes),
-                mean=float(arr.mean()), max=int(arr.max()),
-                var_over_mean=float(arr.var() / arr.mean()),
-                frac_multi=float((arr > 1).mean()), t_min=t_min)
-
-
 def run_detail(run_id: str) -> dict:
     run_dir = run_paths(run_id)
     out = dict(id=run_id)
     out["config"] = json.loads((run_dir / "config.json").read_text())
     out["summary"] = json.loads((run_dir / "summary.json").read_text())
-    out["series"] = _read_series(run_dir)
-    snap = _last_snapshot(run_dir)
-    if snap:
-        t, data = snap
-        out["distributions"] = dict(
-            t=t, n_alive=int(len(data["id"])),
-            ccdf={var: _ccdf(data[var]) for var in ("nw", "L", "K", "income")
-                  if var in data},
-        )
-    out["avalanches"] = _avalanche_histogram(run_dir)
+    # figures matplotlib (style simulation_lab), générées à la demande
+    try:
+        out["figures"] = ensure_figures(run_dir)
+    except Exception as exc:                    # run incomplet : pas bloquant
+        out["figures"] = []
+        out["figures_error"] = str(exc)
     vpath = run_dir / "validation.json"
     if vpath.exists():
         out["validation"] = json.loads(vpath.read_text())
@@ -156,9 +93,16 @@ class ExplorerHandler(BaseHTTPRequestHandler):
         if path == "/api/index":
             return self._json(list_runs())
         if path.startswith("/api/run/"):
-            run_id = unquote(path[len("/api/run/"):])
+            rest = unquote(path[len("/api/run/"):])
             try:
-                return self._json(run_detail(run_id))
+                if "/fig/" in rest:
+                    run_id, fig_name = rest.split("/fig/", 1)
+                    fig_name = Path(fig_name).name
+                    if fig_name not in FIGURES:
+                        return self.send_error(HTTPStatus.NOT_FOUND)
+                    return self._file(run_paths(run_id) / "figures" / fig_name,
+                                      "image/png")
+                return self._json(run_detail(rest))
             except (FileNotFoundError, ValueError) as exc:
                 return self.send_error(HTTPStatus.NOT_FOUND, str(exc))
         if path.startswith("/reports/"):
