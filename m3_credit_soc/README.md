@@ -38,7 +38,20 @@ Depuis `m3_credit_soc/`, avec le venv du dépôt :
 
 # Suivi du budget de calcul (48 h)
 /home/anatole/jupyter/.venv/bin/python3 experiments/m3/exp_common.py
+
+# Explorateur web des simulations (lecture seule, organisé selon le protocole)
+/home/anatole/jupyter/.venv/bin/python3 webapp/serve.py --open-browser
+# options : --port 8791 (défaut), --no-auto-shutdown
 ```
+
+L'explorateur (`webapp/`) présente les 120+ runs archivés dans l'ordre du
+protocole (calibration → baseline A → ablation B → C/D/E → réseau → chocs
+corrélés → H/I/J → grille → runs longs), avec pour chaque groupe la question
+posée, le verdict et le renvoi au rapport, et pour chaque run : séries
+temporelles, CCDF des distributions au dernier instantané, distribution des
+tailles d'avalanches causales et extraits de la validation statistique. Les
+PDF des six rapports y sont servis directement. Il s'arrête tout seul quand
+le navigateur se ferme (comme simulation_lab).
 
 Les rapports LaTeX se compilent depuis leur dossier :
 `latexmk -pdf -interaction=nonstopmode -halt-on-error main.tex`.

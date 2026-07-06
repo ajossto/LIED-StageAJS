@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>M3 — Explorateur des simulations</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<header class="bandeau">
+  <h1>M3 — Explorateur des simulations (m3_credit_soc)</h1>
+  <p>
+    Tous les runs archivés du programme M3, organisés selon le protocole
+    pré-enregistré. Verdict d'ensemble : <b>le crédit est causal
+    démographiquement mais distributionnellement neutre ; pas de SOC ;
+    le plancher d'absorption peut être endogène (ablation H)</b>.
+    Rapports :
+    <a href="/reports/01" target="_blank">01 synthèse M2</a> ·
+    <a href="/reports/02" target="_blank">02 spécification</a> ·
+    <a href="/reports/03" target="_blank">03 implémentation</a> ·
+    <a href="/reports/04" target="_blank">04 validation</a> ·
+    <a href="/reports/05" target="_blank">05 résultats négatifs</a> ·
+    <a href="/reports/06" target="_blank">06 synthèse finale</a>
+  </p>
+</header>
+<main>
+  <nav class="chips" id="sommaire"></nav>
+  <div id="groupes"><p class="note">Chargement de l'index…</p></div>
+</main>
+<script>
+const fmt = (x) => x == null ? "—" :
+  (typeof x === "number" && !Number.isInteger(x) ? x.toFixed(1) : x.toLocaleString("fr-FR"));
+
+function runRow(r) {
+  const badge = `<span class="badge ${r.status}">${r.status}</span>`;
+  const variante = r.variant === "baseline" ? "" :
+    `<span class="badge variante">${r.variant}</span>`;
+  return `<tr>
+    <td><a href="/run?id=${encodeURIComponent(r.id)}">${r.id}</a></td>
+    <td>${r.seed}</td><td>${fmt(r.T)}</td><td>${variante}</td>
+    <td>${badge}</td><td>${fmt(r.pop_final)}</td>
+    <td>${fmt(r.loans_final)}</td><td>${fmt(r.wall_seconds)} s</td>
+  </tr>`;
+}
+
+function groupCard(g) {
+  const rows = g.runs.map(runRow).join("");
+  const table = g.runs.length ? `
+    <table class="runs">
+      <thead><tr><th>run</th><th>seed</th><th>T</th><th>variante vs baseline</th>
+      <th>statut</th><th>pop finale</th><th>contrats</th><th>durée</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>` : `<p class="note">Aucun run archivé pour ce groupe.</p>`;
+  return `
+  <section class="groupe" id="${g.id}">
+    <div class="titre" onclick="this.nextElementSibling.hidden = !this.nextElementSibling.hidden">
+      <h2>${g.title}</h2>
+      <span class="n-runs">${g.runs.length} run${g.runs.length > 1 ? "s" : ""}</span>
+    </div>
+    <div class="corps">
+      <p class="question">${g.question}</p>
+      <div class="verdict"><b>Verdict</b> — ${g.verdict}
+        <span class="ref">(rapport ${g.report})</span></div>
+      ${table}
+    </div>
+  </section>`;
+}
+
+async function main() {
+  const res = await fetch("/api/index");
+  const idx = await res.json();
+  document.getElementById("sommaire").innerHTML = idx.groups
+    .map(g => {
+      const court = g.title.split("(")[0].split("—")[0].trim();
+      return `<a href="#${g.id}">${court}</a>`;
+    })
+    .join("");
+  document.getElementById("groupes").innerHTML =
+    idx.groups.map(groupCard).join("") +
+    (idx.ungrouped.length ?
+      `<section class="groupe"><div class="titre"><h2>Hors protocole</h2></div>
+       <div class="corps"><table class="runs"><tbody>
+       ${idx.ungrouped.map(runRow).join("")}</tbody></table></div></section>` : "");
+}
+main();
+setInterval(() => fetch("/api/heartbeat", {method: "POST"}).catch(() => {}), 5000);
+</script>
+</body>
+</html>
