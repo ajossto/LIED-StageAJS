@@ -1,9 +1,12 @@
 # Journal de recherche M3 (m3_credit_soc)
 
-**État au 2026-07-05 : programme principal CLOS — les 6 rapports sont rédigés
-et compilés (reports/*/main.pdf). Reste ouvert : réplication H seeds 1-2 (en
-cours, ~6 h ; le verdict H repose sur seed 0 et est signalé comme tel dans
-04/06 — mettre à jour 04 §H et 06 §2.11 si s1/s2 contredisent s0).**
+**État au 2026-07-06 : programme CLOS, tout est répliqué. Les 6 rapports sont
+rédigés, compilés et poussés sur origin/main. La réplication H (seeds 1-2) a
+CONFIRMÉ le plancher endogène : pop 5574/5566/5649, d/b=0,98 partout, 67-79
+défauts de liquidité par run. Rapports 04 §H et 06 mis à jour en conséquence.
+Budget final : 73 058 s = 20,3 h / 48 h (H = 10,1 h à elle seule). Correction
+comptable : la mesure « 20,29 h » du 07-05 incluait déjà H s1/s2 (terminées
+plus tôt que je ne le croyais) — aucun dépassement.**
 
 Une leçon par entrée. Résumé d'une ligne en tête, puis confirmé/infirmé et pourquoi.
 Consulter AVANT de relancer un run.

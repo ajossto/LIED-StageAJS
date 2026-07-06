@@ -180,8 +180,9 @@ interdit : principal exigible, taux hors-équilibre, ou liquidité rare.
 endogène (ablation H)}
 Sans $d_0$, seules les endettées peuvent mourir ($D >$ actifs) — et le
 système se borne quand même, quasi-stationnairement, à une population
-$\approx 5\times$ la baseline (morts/naissances $0{,}98$ ; réserve : un
-seed complet à la clôture, réplication en cours). Le crédit y est
+$\approx 5\times$ la baseline ($5574/5566/5649$ sur 3 seeds,
+morts/naissances $= 0{,}98$ dans les trois cas, 67--79 défauts de
+liquidité par run : le verdict est répliqué). Le crédit y est
 \emph{constitutif} de la démographie : c'est le seul régime du programme où
 retirer le crédit changerait qualitativement l'existence même du régime.
 Ce résultat n'était pas anticipé par le protocole et désigne le M4 le plus
@@ -237,8 +238,8 @@ modèles.
 50 tests verts (dont R1 : réduction bit à bit vers M2) ; 124 runs archivés
 avec configuration, séries, instantanés, réseau et journal d'avalanches ;
 \code{validation.json} par run, sans pooling inter-seed ; budget de
-simulation consommé $20{,}3$ h sur 48 à la clôture (dont H seed 0 :
-$3{,}2$ h ; réplication H en cours non comprise) ; journal de recherche
+simulation consommé $20{,}3$ h sur 48, réplication H comprise (les trois
+seeds de H : $10{,}1$ h à elles seules) ; journal de recherche
 \code{NOTES.md} (leçons et décisions datées). Rapports : 01 (synthèse M2), 02 (spécification pré-enregistrée),
 03 (implémentation), 04 (validation), 05 (résultats négatifs — aucun
 n'est dilué ailleurs), 06 (le présent document).
