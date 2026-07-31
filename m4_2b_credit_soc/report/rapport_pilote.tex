@@ -1,0 +1,359 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[french]{babel}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb}
+\usepackage[margin=2.35cm]{geometry}
+\usepackage{booktabs,longtable,tabularx}
+\usepackage{enumitem}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{microtype}
+\usepackage{hyperref}
+
+\hypersetup{colorlinks=true,linkcolor=blue!45!black,urlcolor=blue!45!black}
+\setlist{nosep}
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\Kaut}{K^{*}_{\mathrm{aut}}}
+\newcommand{\fait}{\textbf{[Fait observé]}}
+\newcommand{\inference}{\textbf{[Inférence]}}
+\newcommand{\hyp}{\textbf{[Hypothèse]}}
+\newcommand{\incertitude}{\textbf{[Incertitude]}}
+
+\title{M4.2B --- rapport de phase pilote\\
+\large Émergence et contrôle d'une queue Pareto des revenus d'intérêt,
+sous contrainte de cascades critiques}
+\author{Programme M4.2B --- dossier \code{m4\_2b\_credit\_soc}}
+\date{30 juillet 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+M4.2B remplace la cible de principal géométrique de M4.2,
+$K^*=\sqrt{K_\ell K_b}$, par une cible \textbf{arithmétique}
+$K_{\mathrm{target}}=(K_\ell+K_b)/2$, à taux inchangé, dans une baseline
+scientifique volontairement lente ($\delta=0{,}01$, $\sigma=0{,}01$). La
+question posée était double : une queue Pareto endogène des intérêts reçus
+peut-elle émerger et être contrôlée, et la structure en loi de puissance
+des avalanches de faillites survit-elle ? Ce rapport documente une
+\textbf{phase pilote}, pas une campagne figée : les runs exécutés (baseline
+$T=3000$, contrôle géométrique, balayages $\sigma$ et $\lambda$,
+contraste $\rho$) ont été choisis pour maximiser l'information causale
+avant tout engagement de calcul dans une grille exhaustive, conformément
+à la liberté de recherche accordée par le cahier des charges.
+
+Le résultat central est \textbf{négatif pour l'objectif A, avec un
+mécanisme identifié et quantifié} : à la baseline, le capital devient
+presque parfaitement homogène (Gini$(K)\approx0{,}05$) --- fait qui
+persiste sous les deux règles de principal et sur un facteur 10 en
+population --- et le revenu d'intérêt reçu est dominé à 77\,\% par le
+nombre de contrats accumulés avec l'âge, non par leur taille ou leur taux
+individuels. Aucune configuration testée (baseline, $\sigma\in[0{,}01\,;\,
+0{,}10]$, $\rho\in\{0{,}125\,;\,1\,;\,2\}$, $\lambda\in\{10\,;\,30\,;\,100\}$,
+règle géométrique) ne produit une queue Pareto stable au sens du seuil :
+l'exposant ajusté dérive systématiquement d'un facteur $\sim\!1{,}5$ quand
+le seuil est divisé par deux. Fait notable et contre-intuitif : la règle
+arithmétique, changement constitutif de M4.2B, rend l'objectif A
+\emph{plus difficile} que la règle géométrique de M4.2 (queue plus légère,
+dominance du degré plus forte), pas plus facile. Pour l'objectif B, le
+rapport de branchement des avalanches est robuste et institutionnellement
+pinné ($\approx0{,}78$--$0{,}79$) sur toute la plage testée, mais
+\textbf{aucun exposant de queue indépendant de la taille du système n'a pu
+être établi} : l'estimateur de coupure sature à sa borne numérique à
+$\lambda=100$, signe que l'exposant rapporté y est en réalité celui de la
+loi pure, non comparable aux cellules $\lambda=10$ et $\lambda=30$.
+\end{abstract}
+
+\tableofcontents
+
+\section{Modification constitutive et vérifications}
+
+\subsection{La cible arithmétique}
+
+Pour $K_\ell>K_b>0$, M4.2B calcule directement
+\[
+q_A=\frac{K_\ell-K_b}{2},\qquad K_\ell'=K_b'=\frac{K_\ell+K_b}{2},
+\]
+sans passer par la fonction $K^*(r)$ de M4.2. Le taux reste
+$r_{\ell b}=\sqrt{m_\ell m_b}$, $m=A\gamma K^{\gamma-1}$, strictement
+séparé du calcul du principal dans le code (\code{\_pair\_rate} /
+\code{\_pair\_principal}).
+
+\fait\ Le rapport entre les deux institutions à taux identique est exact :
+\[
+\frac{q_A}{q_{\mathrm{geo}}}=\frac{1+\sqrt{K_\ell/K_b}}{2},
+\]
+vérifié analytiquement et sur grille $(K_\ell,K_b,\gamma,A)$ à $10^{-9}$
+près (\code{tests/test\_arithmetic\_institution.py}). Ce rapport n'est
+borné par rien : pour $K_\ell/K_b=392$ (un newborn $K_0=25$ face à une
+entité proche de $\Kaut(\gamma{=}0{,}5)=9801$), il vaut $10{,}4$.
+
+\fait\ La parité avec M4.2 est vérifiée à $0{,}000\mathrm{e}{+}00$ d'écart
+flottant (pas seulement en tolérance $10^{-9}$) sur deux régimes M4.2 et un
+régime baseline M4.2B, quand \code{target\_rule="geometric"},
+$\rho=1$, $\beta=1$ (\code{tests/test\_parity\_m4\_2.py}) : le refactor du
+moteur (séparation taux/principal, table \code{loan\_events}) n'introduit
+aucune dérive dynamique.
+
+\subsection{Pathologie de service prédite et vérifiée}
+
+\fait\ Pour un newborn $K_b=K_0=25$ face à une prêteuse
+$K_\ell=\Kaut(0{,}5)=9801$ ($\gamma=0{,}5$, $A=1$, $\delta=0{,}01$) :
+$r\approx0{,}02247$, $q_A\approx4888$, service $c=rq\approx109{,}85$,
+production de l'emprunteuse au pas suivant
+$F_{0,5}(K_b')\approx70{,}09$ : $c/F_{0,5}(K_b')\approx1{,}57>1$. Le
+service excède la production du pas.
+
+\fait\ Malgré cela, \textbf{0 défaut de liquidité n'a été observé sur
+l'ensemble des runs pilotes} (\code{roots\_liquidity}=0 cumulé). La raison :
+le paiement des intérêts est prélevé sur le \emph{stock} de capital $K$
+(qui inclut le principal $q$ tout juste reçu, $\approx4913$), pas sur le
+seul flux de production --- le stock suffit très largement. La fragilité
+réelle est un problème de \textbf{levier} : la valeur nette de
+l'emprunteuse ne change pas à la création du prêt ($K_b'-q_A=K_0=25$),
+mais son ratio valeur-nette/dette tombe à $\approx0{,}5\,\%$, rendant
+l'entité extrêmement vulnérable au \emph{prochain} choc $\xi$, pas au
+service du prêt lui-même. C'est une fragilité d'insolvabilité différée,
+pas une incapacité de service immédiate --- réponse à la question §21-Q10.
+
+\section{Stationnarité : une horloge corrigée en cours de route}
+
+\hyp\ initiale (avant tout run) : par analogie avec le temps de relaxation
+autarcique individuel $K\mapsto(1-\delta)(K+AK^\gamma)$
+($584$ pas pour atteindre $90\,\%$ de $\Kaut=9801$, $1048$ pas pour
+$99\,\%$ à $\delta=0{,}01$), un horizon $T\approx8000$--$10000$ semblait
+nécessaire.
+
+\fait\ Cette hypothèse est \textbf{infirmée empiriquement}. Le run baseline
+($T=3000$, seed 0) montre une population qui atteint la stationnarité dès
+$t\approx375$--$750$ : moyenne de population $1134$--$1140$ sur les
+demi-fenêtres $[750,1875]$ et $[1875,3000]$, coefficient de variation
+$0{,}034$, dérive relative entre demi-fenêtres $<1\,\%$
+(\code{lib\_metrics.window\_series\_metrics}). \inference : la mortalité
+par cascades de faillites régule la population bien avant qu'aucune entité
+individuelle n'approche $\Kaut$ --- le bon temps caractéristique est celui
+de la dynamique de crédit-cascade, pas celui de la relaxation productive
+autarcique. Conséquence pratique : $T=1000$ (burn-in $375$) suffit pour
+l'exploration ; $T=3000$ est réservé aux cellules de confirmation.
+
+\section{Objectif A : distribution des revenus d'intérêt}
+
+\subsection{Corps et queue à la baseline}
+
+\fait\ Sur 46 snapshots de la fenêtre stationnaire ($t\in[750,3000]$,
+run baseline) : masse en zéro $p_0=0{,}089\pm0{,}008$ ; parmi les 13
+familles de la ladder (\code{scripts/families.py}), \textbf{GB2 (4
+paramètres) gagne systématiquement par AIC}, devant \code{lognorm\_mix\_5p}
+et \code{gengamma\_3p} ; \code{pareto\_1p} (ajustée sur tout le support)
+est très largement rejetée ($\Delta\mathrm{AIC}>2900$) ; le raccord
+explicite lognormale+Pareto (\code{lognorm\_pareto\_mix\_5p}) est
+\emph{systématiquement moins bon} que GB2 ou même le simple mélange de
+lognormales, malgré le même nombre de paramètres (table
+\ref{tab:aic}).
+
+\begin{table}[h]
+\centering
+\caption{AIC des familles sur 3 snapshots représentatifs (intérêts reçus,
+run baseline). Plus bas = meilleur.}
+\label{tab:aic}
+\begin{tabular}{lrrr}
+\toprule
+Famille (k paramètres) & $t=1500$ & $t=1550$ & $t=1600$ \\
+\midrule
+\code{expon\_1p} (1) & 9672,0 & 9031,8 & 9883,7 \\
+\code{lognorm\_2p} (2) & 9973,9 & 9412,5 & 10207,5 \\
+\code{gengamma\_3p} (3) & 9673,2 & 9030,0 & 9883,7 \\
+\textbf{\code{gb2\_4p}} (4) & \textbf{9591,9} & \textbf{8917,7} & \textbf{9793,1} \\
+\code{lognorm\_mix\_5p} (5) & 9610,8 & 8971,4 & 9809,8 \\
+\code{lognorm\_pareto\_mix\_5p} (5) & 9829,3 & 9201,1 & 10015,7 \\
+\code{pareto\_1p} (1) & 12544,8 & 12891,9 & 13538,2 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\fait\ Le seuil de queue sélectionné par scan KS (\code{tail\_test}) donne
+$\hat\alpha_{\mathrm{density}}=3{,}80\pm0{,}18$ (moyenne/écart-type sur les
+46 snapshots) --- serré \emph{entre} snapshots, mais \textbf{instable au
+seuil} : à seuil moitié, $\hat\alpha$ retombe systématiquement à
+$2{,}52\pm0{,}12$. Un test de Vuong restreint à la queue,
+loi-de-puissance-vs-exponentielle (\code{interest\_income.
+exponential\_vs\_powerlaw\_lr}, famille explicitement demandée par le
+cahier des charges), favorise la loi de puissance dans 46/46 snapshots
+($z=3{,}15\pm0{,}87$) : la queue haute n'est pas un simple prolongement
+exponentiel, mais son exposant n'est pas stable --- signature classique
+d'une courbure log-log (corps à décroissance sous-exponentielle,
+correctement capturée par GB2) plutôt que d'un régime Pareto authentique.
+\inference : le critère 6 du §11 (stabilité au seuil) échoue ; il n'y a
+\textbf{pas de régime Pareto robuste} à la baseline.
+
+\subsection{Décomposition mécanique}
+
+Avec $I_i=\sum_j q_{ij}r_{ij}$ sur le réseau contractuel, l'identité exacte
+\[
+\mathrm{Var}(\log I)=\mathrm{Var}(\log\,\mathrm{deg}_{\mathrm{out}})
++\mathrm{Var}(\log\,\overline{rq})
++2\,\mathrm{Cov}(\log\,\mathrm{deg}_{\mathrm{out}},\log\,\overline{rq})
+\]
+donne, moyennée sur la fenêtre stationnaire : \textbf{77\,\% de la variance
+du log-revenu vient du nombre de prêts émis} (\code{deg\_out}), 23\,\% du
+$rq$ moyen par prêt, covariance négligeable ($-0{,}2\,\%$). \fait\ Le taux
+$r$ lui-même varie peu (moyenne $0{,}01797$, médiane $0{,}01752$, q90
+$0{,}01865$ : bande de $6\,\%$) : le revenu est essentiellement
+$I_i\approx \bar{r}\bar{q}\times\mathrm{deg}_{\mathrm{out}}(i)$.
+
+\fait\ Corrélation de Spearman(revenu, âge)$\,\approx0{,}89$, très stable
+entre snapshots (écart-type $0{,}006$) ; régression linéaire
+revenu$\sim$âge : $R^2\approx0{,}72$. La distribution des âges rejette
+formellement (test KS, $p\approx0$ dans les 46 snapshots) une loi
+exactement exponentielle, mais reste sur-dispersée (écart-type/moyenne
+$\approx2{,}1$, contre $1$ pour l'exponentielle) --- cohérent avec une
+mortalité par cascades épisodiques plutôt qu'à taux constant.
+\inference : le revenu d'intérêt est essentiellement un
+\textbf{effet d'accumulation de contrats avec l'âge}, sous une mortalité
+non exactement exponentielle mais sans excès extrême de dispersion --- pas
+un phénomène de concentration par la taille des prêts individuels.
+
+\fait\ Gini$(K)$ final $=0{,}054$ à la baseline : le capital est presque
+parfaitement homogénéisé. C'est la matière première manquante pour un
+$rq$ hétérogène.
+
+\subsection{Le contrôle géométrique change l'interprétation}
+
+Une première lecture (provisoire, avant ce run) attribuait le
+\code{branching\_ratio} élevé ($0{,}786$) et le Gini$(K)$ bas ($0{,}054$) à
+l'institution arithmétique elle-même. \fait\ Un run de contrôle, mêmes
+paramètres sauf \code{target\_rule="geometric"}, T=1000 : branching
+$=0{,}756$ (quasi identique à $0{,}787$), Gini$(K)=0{,}053$ (identique).
+\textbf{Cette lecture initiale est infirmée} : la cause réelle est la
+baseline lente $\delta{=}0{,}01,\sigma{=}0{,}01$ combinée à $\eta(N){=}N$,
+pas la règle de principal.
+
+En revanche, à cette même baseline, la règle géométrique donne
+$\hat\alpha_{\mathrm{density}}=2{,}94$ contre $3{,}86$ en arithmétique
+--- \textbf{une queue plus lourde}, avec une dominance du degré encore plus
+forte ($0{,}872$ contre $\approx0{,}79$--$0{,}80$). Réponse à la question
+§21-Q1 : le changement constitutif de M4.2B \textbf{rend l'objectif A plus
+difficile}, pas plus facile, que M4.2.
+
+\subsection{Balayage $\sigma$ : identification de mécanisme, pas contrôle
+de queue}
+
+\begin{table}[h]
+\centering
+\caption{Balayage $\sigma$ (arithmétique, $\rho=1$, $\lambda=30$, $T=1000$,
+2 graines). Moyennes des deux graines.}
+\label{tab:sigma}
+\begin{tabular}{lrrrrrr}
+\toprule
+$\sigma$ & pop finale & Gini$(K)$ & part deg\_out & $\hat\alpha$(KS) & $\hat\alpha$(seuil/2) & $\hat\tau$ aval. \\
+\midrule
+0,01 & 1084 & 0,053 & 0,796 & 3,86 & 2,62 & 1,42 \\
+0,03 & 927  & 0,065 & 0,775 & 4,15 & 2,72 & 1,69 \\
+0,05 & 794  & 0,070 & 0,770 & 4,45 & 2,74 & 1,80 \\
+0,10 & 630  & 0,092 & 0,742 & 5,03 & 2,71 & 2,00 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\fait\ $\sigma$ agit dans le sens prédit sur les variables intermédiaires
+(Gini$(K)$ et part deg\_out), mais $\hat\alpha$(KS) \textbf{s'alourdit}
+avec $\sigma$ (table \ref{tab:sigma}) tandis que $\hat\alpha$(seuil/2) reste
+quasi constant ($\approx2{,}6$--$2{,}7$). \inference : $\sigma$ réduit la
+population stationnaire et l'espérance de vie effective, ce qui
+\textbf{tronque l'accumulation de degré} --- le mécanisme même qui produit
+la dispersion du revenu. Les deux effets ($\sigma$ injecte de
+l'hétérogénéité de capital \emph{et} tronque l'accumulation de contrats)
+s'opposent ; la troncature l'emporte dans la plage testée. Ce n'est pas un
+échec du levier $\sigma$ mais une \textbf{identification de mécanisme}
+conforme au critère 7 du §11 : un effet qui se réduit à un déplacement de
+coupure n'est pas un contrôle de queue. Côté avalanches, $\sigma$ éloigne
+le système d'un régime critique (branching $0{,}79\to0{,}46$, $\hat\tau$
+$1{,}42\to2{,}00$) : pas de compromis favorable trouvé.
+
+\section{Objectif B : avalanches de faillites}
+
+\fait\ Test de Vuong tronquée-vs-lognormale sur le run baseline (fenêtre
+stationnaire, \code{lib\_metrics.vuong\_trunc\_vs\_ln}, le modèle PRIMAIRE
+--- pas la loi pure déjà rejetée par LRT) : $z=+16{,}3$, favorise très
+fortement la loi de puissance tronquée. \code{branching\_ratio}
+$=0{,}786$, stable entre demi-fenêtres.
+
+\fait\ Balayage $\lambda\in\{10,100\}$ (2 graines, $T=1000$, sinon
+baseline) : $\hat\tau$ dérive de $1{,}19$--$1{,}27$ ($\lambda=10$) à
+$1{,}42$--$1{,}45$ ($\lambda=30$) à $1{,}75$ ($\lambda=100$), avec
+\code{size\_max} $75\to155\to280$. \textbf{Vérification de l'artefact
+avant conclusion} (cf. mémoire M4.2 sur ce piège précis) : la coupure
+ajustée par \code{fit\_powerlaw\_cutoff} vaut $35$--$107$ (bien en-deçà de
+\code{size\_max}) à $\lambda=10$ et $\lambda=30$, mais
+\textbf{$\approx4{,}85\times10^{8}$ à $\lambda=100$ --- exactement
+$e^{20}$, la borne numérique du paramètre \code{log\_cutoff} dans
+\code{lib\_metrics.py}}. L'optimiseur a buté sur sa borne : aucune coupure
+finie n'est détectée à $\lambda=100$, et le $\hat\tau=1{,}75$ rapporté est
+en réalité l'exposant de la loi \textbf{pure}, non comparable aux deux
+autres cellules (ajustements tronqués authentiques). \inference :
+\textbf{aucun exposant indépendant de la taille du système n'est établi}
+sur $10\le\lambda\le100$ avec cette méthode ; noter en outre que $\lambda$
+déplace simultanément la taille du système et l'intensité de marché
+($\eta(N)=N$), donc la dérive observée ne peut pas être attribuée à la
+taille seule.
+
+\fait\ Le \code{branching\_ratio} reste en revanche remarquablement stable
+: $0{,}782$--$0{,}788$ sur $\lambda\in\{10,30,100\}$ \emph{et}
+$0{,}756$--$0{,}787$ sous les deux \code{target\_rule}. \inference :
+pinning institutionnel réel, analogue à celui trouvé par M4.2
+($b\approx0{,}30$, \og un round de marché par tête\fg{}) mais à un niveau
+différent ($\approx0{,}78$--$0{,}79$), déterminé par la baseline lente
+$\delta{=}0{,}01,\sigma{=}0{,}01$ plutôt que par $\gamma$ ou la règle de
+principal.
+
+\section{Réponses au questionnaire du prompt (§21) disposant d'un support
+empirique}
+
+\begin{enumerate}[leftmargin=1.6em]
+\item \textbf{Que change la cible arithmétique ?} Principal non borné plus
+  élevé ($q_A/q_{\mathrm{geo}}=(1+\sqrt{K_\ell/K_b})/2$) ; égalisation
+  exacte (auto-terminaison de la paire, \code{merge\_share}$\approx2{,}8\,\%$
+  sous les deux règles) ; rend l'objectif A \emph{plus} difficile.
+\item \textbf{Forme du corps ?} GB2, systématiquement meilleur par AIC.
+\item \textbf{Queue Pareto robuste ?} Non, dans aucune configuration
+  testée.
+\item \textbf{Famille globale ?} GB2 ; le composite Pareto explicite
+  n'apporte rien.
+\item--\item[8] \emph{(domaine des exposants, rôle de $\eta$)} :
+  \textbf{non tranchés} --- $\rho$ testé seulement sur $\{0{,}125,1,2\}$,
+  une graine, $T$ court ; aucune tendance monotone claire.
+\item \textbf{Rôle de $r,q,rq$ ?} $r$ quasi constant ; 77\,\% de la
+  variance du log-revenu vient du nombre de contrats, 23\,\% du $rq$ moyen.
+\item \textbf{Pathologie de la règle de taux ?} Oui en levier (ratio
+  valeur-nette/dette $\approx0{,}5\,\%$ pour un newborn face à une
+  entité mature), non en service (0 défaut de liquidité observé).
+\item \textbf{Avalanches en loi de puissance ?} Branching robuste et
+  pinné ; exposant indépendant de la taille non établi.
+\item \textbf{Compromis queue/criticalité ?} $\sigma$ dégrade les deux
+  simultanément dans la plage testée --- pas de compromis favorable trouvé.
+\item[13] \emph{(domaine conjoint)} : \textbf{non atteint} dans la plage
+  testée.
+\item[15] \textbf{Coupure, échelle ou exposant ?} Coupure, de façon
+  répétée et démontrée ($\sigma$, $\lambda$ déplacent tous une coupure
+  haute, jamais la forme du corps).
+\item[16] \emph{(refonte nécessaire ?)} Aucune refonte de mécanisme n'a
+  été tentée dans cette phase ; le levier testé qui identifie le mécanisme
+  le plus clairement est $\sigma$ (troncature de l'accumulation de degré),
+  pas une institution à remettre en cause.
+\end{enumerate}
+
+\section{Non testé (§18)}
+
+$\gamma\ne0{,}5$ ; $K_0\ne25$ ; $\eta$ non linéaire ($\beta\ne1$) ;
+ablations de mécanisme (règle de taux alternative, fusion/mémoire des
+contrats) ; campagne multi-graines complète par cellule ; collapse de
+taille finie en bonne et due forme pour les avalanches (nécessiterait de
+découpler taille du système et intensité de marché, et un $\lambda>100$
+avec une coupure correctement dans la plage observée). Le budget de calcul
+de cette phase a été alloué aux pilotes ci-dessus sur la base du
+diagnostic qu'ils apportaient l'information marginale la plus grande avant
+de figer un protocole de campagne.
+
+\end{document}
