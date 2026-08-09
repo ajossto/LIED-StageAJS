@@ -1374,3 +1374,71 @@ l'avancement de la relance 96 runs, et si elle est terminée, régénérer/
 compléter les livrables qui en dépendent (aucun livrable §10 du prompt ne
 dépend directement des figures simulation_lab — c'est un complément
 d'outillage demandé séparément, pas un critère de clôture du prompt).
+
+## 27. Signalement utilisateur : « impossible de voir/lancer des simulations M4.3 dans simulation_lab » — diagnostiqué et corrigé (2026-08-09)
+
+Deux causes distinctes, diagnostiquées séparément (pas supposées) :
+
+**(1) Runs invisibles.** Confirmé réel : `run_pilot.py`/
+`campaign_relaunch_figures.py` écrivent directement dans
+`m4_3_credit_soc/results/`, sans jamais passer par
+`RunStorage.create_run()`/`finalize_run()` — `simulation_lab_data/runs/`
+n'a donc aucune trace de ces runs. Le seul mécanisme de découverte
+externe existant (`RunStorage.list_external_runs()`, cherche un fichier
+`meta.json`) est conçu pour d'anciennes lignées (claude3-v2, Modèle sans
+banque) avec un schéma différent — pas réutilisable sans toucher du code
+partagé (`storage.py`, hors périmètre M4.3).
+
+Correctif : `scripts/import_to_simulation_lab.py` (nouveau, idempotent) —
+pour chaque run M4.3 terminé (figures déjà générées), crée un SYMLINK
+`simulation_lab_data/runs/<id>` → dossier réel sous
+`m4_3_credit_soc/results/`, et y écrit un `run.json` au format managé
+standard. Vérifié avant d'adopter le lien symbolique (pas une copie,
+zéro duplication disque) : `delete_run()`/`empty_trash()` opèrent par
+`shutil.move`/suppression au niveau du lien top-level, jamais de descente
+récursive destructive dans la cible — testé en pratique (déplacé vers la
+corbeille puis vidé un run importé, données réelles
+`results/d1/baseline/seed0/figures/macro_overview.png` intactes après).
+38 runs déjà enregistrés (D1 en cours + phase pilote), visibles et
+étiquetés par cellule (`D1/<cellule>/seed<N>`) via `list-runs`/le GUI.
+Le script sera relancé (idempotent) au fur et à mesure que la relance des
+96 runs (§24-26) avance.
+
+**(2) Lancement refusé/impossible.** Testé directement (CLI + API HTTP du
+GUI, un serveur GUI FRAIS, lancé après vérification qu'aucun processus
+GUI ne tournait déjà) : un lancement M4.3 réel a fonctionné du premier
+coup (`model_id`, paramètres, exécution, figures --- tout correct).
+Cause la plus probable du signalement initial : un serveur GUI déjà en
+cours d'exécution AVANT la création de l'adaptateur M4.3 (§24), dont le
+`ModelRegistry` n'est chargé qu'une fois au démarrage (`reload()` dans
+`__init__`) --- un serveur resté actif depuis avant n'aurait aucune
+connaissance du modèle `m4_3_credit_soc`, expliquant « je ne peux pas en
+lancer » alors que d'autres modèles (M4B, lancé par l'utilisateur le
+2026-08-09 vers 16h20) continuaient de fonctionner dans cette même
+session. Pas de preuve définitive (le serveur en question, s'il existait,
+avait déjà cessé de tourner au moment du diagnostic), mais cohérent avec
+toutes les observations.
+
+**(3) Trou de sécurité trouvé PENDANT ce diagnostic, corrigé aussi :**
+`model.py::run()` (le point d'entrée que le GUI/CLI utilise pour lancer
+une simulation) n'avait AUCUN garde-fou --- ni préflight disque, ni verrou
+mono-pool, ni plafond mémoire, ni enregistrement PID auprès de
+`mem_guard`. Un lancement GUI pendant que le pool de 96 runs tourne (état
+réel actuel) se serait exécuté sans AUCUNE coordination mémoire avec ce
+pool --- exactement le scénario que le verrou mono-pool existe pour
+empêcher (JOURNAL.md M4.2B §15, cité dans `pool_lock.py`). Corrigé :
+`run()` renommé `_run_inner()`, nouveau `run()` fin enveloppant
+`require_disk_preflight`/`PoolLock`/`register_workers`/plafond
+`RLIMIT_AS` --- même patron que `run_pilot.py`, verrou PARTAGÉ (même
+fichier `results/.pool.lock`) donc mutuellement exclusif avec les
+lancements par script. Vérifié par un test réel : un lancement GUI
+pendant que le pool des 96 runs tenait le verrou a échoué immédiatement
+avec le message d'erreur attendu (`PoolAlreadyRunningError`), pas de
+plantage silencieux ni de contention mémoire.
+
+**Conséquence pour l'utilisateur, à communiquer clairement** : avec ce
+correctif, lancer une NOUVELLE simulation M4.3 via le GUI/CLI est
+désormais REFUSÉ tant que le pool de 96 runs tourne (comportement
+intentionnel, pas un nouveau bug) --- c'est le prix du même garde-fou
+mémoire que le reste du programme. Serveur GUI relancé proprement (tmux
+`simlab_gui`, port 8777) pour que l'utilisateur reparte d'un état propre.
