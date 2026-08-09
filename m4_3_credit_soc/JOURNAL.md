@@ -1345,3 +1345,32 @@ conforme à l'estimation d'ordre de grandeur de l'analyse préalable).
 d'`individual_series` peuplé. Nettoyage post-figures : 1,6 Go → 53 Mo
 (loan_events.csv.gz, checkpoint.pkl, snapshots/, individual_series.csv.gz
 supprimés ; figures/ + CSV légers conservés).
+
+## 26. Point d'étape (2026-08-09, cycle cron) — rapport LaTeX poussé, relance 96 runs en cours
+
+`rapport_final.tex`/`.pdf` complétés (placeholder gamma_comp_0.6667 rempli
+avec les figures de vérification déjà générées §24), section §13/9 sur le
+complément simulation_lab/bins/run de démonstration ajoutée aux deux
+rapports (`.md` et `.tex`). Commit `222f7fd2` poussé sur `main`
+(pré-commit + pré-push OK). Périmètre Git inchangé : `report/`,
+`JOURNAL.md`, `prompts/` uniquement — `simulation_lab/settings.py` a des
+changements PRÉ-EXISTANTS non liés à ce travail (fonction
+`model_is_archived()`, correctifs de chemin `LEGACY_RESULT_SOURCES`,
+présents avant toute intervention de ce programme sur ce fichier) laissés
+tels quels, non commités, pour ne pas embarquer du travail non revu dans
+ce commit.
+
+Relance des 96 runs D1+D3 (§24-25) en cours : 12/96 terminés au moment de
+ce point d'étape, tous `status=ok`, aucun incident mémoire/disque,
+`mem_guard` actif sans interruption, pas de HALT. Progression normale
+(cellules plus grandes = plus lentes, cf. incidents K0_2000/λ=100 déjà
+rencontrés et résolus en §17/§19 pour la même famille de cellules).
+
+**Rien de nouveau côté verdict scientifique** (D2/D3 clos §21-22,
+inchangés). **Décision d'ablation toujours en attente de supervision**
+(§21-22, rappelée aussi dans les deux rapports) — pas d'action unilatérale
+prise sur ce point, conformément à la consigne. Prochain cycle : vérifier
+l'avancement de la relance 96 runs, et si elle est terminée, régénérer/
+compléter les livrables qui en dépendent (aucun livrable §10 du prompt ne
+dépend directement des figures simulation_lab — c'est un complément
+d'outillage demandé séparément, pas un critère de clôture du prompt).
