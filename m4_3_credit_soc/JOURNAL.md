@@ -1178,3 +1178,170 @@ que du signal. Les prochains cycles de réveil resteront courts (vérifier
 qu'aucune donnée nouvelle n'est apparue) tant qu'aucune décision n'est
 prise, conformément à la consigne de l'utilisateur (« ne t'arrêtes que
 quand l'intégralité du prompt initial est répondu »).
+
+
+## 24. Rapport LaTeX + figures de vérification + gap simulation_lab découvert et corrigé (2026-08-09)
+
+Demandes utilisateur successives, hors calcul D1/D2/D3 (déjà clos §22) :
+(a) pousser le rapport sur Git avec tout le travail + la question
+d'ablation + ce qu'il faut de l'utilisateur pour continuer — fait,
+`report/rapport_final.md` étendu et poussé (commit `73bf03eb`) ; (b)
+figures de vérification sur données réelles (régressions/tests, pas
+seulement les paramètres finaux dans une table) + PDF LaTeX — en cours ;
+(c) question explicite : toutes les simulations ont-elles leurs
+graphiques générés, accessibles par `simulation_lab`, triés par cellule ?
+
+**Réponse à (c) : non**, et le diagnostic a révélé un écart de processus
+plus profond qu'un simple retard d'import. §8 du prompt demandait de
+réutiliser `simulation_lab` et ses 28 figures validées telles quelles ;
+au lieu de ça, `campaign_d1.py`/`d3_size_check.py` ont construit un
+pipeline d'analyse maison (dagum_c + b uniquement) et leur nettoyage
+post-analyse (`_cleanup_raw`) supprime `snapshots/` juste après l'analyse
+légère — donc AVANT toute génération de figures possible. Aucun
+adaptateur `m4_3_credit_soc` n'existait sous
+`modeles-systeme-physicoeconomique/`, et `simulation_lab_data/` n'avait
+aucune entrée M4.3.
+
+Proposition initiale (périmètre réduit : adaptateur + seulement 3
+cellules centrales relancées) **explicitement rejetée par l'utilisateur**
+: « re-launch every simulations. these graphics are PARAMOUNT to the
+research. » — instruction de relancer l'intégralité des simulations, pas
+un sous-ensemble.
+
+**Investigation avant relance (mesures réelles, pas d'hypothèse)** :
+- `individual_series.csv.gz` n'est utilisé QUE par `entity_lives()` dans
+  `reporting.py` (1 des 9 recettes de `generate_run`, protégée par
+  try/except). Vérification décisive : **toute la campagne M4.2B**
+  (`results/campaign/*/seed*/config.json`, ~90 runs) a
+  `individual_every: 0` — la convention scientifique déjà établie et
+  validée de ce projet ne peuple JAMAIS cette table pour les runs de
+  campagne. `individual_every=0` n'est donc pas une simplification
+  introduite par M4.3, c'est la norme du projet. Aucun changement requis
+  sur ce point.
+- `loan_events.csv.gz` (≈65 % du poids d'un run — 845 Mo/941 Mo à
+  T=8000) **n'est référencé nulle part dans `reporting.py`** (grep, 0
+  résultat) : aucune des 28 figures n'en a besoin. Reste supprimable
+  après figures, comme avant.
+- Seul `snapshots/` (327 Mo/run) est effectivement nécessaire à la
+  majorité des recettes (macro, temporel, séries, inégalité, réseau,
+  vie instantanée, soc — 7 des 9). `network_figure` n'a besoin que de
+  `final_loans.csv` (déjà conservé), pas de `loan_events.csv.gz`.
+- **Test d'import réel** (pas supposé) : `reporting.generate_run()`
+  exécuté tel quel (aucune modification de code) sur
+  `results/pilot/control_geometric/seed0` (run M4.3 réel, T=8000,
+  toujours muni de ses instantanés) → 22 PNG + figures GIF, **0 erreur**,
+  259 s. Confirme que le pipeline M4.2B est directement réutilisable sur
+  la structure de dossier M4.3 sans adaptation de code (moteurs
+  byte-identiques, cf. parité §engine).
+
+**Conséquence sur l'arithmétique disque** : le changement nécessaire est
+minimal — ne plus supprimer `snapshots/` avant d'avoir appelé
+`generate_run()`, tout le reste du nettoyage (`loan_events.csv.gz`,
+`checkpoint.pkl`) reste inchangé. Empreinte finale par run après figures
+: ~40 Mo (déjà conservé) + ~30-50 Mo de figures ≈ 90 Mo, pas les 1,3-2 Go
+initialement redoutés. Pic transitoire pendant le traitement (6 workers
+× ~941 Mo avant nettoyage) ≈ 5,6 Go, trivial sur 91 Go libres.
+
+**Correctifs appliqués** :
+1. Adaptateur créé : `modeles-systeme-physicoeconomique/m4_3_credit_soc/{model.py,figures.py,reporting.py}`
+   (copie de m4_2b, `reporting.py`/`figures.py` inchangés — confirmés
+   agnostiques au moteur par le test d'import ci-dessus ; `model.py`
+   adapté : `model_id="m4_3_credit_soc"`, `ENGINE_ROOT`, description).
+   `simulation_lab/settings.py::ACTIVE_MODEL_IDS` mis à jour pour inclure
+   `m4_3_credit_soc` (vérifié via `python3 -m simulation_lab.cli
+   list-models` : apparaît, `archived=false`).
+2. `scripts/campaign_relaunch_figures.py` (nouveau) : relance les 96
+   runs D1(84)+D3(12) déjà mesurés, réutilise `campaign_d1._run_and_analyze`
+   SANS duplication (monkey-patch de `campaign_d1._cleanup_raw` pour
+   insérer `reporting.generate_run()` juste avant le nettoyage réel —
+   même patron de bascule `cd.RESULTS` que `d3_size_check.py`). Logique
+   de reprise : si `figures/macro_overview.png` absent, force un
+   re-run complet même si `analysis.json` existe déjà en `status=ok`
+   (le raw a été supprimé au premier passage, rien à réutiliser sans
+   re-simuler).
+3. `scripts/generate_figures_existing.py` (nouveau, pool séparé sans
+   garde-fous mémoire — aucune simulation, seulement du calcul de
+   figures CPU) : génère les figures pour les 6 runs pilotes qui ont
+   encore leurs instantanés bruts (baseline_arithmetic ×3,
+   control_geometric ×2 restants, gamma_comp_0.6667_verif ×1).
+
+**Lancé sous les six garde-fous** (préflight disque, verrou mono-pool,
+plafond mémoire réel, PID enregistrés, checkpoint) : `tmux` session
+`m43_relaunch`, 96 runs, 6 workers, `results/relaunch_figures.log`. Coût
+estimé : durée D1 initiale + ~5 min de génération de figures par run en
+plus (mesuré : 259 s sur control_geometric) — plusieurs heures à ~1-2
+jours de calcul mur, comparable à l'ampleur déjà engagée sur ce
+programme. `mem_guard` (tmux `m43_memguard`) tourne sans interruption
+depuis le 2026-08-07.
+
+**gamma_comp_0.6667_verif** (run de vérification lancé plus tôt pour
+récupérer les instantanés du candidat central) terminé avec succès
+pendant cette investigation (status ok, T=8000). Figures FOPDT
+(τ=436,6, R²=0,973) et queue dagum (c=3,417) générées vers
+`report/figures/verification/` — débloque le placeholder du PDF LaTeX.
+
+**Ce qui reste ouvert** : la décision d'ablation (§9, cf. §21-22) —
+toujours non tranchée, toujours hors de ma décision. Le PDF LaTeX
+(`report/rapport_final.tex`) doit encore être mis à jour avec les
+figures gamma_comp_0.6667 et recompilé/poussé. Le rapport final devra
+être mis à jour pour refléter que TOUTES les simulations D1/D3 ont
+maintenant (une fois `m43_relaunch` terminé) leurs 28 figures
+accessibles via `simulation_lab`, triées par cellule
+(`results/{d1,d3_size}/<cellule>/seed<N>/figures/`).
+
+
+## 25. Correctif bins adaptatifs (demande utilisateur explicite) + run de démonstration complet (2026-08-09)
+
+Demande : « Every histogram MUST have bins of adaptative size (such as in
+cascade_rank_size.pdf). To be fixed before generating : *_evolution And
+*_temporal_mean. » — plus faire tourner une simulation, générer TOUTES les
+figures d'un run M4.2B (y compris les vies individuelles) et nettoyer le
+lourd ensuite.
+
+**Bug confirmé et corrigé (2 occurrences), `modeles-systeme-physicoeconomique/m4_3_credit_soc/reporting.py`** :
+1. `temporal_density()` (alimente `*_evolution.gif`/`*_temporal_mean.png`,
+   7 champs × 2 sorties) : `np.logspace(min, max, bins=32)` — bins de
+   LARGEUR fixe en log, pas adaptés à la densité réelle. Comparaison
+   avant/après sur `control_geometric/seed0` : la version originale
+   produit une courbe en dents de scie sur 2-3 ordres de grandeur (bins
+   pauvres en effectif → bruit de comptage dominant) ; la version
+   corrigée (bornes aux quantiles, factorisées dans `_quantile_edges()`,
+   même famille que `adaptive_hist()`/`cascades_rank_size.png` cité en
+   référence) donne une courbe lisse et unimodale.
+2. `_coarse_log_edges()` dans `network_figure()` (histogrammes de
+   puissance prêtée/empruntée en marge de `loan_network_final.png`) :
+   même défaut (nombre de bins adaptatif mais bornes `np.logspace`
+   uniformes). Remplacé par un appel direct à `_quantile_edges()`,
+   fonction locale supprimée.
+
+Audit complet des autres histogrammes du module (`grep` sur
+`np.histogram`/`.hist(`/`bins=`) : `instantaneous_life()` était déjà
+correcte (bornes aux quantiles) ; les `bins="auto"` (degré réseau, âge au
+décès) et les `hexbin(..., bins="log")` (density plots 2D) ne sont pas
+concernés par ce défaut (mécanismes différents, pas de bins uniformes sur
+grande dynamique) — laissés inchangés.
+
+**Ce fichier n'est donc plus une copie strictement identique de l'original
+M4.2B** (cf. docstring mise à jour) — correctif non reporté sur
+`m4_2b_credit_soc/reporting.py` (hors périmètre, CLAUDE.md : ne pas
+modifier un autre modèle sans accord explicite).
+
+**Conséquence sur la relance en cours (§24)** : le pool des 96 runs D1+D3
+avait été lancé AVANT ce correctif et n'avait encore terminé aucun run
+(vérifié : log ne montrait que les 3 lignes de démarrage) — arrêté
+proprement (SIGTERM puis SIGKILL des workers orphelins, verrou et
+registre de workers nettoyés, vérifiés libres) pour ne pas générer 96×7
+figures buguées qu'il aurait fallu regénérer. Relancé après le correctif,
+coût nul (rien n'était complété).
+
+**Run de démonstration** : `results/pilot/baseline_showcase/seed0`
+(cellule baseline, T=8000, `individual_every=1` — première fois dans ce
+programme, cf. §24 où toute la convention était `individual_every=0`).
+33 min de calcul, 1,5 Go brut (`individual_series.csv.gz` seul : 791 Mo,
+conforme à l'estimation d'ordre de grandeur de l'analyse préalable).
+`reporting.generate_run()` : 32 PNG, 0 erreur, ~7 min — y compris
+`entity_lives_overview.png` + 10 figures détail par entité
+(`detail_vie_entites/entity_*.png`), impossibles jusqu'ici faute
+d'`individual_series` peuplé. Nettoyage post-figures : 1,6 Go → 53 Mo
+(loan_events.csv.gz, checkpoint.pkl, snapshots/, individual_series.csv.gz
+supprimés ; figures/ + CSV légers conservés).

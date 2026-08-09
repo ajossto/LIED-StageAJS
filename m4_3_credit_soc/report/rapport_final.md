@@ -396,6 +396,57 @@ répondre, sans engager de nouveau code.
   redémarrage complet, toujours utilisé à la place, moins cher sur les
   durées rencontrées jusqu'ici).
 
+## 13. Complément : accessibilité `simulation_lab`, bins adaptatifs, run de démonstration (2026-08-09)
+
+Trois demandes utilisateur successives, distinctes du calcul D1/D2/D3
+(déjà clos §9-10) :
+
+**(a) Toutes les simulations ont-elles leurs graphiques `simulation_lab`,
+triés par cellule ?** Réponse à l'époque : non — §8 du prompt demandait de
+réutiliser `simulation_lab` tel quel, ce qui n'avait pas été fait (aucun
+adaptateur M4.3, aucune entrée dans `simulation_lab_data`), et le
+nettoyage disque post-analyse de la campagne D1/D3 supprimait les
+instantanés bruts *avant* toute génération de figures possible.
+Investigation avant correctif (mesures réelles) : `individual_series`
+n'est utilisé que par 1 des 9 recettes de figures et `individual_every=0`
+est la convention de toute la campagne M4.2B elle-même (pas une
+simplification propre à M4.3) ; `loan_events.csv.gz` (~65 % du poids d'un
+run) n'est utilisé par aucune des 28 figures. Seul `snapshots/` manquait
+réellement. Correctif : adaptateur créé
+(`modeles-systeme-physicoeconomique/m4_3_credit_soc/`, `model.py` +
+`reporting.py` + `figures.py`, `simulation_lab` mis à jour pour le
+reconnaître comme actif), et les 96 runs D1+D3 relancés avec génération
+de figures *avant* le nettoyage disque (au lieu d'après) — en cours au
+moment de la rédaction, cf. `JOURNAL.md` §24 pour le détail complet et
+l'arithmétique disque.
+
+**(b) Bins d'histogramme adaptatifs partout.** Deux occurrences d'un même
+défaut trouvées et corrigées dans `reporting.py` (copie M4.3, pas
+répercuté sur l'original M4.2B — hors périmètre de la demande) :
+`temporal_density()` (alimente les figures `*_evolution.gif` et
+`*_temporal_mean.png`, 7 champs) et un histogramme local dans
+`network_figure()` utilisaient tous deux un nombre de bins adaptatif mais
+des bornes espacées uniformément en log — sur des champs à queue lourde,
+ça produit un bruit de comptage qui domine le signal (courbe en dents de
+scie sur 2-3 ordres de grandeur). Remplacé par les mêmes bornes aux
+quantiles empiriques que `adaptive_hist()`/`cascades_rank_size.png` (déjà
+correctes, citées comme référence par l'utilisateur). Vérifié
+visuellement avant/après sur `control_geometric/seed0` : la version
+corrigée donne des courbes lisses et interprétables.
+
+**(c) Un run de démonstration complet.** `results/pilot/baseline_showcase`
+(cellule baseline, $T=8000$, `individual_every=1` — première fois dans ce
+programme, jusqu'ici toujours 0 par convention) : 33 min de calcul, 32
+figures générées sans erreur y compris les vies individuelles
+(`entity_lives_overview.png` + 10 figures détail par entité, impossibles
+sans `individual_series` peuplé), données brutes nettoyées ensuite
+(1,6 Go → 53 Mo).
+
+Ces trois points sont des correctifs d'outillage/de processus, pas de
+nouveaux résultats scientifiques — ils ne changent rien au verdict D2/D3
+(§9-10) ni à la décision d'ablation (§11), toujours en attente de votre
+arbitrage.
+
 ---
 
 *Document généré et maintenu par le programme autonome M4.3. Détail
