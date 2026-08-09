@@ -1,0 +1,362 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[french]{babel}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb}
+\usepackage[margin=2.35cm]{geometry}
+\usepackage{booktabs,longtable,tabularx}
+\usepackage{enumitem}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{microtype}
+\usepackage{float}
+\usepackage{hyperref}
+
+\hypersetup{colorlinks=true,linkcolor=blue!45!black,urlcolor=blue!45!black}
+\setlist{nosep}
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\Kaut}{K^{*}_{\mathrm{aut}}}
+
+\title{Prompt de recherche M4.3 (nom provisoire)\\
+\large L'anti-corrélation entre queue des revenus d'intérêt et
+criticité des avalanches est-elle structurelle, et quel mécanisme la
+brise ?}
+\author{Brouillon de travail --- successeur direct de M4.2B
+(\code{m4\_2b\_credit\_soc})}
+\date{6 août 2026 --- version de travail, non figée}
+
+\begin{document}
+\maketitle
+
+\begin{quote}
+\sloppy
+\emph{Brouillon de travail, à discuter avant figeage. Successeur direct
+de M4.2B (\code{m4\_2b\_credit\_soc/}), dont le prompt
+(\code{prompts/PROMPT\_M4\_2B.md}) et le rapport final
+(\code{report/rapport\_final.md}) sont des lectures préalables
+obligatoires --- ce document ne répète pas ce qui y est déjà établi.}
+\end{quote}
+
+\tableofcontents
+
+\section*{0. Ce que M4.2B a établi, et pourquoi ce prompt existe}
+\addcontentsline{toc}{section}{0. Ce que M4.2B a établi, et pourquoi ce prompt existe}
+
+M4.2B a testé si la queue supérieure de la distribution des intérêts
+perçus pouvait être de type Pareto, de façon contrôlable, sans détruire
+la structure en loi de puissance des avalanches de faillites. Le
+programme n'a tranché ni oui ni non sur l'existence de la queue (limite
+de puissance statistique à l'échelle testée, pas une réfutation) mais a
+établi trois faits solides, confirmés sur graines disjointes :
+
+\begin{enumerate}
+\item \textbf{Épaisseur de queue et criticité des avalanches
+  s'anti-corrèlent dans tout ce qui a été exploré.} $\eta$ aux deux
+  extrêmes du sweep ($\rho=0{,}125$ et $\rho=4$) donne un $\hat\alpha$
+  \emph{plus élevé} qu'à baseline (queue plus fine) alors que le
+  rapport de branchement varie dans des sens opposés ($0{,}478$ vs
+  $0{,}891$) ; le sweep $\delta=\sigma$ conjoint donne la queue la plus
+  épaisse de toute la campagne ($\hat\alpha=3{,}05$) exactement là où
+  le rapport de branchement s'effondre ($0{,}786\to0{,}386$). Aucune
+  cellule des 37 testées ne combine queue plus épaisse ET criticité
+  préservée ou accrue.
+\item \textbf{La cible de principal arithmétique est structurellement
+  anti-multiplicative} : elle homogénéise le capital
+  (Gini($K$)$\approx0{,}05$) et la dispersion du revenu d'intérêt est
+  dominée à $77\,\%$ par le nombre de contrats accumulés avec l'âge
+  (\code{deg\_out}, un compteur), $23\,\%$ seulement par la
+  taille/taux des contrats. Aucune ablation de mécanisme n'a été
+  tentée dans M4.2B (question 16 du prompt original) --- c'est le
+  plus gros degré de liberté resté inexploité.
+\item \textbf{$\lambda$ (naissances, \code{Config.lam}) contrôle déjà
+  la taille de population indépendamment de $K_0$} --- vérifié
+  directement dans \code{m4\_2b/model.py}. La campagne de confirmation
+  a fixé $\lambda=30$ partout et utilisé $K_0$ comme proxy de taille,
+  ce que le rapport lui-même signale comme confondu (Gini $\times 8$,
+  plancher de renouvellement $0\to0{,}8$, part \code{deg\_out} jusqu'à
+  $0{,}24$ d'écart en même temps que $K_0$ varie). C'est un défaut de
+  plan de campagne, pas une limite du moteur.
+\end{enumerate}
+
+Ce prompt ne redemande pas « existe-t-il une queue Pareto
+contrôlable ». Il pose une question plus étroite et décidable :
+\textbf{l'anti-corrélation observée entre l'épaisseur apparente de la
+queue des intérêts et la criticité des avalanches est-elle une
+propriété structurelle de cette classe de modèle (marché à pool
+$k\equiv2$, faillite cancel+destroy, service d'intérêt perpétuel), ou
+existe-t-il un paramètre ou un mécanisme qui la brise --- qui déplace
+les deux quantités indépendamment, ou dans un sens conjointement
+favorable ?}
+
+\section*{1. Trois sous-questions, individuellement tranchables}
+\addcontentsline{toc}{section}{1. Trois sous-questions, individuellement tranchables}
+
+\begin{itemize}
+\item \textbf{D1 --- cartographie.} Sur l'espace déjà couvert par
+  M4.2B ($\eta$, $\gamma$, $K_0$, $\delta$, $\sigma$,
+  \code{target\_rule}) et sur ce que ce prompt ajoute (\S4),
+  l'anti-corrélation ($\hat\alpha$, $b$) tient-elle partout, ou
+  existe-t-il des poches où elle s'inverse ou disparaît ?
+\item \textbf{D2 --- contrôle indépendant.} Existe-t-il un paramètre
+  ou un mécanisme qui déplace $\hat\alpha$ (ou la forme de la queue,
+  voir \S3) sans déplacer $b$/$\hat\tau$ dans le sens opposé --- ou
+  qui déplace les deux dans un sens conjointement favorable (queue
+  plus épaisse, criticité égale ou supérieure) ?
+\item \textbf{D3 --- robustesse.} Si une telle région existe (D2),
+  résiste-t-elle au changement de graine, de fenêtre temporelle, et à
+  la taille du système testée proprement (\S5, via $\lambda$, pas via
+  $K_0$) ?
+\end{itemize}
+
+Un résultat négatif sur D2 (l'anti-corrélation est structurelle, aucun
+levier trouvé ne la brise) est un résultat scientifique valide et
+publiable --- ce n'est pas un échec de ce programme. C'est même le
+résultat le plus probable au vu de M4.2B ; ne pas s'obstiner à le nier.
+
+\section*{2. Existence de la queue de Pareto : hypothèse de travail dès le départ, pas un critère bloquant}
+\addcontentsline{toc}{section}{2. Existence de la queue de Pareto : hypothèse de travail dès le départ, pas un critère bloquant}
+
+M4.2B a dépensé une part importante de son budget (trois révisions
+successives d'un test d'existence, \S4 du rapport final) à essayer de
+\emph{prouver} que la queue est une vraie loi de puissance, avant de
+finalement traiter l'existence comme hypothèse. \textbf{Ce prompt
+saute directement à ce point de départ.}
+
+\begin{itemize}
+\item L'existence d'une loi de puissance pure sur la queue des
+  intérêts n'est \textbf{pas} le critère de succès. Le critère est la
+  réponse aux sous-questions D1--D3 sur le plan (paramètre de queue,
+  criticité).
+\item Caractériser la queue avec la famille qui s'ajuste le mieux et
+  de façon reproductible --- loi de puissance pure, tronquée, avec
+  coude --- sans chercher à trancher laquelle est « la vraie »
+  au-delà de ce que les données permettent. Si un exposant de loi de
+  puissance tronquée (ou un paramètre de coude/coupure) caractérise
+  mieux et plus stablement la réponse aux paramètres que $\hat\alpha$
+  seul, l'utiliser et le dire.
+\item Ne pas répéter le test d'auto-similarité à seuil $\times 2$ de
+  M4.2B tel quel (déjà démontré non calculable à cette échelle, \S4 du
+  rapport final) --- si un test d'existence est utile quelque part
+  dans ce programme, le motiver spécifiquement et vérifier d'abord
+  qu'il est calculable avec le volume de données attendu
+  ($n_{\mathrm{tail}}$ estimé avant de lancer, pas après coup).
+\item \textbf{La statistique de queue utilisée pour D1/D2/D3 (\S1)
+  doit être choisie et gelée pendant la phase pilote, avant le début
+  de la cartographie D1} --- pas ajustée en cours de campagne selon
+  ce qui « a l'air le mieux ». Choix justifié sur la reproductibilité
+  inter-graines (écart-type le plus faible à paramètres fixés), pas
+  sur la valeur elle-même. Une fois gelée ($\hat\alpha$ pur, exposant
+  tronqué, ou paramètre de coupure), le plan (\S1) est défini sur
+  cette statistique jusqu'à la fin du programme --- changer de
+  statistique en cours de route a coûté trois révisions de protocole
+  à M4.2B (\S4 de son rapport final), ne pas répéter.
+\end{itemize}
+
+\section*{3. Durée et taille de run : adaptatives, pas un budget fixé à l'avance}
+\addcontentsline{toc}{section}{3. Durée et taille de run : adaptatives, pas un budget fixé à l'avance}
+
+Pas de $T$ ou de $N$ cible fixé dans ce prompt. Chaque configuration
+doit tourner jusqu'à ce que son propre temps caractéristique soit
+mesuré et la fenêtre d'analyse positionnée en conséquence --- en
+généralisant dès le départ ce que M4.2B a dû faire en rattrapage
+(régression FOPDT sur le renouvellement du décile supérieur,
+\code{scripts/renewal\_relaxation\_all\_runs.py}) :
+
+\begin{itemize}
+\item Étendre l'estimation du temps de relaxation à la variable
+  d'intérêt central (queue des intérêts, pas seulement le
+  renouvellement du décile supérieur utilisé comme proxy en M4.2B ---
+  vérifier si son temps d'autocorrélation propre diffère, cf. limite
+  notée au \S8 du rapport final de M4.2B).
+\item \textbf{Checkpointing obligatoire dès le premier run} (pas de
+  rattrapage possible sans lui, leçon déjà actée en mémoire de session
+  après M4.2B) : sauvegarder l'état complet picklable de
+  \code{Simulation} à intervalle régulier et en fin de run, pour
+  permettre l'extension d'un run existant plutôt que sa relance
+  complète si son temps de relaxation s'avère plus long que prévu.
+\item Une cellule dont le temps de relaxation ne peut pas être atteint
+  dans un budget de calcul raisonnable est documentée comme telle
+  (sévère, non stationnaire confirmée) plutôt que forcée à un $T$
+  arbitraire --- convention déjà en place en M4.2B, à garder.
+\item Profiler le coût réel (s/pas, en fonction de $\lambda$ au
+  minimum) avant tout engagement de campagne à plusieurs cellules ---
+  pas après.
+\end{itemize}
+
+\section*{4. Où chercher un levier (D2) : ce qui est déjà disponible sans nouveau code}
+\addcontentsline{toc}{section}{4. Où chercher un levier (D2) : ce qui est déjà disponible sans nouveau code}
+
+Pas de liste de mécanismes pré-autorisée ni interdite --- la liberté
+de diagnostic de M4.2B (\S17 de son prompt) est reconduite. Deux
+précisions cependant :
+
+\begin{itemize}
+\item \textbf{Le contrôle géométrique
+  (\code{target\_rule="geometric"}) est déjà implémenté, testé et
+  parité-vérifiée avec M4.2 --- c'est un point de départ à coût quasi
+  nul pour tester si le canal multiplicatif (que la cible arithmétique
+  supprime, \S0.2) fait une différence sur le plan ($\hat\alpha$,
+  $b$), avant d'écrire une seule ligne de mécanisme nouveau. Ce doit
+  être le tout premier run de la phase pilote.} Le rapport M4.2B
+  donne déjà un indice ($\hat\alpha=3{,}318$ en géométrique contre
+  $3{,}890$ en arithmétique à baseline autrement identique, mais
+  cellule sévère, un seul instantané) --- à re-mesurer proprement avec
+  la méthode de fenêtrage adaptative (\S3) avant d'en tirer une
+  conclusion.
+\item \textbf{La décision d'ablation ne doit pas disparaître par
+  défaut de temps.} M4.2B avait explicitement autorisé une refonte de
+  mécanisme « en second recours » (\S17 de son prompt) et n'en a
+  tenté aucune --- pas par choix motivé, mais parce que le temps a
+  manqué. Ce prompt impose donc une règle de processus, pas une liste
+  de mécanismes : \textbf{à un jalon fixé à l'avance (par exemple, la
+  fin de la cartographie D1), une décision explicite et écrite doit
+  être prise --- ablation nécessaire ou non, avec la justification ---
+  avant de passer à la suite.} Si la réponse est « non nécessaire »,
+  elle doit être aussi défendable et documentée qu'un « oui ».
+\end{itemize}
+
+\section*{5. Objectif B rigoureux : réutiliser la méthodologie déjà validée sur M4B, avec une réserve vérifiée}
+\addcontentsline{toc}{section}{5. Objectif B rigoureux : réutiliser la méthodologie déjà validée sur M4B, avec une réserve vérifiée}
+
+M4.2B n'a jamais testé l'indépendance de taille de l'exposant
+d'avalanche correctement ($\lambda=30$ fixe, $K_0$ confondu comme
+proxy de taille, \S8 de son rapport final). \code{recherche/sensibilite\_m4b/}
+(campagne M4B, 594 runs, outils \code{lib\_metrics.py}/\code{lib\_screening.py}
+déjà copiés sans changement dans \code{m4\_2b\_credit\_soc/scripts/}) a
+résolu cette question \textbf{pour $k=3$} (\code{rapport\_final.tex}
+\S« Avalanches~: loi tronquée\ldots » et table \code{tab:lois},
+vérifié directement dans le source \LaTeX{}, pas de mémoire) :
+
+\begin{itemize}
+\item loi de puissance \textbf{tronquée} partout (LRT $p<10^{-6}$, pas
+  de loi pure) ;
+\item coupure $\hat s_c \propto \lambda^{1{,}5}$ (mesuré
+  $\lambda=10\to30$ : $10{,}0\to51{,}6$ ; à $\lambda=100$ la coupure
+  sort de la fenêtre observable, Vuong tronquée-vs-pure bascule
+  franchement en faveur de la pure, $z=+21{,}0\pm0{,}9$, 5/5 graines) ;
+\item exposant tronqué monotone avec $\lambda$
+  ($1{,}584$~/~$2{,}041$~/~$2{,}313$), extrapolant à
+  $\alpha_\infty\approx2{,}31$--$2{,}32$ --- la non-monotonie du fit
+  en loi \emph{pure} est un artefact de coupure ;
+\item $\lambda$ confirmé comme \textbf{pure taille finie} (intensivité
+  $\pm2\,\%$ sur les observables normalisés).
+\end{itemize}
+
+\textbf{Réserve importante, à ne pas ignorer} : cette échelle en
+$\lambda$ n'a été mesurée qu'à $k=3$. Le même rapport signale
+explicitement, dans sa section « non observé/non confirmé », que
+\textbf{la coupure $\hat s_c$ à $k=2$ (le \code{pool\_size} de M4.2B)
+n'est pas confirmée en amplitude} (contraste exploratoire $-3{,}2$ vs
+confirmé $+6{,}0\pm2{,}8$, métrique la plus bruitée du programme,
+variance inter-graines $17\,\%$) et recommande explicitement de ne
+piloter aucune conclusion sur la coupure ajustée seule --- de
+préférer $b$ et $\hat\alpha$ (déclaré avec la taille de système) et
+la susceptibilité, plus stables. Le lien entre M4B ($k=3$) et
+M4.2B/ce prompt ($k\equiv2$) est donc une \textbf{hypothèse à
+vérifier}, pas un fait transférable tel quel : la pente
+$\lambda^{1{,}5}$ peut différer à $k=2$, même si le mécanisme
+d'avalanche est hérité sans changement.
+
+\textbf{Ce que ce prompt exige concrètement} :
+
+\begin{itemize}
+\item Réutiliser la méthodologie (loi tronquée par MLE, Vuong
+  tronquée-vs-pure, échelle de $\lambda$ incluant au moins
+  $\{10, 30, 100\}$ et un point au-delà si le budget le permet) ---
+  pas les nombres de M4B.
+\item \textbf{Ré-établir $\hat s_c(\lambda)$ sur le moteur M4.2B
+  ($k\equiv2$)} avant de supposer une pente ; si elle diverge de
+  $1{,}5$, le documenter, ne pas forcer l'accord.
+\item Suivre la recommandation de M4B sur les observables de
+  pilotage : \textbf{$b$ (rapport de branchement) et l'exposant
+  tronqué $\hat\alpha$ déclaré avec sa taille de système sont les
+  métriques primaires} du plan D1/D2/D3 côté avalanches ; la coupure
+  ajustée reste une analyse secondaire/de confirmation, jamais le
+  critère qui tranche à elle seule.
+\item Toujours à paramètres par ailleurs identiques, jamais en
+  faisant varier $K_0$ comme proxy de taille.
+\end{itemize}
+
+C'est un gain d'ingénierie direct (l'outillage existe déjà) et
+méthodologique (fini les $\hat\tau$ indépendants par taille qui
+avaient produit une dérive non interprétable dans le pilote M4.2B) ---
+sans hériter une conclusion numérique qui n'a pas encore été vérifiée
+dans ce régime.
+
+\section*{6. Discipline scientifique (reconduite de M4.2B, sans changement)}
+\addcontentsline{toc}{section}{6. Discipline scientifique (reconduite de M4.2B, sans changement)}
+
+\begin{itemize}
+\item Distinguer explicitement fait observé / inférence / hypothèse /
+  incertitude à chaque affirmation quantitative.
+\item Ne jamais sélectionner après coup graines, snapshots ou seuils
+  donnant le résultat attendu.
+\item Protocole figé après la phase pilote ; résultats négatifs
+  conservés et rapportés comme tels (D1/D2 négatifs inclus, \S1).
+\item Unité de réplication = snapshot pour la queue, run pour la
+  moyenne de cellule, cellule pour l'effet de paramètre --- ne jamais
+  fusionner ces échelles (leçon déjà actée : écart-type
+  intra-instantané $\approx3{,}7\times$ l'écart-type inter-graines
+  dans M4.2B, ne pas répéter la confusion).
+\end{itemize}
+
+\section*{7. Efficacité de calcul}
+\addcontentsline{toc}{section}{7. Efficacité de calcul}
+
+\begin{itemize}
+\item Checkpointing dès le premier run (\S3) --- non négociable.
+\item Profiler le coût par pas en fonction de $\lambda$ avant toute
+  campagne à plusieurs cellules (\S3) ; documenter la mesure, pas une
+  estimation.
+\item Budget de parallélisme $\le6$ processus, un run indépendant par
+  processus, conventions \code{cell\_id}/reprise déjà en place dans
+  \code{scripts/lib\_lab.py} et équivalents (M4.2/M4.2B) ---
+  réutiliser, ne pas reconstruire.
+\end{itemize}
+
+\section*{8. Parité et réutilisation d'outils}
+\addcontentsline{toc}{section}{8. Parité et réutilisation d'outils}
+
+\begin{itemize}
+\item Moteur : partir de \code{m4\_2b/model.py} tel quel
+  (l'institution arithmétique reste la référence sauf si D2/\S4
+  justifie explicitement un changement, avec ablation propre et
+  comparaison à la baseline arithmétique).
+\item Figures et snapshots : réutiliser sans modification l'adaptateur
+  \code{simulation\_lab} et le code de génération de figures hérité
+  de M4.2/M4.2B (28 figures déjà validées) ; ajouter uniquement les
+  figures propres au plan ($\hat\alpha$, $b$) et à la loi d'échelle
+  $\hat s_c(\lambda)$.
+\item Statistiques d'avalanches : réutiliser
+  \code{lib\_metrics.py}/\code{lib\_screening.py} (\S5) sans les
+  récrire.
+\end{itemize}
+
+\section*{9. Livrables}
+\addcontentsline{toc}{section}{9. Livrables}
+
+\begin{itemize}
+\item Le plan ($\hat\alpha$ ou paramètre de queue équivalent,
+  $b$/$\hat\tau$) cartographié sur l'espace testé (D1), avec figure
+  dédiée (un point par cellule, graines agrégées, barres d'erreur
+  inter-graines).
+\item Verdict D2 explicite : levier trouvé ou non, avec le niveau de
+  preuve exact (reproductibilité inter-graines, robustesse
+  temporelle).
+\item Si D2 positif : verdict D3 (robustesse de taille, méthodologie
+  \S5).
+\item Décision d'ablation (\S4) documentée par écrit, prise ou non
+  prise, avec justification, à la date du jalon fixé.
+\item Rapport autonome (contexte, grandeurs et méthode rappelés avant
+  usage, comme le rapport final de M4.2B) + journal chronologique.
+\end{itemize}
+
+\section*{10. Question ouverte avant de figer ce prompt}
+\addcontentsline{toc}{section}{10. Question ouverte avant de figer ce prompt}
+
+Nom et emplacement de dossier (\code{m4\_3\_credit\_soc/} par défaut,
+en suivant la convention M4$\to$M4B$\to$M4.2$\to$M4.2B --- à confirmer
+ou changer), et tout ajustement de fond sur les sections ci-dessus.
+
+\end{document}
