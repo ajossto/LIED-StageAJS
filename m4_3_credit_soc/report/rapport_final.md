@@ -1,18 +1,31 @@
-# M4.3 — rapport (2026-08-08)
+# M4.3 — rapport complet (2026-08-09)
 
-**Statut : D1/D2/D3 TERMINÉS. Une décision reste ouverte, réservée à la
-supervision humaine.** La cartographie D1 est terminée (84/84 runs, y
-compris K0_2000 documentée comme sévère). Un candidat D2 a été trouvé
-(`gamma_comp` à γ≥0,6) et **confirmé robuste à la taille par D3**
-(section 7). Le jalon de décision d'ablation (§4 du prompt) est atteint
-et **explicitement réservé à la supervision** (§9 du prompt) — section 8
-présente les éléments pour et contre, sans trancher. C'est la seule pièce
-manquante pour clore intégralement le prompt de référence.
+**Statut : D1/D2/D3 terminés et positifs. Une décision reste ouverte,
+explicitement réservée à la supervision humaine (§9 du prompt).**
+
+## Ce dont j'ai besoin de vous pour continuer
+
+1. **La décision d'ablation (§4 du prompt, détail §11 ci-dessous)** :
+   maintenant que D3 confirme le candidat `gamma_comp_0.6667` robuste à la
+   taille, faut-il (a) s'arrêter là et documenter ce résultat comme la
+   réponse à D2, (b) affiner le balayage γ déjà implémenté
+   (γ∈{0,7 ; 0,8 ; 0,9} compensé — pas de nouveau code, coût ≈identique à
+   une cellule D1), ou (c) engager le code de mécanisme nouveau anticipé
+   par le prompt (famille de moyennes de puissance pour la règle de taux,
+   note manuscrite du §4) ? Je ne tranche pas seul, c'est explicitement
+   votre décision.
+2. **Si (b) ou (c) : autorisation d'engager un budget de calcul non
+   couvert par le plan D1 initial.** §9 du prompt réserve spécifiquement
+   ce type de décision — le plan D1 listait γ∈{1/3,0.4,0.6,2/3}, pas
+   au-delà.
+3. **Rien d'urgent côté machine** : aucun calcul n'est en cours, le
+   veilleur mémoire (`mem_guard.py`) tourne seul en arrière-plan, disque à
+   92 Go libres. Le programme peut rester à l'arrêt indéfiniment sans
+   risque tant que vous n'avez pas tranché.
 
 Document autonome : contexte, grandeurs et méthode sont rappelés avant
 d'être utilisés, chaque affirmation quantitative renvoie à une donnée
 vérifiable (fichier, figure, ou calcul reproductible par un script cité).
-
 Terminologie : **Fait observé** (mesuré directement) / **Inférence**
 (interprétation appuyée sur plusieurs faits) / **Hypothèse** (mécanisme
 proposé, pas établi) / **Incertitude** (non tranché).
@@ -32,108 +45,202 @@ anti-corrélation est-elle une propriété structurelle de cette classe de
 modèle, ou existe-t-il un paramètre ou un mécanisme qui la brise ?**
 (prompt de référence : `prompts/PROMPT_M4_3_FINAL.md`, non répété ici).
 
-Le moteur est repris de M4.2B **sans aucune modification** (`m4_3/model.py`
-et `m4_3/io.py` sont des copies octet pour octet de
-`m4_2b_credit_soc/m4_2b/{model,io}.py`, `diff` vide, parité runtime
-vérifiée par `tests/test_parity_m4_2b.py` — égalité EXACTE sur 6
-combinaisons seed×target_rule).
+## 2. Vue d'ensemble chronologique de tout le travail effectué
 
-## 2. Méthode
+Cette section couvre l'INTÉGRALITÉ du travail — pas seulement les
+résultats scientifiques (§5-§9) mais aussi l'infrastructure, les
+incidents rencontrés et leur résolution. Détail complet, horodaté,
+vérifiable : `JOURNAL.md` (23 entrées, 2026-08-06 à 2026-08-08).
 
-### 2.1 Garde-fous de calcul (impératif de l'utilisateur, "un crash du PC serait catastrophique")
+### 2.1 Vérification des faits du prompt, garde-fous de calcul construits et testés (2026-08-06)
 
-Six garde-fous, tous dans `scripts/safety/` + `scripts/mem_guard.py`,
-détaillés et testés dans `JOURNAL.md` §3 :
-préflight disque (budgété sur la cellule/le pool entier, pas le seul run
-qui démarre), plafond mémoire par worker calculé sur `MemAvailable` réel,
-verrou mono-pool (`flock`), checkpoint atomique, garde-fou mémoire
-indépendant avec autorité de blocage/terminaison (processus séparé,
-surveille `/proc/meminfo` et `/proc/vmstat`), budget ≤6 workers. **Fait
-observé** : sur l'intégralité du programme à ce jour (campagne pilote +
-D1, plusieurs dizaines d'heures de calcul cumulées), 0 arrêt machine, 0
-intervention du garde-fou mémoire nécessaire (seuil d'action jamais
-atteint), une seule catégorie d'échec — mémoire insuffisante sur la
-cellule K0=2000 — capturée proprement (`status="error"`, traceback
-complet, pool non affecté) plutôt que de faire planter le programme.
+Avant tout calcul, vérification indépendante (pas de confiance aveugle)
+des faits cités par le prompt comme déjà établis : lu directement
+`m4_2b/model.py:269-291` (confirmé : `target_rule` est un branchement
+discret, pas un paramètre continu) et les quatre incidents machine cités
+du JOURNAL de M4.2B (§9/§10/§12/§15 — deux arrêts machine sans trace
+d'OOM-kill, quatre causes distinctes pour K0_2000, un crash par deux pools
+concurrents). Tous confirmés exacts.
 
-### 2.2 Fenêtre d'analyse adaptative, pas un burn-in fixe (§3 du prompt)
+**Six garde-fous construits et testés** (`scripts/safety/` +
+`scripts/mem_guard.py`, 8 tests unitaires, tous verts) avant tout
+lancement de calcul réel :
+1. **Préflight disque** — budgété sur la cellule/le pool ENTIER, pas le
+   seul run qui démarre (le bug spécifique que le prompt demandait
+   d'éviter).
+2. **Plafond mémoire par worker** calculé sur `MemAvailable` réel au
+   lancement, pas la RAM totale.
+3. **Verrou mono-pool** (`flock`, chemin fixe) — empêche deux pools de
+   calcul concurrents, la cause racine d'un crash machine en M4.2B.
+4. **Checkpoint atomique** (écriture temp + `os.replace`) — jamais de
+   checkpoint corrompu par une écriture interrompue.
+5. **Garde-fou mémoire indépendant** (`mem_guard.py`, processus séparé de
+   tout pool de calcul) — surveille `/proc/meminfo`/`/proc/vmstat` en
+   continu, autorité de bloquer de nouveaux runs et de terminer les
+   workers en cours si nécessaire. Tourne en continu depuis le
+   2026-08-07 08h09 (plus de 60h à la date de ce rapport).
+6. **Budget ≤6 workers**, convention héritée de M4.2/M4.2B.
 
-M4.2B positionnait sa fenêtre d'analyse sur un burn-in fixe (T/4). M4.3
-mesure, PAR RUN, le temps de relaxation propre de la variable d'intérêt
-centrale (`int_in`, l'intérêt pur reçu — pas un proxy) par régression
-FOPDT sur la persistance du décile supérieur (méthode déjà validée en
-M4.2B, `scripts/renewal_relaxation_all_runs.py`, réutilisée sans
-modification, étendue au champ `int_in` dans
-`scripts/relaxation_pilot.py`/`campaign_d1.py`). **Fait observé** : ce
-temps de relaxation (i) varie sensiblement entre graines à paramètres
-FIXÉS (contrôle geometric : t_converge 3006 à 4174 sur 3 graines, ~28 %
-d'écart) et (ii) diffère systématiquement, dans le sens d'être PLUS LENT,
-des proxys utilisés par M4.2B (net worth, capital, revenu total) — ratio
-1,35 à 1,66 selon la cellule et la graine, jamais inversé sur 4 mesures
-indépendantes. Durée retenue pour toute la cartographie D1 : **T=8000**,
-choisie empiriquement (validée sur les deux régimes de référence,
-géométrique et arithmétique) plutôt que recalculée cellule par cellule
-(coût déraisonnable sur 28 cellules) ; chaque run vérifie a posteriori que
-son propre `t_converge < 0,9·T`, et se marque `severe_nonstationary` sinon
-— **fait observé : 0/81 runs D1 marqués sévères**, T=8000 s'est avéré
-large sur tout l'espace testé.
+**Deux bugs trouvés et corrigés dans ces garde-fous avant tout usage
+réel** (relecture volontaire avant de faire confiance à du code de
+sécurité) : `mem_guard.py` re-déclenchait la terminaison des workers à
+chaque itération au lieu d'une fois par épisode (aurait geler la
+surveillance mémoire elle-même) ; `worker_registry.py` avait un bug de
+nom de fichier temporaire qui cassait l'écriture atomique voulue.
 
-### 2.3 Statistique de queue gelée (§2 du prompt)
+**Fait observé, bilan sur l'ensemble du programme** (pilote + D1 + D3,
+plusieurs dizaines d'heures de calcul cumulées, jusqu'à 6 processus
+parallèles) : **0 arrêt machine, 0 intervention du garde-fou mémoire
+nécessaire** (seuil d'action — 3 lectures consécutives en dépassement —
+jamais atteint, bien qu'un peu de swap transitoire ait été observé lors
+des cellules les plus lourdes). Deux échecs mémoire propres, capturés
+sans impact sur le reste du calcul (voir §2.7).
 
-Choisie et gelée AVANT la cartographie D1, sur le critère prescrit
-(reproductibilité inter-graines, pas la valeur) — détail complet et
-**une erreur trouvée et corrigée avant que D1 ne s'appuie dessus** dans
-`JOURNAL.md` §11. Deux candidats comparés sur 3 graines × 2 régimes
-(géométrique, arithmétique) : l'estimateur de Hill/Pareto pur utilisé par
-M4.2B (CV 1,35-1,59 %) contre le paramètre de forme `c` (indice de queue
-supérieure, `survie ~ x^-c`) du meilleur ajustement à 3 paramètres
-(`dagum_3p`, Burr Type III — famille usuelle pour les distributions de
-revenu avec coude de queue ; AIC favorise TRÈS largement une famille à
-coude sur les 6 graines testées, ΔAIC~15 000-20 000 contre une
-exponentielle pure). **Résultat : `dagum_3p` c est ~2× plus reproductible**
-(CV 0,69-0,70 %) **— statistique gelée pour tout le reste du programme.**
+### 2.2 Nettoyage des journaux bruts M4.2B (2026-08-07)
 
-### 2.4 Cartographie D1
+Autorisé explicitement par l'utilisateur (voir prompt §7 point 6).
+Dry-run d'abord (manifeste écrit, montré avant exécution), puis exécution
+réelle : **78,94 Go libérés** (32 346 fichiers, 132 runs de campagne
+M4.2B), disque `/home` ramené de 87 % à 51 % d'occupation. Vérifié après
+coup : les 25 figures du rapport M4.2B et les fichiers agrégés
+(`*.csv`/`*.json` à la racine de `results/`) intacts (hash de la liste de
+fichiers identique avant/après).
 
-`scripts/campaign_d1.py` : pool multiprocessing (patron déjà validé en
-M4.2B sur 87+45 runs), 6 workers, cellules = copie exacte des paramètres
-de la campagne d'exploration M4.2B (`m4_2b_credit_soc/scripts/campaign.py`
-— η/ρ, γ (compensé et non compensé), K0, δ/σ, target_rule), 28 cellules ×
-3 graines = 84 runs. Nettoyage disque post-analyse intégré dès le départ
-(journaux bruts par transaction et instantanés réseau supprimés après
-extraction des métriques agrégées — nécessaire par arithmétique disque,
-détail dans `JOURNAL.md` §13).
+### 2.3 Port du moteur, parité, profilage de coût (2026-08-07)
+
+`m4_3/model.py` et `m4_3/io.py` copiés OCTET POUR OCTET depuis
+`m4_2b_credit_soc/m4_2b/` (`diff` vide). Parité runtime vérifiée par
+égalité EXACTE (pas de tolérance) sur 6 combinaisons seed×target_rule
+(`tests/test_parity_m4_2b.py`). Profilage de coût avant tout engagement
+de campagne (`scripts/profile_cost.py`, λ∈{10,30,100}) : révèle que le
+carnet de prêts actifs dépasse largement son niveau stationnaire pendant
+la montée en charge (jusqu'à ~96 000 prêts vers t≈100 sur la cellule
+baseline) avant de se contracter — fait non anticipé, documenté.
+
+### 2.4 Phase pilote : fenêtre adaptative et statistique de queue
+
+Premier run prescrit par le prompt (contrôle géométrique) mesuré à
+T=3000 (convention M4.2B), puis **relaxation étendue à la variable
+d'intérêt centrale (`int_in`) — jamais mesurée spécifiquement par
+M4.2B** : révèle que `int_in` relaxe 35 à 66 % plus lentement que les
+proxys utilisés jusque-là (net worth, capital, revenu total), sur 4
+mesures indépendantes, jamais inversé. **Le run à T=3000 s'est avéré
+insuffisant** (`t_converge` estimé à 3911 > T=3000) — refait à T=8000,
+qui s'est révélé suffisant pour la suite du programme.
+
+**Statistique de queue gelée** (§2 du prompt, critère : reproductibilité
+inter-graines) : comparaison entre l'estimateur de Hill/Pareto pur utilisé
+par M4.2B et le paramètre de forme d'un ajustement à 3 paramètres avec
+coude de queue (`dagum_3p`, Burr Type III). **Erreur trouvée et corrigée
+avant que D1 ne s'appuie dessus** : la première mesure annonçait le
+candidat `c·d` comme statistique, avec une justification physique fausse
+(confusion avec une autre famille du ladder, Burr Type XII) — repérée
+avant tout usage en aval, corrigée pour le paramètre `c` seul, la
+conclusion (quel candidat geler) ne change pas mais la valeur numérique
+et sa justification si. Résultat final : `dagum_3p` c est ~2× plus
+reproductible que l'estimateur de Hill (CV 0,69-0,70 % contre 1,35-
+1,59 %) — gelé pour tout le reste du programme.
+
+### 2.5 Cartographie D1 (2026-08-07 18h50 → 2026-08-08 04h27)
+
+`scripts/campaign_d1.py` : pool à 6 workers, 28 cellules × 3 graines =
+84 runs, paramètres repris à l'identique de la campagne d'exploration
+M4.2B (γ, γ compensé, K0, δ/σ, ρ/η, target_rule). Nettoyage disque
+post-analyse intégré dès le départ (journaux bruts supprimés après
+extraction des métriques agrégées — nécessaire : 84 runs bruts auraient
+occupé plus que l'espace disque disponible). **Durée : ~9h40, 6 workers
+en continu.**
+
+### 2.6 Deux incidents mémoire rencontrés et résolus (2026-08-08)
+
+- **K0_2000** (les 3 graines) : `ArrayMemoryError` dans le pool principal
+  (plafond 4,43 Go/worker atteint) — capturé proprement par les garde-fous
+  (statut d'erreur écrit, traceback complet, le reste du pool non
+  affecté : 81 autres runs terminés sans incident). Retenté séparément
+  avec 2 workers au lieu de 6 (plafond 13,56 Go/worker) : les 3 graines
+  réussissent, confirmant que c'était bien un problème de plafond. Fait
+  supplémentaire découvert : les 3 graines sont intrinsèquement
+  `severe_nonstationary` à T=8000 (K0=2000 est 80× la baseline, sa
+  relaxation propre dépasse 0,9×T) — décision (déjà prévue par le
+  prompt §3) de documenter comme cellule sévère plutôt que d'étendre la
+  durée (coût estimé 8-10h/run pour cette seule cellule extrême).
+- **`gamma_comp_0.6667` à λ=100** (les 3 graines, pendant D3, §2.7) :
+  même motif exact (mémoire), même correctif (moins de workers, plus de
+  marge chacun) — les 3 graines réussissent au deuxième essai, aucune
+  `severe_nonstationary` cette fois.
+
+Ces deux incidents partagent la même cause (systèmes parmi les plus gros
+du programme, plafond par worker trop serré à 6 workers) et le même
+correctif — pas des bugs différents, un seul phénomène rencontré deux
+fois.
+
+### 2.7 D3 : robustesse de taille et temporelle (2026-08-08)
+
+Détail scientifique en §9. Deux vérifications indépendantes menées :
+taille du système (λ∈{10,30,100}, méthodologie M4B) et fenêtre temporelle
+(première vs seconde moitié de la fenêtre post-convergence, en réutilisant
+des données déjà calculées, sans nouveau calcul).
+
+### 2.8 Fonctionnement autonome : réveil périodique, incidents de supervision
+
+Sur consigne explicite de l'utilisateur (« continue systématiquement,
+réveille-toi périodiquement »), un mécanisme de reprise a été mis en
+place via `CronCreate` (prompt réinjecté dans la même session toutes les
+~5h — **pas** la compétence `schedule`/agents cloud, essayée puis
+abandonnée car elle n'aurait eu aucun accès à cette machine, ses
+processus, ou son état mémoire réel). Deux erreurs de lecture d'état
+commises PENDANT ce fonctionnement autonome, toutes deux corrigées après
+vérification avant d'être rapportées comme faits : (1) un script d'attente
+basé sur le contenu affiché d'une session tmux a raté la notification de
+fin d'un run pourtant terminé avec succès (le run n'a subi aucun impact,
+seule la notification a échoué — corrigé en vérifiant l'état sur disque
+plutôt que le texte affiché) ; (2) une notification de fin de calcul lue
+trop vite a été prise pour un nouvel échec de K0_2000 alors qu'il
+s'agissait d'un fichier d'erreur déjà ancien, laissé par la tentative
+précédente — corrigé en vérifiant l'horodatage avant de conclure. Un
+défaut de structure dans `JOURNAL.md` (une section dupliquée en fin de
+fichier par une édition antérieure) a aussi été repéré et corrigé en
+cours de route.
 
 ## 3. Repères : ce que mesurent les grandeurs citées plus loin
 
-- **`dagum_c`** (statistique de queue gelée, §2.3) : indice de la queue
+- **`dagum_c`** (statistique de queue gelée, §2.4) : indice de la queue
   supérieure de la distribution des revenus d'intérêt reçus, mesuré sur
   la fenêtre post-relaxation propre à chaque run. **Plus `c` est PETIT,
   plus la queue est ÉPAISSE** (décroissance plus lente).
 - **`b` (branching ratio)** : rapport de branchement des avalanches de
   faillites (méthodologie M4B/M4.2B, `lib_metrics.window_avalanche_
-  metrics`, inchangée). Proche de 1 = dynamique proche du point critique
-  (avalanches plus grosses, plus fréquentes) ; proche de 0 = sous-
-  critique.
+  metrics`, inchangée). Proche de 1 = dynamique proche du point critique ;
+  proche de 0 = sous-critique.
 - **`τ̂`** : exposant de la loi de puissance (tronquée si identifiable)
   ajustée sur la distribution des tailles d'avalanche — métrique
-  secondaire par rapport à `b` (convention M4B, `JOURNAL.md` §5).
+  secondaire par rapport à `b` (convention M4B).
 - **Anti-corrélation** (le sujet central du programme) : `dagum_c` et `b`
-  varient dans le MÊME sens d'une cellule à l'autre (queue plus épaisse
-  = `c` bas = `b` bas aussi = moins critique). Un « candidat D2 » est une
+  varient dans le MÊME sens d'une cellule à l'autre (queue plus épaisse =
+  `c` bas = `b` bas aussi = moins critique). Un « candidat D2 » est une
   cellule où `c` baisse (queue plus épaisse) MAIS `b` monte (plus
   critique) — le motif recherché par tout le programme.
-- **`t_converge`** : instant estimé où la variable d'intérêt (`int_in`)
-  atteint sa valeur stationnaire, par régression FOPDT sur la persistance
-  du décile supérieur (§2.2). La fenêtre d'analyse d'un run est
-  `[t_converge, T]`.
+- **`t_converge`** : instant estimé où `int_in` atteint sa valeur
+  stationnaire (régression FOPDT sur la persistance du décile supérieur).
+  La fenêtre d'analyse d'un run est `[t_converge, T]`.
 
-## 4. Résultat pilote : `target_rule` (géométrique vs arithmétique) — D2 négatif
+## 4. Méthode : fenêtre adaptative, pas un burn-in fixe
 
-Premier run prescrit par le prompt (§4) : le contrôle géométrique
-(canal multiplicatif que la cible arithmétique de M4.2B supprime), 3
-graines contre 3 graines de la baseline arithmétique, T=8000, méthode
-complète (§2.2-2.3) — pas la mesure ponctuelle de M4.2B.
+M4.2B positionnait sa fenêtre d'analyse sur un burn-in fixe (T/4). M4.3
+mesure, PAR RUN, le temps de relaxation propre de `int_in` (§2.4).
+Durée retenue pour toute la cartographie D1 : **T=8000**, choisie
+empiriquement (validée sur les deux régimes de référence) plutôt que
+recalculée cellule par cellule (coût déraisonnable sur 28 cellules) ;
+chaque run vérifie a posteriori que son propre `t_converge < 0,9·T`, et
+se marque `severe_nonstationary` sinon. **Fait observé : sur 84 runs D1,
+seule la cellule K0_2000 (les 3 graines) est marquée sévère** — T=8000
+s'est avéré large sur tout le reste de l'espace testé.
+
+## 5. Résultat pilote : `target_rule` (géométrique vs arithmétique) — D2 négatif
+
+Premier run prescrit par le prompt (§4) : le contrôle géométrique (canal
+multiplicatif que la cible arithmétique de M4.2B supprime), 3 graines
+contre 3 graines de la baseline arithmétique, T=8000, méthode complète.
 
 | régime | dagum_c | b | τ̂ |
 |---|---|---|---|
@@ -142,60 +249,55 @@ complète (§2.2-2.3) — pas la mesure ponctuelle de M4.2B.
 
 **Géométrique a la queue d'intérêt plus ÉPAISSE (c plus bas) ET des
 avalanches MOINS critiques (b plus bas)** — anti-corrélation confirmée,
-séparation ~29σ (c) à ~34σ (b), pas un effet marginal. Confirmé par trois
-mesures indépendantes convergentes (candidat A, candidat B, et la mesure
-historique de M4.2B — détail `JOURNAL.md` §12). **Verdict D2 pour ce
-levier : négatif.** Un résultat négatif est un résultat scientifique
-valide (le prompt le dit explicitement, §1) — le canal multiplicatif ne
-casse pas l'anti-corrélation, il en est un point de plus.
+séparation ~29σ (c) à ~34σ (b). Confirmé par trois mesures indépendantes
+convergentes (candidat A, candidat B, et la mesure historique de M4.2B —
+`JOURNAL.md` §12). **Verdict D2 pour ce levier : négatif** — un résultat
+négatif est un résultat scientifique valide (le prompt le dit
+explicitement) ; le canal multiplicatif ne casse pas l'anti-corrélation.
 
-## 5. Cartographie D1 : l'espace de M4.2B, remesuré
+## 6. Cartographie D1 : l'espace de M4.2B, remesuré
 
 Figure : `figures/d1_plan_dagum_c_vs_b.png` (un point par cellule, barres
 d'erreur inter-graines, axe `dagum_c` inversé pour lire « queue plus
 épaisse » de gauche à droite). Table complète :
 `results/d1/d1_verdict_cells.csv`.
 
-**Sur 26 cellules identifiables** (K0_2000 exclu, en reprise — voir §6) :
-24 confirment l'anti-corrélation ou montrent les deux métriques bougeant
-ensemble dans le même sens (non informatif). **2 cellules — `gamma_comp_
-0.6000` et `gamma_comp_0.6667` (γ=0,6 et γ=2/3, K0 compensé pour tenir
-K0/K*_aut(γ) constant) — montrent le motif inverse : queue plus épaisse
-ET b plus élevé que la baseline**, avec une tendance MONOTONE sur toute
-la branche γ∈{1/3, 0.4, 0.6, 2/3} (`dagum_c` : 5,19→4,56→3,58→3,39 ;
-`b` : 0,760→0,770→0,802→0,804), séparation ~15σ sur les deux axes contre
-la baseline. Détail complet, y compris le contraste avec la branche γ NON
-compensée (motif non monotone, pas le même effet), dans `JOURNAL.md` §16.
+**Sur les 26 cellules comparées à la baseline** (K0_2000 exclue, sévère —
+§7) : 24 confirment l'anti-corrélation ou montrent les deux métriques
+bougeant ensemble dans le même sens (non informatif). **2 cellules —
+`gamma_comp_0.6000` et `gamma_comp_0.6667` (γ=0,6 et γ=2/3, K0 compensé
+pour tenir K0/K*_aut(γ) constant) — montrent le motif inverse : queue
+plus épaisse ET b plus élevé que la baseline**, avec une tendance
+MONOTONE sur toute la branche γ∈{1/3, 0.4, 0.6, 2/3} (`dagum_c` :
+5,19→4,56→3,58→3,39 ; `b` : 0,760→0,770→0,802→0,804), séparation ~15σ sur
+les deux axes contre la baseline. Le contraste avec la branche γ NON
+compensée (motif non monotone, pas le même effet) suggère que c'est la
+COMBINAISON γ+compensation qui compte, pas γ seul.
 
-**Réserve non résolue à ce stade** : `gamma_comp` fait varier K0 (par
-construction, pour la compensation), donc la population finale varie
-d'environ ±25 % autour de la baseline sur cette branche (bien moins que
-la variation sur plusieurs ordres de grandeur de la branche K0 brute, mais
-pas nulle). Ce candidat n'est pas confirmé tant que sa robustesse à taille
-FIXE (via λ, méthode M4B/§5 du prompt) n'est pas vérifiée — c'est l'objet
-de la section suivante.
+**Réserve appliquée avant de conclure** : `gamma_comp` fait varier K0 (par
+construction), donc la population finale varie d'environ ±25 % autour de
+la baseline (bien moins que la branche K0 brute, mais pas nulle). Ce
+candidat n'a été traité comme confirmé qu'après la vérification de taille
+indépendante (§9).
 
-## 6. K0_2000 : échec mémoire propre, résolu, mais cellule intrinsèquement sévère
+## 7. K0_2000 : échec mémoire propre, résolu, mais cellule intrinsèquement sévère
 
-Les 3 graines de K0_2000 ont d'abord échoué dans le pool principal
-(`ArrayMemoryError`, plafond mémoire virtuel par worker atteint, 4,43 Go)
-— capturé proprement (§2.1), 0 impact sur les 81 autres runs. Reprise
-séparée (2 workers, plafond ≈13,56 Go/worker) : **3/3 réussissent**,
-confirmant que le problème était bien le plafond, pas la cellule. **Mais
-les 3 graines sont `severe_nonstationary` à T=8000** (`t_converge_int_in`
-entre 7568 et 9087, proche ou au-delà de 0,9·T) — K0_2000 (80× la
-baseline) est intrinsèquement trop lente à relaxer pour T=8000. Décision
-(convention déjà actée par le prompt §3, pas un choix nouveau) :
-**ne pas étendre** (coût estimé 8-10h/run pour cette seule cellule
-extrême) — `dagum_c` non disponible pour K0_2000, mais le rapport de
-branchement reste identifiable (moins sensible à la fenêtre) :
-**b = 0,6797 ± 0,0011** (2/3 graines identifiables). Détail complet dans
-`JOURNAL.md` §15/§18/§19.
+Détail complet en §2.6. Résumé du résultat scientifique : `dagum_c` non
+disponible (3/3 graines sévères), mais le rapport de branchement reste
+identifiable (moins sensible à la fenêtre) : **b = 0,6797 ± 0,0011**
+(2/3 graines identifiables).
 
-## 7. D3 — robustesse de taille du candidat `gamma_comp` : POSITIF
+## 8. Statistique de queue gelée : détail
+
+Voir §2.4 pour le récit complet (choix, erreur trouvée et corrigée).
+Statistique gelée pour tout le programme : `dagum_3p` (Burr Type III)
+ajusté sur `int_in` poolé sur la fenêtre post-convergence, paramètre
+rapporté = `c` (indice de queue supérieure, `survie ~ x^-c`).
+
+## 9. D3 — robustesse de taille et temporelle du candidat `gamma_comp` : POSITIF
 
 `scripts/d3_size_check.py` : `{baseline, gamma_comp_0.6667} × λ∈{10,30,100}`,
-3 graines chacune (λ=30 réutilisé de D1). Résultat :
+3 graines chacune (λ=30 réutilisé de D1).
 
 | λ | pop (baseline) | pop (gamma_comp) | Δc (gamma_comp−baseline) | Δb |
 |---|---|---|---|---|
@@ -206,78 +308,99 @@ branchement reste identifiable (moins sensible à la fenêtre) :
 **Δb est identique à 4 chiffres significatifs sur les trois échelles de
 taille (0,0184 / 0,0184 / 0,0185) et Δc varie de moins de 2 % relatif**,
 malgré un facteur >10× sur la population absolue. C'est la signature
-attendue d'un effet indépendant de la taille — pas l'atténuation qu'on
-observerait si l'effet était un artefact de la variation de population
-que la compensation K0/K*_aut(γ) ne neutralise pas parfaitement.
-**Vérification annexe** : la baseline elle-même est size-indépendante sur
-ces deux métriques (écart <1 % sur c, <0,5 % sur b entre λ=10 et λ=100) —
-reproduit directement le résultat déjà établi par M4B, validation
-indépendante que le test de taille par λ fonctionne comme attendu sur ce
-moteur.
+attendue d'un effet indépendant de la taille. **Vérification annexe** :
+la baseline elle-même est size-indépendante sur ces deux métriques (écart
+<1 % sur c, <0,5 % sur b entre λ=10 et λ=100) — reproduit le résultat déjà
+établi par M4B, validation indépendante que le test de taille par λ
+fonctionne comme attendu sur ce moteur.
+
+**Robustesse temporelle** (distincte de la reproductibilité inter-graines) :
+la fenêtre post-convergence de chaque run (baseline, gamma_comp_0.6667,
+λ=30) découpée en deux moitiés temporelles donne un écart `b` stable
+(+0,0189 en première moitié, +0,0178 en seconde,
+`scripts/temporal_robustness_check.py`, réutilise des données déjà
+calculées, sans nouveau calcul) — pas un artefact d'une sous-période
+particulière.
+
+Figure : `figures/d3_size_robustness.png` — Δc et Δb contre λ, échelle
+log, barres d'erreur inter-graines. Les deux courbes sont visuellement
+plates.
 
 **Verdict D3 : POSITIF.** `gamma_comp_0.6667` casse l'anti-corrélation de
-façon robuste à la taille. **C'est le premier résultat de tout le
-programme M4.2B→M4.3 (65 cellules testées au total, M4.2B + D1 de M4.3)
-qui casse l'anti-corrélation avec cette solidité statistique.**
-Mécanisme : γ et la compensation K0/K*_aut(γ) sont DÉJÀ dans le moteur —
-aucune ablation de mécanisme n'est nécessaire pour ce résultat spécifique.
+façon robuste à la taille ET à la fenêtre temporelle. **C'est le premier
+résultat de tout le programme M4.2B→M4.3 (65 cellules testées au total)
+qui casse l'anti-corrélation avec cette solidité statistique.** Mécanisme :
+γ et la compensation K0/K*_aut(γ) sont DÉJÀ dans le moteur — aucune
+ablation de mécanisme n'est nécessaire pour ce résultat spécifique.
 
-**Robustesse temporelle** (distincte de la reproductibilité inter-graines
-ci-dessus) : la fenêtre post-convergence de chaque run (baseline,
-gamma_comp_0.6667, λ=30) découpée en deux moitiés temporelles donne un
-écart `b` stable (+0,0189 en première moitié, +0,0178 en seconde,
-`scripts/temporal_robustness_check.py`) — pas un artefact d'une
-sous-période particulière.
+## 10. Ce que le résultat D3 signifie pour D2
 
-Figure : `figures/d3_size_robustness.png` — Δc et Δb (gamma_comp−baseline)
-contre λ, échelle log, barres d'erreur inter-graines. Les deux courbes
-sont visuellement plates : aucune tendance décelable sur deux ordres de
-grandeur de λ.
+**Le levier existe.** `target_rule` seul (§5) est D2-négatif, mais
+`gamma_comp` (déjà dans l'espace couvert par M4.2B) est D2-positif et
+D3-confirmé. Ce n'est PAS un nouveau mécanisme à construire — la question
+qui reste est de savoir si la région favorable s'étend au-delà des deux
+points déjà mesurés (γ=0,6 et 2/3) ou si γ=2/3 est proche d'un
+optimum/plateau. C'est exactement la question posée à la section suivante.
 
-## 8. Décision d'ablation (§4 du prompt) : jalon atteint, décision réservée à la supervision (§9 du prompt)
+## 11. Décision d'ablation (§4 du prompt) : jalon atteint, décision réservée à la supervision (§9 du prompt)
 
 La cartographie D1 est le jalon fixé à l'avance pour trancher, par écrit,
-si une refonte de mécanisme (ex. famille de moyennes de puissance pour la
+si une refonte de mécanisme (famille de moyennes de puissance pour la
 règle de taux, note manuscrite citée au §4 du prompt) est nécessaire.
 **Cette décision est explicitement hors du périmètre de ce qui peut être
-tranché de façon autonome**, même après confirmation D3. Éléments pour la
-décision, sans trancher :
+tranché de façon autonome**, même après confirmation D3.
 
-- **Pour** : D3 (§7) CONFIRME `gamma_comp_0.6667` robuste à la taille
-  (marge statistique large, 27-85σ selon λ) — la preuve directe qu'un
-  changement de règle de taux COMBINÉ à une compensation de capital casse
-  l'anti-corrélation. Signal fort qu'une famille plus riche (moyennes de
-  puissance, note manuscrite) pourrait révéler une région encore plus
-  favorable que les deux points déjà couverts (arithmétique, géométrique)
-  — ou, alternative moins coûteuse à explorer d'abord, qu'un simple
-  affinement du balayage γ_comp déjà existant (γ∈{0,7;0,8;0,9} compensé)
-  pourrait suffire sans nouveau code.
-- **Contre / pas encore** : le mécanisme qui casse l'anti-corrélation
-  (`gamma_comp`) EXISTE DÉJÀ dans le moteur — ce n'est pas `target_rule`
-  (D2-négatif, §4) qui était le déclencheur anticipé par le prompt pour
-  cette famille de moyennes de puissance. Un affinement du γ déjà
-  implémenté (coût ~identique à une cellule D1) est un préalable moins
-  coûteux et plus informatif qu'un engagement de code de mécanisme
-  nouveau — et ce prolongement lui-même est un nouvel engagement de
-  calcul non couvert par le plan D1 initial, donc également signalé
-  plutôt que lancé seul (`JOURNAL.md` §21).
+**La question concrète, pour vous** : maintenant que D3 confirme
+`gamma_comp_0.6667` robuste (taille ET temps), trois options existent,
+de la moins à la plus coûteuse :
 
-## 9. Limites et non testé à ce stade
+- **(a) S'arrêter ici.** Le résultat (le levier existe, il est dans
+  `gamma_comp`, robuste) répond déjà à la question du prompt. Rien
+  d'autre n'est strictement nécessaire pour clore le programme.
+- **(b) Affiner le balayage γ_comp déjà implémenté** (ex.
+  γ∈{0,7 ; 0,8 ; 0,9} compensé) — PAS une ablation, un prolongement
+  direct de D1 avec le code déjà écrit, coût ≈identique à une cellule D1
+  (quelques heures). Répondrait à « la région favorable s'étend-elle, ou
+  γ=2/3 est-il déjà proche d'un plafond ? ».
+- **(c) Engager le code de mécanisme nouveau** anticipé par le prompt
+  (famille de moyennes de puissance pour la règle de taux — harmonique,
+  géométrique, arithmétique, quadratique... comme continuum, au lieu du
+  choix binaire actuel). Investissement de code réel, ablation propre
+  requise (comparaison à la baseline arithmétique), le plus coûteux des
+  trois mais aussi ce que le prompt anticipait explicitement comme
+  « second recours ».
 
-- Statistique de queue gelée sur 3 graines par régime (§2.3) — assez pour
+Je n'ai pas d'avis à imposer entre ces trois options — c'est vous qui
+avez le contexte sur le temps/budget restant et l'intérêt scientifique
+relatif. Mon inclination technique, pour ce qu'elle vaut : **(b) avant
+(c)**, parce que (b) est presque gratuit avec l'outillage déjà en place
+et répond à une partie de la question que (c) chercherait aussi à
+répondre, sans engager de nouveau code.
+
+## 12. Limites et non testé à ce stade
+
+- Statistique de queue gelée sur 3 graines par régime — assez pour
   trancher entre les deux candidats testés (écart net, ~2×), pas assez
   pour une incertitude publiable au sens strict (M4.2B utilisait 5 graines
   de confirmation disjointes pour ce niveau de rigueur).
-- D1 mesure `dagum_c`/`b` en fin de fenêtre post-convergence, pas
-  l'évolution temporelle intra-fenêtre (stationnarité supposée une fois
-  `t > t_converge`, pas re-testée formellement dans D1).
-- La coupure d'avalanche ŝc(λ) n'a pas encore été ré-établie sur ce moteur
-  (§5 du prompt, prévu si D2 devient positif après D3).
+- D1 mesure `dagum_c`/`b` en fin de fenêtre post-convergence ; la
+  robustesse temporelle (§9) n'a été vérifiée que sur la paire
+  baseline/gamma_comp_0.6667 à λ=30, pas sur les 28 cellules de D1.
+- La coupure d'avalanche ŝc(λ) n'a pas encore été ré-établie sur ce
+  moteur (§5 du prompt, pertinent maintenant que D2 est positif).
 - Rapport de branchement `b` et `τ̂` utilisent `s_min=2` (convention
   M4B/M4.2B) sans re-test de sensibilité à ce choix dans M4.3.
+- Le mécanisme de reprise depuis checkpoint (sauvegarde testée et
+  fonctionnelle) n'a jamais eu besoin d'être exercé en pratique — aucun
+  run n'a dû être repris depuis un arrêt en cours (contrairement à un
+  redémarrage complet, toujours utilisé à la place, moins cher sur les
+  durées rencontrées jusqu'ici).
 
 ---
 
-*Document généré et maintenu par le programme autonome M4.3 (voir
-`JOURNAL.md` pour le détail chronologique complet). Prochaine mise à
-jour : verdict D3 dès disponible.*
+*Document généré et maintenu par le programme autonome M4.3. Détail
+chronologique complet, avec horodatage et données brutes, dans
+`JOURNAL.md`. Tout le code cité (`scripts/`, `m4_3/`) est disponible dans
+le dépôt local mais pas encore versionné dans Git (voir note du dépôt sur
+la portée du suivi Git, alignée sur la convention déjà en place pour
+M4.2B) — demandez si vous voulez qu'il soit poussé aussi.*
