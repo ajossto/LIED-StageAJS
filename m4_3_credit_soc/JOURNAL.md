@@ -1465,3 +1465,29 @@ de cette décision, qui n'est pas de mon ressort. Prochain cycle :
 vérifier l'avancement de la relance, continuer à synchroniser
 l'importeur, sans autre action nécessaire tant que la décision d'ablation
 n'arrive pas.
+
+## 29. Point d'étape (2026-08-10, cycle cron) — K0_2000 réplique l'échec mémoire connu, retry préparé
+
+Relance 96 runs : 90/96 traités (K0_2000 exclu, cf. ci-dessous), tous les
+autres `status=ok`. Les 6 derniers (`baseline_lam100`,
+`gamma_comp_0.6667_lam100`, les cellules λ=100 les plus lourdes de la
+grille) sont en cours, lents mais sans incident (disque 67 Go libres,
+`mem_guard` actif, pas de HALT) --- normal, déjà observé pour ces tailles.
+
+`K0_2000` a échoué sur ses 3 graines avec le même `MemoryError` au
+checkpoint déjà rencontré et résolu une première fois lors de la
+campagne D1 initiale (JOURNAL.md §17/19) --- cellule intrinsèquement plus
+lourde que le plafond mémoire calculé pour 6 workers. Pas une régression
+du correctif bins/figures : root cause identique, déjà documentée.
+`scripts/retry_k0_2000_with_figures.py` écrit (2 workers, même
+monkey-patch génération-figures-avant-nettoyage que
+`campaign_relaunch_figures.py` --- **pas** une réutilisation telle quelle
+de l'ancien `retry_k0_2000.py`, qui daterait le nettoyage avant les
+figures et reproduirait le problème initial de ce chantier). Prêt à
+lancer dès que le pool principal libère le verrou mono-pool (les deux ne
+peuvent pas tourner en même temps par construction, §7.3).
+
+Rien de nouveau côté verdict scientifique ni côté décision d'ablation
+(toujours en attente de supervision, aucune action unilatérale). Prochain
+cycle : si le pool principal est terminé, lancer le retry K0_2000, puis
+resynchroniser l'importeur simulation_lab (§27) une dernière fois.
