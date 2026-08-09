@@ -1442,3 +1442,26 @@ désormais REFUSÉ tant que le pool de 96 runs tourne (comportement
 intentionnel, pas un nouveau bug) --- c'est le prix du même garde-fou
 mémoire que le reste du programme. Serveur GUI relancé proprement (tmux
 `simlab_gui`, port 8777) pour que l'utilisateur reparte d'un état propre.
+
+## 28. Point d'étape (2026-08-09, cycle cron) — relance à mi-parcours, importeur suivi
+
+Relance 96 runs : 45/96 terminés, tous `status=ok`, disque 77 Go libres
+(consommation stable, ~1,2 Go/run en moyenne sur les runs traités jusqu'ici,
+cohérent avec l'estimation §24), `mem_guard` actif, pas de HALT.
+`gamma_comp_0.6667` (cellule centrale du résultat D2/D3) a terminé ses 3
+graines --- figure `entity_size_histo_temporal_mean.png` inspectée
+visuellement : courbe lisse et unimodale, correctif bins (§25) confirmé
+opérant sur cette cellule aussi.
+
+`scripts/import_to_simulation_lab.py` relancé (idempotent) : 50 runs
+maintenant enregistrés et visibles dans `simulation_lab` (était 38 au
+cycle précédent), continuera d'être relancé à chaque cycle tant que la
+relance progresse.
+
+Rien de nouveau côté verdict scientifique (clos §21-22). Décision
+d'ablation toujours en attente de supervision --- aucune action
+unilatérale. Tous les livrables §10 du prompt sont répondus à l'exception
+de cette décision, qui n'est pas de mon ressort. Prochain cycle :
+vérifier l'avancement de la relance, continuer à synchroniser
+l'importeur, sans autre action nécessaire tant que la décision d'ablation
+n'arrive pas.
