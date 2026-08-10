@@ -1535,3 +1535,15 @@ Rien de nouveau côté science ni décision d'ablation (en attente). Prochain
 cycle : vérifier la fin du retry, resynchroniser l'importeur (104/104
 attendu) --- dernier point d'outillage avant que tout le travail demandé
 sur `simulation_lab` soit clos.
+
+## 32. Point d'étape (2026-08-10, cycle cron) — retry à 5/6, dernier run en cours
+
+K0_2000 (3/3) et gamma_comp_0.6667_lam100 seed0/seed1 terminés avec
+succès. Seul `gamma_comp_0.6667_lam100` seed2 reste en cours, aucun
+incident (disque 87 Go libres, `mem_guard` actif, pas de HALT). Importeur
+resynchronisé : 103/104 runs M4.3 visibles dans `simulation_lab`.
+
+Dès ce dernier run terminé, tout le travail d'outillage simulation_lab
+demandé (visibilité, bins adaptatifs, garde-fou de lancement GUI) sera
+clos --- il ne restera que la décision d'ablation comme seul point ouvert
+de tout le programme M4.3, toujours en attente de supervision.
