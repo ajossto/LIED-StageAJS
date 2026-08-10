@@ -1547,3 +1547,44 @@ Dès ce dernier run terminé, tout le travail d'outillage simulation_lab
 demandé (visibilité, bins adaptatifs, garde-fou de lancement GUI) sera
 clos --- il ne restera que la décision d'ablation comme seul point ouvert
 de tout le programme M4.3, toujours en attente de supervision.
+
+## 33. Travail d'outillage simulation_lab clos : 104/104 runs M4.3 avec figures, visibles, garde-fous GUI en place (2026-08-10)
+
+`retry_failed_cells.py` terminé : 6/6 runs `status=ok` (K0_2000 ×3,
+gamma_comp_0.6667_lam100 ×3) --- confirme une troisième fois que le
+plafond mémoire élargi (≈13,5 Go/worker, 2 workers) résout ce type de
+cellule, sans ambiguïté sur la cause (mémoire, pas un bug du correctif
+bins/figures). Verrou mono-pool et registre de workers correctement
+libérés en sortie, `mem_guard` toujours actif sans interruption depuis le
+2026-08-07, disque 90 Go libres, aucun HALT sur toute cette phase.
+
+`import_to_simulation_lab.py` : 104/104 runs M4.3 enregistrés (0 ignoré)
+--- toutes les cellules D1 (28×3), D3 (4×3), la phase pilote (7) et le run
+de démonstration (1) sont désormais visibles dans `simulation_lab`,
+étiquetées par cellule, avec leurs 28 figures (moins `entity_lives`,
+absent par convention sauf pour le run de démonstration qui avait
+`individual_every=1`, cf. §25).
+
+**Bilan complet du chantier simulation_lab (§24-33, ouvert le 2026-08-09
+par une question utilisateur, clos ici)** :
+- Adaptateur M4.3 créé et enregistré comme modèle actif.
+- Deux occurrences du même défaut de bins non-adaptatifs trouvées et
+  corrigées.
+- Run de démonstration avec vies individuelles généré.
+- 104 runs relancés avec figures avant nettoyage, tous réussis (deux
+  cellules ont nécessité une reprise à plafond mémoire élargi, cause déjà
+  connue).
+- Mécanisme d'import (symlink + `run.json`) construit et vérifié sûr
+  (suppression via le GUI ne touche jamais les données réelles).
+- Trou de sécurité mémoire trouvé et corrigé dans le point d'entrée de
+  lancement GUI/CLI (`model.py::run()`), désormais protégé par les mêmes
+  garde-fous que les scripts de campagne.
+
+**État du programme M4.3 à ce stade** : tous les livrables du §10 du
+prompt sont répondus (plan D1 cartographié, verdict D2 explicite,
+verdict D3 positif avec niveau de preuve complet, rapport autonome +
+journal + points d'étape). **Le seul point encore ouvert, dans tout le
+programme, est la décision d'ablation (§4/§9)** --- explicitement
+réservée à la supervision, non tranchée, options déjà posées par écrit
+dans `report/rapport_final.md`/`.tex` (§11 resp. §8). Rien d'autre n'est
+en attente de calcul ou de décision de ma part.
