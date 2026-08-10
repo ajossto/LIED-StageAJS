@@ -1521,3 +1521,17 @@ resynchroniser l'importeur une dernière fois (104/104 attendu), et à ce
 stade tous les travaux d'outillage simulation_lab demandés seront clos ---
 il ne restera que la décision d'ablation comme point ouvert de tout le
 programme M4.3.
+
+## 31. Point d'étape (2026-08-10, cycle cron) — retry en cours, 2/6 déjà ok
+
+`retry_failed_cells.py` : K0_2000 seed0/seed1 terminés avec succès
+(`status=ok`) sur le plafond élargi (13,52 Go/worker, 2 workers) --- confirme
+que le retry fonctionne comme la première fois (§17/19). 4 runs restants
+(K0_2000 seed2 + gamma_comp_0.6667_lam100 ×3), aucun incident, disque
+82 Go libres, `mem_guard` actif, pas de HALT. Importeur resynchronisé :
+100/104 runs M4.3 visibles dans `simulation_lab`.
+
+Rien de nouveau côté science ni décision d'ablation (en attente). Prochain
+cycle : vérifier la fin du retry, resynchroniser l'importeur (104/104
+attendu) --- dernier point d'outillage avant que tout le travail demandé
+sur `simulation_lab` soit clos.
