@@ -1491,3 +1491,33 @@ Rien de nouveau côté verdict scientifique ni côté décision d'ablation
 (toujours en attente de supervision, aucune action unilatérale). Prochain
 cycle : si le pool principal est terminé, lancer le retry K0_2000, puis
 resynchroniser l'importeur simulation_lab (§27) une dernière fois.
+
+## 30. Relance des 96 runs terminée (90/96 ok), retry combiné K0_2000 + gamma_comp_0.6667_lam100 lancé (2026-08-10)
+
+`campaign_relaunch_figures.py` (§24-26) terminé : 96/96 runs traités, 90
+`status=ok`, 6 échecs `MemoryError` au checkpoint --- `K0_2000` (D1, 3/3
+graines) et `gamma_comp_0.6667_lam100` (D3, 3/3 graines), toutes deux DÉJÀ
+rencontrées et résolues lors de la campagne D1/D3 initiale par la même
+méthode (JOURNAL.md §17/19) --- pas une régression du correctif
+bins/figures, root cause identique et déjà documentée (cellules
+intrinsèquement plus lourdes que le plafond calculé pour 6 workers).
+
+`scripts/retry_failed_cells.py` (nouveau, combine les deux cellules en un
+seul passage 2 workers au lieu de deux retries séquentiels) lancé sous
+les six garde-fous : préflight disque OK, verrou mono-pool tenu, plafond
+13,52 Go/worker (cohérent avec les 13,56 Go/worker qui avaient déjà
+résolu ce même problème). Réutilise `campaign_relaunch_figures` tel quel
+(le monkey-patch génération-figures-avant-nettoyage s'applique à
+l'import, pas dupliqué).
+
+`scripts/import_to_simulation_lab.py` resynchronisé : 98/104 runs M4.3
+maintenant visibles dans `simulation_lab` (96 relance + 7 pilote + 1
+démonstration, moins les 6 en cours de reprise). Les 6 derniers seront
+importés dès que le retry aboutit.
+
+Rien de nouveau côté verdict scientifique ni décision d'ablation (toujours
+en attente de supervision). Prochain cycle : vérifier l'issue du retry,
+resynchroniser l'importeur une dernière fois (104/104 attendu), et à ce
+stade tous les travaux d'outillage simulation_lab demandés seront clos ---
+il ne restera que la décision d'ablation comme point ouvert de tout le
+programme M4.3.
