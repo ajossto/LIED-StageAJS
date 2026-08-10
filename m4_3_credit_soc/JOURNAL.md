@@ -1588,3 +1588,15 @@ programme, est la décision d'ablation (§4/§9)** --- explicitement
 réservée à la supervision, non tranchée, options déjà posées par écrit
 dans `report/rapport_final.md`/`.tex` (§11 resp. §8). Rien d'autre n'est
 en attente de calcul ou de décision de ma part.
+
+## 34. Point d'étape (2026-08-10, cycle cron) — au point mort, rien de nouveau
+
+Vérification de routine : `mem_guard` actif sans interruption, pas de
+HALT, disque 90 Go libres, aucun calcul en cours, 104/104 figures
+toujours présentes (aucune régression). Rien n'a changé depuis le point
+précédent (§33) --- programme réellement au point mort, comme documenté
+alors : tout ce qui pouvait être avancé sans nouveau calcul ni décision de
+supervision est fait. Décision d'ablation toujours en attente, aucune
+action unilatérale. Ce cycle reste volontairement court, conformément à
+la discipline déjà établie (§23) : ne pas fabriquer de travail artificiel
+tant qu'aucune décision n'arrive.
