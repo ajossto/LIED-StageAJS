@@ -418,23 +418,31 @@ def figure_closure(records: list[dict], path: Path, fit: dict) -> None:
     axes[0].set_title(r"(a) $f_3$ EST le Gini des capitaux", fontsize=9)
 
     if with_gini:
+        # Couleur par FAMILLE DE LEVIER : c'est ce qui rend visible que
+        # l'ajustement groupé joint les lignes de base des familles plutôt
+        # qu'il ne mesure une réponse (§14.2 du prompt).
+        palette = {"base": "#1c252b", "lam": "#c1440e", "rho": "#294c60",
+                   "sigma": "#7a9e9f", "K0": "#8f6b9e", "delta": "#b58b3c"}
+        groups: dict[str, list[dict]] = {}
+        for row in with_gini:
+            groups.setdefault(row["run"].split("/")[0].split("_")[0], []).append(row)
         xs = [predicted_cv(row) for row in with_gini]
         ys = [row["f3_transfer_over_Kmean"] for row in with_gini]
-        labels = [row["run"].split("/")[0] for row in with_gini]
-        axes[1].scatter(xs, ys, s=22, color="#294c60")
-        for x, y, label in zip(xs, ys, labels):
-            axes[1].annotate(label, (x, y), fontsize=5, alpha=0.7,
-                             textcoords="offset points", xytext=(3, 3))
+        for lever, group in sorted(groups.items()):
+            axes[1].scatter([predicted_cv(r) for r in group],
+                            [r["f3_transfer_over_Kmean"] for r in group],
+                            s=26, color=palette.get(lever, "#888888"),
+                            label=f"levier {lever}", zorder=3)
         if fit.get("n", 0) >= 3:
             grid = [min(xs), max(xs)]
             axes[1].plot(grid, [fit["factor"] * x ** fit["slope"] for x in grid],
-                         color="#c1440e", lw=1.2,
-                         label=(f"ajustement : pente {fit['slope']:.3f}, "
+                         color="#c1440e", lw=1.2, ls="-", alpha=0.7,
+                         label=(f"ajustement groupé : pente {fit['slope']:.3f}, "
                                 f"$R^2$ = {fit['r2']:.4f}"))
         axes[1].plot([min(xs), max(xs)],
                      [x / math.sqrt(math.pi) for x in (min(xs), max(xs))],
-                     color="black", lw=0.8, ls="--", label=r"prédiction $CV/\sqrt{\pi}$")
-        axes[1].legend(fontsize=7)
+                     color="black", lw=0.9, ls="--", label=r"prédiction $CV/\sqrt{\pi}$")
+        axes[1].legend(fontsize=6, loc="upper left")
     axes[1].set_xlabel(r"$CV$ prédit $= \sqrt{[(\lambda/N)(1-K_0/\bar K)^2 + \sigma^2]/\rho}$")
     axes[1].set_ylabel(r"$f_3$ mesuré")
     axes[1].set_title("(b) la fermeture par le bilan de variance", fontsize=9)

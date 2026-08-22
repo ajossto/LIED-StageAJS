@@ -374,13 +374,38 @@ colonne --- c'est vérifié avant de lire l'état final. Source :
 \label{fig:survivors}
 \end{figure}
 
-\fait{} Sous le sens libre, \survFreeOldCreditor\,\% des survivantes de
-l'ancienne technologie sont en position nette \emph{créancière}, et
-\survFreeOldInterest\,\% de leur revenu vient des intérêts reçus plutôt que de
-leur propre production. La population de la technologie dominante, elle, tire
-\survFreeNewInterest\,\% de son revenu des intérêts. Leur capital moyen est
-\survFreeOldK{} contre \survFreeNewK{}, et leur âge médian
-\survFreeOldAge{} pas contre \survFreeNewAge{}.
+\fait{} Le portrait est net, et il est le même sur les trois graines
+rejouées.
+
+\begin{center}\footnotesize
+\begin{tabular}{@{}lrrrrr@{}}
+\toprule
+\textbf{groupe} & \textbf{effectif} & \textbf{créancières nettes} &
+\textbf{revenu d'intérêt} & \textbf{capital moyen} & \textbf{âge médian} \\
+\midrule
+ancienne technologie, sens libre & \survFreeOldN{} &
+\survFreeOldCreditor\,\% & \survFreeOldInterest\,\% & \survFreeOldK{} &
+\survFreeOldAge{} pas \\
+nouvelle technologie, sens libre & \survFreeNewN{} &
+\survFreeNewCreditor\,\% & \survFreeNewInterest\,\% & \survFreeNewK{} &
+\survFreeNewAge{} pas \\
+nouvelle technologie, règle v1 & \survVoneNewN{} &
+\survVoneNewCreditor\,\% & \survVoneNewInterest\,\% & \survVoneNewK{} &
+\survVoneNewAge{} pas \\
+\midrule
+\multicolumn{6}{@{}l@{}}{\emph{ancienne technologie, règle v1 : aucune
+survivante --- le groupe est vide}} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\fait{} \survFreeOldCreditor\,\% des survivantes de l'ancienne technologie sont
+en position nette \emph{créancière}, et \survFreeOldInterest\,\% de leur revenu
+vient des intérêts reçus plutôt que de leur propre production --- contre
+\survFreeNewInterest\,\% pour la population dominante. Elles détiennent une
+position nette de l'ordre de vingt-quatre fois leur propre capital. Et leur âge
+médian est de \survFreeOldAge{} pas sur un run de 4000 : ce ne sont pas des
+entités récentes, ce sont \emph{les mêmes depuis le début}.
 
 \inference{} Le mécanisme est celui que le programme cherchait, et il se lit
 sur l'institution. Soit une entité de l'ancienne technologie ($A = 1$) appariée
@@ -759,14 +784,21 @@ fermeture par le bilan de variance. Source :
 \label{fig:rotation-closure}
 \end{figure}
 
-\fait{} Sur les \rotNInstrumented{} runs instrumentés, l'écart entre $f_3$ et
-$\bar G$ a pour médiane $\rotGapGiniLogMed$\,\%, avec une étendue de
-$\rotGapGiniLogMin$\,\% à $\rotGapGiniLogMax$\,\%. Le Gini pris \emph{avant} la
-phase de marché, lui, surestime $f_3$ de $\rotGapGiniBeforeMed$\,\% en médiane
---- ce qui est la mesure directe de l'effet d'égalisation intra-pas.
-L'ajustement en loi de puissance de $f_3$ contre $\bar G$ donne un exposant
-$\rotSlopeGini$ avec $R^2 = \rotRtwoGini$ sur $\rotNGini$ points couvrant une
-plage de $\times\rotSpanGini$.
+\fait{} \textbf{C'est le résultat le plus net de ce rapport.} Sur les
+\rotNInstrumented{} runs instrumentés, l'écart entre $f_3$ et $\bar G$ a pour
+médiane $\rotGapGiniLogMed$\,\%, avec une étendue de
+$\rotGapGiniLogMin$\,\% à $\rotGapGiniLogMax$\,\%. L'ajustement en loi de
+puissance de $f_3$ contre $\bar G$ donne un exposant $\rotSlopeGini$ ---
+c'est-à-dire 1 à un pour cent et demi près --- avec
+$R^2 = \rotRtwoGini$ sur $\rotNGini$ points couvrant une plage de
+$\times\rotSpanGini$. La relation \eqref{eq:rotation-gini} n'est pas ajustée :
+elle est \emph{dérivée}, et la mesure la confirme.
+
+\fait{} La correction intra-pas est nécessaire et sa taille est mesurée : le
+Gini pris \emph{avant} la phase de marché surestime $f_3$ de
+$\rotGapGiniBeforeMed$\,\% en médiane (étendue $\rotGapGiniBeforeMin$\,\% à
+$\rotGapGiniBeforeMax$\,\%). Autrement dit, une ronde de marché sur deux voit
+déjà une distribution que les rondes précédentes ont resserrée.
 
 \subsection{La fermeture : d'où vient le Gini ?}
 
@@ -793,30 +825,100 @@ CV \;\approx\;
 et pour une distribution proche de la normale, $G \approx CV/\sqrt{\pi}$, d'où
 $\text{rotation} \approx \rho\,CV/\sqrt{\pi}$.
 
-\fait{} L'ajustement de $f_3$ contre le $CV$ prédit par \eqref{eq:cv} donne un
-exposant $\rotSlopeClosure$ avec $R^2 = \rotRtwoClosure$ sur $\rotNClosure$
-points couvrant une plage de $\times\rotSpanClosure$. Rapportée à la forme
-fermée $\rho\,CV/\sqrt{\pi}$, la rotation mesurée s'en écarte de
-$\rotGapClosedFormMed$\,\% en médiane, avec une étendue de
-$\rotGapClosedFormMin$\,\% à $\rotGapClosedFormMax$\,\%.
+Un balayage instrumenté a été lancé pour la tester : un paramètre bougé à la
+fois autour du régime de référence --- $\lambda$, $\rho$, $\sigma$, $K_0$,
+$\delta$ --- sur 3 graines, soit \rotNInstrumented{} runs de 2500 pas avec le
+Gini enregistré. Aucune campagne antérieure ne fait varier $\lambda$, $\rho$
+ni $\sigma$ : c'est le seul calcul neuf que ce chantier a demandé.
 
-\subsection{Le contrôle qu'il faut faire, et son résultat}
+\fait{} L'ordre de grandeur est bon : la rotation mesurée s'écarte de la forme
+fermée $\rho\,CV/\sqrt{\pi}$ de \rotGapClosedFormMed\,\% en médiane, avec une
+étendue de \rotGapClosedFormMin\,\% à \rotGapClosedFormMax\,\%.
+L'ajustement de la rotation contre $\rho\,CV$ donne un exposant
+$\rotSlopeClosureRot$ avec $R^2 = \rotRtwoClosureRot$ sur $\rotNClosureRot$
+points.
 
-\inference{} Un ajustement groupé sur plusieurs familles de leviers peut n'être
-que la droite qui joint leurs lignes de base : il ne mesurerait alors aucune
-réponse. Le balayage instrumenté bouge un paramètre à la fois autour d'un même
-point de référence, il est donc exactement dans ce cas de figure. Le contrôle
-consiste à ajuster \emph{à l'intérieur} de chaque famille de levier et à
-comparer les exposants à l'ajustement groupé ; ils sont rapportés dans
-\code{results/analysis/rotation\_summary.json}.
+\subsection{Le contrôle qui invalide la fermeture}
+\label{sec:controle-fermeture}
 
-\subsection{Ce que la mortalité en retire}
+\inference{} Un ajustement groupé sur plusieurs familles de leviers peut
+n'être que la droite qui joint leurs lignes de base : il ne mesurerait alors
+aucune réponse. Le balayage bouge un paramètre à la fois autour d'un même
+point, il est donc exactement dans ce cas de figure, et le contrôle est
+obligatoire : ajuster \emph{à l'intérieur} de chaque famille et comparer.
+
+\fait{} Le contrôle est accablant, et il faut le rapporter tel quel.
+
+\begin{center}\footnotesize
+\begin{tabular}{@{}lrrrl@{}}
+\toprule
+\textbf{levier} & \textbf{exposant} & $R^2$ & \textbf{étendue de $x$} &
+\textbf{lecture} \\
+\midrule
+$\rho$ & \leverSlopeRho{} & \leverRtwoRho{} & $\times\leverSpanRho$ &
+exploitable \\
+$K_0$ & \leverSlopeKzero{} & \leverRtwoKzero{} & $\times\leverSpanKzero$ &
+exploitable \\
+$\sigma$ & \leverSlopeSigma{} & \leverRtwoSigma{} & $\times\leverSpanSigma$ &
+étendue trop faible \\
+$\lambda$ & \leverSlopeLam{} & \leverRtwoLam{} & $\times\leverSpanLam$ &
+étendue trop faible \\
+$\delta$ & \leverSlopeDelta{} & \leverRtwoDelta{} & $\times\leverSpanDelta$ &
+étendue trop faible \\
+\midrule
+\textbf{groupé} & $\rotSlopeClosureRot$ & $\rotRtwoClosureRot$ &
+$\times\rotSpanClosureRot$ & --- \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\fait{} Trois des cinq familles couvrent une étendue de $x$ inférieure à
+10\,\% : leur exposant ajusté ne mesure rien --- celui de $\delta$
+vaut \leverSlopeDelta{} sur une étendue de $\times\leverSpanDelta$, ce qui est
+du bruit de graine et non une pente. Des deux familles exploitables, celle de
+$\rho$ donne \leverSlopeRho{} et celle de $K_0$ \leverSlopeKzero{}, contre
+$\rotSlopeClosureRot$ pour l'ajustement groupé. \textbf{Les exposants intra-famille
+ne coïncident ni entre eux ni avec le groupé.}
+
+\inference{} \textbf{La fermeture n'est donc pas établie, et c'est un constat
+d'échec, pas un résultat.} Le $R^2$ groupé de $\rotRtwoClosureRot$ reflète
+pour l'essentiel la géométrie du balayage --- la droite qui joint les points de
+base des cinq leviers --- et non une réponse mesurée. Ce que le bilan de
+variance donne réellement est un \emph{ordre de grandeur} correct à
+20\,\% près, ce qui est déjà informatif sur la nature du mécanisme,
+mais ce n'est pas une loi.
+
+\incertitude{} Ce qu'il aurait fallu, et qui n'a pas été fait : un plan
+factoriel, avec des étendues d'au moins un facteur 3 sur chaque levier ---
+ce qui est coûteux pour $\lambda$, dont la population croît proportionnellement,
+et pour $\delta$, dont l'échelle autarcique varie en $\delta^{-1/(1-\gamma)}$.
+
+\subsection{Ce que la mortalité en retire, et un test qui n'a pas de prise}
 
 \fait{} Sur \rotNMortAll{} runs des deux lignées, la mortalité par entité et
 par pas suit la rotation avec un exposant $\rotSlopeMortAll$ et
 $R^2 = \rotRtwoMortAll$ sur une plage de $\times\rotSpanMortAll$. Restreinte
 aux runs qui passent le contrôle de stationnarité, la même relation donne
-$\rotSlopeMortStat$ et $R^2 = \rotRtwoMortStat$ sur $\rotNMortStat$ runs.
+$\rotSlopeMortStat$ et $R^2 = \rotRtwoMortStat$ sur $\rotNMortStat$ runs. Ces
+exposants sont compatibles avec le $1{,}337$ publié par la lignée précédente,
+sur un corpus plus large et plus hétérogène.
+
+\fait{} \textbf{Et le levier nouveau ne biaise pas la loi en niveau.} Le biais
+résiduel médian par rapport à l'ajustement groupé vaut
+\biasDirectionFreeMed\,\% pour les \biasDirectionFreeN{} runs à sens libre et
+\biasDirectionRichestlendsMed\,\% pour les \biasDirectionRichestlendsN{} runs à
+règle ancienne.
+
+\inference{} \textbf{Ce résultat et celui du §\ref{sec:loi-en-defaut} ne se
+contredisent pas, et l'articulation mérite d'être écrite.} La loi décrit
+correctement les \emph{niveaux} : un run à sens libre tombe sur la même courbe
+qu'un run à règle ancienne. Elle décrit mal la \emph{réponse} à ce levier
+pendant la transition, où elle sur-prédit d'un facteur 3 à 10. Une régression
+sur les niveaux n'a d'ailleurs aucune puissance pour détecter cela : l'écart
+apparié sur la rotation vaut \diffRotAhcentCinquanteTransition\,\% quand la
+plage ajustée couvre un facteur $\rotSpanMortAll$. \incertitude{} Il faudrait,
+pour trancher, un dispositif qui maintienne le levier actif à l'état
+stationnaire.
 
 \input{tables/rotation}
 

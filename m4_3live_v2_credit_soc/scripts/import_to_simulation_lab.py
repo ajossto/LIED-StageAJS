@@ -211,18 +211,18 @@ def main(argv: list[str]) -> int:
         root = ROOT / "results" / group
         if not root.exists():
             continue
-        for gamma_dir in sorted(root.iterdir()):
-            if not gamma_dir.is_dir():
+        for outer_dir in sorted(root.iterdir()):
+            if not outer_dir.is_dir():
                 continue
-            for cell_dir in sorted(gamma_dir.iterdir()):
+            for cell_dir in sorted(outer_dir.iterdir()):
                 if not cell_dir.is_dir():
                     continue
                 for seed_dir in sorted(cell_dir.glob("seed*")):
                     if not (seed_dir / "series.csv").exists():
                         continue
-                    run_id = template.format(gamma=gamma_dir.name, cell=cell_dir.name,
+                    run_id = template.format(outer=outer_dir.name, cell=cell_dir.name,
                                              seed=seed_dir.name)
-                    label = label_template.format(gamma=gamma_dir.name, cell=cell_dir.name,
+                    label = label_template.format(outer=outer_dir.name, cell=cell_dir.name,
                                                   seed=seed_dir.name)
                     imported.append(import_one(seed_dir, run_id, label, role, force))
 

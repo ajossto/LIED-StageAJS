@@ -235,6 +235,28 @@ def main() -> int:
         macros[f"rotGap{name}Max"] = french(
             100 * node["max"], 1, sign=True) if node else MISSING
 
+    # -- contrôle par levier et biais résiduel (§14.1, §14.2) --------------
+    levers = rotation.get("fits_par_levier", {})
+    names = {"lam": "Lam", "rho": "Rho", "sigma": "Sigma", "K0": "Kzero",
+             "delta": "Delta", "base": "Base"}
+    for key, name in names.items():
+        fit = levers.get(key, {})
+        macros[f"leverSlope{name}"] = french(fit.get("slope"), 3)
+        macros[f"leverRtwo{name}"] = french(fit.get("r2"), 4)
+        macros[f"leverSpan{name}"] = french(fit.get("span"), 2)
+        macros[f"leverN{name}"] = integer(fit.get("n"))
+    bias = rotation.get("biais_residuel", {})
+    for key, entries in bias.items():
+        tag = "Family" if key == "family" else "Direction"
+        for name, node in entries.items():
+            clean = (name.replace(" ", "").replace("_", "")
+                     .replace("v1", "Vone").replace("v2", "Vtwo"))
+            clean = clean[0].upper() + clean[1:]
+            macros[f"bias{tag}{clean}Med"] = french(100 * node["biais_median"], 2, sign=True)
+            macros[f"bias{tag}{clean}Min"] = french(100 * node["min"], 1, sign=True)
+            macros[f"bias{tag}{clean}Max"] = french(100 * node["max"], 1, sign=True)
+            macros[f"bias{tag}{clean}N"] = integer(node["n"])
+
     # -- coût --------------------------------------------------------------
     for row in cost:
         # Un nom de macro LaTeX ne peut pas contenir de chiffre : `v1` et `v2`

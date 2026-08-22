@@ -165,12 +165,18 @@ def figure(rows: list[dict], summary: list[dict], path: Path) -> None:
             match = [s for s in summary if s["seed"] == seed
                      and s["direction"] == direction and s["tech"] == 0]
             counts.append(match[0]["n"] if match else 0)
-        axes[0].bar([s + (index - 0.5) * width for s in seeds], counts, width=width,
-                    color=colours[(direction, 0)],
+        positions = [s + (index - 0.5) * width for s in seeds]
+        axes[0].bar(positions, counts, width=width, color=colours[(direction, 0)],
                     label="sens libre" if direction == "free" else "règle v1")
+        # Un effectif nul ne dessine aucune barre : on l'écrit, sinon un
+        # lecteur croit à une donnée manquante.
+        for x, value in zip(positions, counts):
+            if value == 0:
+                axes[0].text(x, 0.15, "0", ha="center", va="bottom", fontsize=8,
+                             color=colours[(direction, 0)], fontweight="bold")
     axes[0].set_xticks(seeds)
     axes[0].set_xlabel("graine")
-    axes[0].set_ylabel("entités de l'ancienne technologie encore vivantes")
+    axes[0].set_ylabel("ancienne technologie :\neffectif encore vivant")
     axes[0].set_title(r"(a) à $t_0 + 2000$, la cohorte d'origine", fontsize=9)
     axes[0].legend(fontsize=7)
 

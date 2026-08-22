@@ -230,3 +230,117 @@ sous l'ordre v1 avant que le bras `deprec_first` n'existe.
 | 3 | nombre de graines de verdict | **12**, contre coût mesuré et non extrapolé | lot D ci-dessous |
 | 4 | rééchelonner `MIN_LOAN` / `ZERO_TOL` | **non** : cela casserait la comparabilité avec toutes les campagnes antérieures, pour un gain qui ne se voit qu'au 14ᵉ chiffre | `tests/test_scale_covariance.py` |
 | 5 | covariance de pas de temps en non-régression | **non** — son résidu mesuré est de 6 à 17 %, un seuil y serait arbitraire. En revanche la **covariance d'échelle**, elle, est exacte : elle DEVIENT un test de non-régression | `tests/test_scale_covariance.py` |
+
+---
+
+## 22 août 2026 — lot D : campagne appariée du sens du prêt
+
+### Protocole effectivement exécuté
+
+12 graines, amorçage partagé à t₀ = 2000 (404 s pour les 12), 96 bras de
+2000 pas (2495 s sur 7 processus). Cellule pilote mesurée avant de s'engager :
+144,5 s sous le sens libre, 140,8 s sous la règle v1 — c'est ce chiffre, et
+non une extrapolation depuis v1, qui a confirmé les 12 graines.
+
+`control` et `all_A150` restent homogènes après intervention : ils ne sont
+lancés que sous le sens libre, parce que les relancer sous l'autre règle
+produirait des fichiers identiques bit à bit (vérifié par
+`test_v1_equivalence.py`).
+
+### Une correction de protocole faite en cours de route
+
+**Inférence retirée.** J'avais prévu de lire un seul niveau sur les 1000
+derniers pas. C'est faux, et le pilote l'a montré : la portée `new` ne
+renouvelle pas la cohorte d'origine, dont la durée de vie moyenne est
+pop/λ ≈ 34 pas. La part des rondes à contre-sens passe de **23,7 %** sur
+]t₀, t₀+200] à **1,4 %** sur le plateau. Lire un seul niveau moyenné aurait
+donné « pas d'effet » là où il fallait lire « plus de paires mixtes ».
+Deux fenêtres sont donc rapportées, et la fenêtre de transition est
+explicitement présentée comme un transitoire.
+
+**Seconde correction, méthodologique.** Le contrôle de stationnarité hérité de
+v1 (bande fixe [0,99 ; 1,01]) **rejetait 11 des 12 graines du contrôle** sur
+une fenêtre de 1000 pas : les quarts font 250 pas et le rapport a un écart-type
+de graine à graine de ~3 %. La bande ne mesurait que la longueur de la
+fenêtre. Le critère est désormais un test de Student sur la moyenne du rapport
+(12 graines), l'étendue par run étant rapportée comme plancher de bruit.
+
+### Résultats
+
+Bras `new_A150`, fenêtre de transition, écarts appariés sens libre / règle v1 :
+
+| grandeur | écart | t (11 ddl) |
+|---|---|---|
+| production agrégée | **−5,20 %** | −11,2 |
+| capital total | **−10,11 %** | −19,8 |
+| contrats vivants | **+24,34 %** | +26,5 |
+| rotation du crédit | **+15,81 %** | +57,5 |
+| intérêts versés | +2,96 % | +5,5 |
+| mortalité par entité | +2,13 % | +7,0 |
+| population | −2,10 % | −4,6 |
+| cohorte d'origine vivante | +22,0 % | +11,2 |
+
+**Le régime nouveau existe et il est durable.** À t₀+2000, il reste **7,0**
+entités de l'ancienne technologie sous le sens libre et **0,0** sous la règle
+v1, moyenne sur 12 graines. C'est le résultat attendu du chantier : une entité
+de faible rendement marginal cède son capital et vit de l'intérêt.
+
+**Un résultat qui n'était pas attendu.** Chaque échange augmente la production
+jointe de sa paire par construction, et pourtant la production agrégée baisse.
+La chaîne est mesurée : plus de contrats → plus de service perpétuel → plus de
+faillites → et une faillite *détruit* le capital dans ce modèle. Un marché plus
+complet y est un marché plus fragile. Cette lecture est cohérente avec toutes
+les colonnes ; elle n'est pas démontrée, il faudrait une ablation qui coupe un
+maillon.
+
+**Une régularité de v1 mise en défaut.** `morts/pop ∝ rotation^1,337`
+sur-prédit la mortalité d'un facteur 3 à 10 sur ce cinquième levier
+(+21,7 % prédit contre +2,1 % mesuré pour `new_A150`). **Ce n'est pas encore
+une réfutation** : la loi est une relation d'état stationnaire et la fenêtre de
+transition n'en est pas un ; dans le régime résiduel, où la comparaison serait
+légitime, le levier n'agit presque plus. Le seul régime où ce levier agit
+fortement est un régime où la loi n'a pas à s'appliquer.
+
+**Asymétrie à noter.** L'effet de survie n'apparaît que quand la technologie
+d'origine est celle de plus faible A. Dans `new_A075` — où les entités en place
+ont le A le plus élevé — la cohorte d'origine survit sous les deux règles
+(9,2 contre 10,8), et l'écart n'est pas significatif.
+
+---
+
+## 22 août 2026 — lot E : ordre des phases, une prédiction réfutée
+
+**La prédiction, écrite avant le bras traité.** Bascule en défaut toute
+débitrice dont le capital vérifie (1−δ)K < dû ≤ K. La distribution du rapport
+capital/dû est lue sur les 12 snapshots d'amorçage, soit **13 447 observations
+de débitrices** :
+
+| minimum | 1ᵉʳ centile | 5ᵉ centile | médiane | maximum | seuil de bascule |
+|---|---|---|---|---|---|
+| 3,27 | 11,14 | 13,83 | 26,76 | 1314,1 | 1,0101 |
+
+**La fenêtre est vide.** Zéro observation. La débitrice la plus tendue du
+corpus détient 3,27 fois ce qu'elle doit, soit 3,23 fois le seuil. La
+prédiction est donc : *aucun défaut de liquidité supplémentaire*. Mesuré :
+0 défaut par pas dans les deux bras.
+
+**L'attente d'origine — « ça devrait faire augmenter le taux de défaut » — est
+donc réfutée, et pour une raison chiffrable** : il faudrait δ > 0,69 pour que
+le levier morde par ce canal.
+
+**Le canal réel, exact.** Sous l'ordre v1 une débitrice finit à
+(1−δ)(K − dû) ; sous l'ordre inverse à (1−δ)K − dû. L'écart est −δ·dû. Une
+créancière gagne symétriquement +δ·versement. Les deux se compensent : le
+capital total du pas est rigoureusement le même, et l'échange des phases est
+une **pure redistribution** des débitrices vers les créancières, de
+δ × (intérêts servis) par pas — soit 356 joules par pas, 0,041 % du capital
+total à chaque pas.
+
+Effet apparié (12 graines, fenêtre résiduelle) : production **−1,84 %**
+(t = −11,7), capital −2,52 %, population −1,16 %, mortalité +0,99 %.
+
+**Ce que la prédiction a attrapé et manqué** : elle a attrapé exactement ce
+sur quoi elle portait, le nombre de défauts, qu'elle annonçait nul et qui l'est.
+Elle a manqué le canal réel parce qu'elle ne regardait que les défauts — la
+note d'origine parlait de « taux de défaut », et cette focalisation a orienté
+la prédiction vers la seule grandeur que le levier ne touche pas.
