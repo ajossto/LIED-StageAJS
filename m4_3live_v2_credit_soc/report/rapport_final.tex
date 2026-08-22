@@ -55,8 +55,9 @@ prêt dans le sens que l'ancienne règle refusait, et ces prêts portent
 \pctVolumeRevAhcentCinquanteTransition\,\% du volume échangé.
 
 \textbf{Le régime nouveau a un horizon, et une signature.} La part des
-échanges à contre-sens décroît d'un facteur $\sim 17$ en quatre cents pas, puis
-\emph{plafonne} : elle ne tend pas vers zéro. Ce plateau est tenu par une
+échanges à contre-sens décroît d'un facteur $\sim 6$ en quatre cents pas et
+d'un facteur $\sim 16$ à l'horizon de la fenêtre, puis \emph{plafonne} : elle
+ne tend pas vers zéro. Ce plateau est tenu par une
 poignée d'entités de l'ancienne technologie qui \textbf{survivent
 indéfiniment}, là où la règle ancienne les éteint. Sous le sens libre il en
 reste \techZeroFreeAhcentCinquanteResiduel{} en fin de fenêtre ; sous la règle
@@ -105,9 +106,13 @@ $\text{loan\_volume}/K_{\text{tot}}$ prédisait la mortalité à mieux d'un pour
 cent dans la lignée précédente, quel que soit le levier employé --- mais elle
 est endogène. Ce rapport la décompose en trois facteurs dont deux sont pinés
 par la combinatoire, et montre que le troisième \textbf{est} le coefficient de
-Gini de la distribution des capitaux. La rotation du crédit n'est donc pas une
-grandeur de crédit : c'est l'inégalité des capitaux, multipliée par le taux
-d'appariement.
+Gini de la distribution des capitaux --- exactement en régime homogène, à
+\heteroFreeMed\,\% près quand deux technologies coexistent. La rotation du
+crédit n'est donc pas une grandeur de crédit : c'est l'inégalité des capitaux,
+multipliée par le taux d'appariement. Ce qui est \emph{mesuré}, et non déduit,
+est la correction que la phase de marché s'inflige à elle-même : elle resserre
+la distribution qu'elle consomme, et l'ignorer fausse la relation de
+\rotGapGiniBeforeMed\,\%.
 \end{abstract}
 
 \tableofcontents
@@ -350,8 +355,13 @@ trouve}, pas le long d'une trajectoire de l'ancienne règle.
 
 \subsection{Le régime ne s'éteint pas : il plafonne}
 
-\fait{} La figure~\ref{fig:horizon} montre une décroissance d'un facteur
-$\sim 17$ en quatre cents pas, suivie d'un \emph{plateau}. C'est le point qui
+\fait{} La figure~\ref{fig:horizon} montre une décroissance rapide suivie d'un
+\emph{plateau}. Par blocs de 200 pas et sur la graine 0 du bras
+\code{new\_A150}, la part des rondes à contre-sens vaut $23{,}8$\,\% sur
+$]t_0,\ t_0+200]$, $7{,}8$\,\% sur le bloc suivant et $3{,}8$\,\% sur le
+troisième --- soit un facteur $\sim 6$ en quatre cents pas. Entre la moyenne
+de la fenêtre de transition et celle du régime résiduel, le facteur est de
+$\sim 16$. C'est le point qui
 demande une explication, parce qu'on attendrait l'extinction : la cohorte
 d'origine n'est pas renouvelée, sa durée de vie moyenne est de trente-quatre
 pas, et deux mille pas représentent une soixantaine de renouvellements.
@@ -576,6 +586,19 @@ $[1,\ 1/(1-\delta)]$. À $\delta = 0{,}01$, cet intervalle est
 $[1\ ;\ \ratioSeuilResiduel]$. La distribution de ce rapport est lue sur les
 \nSeeds{} snapshots d'amorçage, \emph{avant} de lancer quoi que ce soit.
 
+\begin{figure}[H]
+\centering
+\includegraphics[width=\linewidth]{figures/service_ratio.png}
+\caption{Distribution du rapport capital / dû à l'instant du service, sur les
+\ratioNResiduel{} observations de débitrices des \nSeeds{} snapshots
+d'amorçage. La bande rouge est la fenêtre de bascule
+$[1\,;\,\ratioSeuilResiduel]$ ; le trait tireté marque le minimum observé.
+Source : \code{results/analysis/service\_ratio.csv}.}
+\label{fig:service-ratio}
+\end{figure}
+
+\noindent Les quantiles, pour les chiffres exacts :
+
 \begin{center}\footnotesize
 \begin{tabular}{@{}lrrrrr@{}}
 \toprule
@@ -657,22 +680,26 @@ $\delta$.
 \subsection{L'amplitude, et le levier qui n'est pas un cadran}
 
 \begin{center}\footnotesize
-\begin{tabular}{@{}lrrrrr@{}}
+\begin{tabular}{@{}lrrr@{}}
 \toprule
-\textbf{levier} & $m$ \textbf{mesurée} & \textbf{naïve} $K=1$ &
-\textbf{naïve} $K_{\text{eq}}$ & $p$ \textbf{ex ante} & $E$ \\
+\textbf{levier} & $m$ \textbf{mesurée} & \textbf{prédiction naïve} $K=1$ &
+$p$ \textbf{ex ante} \\
 \midrule
-$A \times 1{,}5$, toutes & 1,500000000000001 & 1,5 & 1,5 & 1,0 exactement &
-1,000000000000000 \\
-$A \times 1{,}25$, fraction $\varphi = 0{,}2$ & 1,250000000000 & 1,25 & 1,25 &
-0,1978 & $1$ à $10^{-9}$ \\
+$A \times 1{,}5$, toutes & 1,500000000000001 & 1,5 & 1,0 exactement \\
+$A \times 1{,}25$, fraction $\varphi = 0{,}2$ & 1,250000000000 & 1,25 &
+0,1978 \\
 $\gamma : 0{,}5 \to 0{,}6$, toutes & \textbf{1,960149} & \textbf{1,000000} &
-1,952475 & 1,0 & $1$ à $10^{-9}$ \\
-$A \times 1{,}5$, nouvelles & 1,500000000000 & 1,5 & 1,5 & 0,005769 &
-$1$ à $10^{-9}$ \\
+1,0 \\
+$A \times 1{,}5$, nouvelles & 1,500000000000 & 1,5 & 0,005769 \\
 \bottomrule
 \end{tabular}
 \end{center}
+
+\noindent Deux colonnes ont été retirées de ce tableau pour le garder lisible,
+et leurs valeurs tiennent en une phrase : la prédiction faite au capital
+équivalent, $K_{\text{eq}}^{\Delta\gamma}$, ne diffère de la prédiction naïve
+que pour le levier sur $\gamma$, où elle vaut $1{,}952475$ ; et $E$ vaut $1$ à
+$10^{-9}$ près dans les quatre cas, pour la raison donnée ci-dessous.
 
 \fait{} Le levier sur $\gamma$ est le cas qui justifie la mesure. La prédiction
 naïve --- celle qu'on ferait en supposant $K = 1$, où $K^{\Delta\gamma} = 1$
@@ -754,8 +781,11 @@ par sa définition même, $G = \mathbb{E}|X-Y|/(2\,\mathbb{E}[X])$. Donc
 $f_3 = G$, et
 \begin{equation}
 \boxed{\ \text{rotation} \;=\; \rho \cdot G\ }
+\qquad\text{(régime homogène)}
 \label{eq:rotation-gini}
 \end{equation}
+Le §\ref{sec:hetero} met cette relation à l'épreuve hors de ce régime, où elle
+n'est plus une identité.
 La rotation du crédit n'est \emph{pas} une grandeur de crédit : c'est
 l'inégalité des capitaux, multipliée par le taux d'appariement.
 
@@ -784,21 +814,70 @@ fermeture par le bilan de variance. Source :
 \label{fig:rotation-closure}
 \end{figure}
 
-\fait{} \textbf{C'est le résultat le plus net de ce rapport.} Sur les
-\rotNInstrumented{} runs instrumentés, l'écart entre $f_3$ et $\bar G$ a pour
-médiane $\rotGapGiniLogMed$\,\%, avec une étendue de
-$\rotGapGiniLogMin$\,\% à $\rotGapGiniLogMax$\,\%. L'ajustement en loi de
-puissance de $f_3$ contre $\bar G$ donne un exposant $\rotSlopeGini$ ---
-c'est-à-dire 1 à un pour cent et demi près --- avec
-$R^2 = \rotRtwoGini$ sur $\rotNGini$ points couvrant une plage de
-$\times\rotSpanGini$. La relation \eqref{eq:rotation-gini} n'est pas ajustée :
-elle est \emph{dérivée}, et la mesure la confirme.
+\inference{} \textbf{Ce qui est vérifiable ici, et ce qui ne l'est pas.}
+En régime homogène, $f_3 = G$ est une \emph{conséquence algébrique} de la
+définition du Gini, pas un résultat empirique : la « vérifier » ne mesurerait
+que la propreté de l'arithmétique. Ce qui est empirique, et non trivial, est
+la \emph{correction intra-pas} --- de combien la phase de marché resserre la
+distribution qu'elle consomme, et par quelle moyenne il faut la remplacer.
 
-\fait{} La correction intra-pas est nécessaire et sa taille est mesurée : le
-Gini pris \emph{avant} la phase de marché surestime $f_3$ de
+\fait{} \textbf{Et c'est le résultat le plus net de ce rapport.} Le Gini pris
+\emph{avant} la phase de marché surestime $f_3$ de
 $\rotGapGiniBeforeMed$\,\% en médiane (étendue $\rotGapGiniBeforeMin$\,\% à
-$\rotGapGiniBeforeMax$\,\%). Autrement dit, une ronde de marché sur deux voit
-déjà une distribution que les rondes précédentes ont resserrée.
+$\rotGapGiniBeforeMax$\,\%) : ce n'est pas une correction du second ordre.
+Remplacé par la moyenne logarithmique \eqref{eq:gbar}, l'écart tombe à
+$\rotGapGiniLogMed$\,\% en médiane, avec une étendue de
+$\rotGapGiniLogMin$\,\% à $\rotGapGiniLogMax$\,\% --- soit un facteur
+trente-cinq sur le biais. L'ajustement en loi de puissance donne un exposant
+$\rotSlopeGini$ avec $R^2 = \rotRtwoGini$ sur $\rotNGini$ points couvrant une
+plage de $\times\rotSpanGini$. Autrement dit : la décroissance du Gini
+\emph{pendant} la phase de marché est bien exponentielle en le numéro de
+ronde, et c'est cela qui est mesuré.
+
+\subsection{Et hors du régime homogène ?}
+\label{sec:hetero}
+
+\incertitude{} Le balayage ci-dessus est \textbf{homogène} : une seule
+technologie, donc $\lambda^{*} = 1/2$ et $\delta^{*} = (K_b-K_a)/2$
+exactement. C'est précisément le régime où \eqref{eq:gini} est une identité.
+Dès que deux technologies coexistent --- c'est-à-dire dans tout le sujet de ce
+rapport --- le transfert est un rééquilibrage \emph{pondéré},
+$\delta^{*} = h(C) - K_a$ avec $\lambda^{*} \ne 1/2$, et rien ne garantit plus
+que $\mathbb{E}|\delta|$ vaille $\overline{K}\,G$.
+
+Le bras \code{new\_A150} a donc été rejoué avec le Gini instrumenté, sous les
+deux règles de sens, pour mettre la relation à l'épreuve là où elle peut
+échouer.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\linewidth]{figures/rotation_hetero.png}
+\caption{Écart relatif entre $f_3$ mesuré et $\bar G$, pas par pas, sur le
+bras \code{new\_A150} où deux technologies coexistent. La bande ombrée est la
+fenêtre de transition. Source :
+\code{results/rotation\_hetero/}.}
+\label{fig:hetero}
+\end{figure}
+
+\fait{} Sur \heteroFreeN{} pas mesurés par règle, l'écart
+$f_3/\bar G - 1$ a pour médiane \heteroFreeMed\,\% sous le sens libre et
+\heteroVoneMed\,\% sous la règle ancienne. \textbf{Mais la queue est
+lourde} : le cinquième centile descend à \heteroFreePfive\,\% sous le sens
+libre et \heteroVonePfive\,\% sous la règle ancienne, le quatre-vingt-quinzième
+montant à \heteroFreePninetyfive\,\% et \heteroVonePninetyfive\,\%. Ces
+excursions sont concentrées dans la fenêtre de transition, quand les deux
+technologies pèsent d'un poids comparable : restreint au régime résiduel, où
+la population est redevenue presque homogène, l'écart médian remonte à
+\heteroFreeMedResiduel\,\% et \heteroVoneMedResiduel\,\%.
+
+\inference{} La lecture est donc en deux temps, et il faut résister à
+l'envie de n'en garder qu'un. \emph{En régime homogène}, $f_3 = G$ est exact
+et la seule chose mesurée est la correction intra-pas. \emph{En régime
+hétérogène}, la relation reste une bonne approximation en médiane --- à
+quelques pour cent --- mais elle cesse d'être une identité, et lors des
+épisodes où le rééquilibrage est le plus fortement pondéré elle se trompe de
+moitié. \textbf{Ce n'est donc pas une loi du modèle, c'est une loi de son
+régime homogène, robuste en médiane hors de lui.}
 
 \subsection{La fermeture : d'où vient le Gini ?}
 
@@ -898,10 +977,21 @@ et pour $\delta$, dont l'échelle autarcique varie en $\delta^{-1/(1-\gamma)}$.
 \fait{} Sur \rotNMortAll{} runs des deux lignées, la mortalité par entité et
 par pas suit la rotation avec un exposant $\rotSlopeMortAll$ et
 $R^2 = \rotRtwoMortAll$ sur une plage de $\times\rotSpanMortAll$. Restreinte
-aux runs qui passent le contrôle de stationnarité, la même relation donne
-$\rotSlopeMortStat$ et $R^2 = \rotRtwoMortStat$ sur $\rotNMortStat$ runs. Ces
-exposants sont compatibles avec le $1{,}337$ publié par la lignée précédente,
-sur un corpus plus large et plus hétérogène.
+au sous-ensemble des runs \emph{les plus plats} --- ceux dont le rapport de
+quarts tombe dans une bande fixe de $\pm 1$\,\%, ce qui n'est \textbf{pas} le
+contrôle de stationnarité du §\ref{sec:stationnarite} et sert seulement à
+vérifier que l'exposant ne dépend pas du filtre --- la même relation donne
+$\rotSlopeMortStat$ et $R^2 = \rotRtwoMortStat$ sur $\rotNMortStat$ runs.
+\incertitude{} L'exposant groupé vaut
+$\rotSlopeMortAll \pm \rotSeMortAll$ (erreur-type de la pente) : l'intervalle
+à deux erreurs-types \textbf{n'atteint pas} le $1{,}337$ publié par la lignée
+précédente. Ce n'est pas une contradiction, et il ne faut pas la présenter
+comme telle : le corpus employé ici est plus large et bien plus hétérogène ---
+il mélange les deux lignées, les deux règles de sens, les bras traités et les
+transitoires --- là où l'ajustement publié portait sur 109 runs d'un balayage
+contrôlé. Les deux exposants décrivent des populations différentes ; les
+rapprocher demanderait de refaire l'ajustement sur le même sous-ensemble, ce
+qui n'a pas été fait.
 
 \fait{} \textbf{Et le levier nouveau ne biaise pas la loi en niveau.} Le biais
 résiduel médian par rapport à l'ajustement groupé vaut
@@ -987,10 +1077,12 @@ Ce rapprochement n'est pas testé ici : il désigne où chercher.
   débitrices vers les créancières, à capital total conservé.
 \item \textbf{La rotation du crédit est l'inégalité des capitaux.}
   $\text{rotation} = \rho\,\bar G$, avec $\bar G$ le coefficient de Gini
-  moyenné sur la phase de marché. C'est une identité de structure, pas un
-  ajustement, et elle ramène la question « qu'est-ce qui détermine la
-  rotation ? » à « qu'est-ce qui détermine l'inégalité des capitaux ? », pour
-  laquelle un bilan de variance donne une réponse au bon ordre de grandeur.
+  moyenné sur la phase de marché. En régime homogène c'est une identité de
+  structure et non un ajustement ; en régime hétérogène c'est une mesure, qui
+  tient à \heteroFreeMed\,\% près. La question « qu'est-ce qui détermine la
+  rotation ? » devient donc « qu'est-ce qui détermine l'inégalité des
+  capitaux ? », pour laquelle un bilan de variance donne le bon ordre de
+  grandeur sans être une loi.
 \end{enumerate}
 
 \section{Limites}

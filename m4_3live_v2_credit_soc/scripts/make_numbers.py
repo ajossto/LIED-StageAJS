@@ -214,7 +214,7 @@ def main() -> int:
     fits = rotation.get("fits", {})
     for key, name in (
         ("mortalité $\\sim$ rotation (tous runs)", "MortAll"),
-        ("mortalité $\\sim$ rotation (runs stationnaires)", "MortStat"),
+        ("mortalité $\\sim$ rotation (sous-ensemble le plus plat)", "MortStat"),
         ("$f_3 \\sim \\bar G$ (Gini, moyenne logarithmique)", "Gini"),
         ("$f_3 \\sim CV$ prédit (bilan de variance)", "Closure"),
         ("rotation $\\sim CV$ prédit $\\times\\ \\rho$", "ClosureRot"),
@@ -224,6 +224,7 @@ def main() -> int:
         macros[f"rotRtwo{name}"] = french(fit.get("r2"), 4)
         macros[f"rotSpan{name}"] = french(fit.get("span"), 1)
         macros[f"rotN{name}"] = integer(fit.get("n"))
+        macros[f"rotSe{name}"] = french(fit.get("se_slope"), 3)
     for key, name in (("f3_over_gini_logmean", "GiniLog"),
                       ("f3_over_gini_before", "GiniBefore"),
                       ("rotation_over_closed_form", "ClosedForm")):
@@ -234,6 +235,20 @@ def main() -> int:
             100 * node["min"], 1, sign=True) if node else MISSING
         macros[f"rotGap{name}Max"] = french(
             100 * node["max"], 1, sign=True) if node else MISSING
+
+    # -- régime hétérogène : la relation f3 = Gbar y tient-elle ? ---------
+    hetero = rotation.get("hetero", {})
+    for direction, tag in (("free", "Free"), ("richest_lends", "Vone")):
+        node = hetero.get(direction, {})
+        macros[f"hetero{tag}N"] = integer(node.get("n")) if node else MISSING
+        macros[f"hetero{tag}Med"] = french(
+            100 * node["median"], 2, sign=True) if node else MISSING
+        macros[f"hetero{tag}Pfive"] = french(
+            100 * node["p5"], 1, sign=True) if node else MISSING
+        macros[f"hetero{tag}Pninetyfive"] = french(
+            100 * node["p95"], 1, sign=True) if node else MISSING
+        macros[f"hetero{tag}MedResiduel"] = french(
+            100 * node["median_residuel"], 2, sign=True) if node else MISSING
 
     # -- contrôle par levier et biais résiduel (§14.1, §14.2) --------------
     levers = rotation.get("fits_par_levier", {})

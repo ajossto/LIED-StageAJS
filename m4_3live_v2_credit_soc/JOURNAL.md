@@ -423,3 +423,49 @@ expression régulière).
 4. **§9 de la feuille de route reste vide.** Les annotations de
    `conception_m4_3live.pdf` ne sont pas sur le disque (0 objet
    `/Subtype/Text`). Rien n'a été inventé pour combler ce trou.
+
+---
+
+## 22 août 2026 — cinq corrections de relecture, avant clôture
+
+Une relecture critique a trouvé cinq points qui ne survivaient pas à la
+vérification. Les cinq sont corrigés ; ils sont consignés ici parce que
+retirer une affirmation fait partie du travail.
+
+1. **`rotation = ρ·Ḡ` n'était vérifiée qu'en régime homogène.** Les 33 runs
+   instrumentés du balayage n'ont aucune intervention : une seule technologie,
+   donc λ* = 1/2 et l'égalité est une conséquence *algébrique* de la
+   définition du Gini. En régime hétérogène — c'est-à-dire dans tout le sujet
+   de ce rapport — le transfert est pondéré et rien ne la garantit. **Quatre
+   rejeux instrumentés du bras `new_A150` (156 s)** l'ont mise à l'épreuve :
+   écart médian **−4,04 %** sous le sens libre et **−1,19 %** sous la règle v1,
+   mais avec une **queue lourde** (5ᵉ centile à −51,5 %) concentrée dans la
+   fenêtre de transition. Ce n'est donc pas une loi du modèle : c'est une loi
+   de son régime homogène, robuste en médiane hors de lui. Les quatre endroits
+   qui l'énonçaient sans restriction sont corrigés.
+2. **Le superlatif était sur la mauvaise affirmation** (§14.4 du prompt).
+   « Le résultat le plus net » portait sur une identité dérivée. Il porte
+   désormais sur ce qui est réellement mesuré : la taille de la correction
+   intra-pas (−17,7 % de biais si on l'ignore, ramené à +0,5 % par la moyenne
+   logarithmique).
+3. **« Un facteur ∼17 en quatre cents pas » était faux.** Les blocs de 200 pas
+   donnent 23,8 % / 7,8 % / 3,8 % : c'est un facteur ∼6 en quatre cents pas.
+   Le 17 était le rapport entre la moyenne de la fenêtre de transition et
+   celle du régime résiduel, qui couvre 1500 pas. Corrigé aux deux endroits.
+4. **`rotation.py` filtrait encore avec la bande fixe ±1 %** que le §3.6 du
+   même rapport démontre inutilisable. Le sous-ensemble est renommé « les runs
+   les plus plats », et le texte dit explicitement que ce n'est pas le
+   contrôle de stationnarité du protocole.
+5. **« Compatible avec le 1,337 publié » n'était pas soutenu** : l'ajustement
+   ne rendait aucune erreur-type. Elle est ajoutée
+   (`se = √[(Syy − a·Sxy)/((n−2)·Sxx)]`), et le résultat est que l'intervalle
+   à deux erreurs-types **n'atteint pas** 1,337 — sur un corpus qui n'est pas
+   celui de l'ajustement publié. Le texte le dit maintenant ainsi, sans
+   présenter cela comme une contradiction.
+
+**Et deux règles de rédaction du §10 qui n'étaient pas tenues** : deux
+tableaux de plus de quatre colonnes n'avaient pas de figure. Celui de la
+distribution capital/dû en a une désormais (`figures/service_ratio.png`), et
+c'est la plus parlante du chapitre — la fenêtre de bascule y est un cheveu à
+gauche d'une distribution qui commence à 3,27. Celui des amplitudes est réduit
+à quatre colonnes, les deux retirées tenant en une phrase.

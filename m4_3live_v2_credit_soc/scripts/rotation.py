@@ -306,8 +306,12 @@ def loglog_fit(xs: list[float], ys: list[float]) -> dict:
     intercept = mean_y - slope * mean_x
     r2 = (sxy * sxy) / (sxx * syy) if sxx and syy else float("nan")
     span = math.exp(max(p[0] for p in pairs) - min(p[0] for p in pairs))
-    return {"n": n, "slope": slope, "intercept": intercept, "r2": r2,
-            "factor": math.exp(intercept), "span": span}
+    # Erreur-type de la pente : sans elle, dire qu'un exposant est
+    # « compatible » avec un autre n'a pas de sens.
+    residual = syy - slope * sxy
+    se = math.sqrt(residual / ((n - 2) * sxx)) if n > 2 and sxx > 0 and residual > 0 else float("nan")
+    return {"n": n, "slope": slope, "se_slope": se, "intercept": intercept,
+            "r2": r2, "factor": math.exp(intercept), "span": span}
 
 
 def predicted_cv(record: dict) -> float:
@@ -457,6 +461,148 @@ def figure_closure(records: list[dict], path: Path, fit: dict) -> None:
     plt.close(figure)
 
 
+def figure_service_ratio(path: Path) -> None:
+    """Distribution du rapport capital/dû, avec la fenêtre de bascule ombrée.
+
+    C'est la figure qui rend visible, d'un coup d'œil, que la fenêtre est vide
+    — et de combien. Elle précède le tableau des quantiles, conformément à la
+    règle de rédaction « tout tableau de plus de quatre colonnes est d'abord
+    une figure »."""
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    try:
+        from simulation_lab.plot_utils import apply_style
+
+        apply_style()
+    except Exception:
+        pass
+
+    source = ANALYSIS / "service_ratio.csv"
+    if not source.exists():
+        return
+    with open(source, newline="", encoding="utf-8") as handle:
+        values = [float(row["rapport_capital_sur_du"]) for row in csv.DictReader(handle)]
+    if not values:
+        return
+    values.sort()
+    delta = 0.01
+    threshold = 1.0 / (1.0 - delta)
+    figure, axis = plt.subplots(figsize=(9, 3.6))
+    bins = [10 ** (x / 40.0) for x in range(0, 130)]
+    axis.hist(values, bins=bins, color="#294c60", alpha=0.85)
+    axis.axvspan(1.0, threshold, color="#c1440e", alpha=0.45, zorder=3)
+    axis.axvline(values[0], color="#c1440e", lw=1.2, ls="--")
+    axis.annotate(
+        "fenêtre de bascule : [1 ; "
+        + f"{threshold:.4f}".replace(".", ",")
+        + "]\n(un cheveu, à cette échelle)",
+        xy=(1.0, axis.get_ylim()[1] * 0.55), xytext=(1.35, axis.get_ylim()[1] * 0.82),
+        fontsize=7, color="#c1440e",
+        arrowprops=dict(arrowstyle="->", color="#c1440e", lw=0.8))
+    axis.annotate(
+        "minimum observé : " + f"{values[0]:.2f}".replace(".", ",")
+        + ", soit " + f"{values[0] / threshold:.2f}".replace(".", ",") + " fois le seuil",
+        xy=(values[0], axis.get_ylim()[1] * 0.25),
+        xytext=(values[0] * 1.4, axis.get_ylim()[1] * 0.45),
+        fontsize=7, arrowprops=dict(arrowstyle="->", lw=0.8))
+    axis.set_xscale("log")
+    axis.set_xlabel(r"rapport capital / dû à l'instant du service (échelle log)")
+    axis.set_ylabel("nombre de débitrices")
+    axis.set_title(
+        f"{len(values)} observations de débitrices sur les snapshots d'amorçage — "
+        "aucune dans la fenêtre", fontsize=9)
+    axis.grid(True, alpha=0.2)
+    figure.tight_layout()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    figure.savefig(path, dpi=130, bbox_inches="tight")
+    plt.close(figure)
+
+
+def figure_hetero(path: Path) -> dict:
+    """f₃ contre le Gini en régime HÉTÉROGÈNE, sous les deux règles de sens.
+
+    Retourne les écarts mesurés, qui sont le contenu du test."""
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    try:
+        from simulation_lab.plot_utils import apply_style
+
+        apply_style()
+    except Exception:
+        pass
+
+    root = ROOT / "results" / "rotation_hetero"
+    if not root.exists():
+        return {}
+    colours = {"free": "#294c60", "richest_lends": "#c1440e"}
+    labels = {"free": "sens libre", "richest_lends": "règle v1"}
+    figure, axes = plt.subplots(1, 2, figsize=(11, 4))
+    out: dict = {}
+    for direction in ("free", "richest_lends"):
+        gaps_all, gaps_late = [], []
+        for seed_dir in sorted((root / direction).glob("seed*")):
+            rows = read_csv(seed_dir / "market_stats.csv")
+            rows = [r for r in rows if int(r["t"]) > 2000]
+            steps, ratios = [], []
+            for row in rows:
+                before = float(row["gini_before"])
+                after = float(row["gini_after"])
+                volume = float(row["volume"])
+                capital = float(row["K_pool_before"])
+                if before <= 0 or after <= 0 or capital <= 0 or before == after:
+                    continue
+                bar = (before - after) / math.log(before / after)
+                rounds = float(row["rounds"])
+                pool = float(row["pool"])
+                if rounds <= 0 or pool <= 0:
+                    continue
+                f3 = (volume / float(row["new_loans"])) / (capital / pool)
+                steps.append(int(row["t"]))
+                ratios.append(f3 / bar - 1.0)
+            if not steps:
+                continue
+            axes[0].plot(steps, [100 * r for r in ratios], lw=0.5, alpha=0.5,
+                         color=colours[direction])
+            gaps_all += ratios
+            gaps_late += [r for step, r in zip(steps, ratios) if step > 3000]
+        if not gaps_all:
+            continue
+        gaps_all.sort()
+        gaps_late.sort()
+        out[direction] = {
+            "n": len(gaps_all),
+            "median": gaps_all[len(gaps_all) // 2],
+            "p5": gaps_all[len(gaps_all) // 20],
+            "p95": gaps_all[int(0.95 * len(gaps_all))],
+            "median_residuel": gaps_late[len(gaps_late) // 2] if gaps_late else float("nan"),
+        }
+        axes[1].hist([100 * r for r in gaps_all], bins=60, alpha=0.6,
+                     color=colours[direction], label=labels[direction])
+    axes[0].axhline(0.0, color="black", lw=0.8)
+    axes[0].axvspan(2000, 2200, color="#d9d0c1", alpha=0.5, zorder=0)
+    axes[0].set_xlabel("t (pas)")
+    axes[0].set_ylabel("$f_3/\\bar G - 1$  (%)")
+    axes[0].set_title("(a) régime hétérogène : la relation tient-elle ?", fontsize=9)
+    axes[1].axvline(0.0, color="black", lw=0.8)
+    axes[1].set_xlabel("$f_3/\\bar G - 1$  (%)")
+    axes[1].set_ylabel("pas")
+    axes[1].set_title("(b) distribution de l'écart", fontsize=9)
+    axes[1].legend(fontsize=7)
+    for axis in axes:
+        axis.grid(True, alpha=0.2)
+    figure.suptitle("$f_3 = \\bar G$ hors du régime homogène — bras « new A150 »")
+    figure.tight_layout()
+    figure.savefig(path, dpi=130, bbox_inches="tight")
+    plt.close(figure)
+    return out
+
+
 def write_table(path: Path, payload: dict) -> None:
     def number(value: float, digits: int = 3) -> str:
         if value != value:
@@ -494,7 +640,14 @@ def cmd_analyse(window: int = 1000) -> int:
         row for row in records
         if row["family"] != "v1" or "frac_" not in row["run"]
     ]
-    stationary = [
+    # NB : cette bande fixe N'EST PAS le contrôle de stationnarité du
+    # protocole. `scripts/analyse.py` montre qu'une bande de ±1 % sur le
+    # rapport de quarts rejette 11 des 12 graines du CONTRÔLE, c'est-à-dire un
+    # bras qu'on sait stationnaire : elle ne mesure que la longueur de la
+    # fenêtre. Le sous-ensemble ci-dessous est donc étiqueté pour ce qu'il est
+    # — les runs les plus plats — et sert uniquement à vérifier que
+    # l'exposant ne dépend pas de ce filtre.
+    flat = [
         row for row in records
         if 0.99 <= row["stat_K_tot"] <= 1.01 and 0.99 <= row["stat_pop"] <= 1.01
     ]
@@ -507,9 +660,9 @@ def cmd_analyse(window: int = 1000) -> int:
                    [row["deaths_per_pop"] for row in records]),
     ))
     fits.append((
-        r"mortalité $\sim$ rotation (runs stationnaires)",
-        loglog_fit([row["rotation"] for row in stationary],
-                   [row["deaths_per_pop"] for row in stationary]),
+        r"mortalité $\sim$ rotation (sous-ensemble le plus plat)",
+        loglog_fit([row["rotation"] for row in flat],
+                   [row["deaths_per_pop"] for row in flat]),
     ))
     if with_gini:
         fits.append((
@@ -570,7 +723,7 @@ def cmd_analyse(window: int = 1000) -> int:
     summary = {
         "window": window,
         "n_runs": len(records),
-        "n_stationary": len(stationary),
+        "n_flat_subset": len(flat),
         "n_with_gini": len(with_gini),
         "f1_vs_rho_max_gap": max(
             abs(row["f1_rounds_per_entity"] - row["rho"]) for row in records
@@ -610,6 +763,11 @@ def cmd_analyse(window: int = 1000) -> int:
         json.dumps(summary, indent=2, ensure_ascii=False), encoding="utf-8"
     )
     figure_decomposition(records, FIGURES / "rotation_decomposition.png")
+    figure_service_ratio(FIGURES / "service_ratio.png")
+    summary["hetero"] = figure_hetero(FIGURES / "rotation_hetero.png")
+    (ANALYSIS / "rotation_summary.json").write_text(
+        json.dumps(summary, indent=2, ensure_ascii=False), encoding="utf-8"
+    )
     figure_closure(records, FIGURES / "rotation_closure.png", closure)
     write_table(TABLES / "rotation.tex", {"fits": fits})
 
@@ -617,10 +775,69 @@ def cmd_analyse(window: int = 1000) -> int:
     return 0
 
 
+def run_hetero(job: tuple[int, str]) -> dict:
+    """Rejeu instrumenté d'un bras HÉTÉROGÈNE (§ « la relation tient-elle
+    quand λ* ≠ 1/2 ? »).
+
+    Le balayage de `cmd_sweep` est homogène : une seule technologie, donc
+    δ* = (K_b − K_a)/2 exactement, et l'égalité f₃ = G est une conséquence
+    ALGÉBRIQUE de la définition du Gini. En régime hétérogène le transfert est
+    un rééquilibrage PONDÉRÉ (λ* ≠ 1/2) et rien ne garantit plus l'égalité.
+    Ce rejeu la met à l'épreuve là où elle peut échouer : le bras `new_A150`,
+    sous les deux règles de sens, avec le Gini enregistré.
+    """
+    seed, direction = job
+    directory = ROOT / "results" / "rotation_hetero" / direction / f"seed{seed}"
+    marker = directory / "summary.json"
+    if marker.exists():
+        return {"seed": seed, "direction": direction, "skipped": True}
+    started = time.time()
+    from m4_3live_v2.live import load_snapshot
+    from m4_3live_v2.model import Intervention
+
+    burn = ROOT / "results" / "campaign" / "burn" / f"seed{seed}" / "snapshot_t2000.pkl"
+    base = {k: v for k, v in BASE.items() if k != "record_market_stats"}
+    config = Config(**base, record_market_stats=True, loan_direction=direction,
+                    seed=seed, T=2000 + 2000)
+    simulation = load_snapshot(burn, config=config)
+    plan = Intervention(param="A", value=1.5, scope="new")
+    while simulation.t < config.T and simulation.status == "ok":
+        if simulation.t + 1 == 2001:
+            simulation.submit(plan)
+        simulation.step()
+    write_series(simulation, directory)
+    rows = simulation.market_stats
+    with open(directory / "market_stats.csv", "w", newline="", encoding="utf-8") as handle:
+        writer = csv.DictWriter(handle, fieldnames=list(rows[0]))
+        writer.writeheader()
+        writer.writerows(rows)
+    marker.write_text(json.dumps({
+        "seed": seed, "direction": direction, "t_final": simulation.t,
+        "status": simulation.status, "wall_seconds": time.time() - started,
+        "parameters": config.to_dict(),
+    }, indent=2, ensure_ascii=False), encoding="utf-8")
+    return {"seed": seed, "direction": direction, "status": simulation.status,
+            "wall_seconds": time.time() - started}
+
+
+def cmd_hetero(seeds=(0, 1)) -> int:
+    jobs = [(seed, direction) for seed in seeds
+            for direction in ("free", "richest_lends")]
+    started = time.time()
+    with mp.Pool(processes=min(len(jobs), WORKERS)) as pool:
+        for payload in pool.imap_unordered(run_hetero, jobs):
+            print(json.dumps(payload, ensure_ascii=False), flush=True)
+    print(f"# rejeux hétérogènes instrumentés : {len(jobs)} en "
+          f"{time.time() - started:.0f} s")
+    return 0
+
+
 def main(argv: list[str]) -> int:
     command = argv[1] if len(argv) > 1 else "analyse"
     if command == "sweep":
         return cmd_sweep()
+    if command == "hetero":
+        return cmd_hetero()
     if command == "analyse":
         window = int(argv[2]) if len(argv) > 2 else 1000
         return cmd_analyse(window)

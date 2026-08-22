@@ -180,6 +180,10 @@ def load_snapshot(path: str | Path, config: Config | None = None) -> Simulation:
     simulation.series = list(payload["series"])
     simulation.tech_series = list(payload["tech_series"])
     simulation.tension_series = list(payload["tension_series"])
+    # `market_stats` n'est pas sérialisé : c'est un diagnostic hors circuit
+    # (§5), il ne participe à aucune trajectoire et un bras branché sur un
+    # snapshot n'a pas à hériter des statistiques de l'amorçage.
+    simulation.market_stats = []
     simulation.deaths = list(payload["deaths"])
     simulation.avalanches = list(payload["avalanches"])
     simulation.avalanche_members = list(payload["avalanche_members"])
