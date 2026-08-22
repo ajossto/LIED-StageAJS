@@ -156,41 +156,88 @@ observable primaire.** v2 l'a partiellement entendu — `K_share_creditors`,
 
 ## 3. Ce que ce programme mesure de neuf
 
-### 3.1 L'identité de décomposition, et ce qu'elle contient vraiment
+### 3.1 La décomposition, et le seul endroit où elle contient de la nouveauté
 
-Par définition du capital équivalent (v2 §1),
-`prod_tot = n · A · K_eq^γ`. Par la loi de Little, vérifiée à mieux de 1 %
-dans M4B, `n = λ / (morts par entité et par pas)`. Donc
-
-```
-ε ≡ dln(prod_tot)/dln(A) = 1 + γ·dlnK_eq/dlnA − dln(mortalité)/dlnA
-```
-
-\inference{} **Les deux premiers termes sont une réécriture des définitions,
-pas un résultat.** C'est la leçon §14.4 appliquée à ce plan lui-même : une
-identité qui ne peut pas être fausse ne confirme rien. Le contenu empirique
-est entièrement dans les deux élasticités, et surtout dans la troisième, que
-v2 relie à la distribution :
-
-- v2 établit `rotation = ρ·Ḡ`, où Ḡ est le coefficient de Gini des capitaux
-  moyenné sur la phase de marché — **exact en régime homogène**, à −4,0 % en
-  médiane hors de lui ;
-- v2 et v1 mesurent `mortalité ∝ rotation^a`, avec **a = 1,260 ± 0,009**
-  (v2, 322 runs des deux lignées) ou **a = 1,337** (v1, 109 runs d'un
-  balayage contrôlé). Les deux intervalles ne se recouvrent pas ; ils
-  décrivent des corpus différents.
-
-**Prédiction à écrire avant de mesurer.** Les chiffres v2 donnent
-`dln(mortalité)/dlnA = 0,7043` et `γ·dlnK_eq/dlnA = 0,4516`, donc
+Par **définition** du capital équivalent (v2 §1), et en prenant l'effectif
+producteur `n_prod` — celui d'avant les morts du pas, que v2 enregistre
+nativement :
 
 ```
-dln(Ḡ)/dln(A) = 0,7043 / a ∈ [0,527 ; 0,559]
+prod_tot = n_prod · A · K_eq^γ        (définition de K_eq)
 ```
 
-la borne basse correspondant à a = 1,337 et la haute à a = 1,260.
-**La mesure discrimine entre les deux exposants**, ce qu'aucun des deux
-programmes précédents ne pouvait faire. C'est le premier test du programme,
-et il ne coûte que d'instrumenter deux bras déjà définis.
+d'où, en élasticités par rapport à `A` :
+
+```
+ε = dln(n_prod)/dlnA  +  1  +  γ·dlnK_eq/dlnA
+```
+
+\fait{} Les trois termes sont mesurés sur les bras `control` et `all_A150`,
+12 graines appariées, fenêtre résiduelle :
+
+| terme | valeur | source |
+|---|---|---|
+| `dln(n_prod)/dlnA` | **−0,6834 ± 0,0041** | colonne `n_prod` de `tension_agg.csv` |
+| `1` | 1 | exact |
+| `γ·dlnK_eq/dlnA` | **+0,4308 ± 0,0022** | colonne `K_eq` de `tension_agg.csv` |
+| **somme** | **+0,7474 ± 0,0048** | l'identité |
+| ε mesuré | **+0,7473 ± 0,0048** | `prod_tot` de `series.csv` |
+
+Données : `results/analysis/decomposition_epsilon.csv`, 12 graines.
+
+\fait{} L'identité se referme à **5,3·10⁻⁴** au pire, et non à la précision
+machine. L'écart n'est pas une erreur : `K_eq` est moyenné sur les 1000 pas
+de la fenêtre, et la moyenne d'une fonction non linéaire n'est pas la fonction
+de la moyenne. 0,07 % sur ε — à rapporter, pas à masquer, et à ne surtout pas
+présenter comme une vérification de l'identité.
+
+\inference{} **Cette décomposition ne contient qu'une seule mesure, pas
+deux.** L'identité étant la définition de `K_eq`, les deux termes non triviaux
+sont la même mesure — la production — coupée en deux. C'est la leçon §14.4
+appliquée à ce plan : une identité qui ne peut pas être fausse ne confirme
+rien, et l'écrire en trois termes n'en fait pas trois résultats. Le seul
+intérêt de la découpe est de séparer ce qui relève de l'effectif de ce qui
+relève de l'échelle par entité.
+
+\fait{} **Un piège d'instant, qu'il faut noter parce qu'il a déjà mordu.**
+L'élasticité de la population de **fin de pas** vaut −0,7043, pas −0,6835 :
+l'écart de 0,021 est la mortalité intra-pas (≈ 30 morts pour ≈ 1030
+vivantes). L'identité ne se referme qu'avec `n_prod`. Employer `pop` la fait
+manquer de 9 erreurs-types — c'est exactement la correction d'instant que v2
+a portée dans le moteur, et elle se venge ici si on l'oublie.
+
+**Le contenu empirique, et le test.** Il est ailleurs : dans le fait que le
+terme d'effectif soit *prévisible* à partir de la distribution. Par la loi de
+Little (M4B, vérifiée à mieux de 1 %), l'effectif stationnaire vaut
+λ / (morts par entité et par pas) ; v2 relie cette mortalité à la rotation du
+crédit, et la rotation au coefficient de Gini :
+
+```
+rotation = ρ · Ḡ        (v2 : exact en régime homogène)
+mortalité ∝ rotation^a  (v2 : a = 1,260 ± 0,009 ; v1 : a = 1,337)
+```
+
+Les deux intervalles sur `a` **ne se recouvrent pas** ; ils décrivent des
+corpus différents (322 runs des deux lignées contre 109 runs d'un balayage
+contrôlé). D'où la prédiction, écrite ici **avant** toute mesure :
+
+```
+dln(Ḡ)/dln(A)  =  0,7043 / a  ∈  [0,527 ; 0,559]
+```
+
+la borne basse pour `a = 1,337`, la haute pour `a = 1,260`.
+
+> **C'est le test, et il a trois issues, toutes informatives.** Si la mesure
+> de `dlnḠ/dlnA` tombe dans la bande, elle **discrimine entre les deux
+> exposants** — ce qu'aucun des deux programmes précédents ne pouvait faire.
+> Si elle tombe hors de la bande, c'est la chaîne
+> Gini → rotation → mortalité → population qui est en défaut, et le rebond
+> n'est pas gouverné par l'inégalité. Si Ḡ ne répond pas du tout à `A`, la
+> contraction de population vient d'ailleurs — et le candidat est l'échelle
+> `K0`, que le bras compensé du §6 est là pour détecter.
+
+Ḡ doit être **mesuré indépendamment**, par la sonde `record_market_stats` du
+moteur v2, et non déduit de la rotation : le déduire referait une identité.
 
 ### 3.2 Le rapport de branchement se lit sur les runs déjà faits
 
@@ -235,18 +282,38 @@ et sur la fenêtre de transition, où le sens du prêt agit :
    v2 avait établi par une chaîne de colonnes sans jamais nommer b.
 
 \hyp{} L'écart à M4B tient au régime : v2 tourne à **σ = 0,01** contre 0,25
-au centre M4B, et M4B mesure b = 0,647 à σ = 0 contre 0,297 à σ = 0,25.
-La direction est la bonne, l'ampleur ne l'est pas : v2 dépasse la valeur
-σ = 0 de M4B. \incertitude{} Il reste donc un second facteur — candidat :
-l'institution de production jointe, qui égalise les paires plus fortement que
-le partage arithmétique. **Non tranché, et c'est une question du lot F.**
+au centre M4B, et M4B mesure b = 0,647 à σ = 0 contre 0,297 à σ = 0,25. La
+direction est la bonne, l'ampleur ne l'est pas — v2 dépasse la valeur σ = 0
+de M4B.
 
-**Garde-fou obligatoire (porte du lot A).** L'estimateur générationnel —
-descendance moyenne par mort, lue sur `avalanche_members.generation`
-(`model.py:1398`) — n'est **pas** la même fonctionnelle de l'arbre. Les deux
-doivent être recalculés sur les **mêmes** runs v2 et comparés avant qu'un
-seul chiffre de branchement ne soit publié. Sans cela, le point 1 ci-dessus
-reste suspect.
+\incertitude{} **Mais la cellule σ = 0 de M4B n'est pas comparable terme à
+terme**, et il faut le dire avant de bâtir un lot dessus : elle tourne à
+δ = 0,05 (v2 : 0,01), avec un pool d'appariement k ∈ [2 ; 10] (v2 : k ≡ 2),
+et sous l'institution de principal **arithmétique** (v2 : production jointe
+maximale). Quatre différences, pas une. Le lot F ne peut donc pas « isoler
+σ » ; il peut au mieux ordonner les quatre candidats par une ablation à un
+facteur à la fois, en partant du régime v2 et en marchant vers celui de M4B.
+Le dire ainsi, et non « séparer σ de l'institution ».
+
+**Garde-fou obligatoire (porte du lot A), et il coûte plus cher qu'il n'y
+paraît.** Un second estimateur — la descendance moyenne par mort, lue sur
+l'arbre causal — n'est **pas** la même fonctionnelle, et les deux doivent être
+recalculés sur les **mêmes** runs avant qu'un seul chiffre ne soit publié.
+
+\fait{} Mais `avalanche_members.generation` (`model.py:1398`) **ne permet pas
+de le calculer** : ce champ vaut `death_iteration`, c'est-à-dire le numéro de
+**passe du point fixe** de `_resolve_bankruptcies` (`model.py:945-985`).
+Toutes les entités devenues insolvables à la même passe partagent la même
+« génération », indépendamment de qui a causé la perte de qui. Ce n'est pas
+un compte de descendance.
+
+\fait{} La structure causale réelle est dans `ledger["loss_edges"]` —
+les triplets (source, victime, principal) — que `_build_avalanches` consomme
+pour son union-find puis **jette** (`model.py:900-935`) : rien ne la persiste,
+nulle part. **Persister `loss_edges` est donc une condition d'existence de la
+porte du lot A**, et non un raffinement. C'est le cinquième manque
+d'instrumentation, et il n'était pas dans la liste du §4 avant cette
+vérification.
 
 ### 3.3 Ce que « contrôler » veut dire, et ce que ça exclut
 
@@ -279,9 +346,9 @@ déplace b sans déplacer α, ou l'inverse, la chaîne est fausse.
 
 ---
 
-## 4. Instrumentation : quatre manques, et leur ordre
+## 4. Instrumentation : cinq manques, et leur ordre
 
-L'ordre n'est pas indifférent — les trois derniers manques sont sans objet
+L'ordre n'est pas indifférent — les quatre derniers manques sont sans objet
 tant que le premier tient.
 
 ### 4.1 La persistance — bloquant
@@ -325,11 +392,20 @@ prix fort : impossible d'étendre les cellules sévères sans tout rejouer, à
 Ce programme a besoin d'horizons longs pour la statistique de queue. **La
 dette se paie ici, dans le lot A.**
 
-### 4.4 Les groupes d'entités — à définir une fois
+### 4.4 L'arbre causal des cascades — découvert en écrivant ce plan
+
+\fait{} `ledger["loss_edges"]` porte les arêtes (source, victime, principal)
+de chaque cascade ; `_build_avalanches` s'en sert pour son union-find puis les
+jette (`model.py:900-935`). Sans elles, **aucun** estimateur de descendance
+n'est calculable, et le garde-fou du §3.2 est inexécutable. À persister avec
+le reste (§4.1), en notant que le volume est celui des arêtes de perte, pas
+celui des contrats.
+
+### 4.5 Les groupes d'entités — à définir une fois
 
 Quatre partitions, et une seule règle : elles doivent être calculées sur le
 **même instantané** que les distributions, sinon la coordination annoncée
-n'existe pas.
+n'existe pas. Les groupes sont référencés `§4.5` dans la suite.
 
 | groupe | définition | pourquoi |
 |---|---|---|
@@ -350,13 +426,37 @@ précédent mesuré est signalée comme telle**.
 
 | lot | contenu | porte de sortie | coût |
 |---|---|---|---|
-| **A** | Fork ; persistance (§4.1) ; panneaux par entité câblés dans la boucle de campagne (§4.2) ; checkpoint de fin de run (§4.3) ; **les deux estimateurs de b réconciliés** (§3.2) | parité bit à bit 8000 pas × 26 colonnes, **écart nul exigé** — toute l'addition est hors circuit ; **et** coût par instantané + empreinte disque mesurés sur une cellule | 1 j + ~750 s |
+| **A** | Fork ; persistance (§4.1) ; panneaux câblés dans la boucle de campagne (§4.2) ; checkpoint de fin de run (§4.3) ; arbre causal persisté (§4.4) ; **les deux estimateurs de b réconciliés** (§3.2) | **deux portes distinctes.** (i) Parité bit à bit 8000 pas × 26 colonnes, écart nul exigé : elle couvre le **moteur**, dont rien de l'addition n'est relu. (ii) **Test de fermeture des panneaux** (§7) : la parité ne verrait pas un instantané pris au mauvais instant, puisqu'il n'entre pas dans `step()`. Les deux sont nécessaires ; ni l'une ni l'autre ne suffit | 1 j + ~750 s |
 | **B** | Décomposition distributionnelle du rebond : bras `control`, `all_A150`, **`all_A150_K0comp` (K0×2,25)**, panneaux à k mesuré, 12 graines | `dln(Ḡ)/dlnA` mesuré et confronté à la prédiction [0,527 ; 0,559] du §3.1 ; verdict sur lequel des deux exposants tient | 3 h de calcul |
-| **C** | Classes de lois, coordonnées : revenu d'intérêt et NW, par groupe (§4.4), sur les instantanés post-convergence ; familles candidates du §2.3 ; sélection par AIC + Vuong | **aucune** conclusion d'existence de queue ; α̂ rendu avec ses trois échelles d'incertitude non fusionnées | 1,5 j |
+| **C0** | **Pilote de couverture** : une cellule, mesurer `n_tail` au seuil optimal et l'empreinte disque des panneaux | `n_tail` médian mesuré, et le nombre d'instantanés indépendants qu'un run rend | 1 h + 1 cellule |
+| **C** | Classes de lois, coordonnées : revenu d'intérêt et NW, par groupe (§4.5), sur les instantanés post-convergence ; familles candidates du §2.3 ; sélection par AIC + Vuong | **cible de couverture atteinte** (voir ci-dessous) ; **aucune** conclusion d'existence de queue ; α̂ rendu avec ses trois échelles d'incertitude non fusionnées | 1,5 j + calcul **fixé par C0** |
 | **D** | Avalanches et branchement : les deux estimateurs, susceptibilité, profondeur, distribution des tailles (lois de puissance **seules**) ; réconciliation avec M4B et M4 fable | l'écart b ≈ 0,79 vs 0,30 expliqué, ou déclaré ouvert avec ce qui a été essayé | 0,5 j + 2 h |
 | **E** | **Contrôle** : interventions en direct sur ρ (candidat n°1, §3.3), puis sur le second levier que le lot C ou D désigne ; réponse appariée de α et de b | les trois conditions du §3.3 tenues ou explicitement non tenues, levier par levier | 1 j + 4 h |
 | **F** | La question ouverte du §3.2 : pourquoi b dépasse la valeur σ = 0 de M4B — σ, ou l'institution de production jointe ? | une ablation qui sépare les deux, ou un constat d'échec documenté | 0,5 j + 3 h |
 | **G** | Rapports, journal, traçabilité, import `simulation_lab` | relecture annotée | 1,5 j |
+
+### La couverture de queue est le budget du lot C, et rien d'autre
+
+\fait{} Ce qui a bloqué M4.2B n'est pas la finesse du critère : c'est le
+**nombre de points dans la queue extrême** — `n_tail` médian 113 au seuil
+optimal, 17 au seuil doublé, 2 % seulement des instantanés restant
+admissibles.
+
+\inference{} **Aucun lot de ce plan ne change la couverture par défaut.**
+12 graines × 1000 pas × ≈ 1000 entités à λ = 30 rendent la même profondeur de
+queue par instantané que M4.2B. Reconduire ce protocole, c'est reproduire son
+impasse avec un moteur plus récent. Il n'existe que deux leviers, et ils ont
+un coût mesurable :
+
+| levier | effet | coût |
+|---|---|---|
+| plus d'entités par instantané (λ ↑) | M4B : λ est de la **pure taille finie**, intensivité ±2 % — donc la physique ne change pas, seule la statistique s'améliore | ≈ ×4 à λ = 60 (population double, marché et service doublent) |
+| plus d'instantanés indépendants (T ↑, espacés de τ) | ne change pas `n_tail` par instantané, réduit l'incertitude inter-instantanés | linéaire en T, **sans précédent mesuré** dans v2 au-delà de 4000 pas |
+
+**Porte du lot C, à fixer chiffrée par C0** : une cible `n_tail ≥ X` par
+instantané, X étant dérivé de la précision voulue sur α̂ et non choisi. Et le
+calcul du lot C est dimensionné pour l'atteindre, ou le lot est déclaré
+infaisable au budget — ce qui est un résultat, pas un échec.
 
 **Les lots qui changent le moteur sont séparés dans l'historique git.**
 Ici, un seul le fait (A), et il est neutre par construction : rien de ce qu'il
@@ -389,7 +489,7 @@ Reprendre le protocole v2 — amorçage partagé à t₀ = 2000, fenêtre de 200
 |---|---|---|
 | `control` | aucune | référence appariée |
 | `all_A150` | A = 1,5, portée toutes | le rebond à K0 fixe : ε = 0,747 attendu |
-| `all_A150_K0comp` | A = 1,5 **et** K0 = 56,25 | **indispensable** : v1 montre que la contraction de population est un effet d'échelle de K0 que la compensation annule entièrement. Sans ce bras, une réponse de queue qui ne serait qu'un artefact d'échelle serait découverte à la fin, pas détectée |
+| `all_A150_K0comp` | A = 1,5 **et** `K0 → K0·(A'/A)^{1/(1−γ)}`, soit 56,25 à γ = 0,5 | **indispensable** : v1 montre que la contraction de population est un effet d'échelle de K0 que la compensation annule entièrement (pop ×1,005). Sans ce bras, une réponse de queue qui ne serait qu'un artefact d'échelle serait découverte à la fin plutôt que détectée. La formule, et non le nombre, pour que le bras survive à un changement de γ |
 | `new_A150` | A = 1,5, portée nouvelles | deux technologies coexistantes ; le seul régime où le sens du prêt agit |
 
 ---
@@ -436,7 +536,9 @@ la suite v2 (12 fichiers, tous verts) et l'étendre.
 
 - **La couverture de queue, pas la courbure.** Ce qui a bloqué M4.2B est le
   nombre de points dans la queue extrême. Un protocole qui n'augmente pas la
-  couverture ne fera pas mieux, quelle que soit la finesse du critère.
+  couverture ne fera pas mieux, quelle que soit la finesse du critère — c'est
+  pourquoi le lot C a une **cible de couverture chiffrée** et un pilote C0 qui
+  la dimensionne (§5), plutôt qu'un budget en jours.
 - **Un instantané n'est pas une cellule.** L'écart-type bootstrap
   intra-instantané vaut ≈ 3,7× l'écart-type inter-graines : ne jamais publier
   un α̂ d'instantané avec l'incertitude d'une moyenne de cellule.
@@ -455,8 +557,13 @@ la suite v2 (12 fichiers, tous verts) et l'étendre.
   fois autour d'un point unique produit un R² groupé qui n'est que la droite
   joignant les lignes de base — v2 s'y est fait prendre et l'a documenté.
   Ajuster **dans** chaque famille, et exiger une étendue d'au moins ×3.
-- **Une identité n'est pas une confirmation.** Le §3.1 en est une aux deux
-  tiers ; le dire dans le rapport à chaque emploi.
+- **L'instant de mesure décide du résultat.** L'identité du §3.1 ne se
+  referme qu'avec l'effectif **producteur** ; avec l'effectif de fin de pas
+  elle manque de 9 erreurs-types, pour une différence qui n'est que la
+  mortalité intra-pas. v2 a porté cette correction dans le moteur ; toute
+  grandeur nouvelle doit déclarer à quel instant du pas elle est prise.
+- **Une identité n'est pas une confirmation.** Le §3.1 en est une ; le dire
+  dans le rapport à chaque emploi.
 
 ---
 
