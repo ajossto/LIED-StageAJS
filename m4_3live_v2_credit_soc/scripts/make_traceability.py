@@ -126,7 +126,7 @@ EXTERNAL = [
     },
 ]
 
-KEYS = ("gamma", "A", "lam", "delta", "sigma", "K0", "transfer_cap", "rate_rule", "kernel_policy")
+KEYS = ("gamma", "A", "lam", "delta", "sigma", "K0", "rate_rule", "kernel_policy")
 
 
 def short_parameters(parameters: dict) -> str:

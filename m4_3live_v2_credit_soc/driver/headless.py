@@ -118,7 +118,6 @@ def cmd_burn(args) -> int:
         delta=args.delta,
         sigma=args.sigma,
         K0=args.K0,
-        transfer_cap=args.transfer_cap,
         rate_rule=args.rate_rule,
         kernel_policy=args.kernel_policy,
     )
@@ -211,7 +210,6 @@ def main(argv=None) -> int:
     burn.add_argument("--delta", type=float, default=0.01)
     burn.add_argument("--sigma", type=float, default=0.01)
     burn.add_argument("--K0", type=float, default=25.0)
-    burn.add_argument("--transfer-cap", dest="transfer_cap", default="optimum")
     burn.add_argument("--rate-rule", dest="rate_rule", default="marginal")
     burn.add_argument("--kernel-policy", dest="kernel_policy", default="exact_lut")
     burn.add_argument("--progress", type=int, default=0)

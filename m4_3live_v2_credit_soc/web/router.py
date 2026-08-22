@@ -52,7 +52,6 @@ CREATE_FIELDS = (
     "rho",
     "eta_beta",
     "eta_n_ref",
-    "transfer_cap",
     "rate_rule",
     "surplus_share_p",
     "kernel_policy",

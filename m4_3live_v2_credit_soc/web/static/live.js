@@ -12,7 +12,6 @@ const COLOR_B = "#D55E00"; // vermillon : deuxième série
 const COLOR_INTERVENTION = "rgba(28, 37, 43, 0.55)";
 
 const STRING_FIELDS = {
-  transfer_cap: ["optimum", "equalization"],
   rate_rule: ["marginal", "surplus_share"],
   kernel_policy: ["exact_lut", "hybrid"],
 };

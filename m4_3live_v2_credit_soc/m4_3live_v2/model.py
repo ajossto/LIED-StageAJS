@@ -66,7 +66,6 @@ ZERO_TOL = 1e-12
 K_FLOOR = 1e-9
 POOL_SIZE = 2
 
-TRANSFER_CAPS = ("optimum", "equalization")
 RATE_RULES = ("marginal", "surplus_share")
 
 # Sémantique de portée par paramètre (prompt §2). Le champ `degenerate`
@@ -141,7 +140,6 @@ class Config:
     eta_n_ref: float = 1.0
     target_rule: str = "arithmetic"
     # -- M4.3Live -------------------------------------------------------
-    transfer_cap: str = "optimum"
     rate_rule: str = "marginal"
     surplus_share_p: float = 0.5
     kernel_policy: str = "exact_lut"
@@ -164,8 +162,6 @@ class Config:
             raise ValueError("rho doit être strictement positif")
         if self.eta_n_ref <= 0:
             raise ValueError("eta_n_ref doit être strictement positif")
-        if self.transfer_cap not in TRANSFER_CAPS:
-            raise ValueError(f"transfer_cap doit être dans {TRANSFER_CAPS}")
         if self.rate_rule not in RATE_RULES:
             raise ValueError(f"rate_rule doit être dans {RATE_RULES}")
         if not 0.0 < self.surplus_share_p <= 1.0:
@@ -352,6 +348,33 @@ class LoanBook:
         self.due[borrower] -= principal * rate
         self.by_pair.pop((lender, borrower))
 
+    def forget(self, entity: int) -> None:
+        """Efface toute trace d'une entité MORTE (§3.4 du prompt v2).
+
+        Sans cet appel, `by_borrower` conserve une clef à ensemble vide par
+        entité jamais créée. La phase de service des intérêts itère sur
+        TOUTES les clefs (`Simulation.step`) : son coût par pas croît alors
+        comme λ·t et le coût d'un run comme λT²/2. La purge le ramène à la
+        population vivante, donc le run redevient linéaire en T.
+
+        DEUX CONDITIONS, toutes deux nécessaires à la parité bit à bit :
+
+        1. l'entité n'a plus aucun contrat — le corps de boucle sauté était
+           donc un no-op, aucune opération flottante n'est supprimée ;
+        2. l'entité est MORTE, donc elle ne peut plus jamais emprunter et sa
+           clef ne sera pas réinsérée. Purger la clef vide d'une entité
+           VIVANTE casserait la parité : `defaultdict` réinsère une clef en
+           FIN d'ordre d'itération, ce qui changerait la séquence de sommation
+           au prochain emprunt.
+        """
+        if self.by_borrower.get(entity) or self.by_lender.get(entity):
+            raise RuntimeError(f"purge de l'entité {entity} qui porte encore des contrats")
+        self.by_borrower.pop(entity, None)
+        self.by_lender.pop(entity, None)
+        self.due.pop(entity, None)
+        self.claims.pop(entity, None)
+        self.debts.pop(entity, None)
+
     def consistency_errors(self, alive: list[bool]) -> list[str]:
         """Contrôle hors boucle : contrats valides et agrégats exacts."""
         claims: defaultdict[int, float] = defaultdict(float)
@@ -487,7 +510,6 @@ def _run_market(
         "blocked_dir": 0,
         "blocked_tiny": 0,
         "blocked_rate": 0,
-        "capped": 0,
         "surplus": 0.0,
     }
     events: list[dict] = []
@@ -503,7 +525,6 @@ def _run_market(
     pop_g = population.g
     pop_tech = population.tech
     solve = kernel.solve
-    cap_at_equalization = config.transfer_cap == "equalization"
     use_surplus_rate = config.rate_rule == "surplus_share"
     share = config.surplus_share_p
     record_events = config.record_loan_events
@@ -528,11 +549,6 @@ def _run_market(
             # sens interdit par le marché, la paire ne traite pas.
             market["blocked_dir"] += 1
             continue
-        if cap_at_equalization:
-            bound = 0.5 * (lender_capital - borrower_capital)
-            if principal > bound:
-                principal = bound
-                market["capped"] += 1
         if principal < MIN_LOAN:
             market["blocked_tiny"] += 1
             continue
@@ -616,6 +632,9 @@ def _fail_one(population: Population, book: LoanBook, entity: int, ledger: dict)
 
     ledger["destroyed"] += max(population.K[entity], 0.0)
     population.kill(entity)
+    # §3.4 : la clef morte est retirée ICI, au moment de la mort, et
+    # nulle part ailleurs (voir `LoanBook.forget`).
+    book.forget(entity)
 
 
 def _build_avalanches(ledger: dict) -> list[dict]:
@@ -1007,6 +1026,7 @@ class Simulation:
                 "injected": injected,
                 "depreciated": depreciated,
                 "shock_gain": shock_gain,
+                "book_keys": len(book.by_borrower),
                 "mkt_pool": market["pool"],
                 "mkt_rounds": market["rounds"],
                 "mkt_new_edges": market["new_edges"],
@@ -1015,7 +1035,6 @@ class Simulation:
                 "mkt_blocked_dir": market["blocked_dir"],
                 "mkt_blocked_tiny": market["blocked_tiny"],
                 "mkt_blocked_rate": market["blocked_rate"],
-                "mkt_capped": market["capped"],
                 "mkt_surplus": market["surplus"],
                 "n_tech_alive": sum(1 for count in population.tech_alive.values() if count > 0),
                 "mean_A": coefficient_sum / n_alive if n_alive else float("nan"),

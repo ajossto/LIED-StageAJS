@@ -64,7 +64,6 @@ STREAM_COLUMNS = (
     "mkt_rounds",
     "mkt_blocked_dir",
     "mkt_blocked_tiny",
-    "mkt_capped",
     "mkt_surplus",
     "n_avalanches",
     "max_avalanche",
@@ -354,7 +353,6 @@ class LiveSession:
                     "depreciation_market_bankruptcy_measures"
                 ),
                 "principal_rule": "joint_production_optimum (delta = h(C) - K_b)",
-                "transfer_cap": self.simulation.config.transfer_cap,
                 "rate_rule": self.simulation.config.rate_rule,
                 "pool_size": 2,
                 "bankruptcy": "cancel_and_destroy",
