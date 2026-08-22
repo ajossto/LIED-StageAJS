@@ -52,6 +52,8 @@ CREATE_FIELDS = (
     "rho",
     "eta_beta",
     "eta_n_ref",
+    "loan_direction",
+    "phase_order",
     "rate_rule",
     "surplus_share_p",
     "kernel_policy",

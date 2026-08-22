@@ -1,11 +1,14 @@
 """Figures de tension pour un dossier de run, et regénération en masse.
 
-La tension `T = K_aut / K_eq` est définie et calculée dans
-`scripts/tension.py` ; ce module ne fait que la tracer. Ni l'un ni l'autre
-ne touche au moteur : ce sont des dérivés de `tech_series.csv` et
-`series.csv`, calculables sur un run déjà terminé. Il est appelé
-automatiquement à la fin de chaque run par `driver/headless.py`, et peut être
-relancé sur des runs déjà terminés :
+La tension `T = K_aut / K_eq` est DÉFINIE ET CALCULÉE DANS LE MOTEUR
+(`m4_3live_v2/tension.py`, §4.1 du prompt v2) et écrite dans `tension.csv` /
+`tension_agg.csv` par `write_series`. Ce module ne fait que la tracer : il ne
+recalcule rien et ne reconstruit rien. C'est la différence avec v1, où la
+tension était un dérivé a posteriori de `tech_series.csv`, avec une colonne
+`basis` pour dire de quelle reconstruction elle provenait.
+
+Appelé automatiquement à la fin de chaque run par `driver/headless.py` ;
+relançable sur des runs déjà terminés :
 
     python3 scripts/tension_figures.py                 # tous les runs de results/
     python3 scripts/tension_figures.py results/campaign/burn/seed0
@@ -20,8 +23,6 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT.parent))
-
-from scripts.tension import write_tension  # noqa: E402
 
 
 def _read(path: Path) -> list[dict]:
@@ -56,10 +57,11 @@ def _relaxation_cut(time_axis: list[float]) -> int:
     return int(max(200, 0.1 * (time_axis[-1] if time_axis else 0)))
 
 
-def plot_tension(directory: str | Path, delta: float | None = None) -> Path | None:
-    """Écrit `figures/tension.png`. `delta` est lu dans summary.json si absent."""
-    import json
+def plot_tension(directory: str | Path) -> Path | None:
+    """Écrit `figures/tension.png` à partir de `tension_agg.csv` et `tension.csv`.
 
+    Retourne None si le run ne porte pas ces fichiers (run de zéro pas, ou run
+    d'une lignée antérieure)."""
     import matplotlib
 
     matplotlib.use("Agg")
@@ -73,16 +75,6 @@ def plot_tension(directory: str | Path, delta: float | None = None) -> Path | No
         pass
 
     directory = Path(directory)
-    if delta is None:
-        summary = {}
-        for name in ("summary.json", "burn.json", "run.json"):
-            if (directory / name).exists():
-                summary = json.loads((directory / name).read_text(encoding="utf-8"))
-                break
-        delta = float(summary.get("parameters", {}).get("delta", 0.01))
-    if write_tension(directory, delta) is None:
-        return None
-
     per_tech = _read(directory / "tension.csv")
     aggregate = _read(directory / "tension_agg.csv")
     series = _read(directory / "series.csv")
@@ -177,8 +169,10 @@ def plot_tension(directory: str | Path, delta: float | None = None) -> Path | No
     axis.set_ylabel("morts / population")
     axis.grid(True, alpha=0.2)
 
-    basis = aggregate[-1].get("basis", "?")
-    figure.suptitle(f"Tension — {directory.name}  (base d'effectif : {basis})")
+    figure.suptitle(
+        f"Tension — {directory.name}  "
+        "(effectif producteur exact, mesuré à l'instant de la production)"
+    )
     figure.tight_layout()
     target = directory / "figures" / "tension.png"
     target.parent.mkdir(parents=True, exist_ok=True)
@@ -191,13 +185,13 @@ def main(argv: list[str]) -> int:
     targets = [Path(arg) for arg in argv[1:] if not arg.startswith("-")]
     if not targets:
         targets = sorted(
-            path.parent for path in (ROOT / "results").rglob("tech_series.csv")
+            path.parent for path in (ROOT / "results").rglob("tension_agg.csv")
         )
     written = 0
     for directory in targets:
         if plot_tension(directory) is not None:
             written += 1
-    print(f"{written} run(s) : tension.csv, tension_agg.csv, figures/tension.png")
+    print(f"{written} run(s) : figures/tension.png")
     return 0
 
 

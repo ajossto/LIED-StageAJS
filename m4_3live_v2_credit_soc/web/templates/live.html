@@ -182,9 +182,18 @@
         </div>
 
         <div class="chart-block">
-          <h3>Marché : <code>loan_volume</code> et paires bloquées par le sens du prêt <code>mkt_blocked_dir</code></h3>
+          <h3>Marché : volume prêté <code>loan_volume</code>, dont volume prêté
+          dans le sens que la règle v1 interdisait <code>mkt_volume_rev</code></h3>
           <canvas id="chart-market" class="live-chart"></canvas>
           <div id="legend-market" class="chart-legend"></div>
+        </div>
+
+        <div class="chart-block">
+          <h3>Créancières nettes : part du capital qu'elles détiennent
+          <code>K_share_creditors</code>, et corrélation entre rendement marginal
+          et position nette <code>corr_marg_net</code></h3>
+          <canvas id="chart-creditors" class="live-chart"></canvas>
+          <div id="legend-creditors" class="chart-legend"></div>
         </div>
       </section>
 

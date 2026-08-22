@@ -12,6 +12,8 @@ const COLOR_B = "#D55E00"; // vermillon : deuxième série
 const COLOR_INTERVENTION = "rgba(28, 37, 43, 0.55)";
 
 const STRING_FIELDS = {
+  loan_direction: ["free", "richest_lends"],
+  phase_order: ["v1", "deprec_first"],
   rate_rule: ["marginal", "surplus_share"],
   kernel_policy: ["exact_lut", "hybrid"],
 };
@@ -54,7 +56,15 @@ const CHARTS = [
     legendId: "legend-market",
     series: [
       { key: "loan_volume", axis: "left", color: COLOR_A, label: "loan_volume" },
-      { key: "mkt_blocked_dir", axis: "right", color: COLOR_B, label: "mkt_blocked_dir" },
+      { key: "mkt_volume_rev", axis: "left", color: COLOR_B, label: "mkt_volume_rev (sens inversé)" },
+    ],
+  },
+  {
+    id: "chart-creditors",
+    legendId: "legend-creditors",
+    series: [
+      { key: "K_share_creditors", axis: "left", color: COLOR_A, label: "part du capital aux créancières nettes" },
+      { key: "corr_marg_net", axis: "right", color: COLOR_B, label: "corr(rendement marginal, position nette)" },
     ],
   },
 ];

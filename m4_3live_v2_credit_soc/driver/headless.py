@@ -69,13 +69,24 @@ def write_outputs(simulation: Simulation, directory: Path, extra: dict | None = 
         with open(directory / "interventions.jsonl", "w", encoding="utf-8") as handle:
             for entry in simulation.intervention_log:
                 handle.write(json.dumps(entry, ensure_ascii=False) + "\n")
-    # Tension K_aut/K_eq : colonnes + figure, à chaque run. L'import de
-    # matplotlib est fait ici et pas en tête de module pour que la session
-    # pilotable (qui n'écrit pas de figures) n'en paie pas le coût.
+    # Tension K_aut/K_eq : la FIGURE, à chaque run. Les colonnes, elles, sont
+    # déjà écrites par `write_series` — elles viennent du moteur (§4.1), plus
+    # d'un post-traitement. Le module de tracé est chargé PAR CHEMIN et pas
+    # comme `scripts.tension_figures` : `scripts` est un nom de premier niveau
+    # générique, et les deux lignées (v1 et v2) en ont un ; un import par nom
+    # résoudrait vers l'une ou l'autre selon l'ordre de `sys.path`. L'import de
+    # matplotlib reste tardif pour que la session pilotable n'en paie pas le
+    # coût.
     try:
-        from scripts.tension_figures import plot_tension
+        import importlib.util
 
-        plot_tension(directory, simulation.config.delta)
+        spec = importlib.util.spec_from_file_location(
+            "m4_3live_v2_tension_figures",
+            Path(__file__).resolve().parent.parent / "scripts" / "tension_figures.py",
+        )
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        module.plot_tension(directory)
     except Exception as error:  # une figure manquante ne perd pas un run
         print(f"    [tension] figure non produite : {error}", flush=True)
 
@@ -118,6 +129,8 @@ def cmd_burn(args) -> int:
         delta=args.delta,
         sigma=args.sigma,
         K0=args.K0,
+        loan_direction=args.loan_direction,
+        phase_order=args.phase_order,
         rate_rule=args.rate_rule,
         kernel_policy=args.kernel_policy,
     )
@@ -210,6 +223,10 @@ def main(argv=None) -> int:
     burn.add_argument("--delta", type=float, default=0.01)
     burn.add_argument("--sigma", type=float, default=0.01)
     burn.add_argument("--K0", type=float, default=25.0)
+    burn.add_argument("--loan-direction", dest="loan_direction", default="free",
+                      choices=("free", "richest_lends"))
+    burn.add_argument("--phase-order", dest="phase_order", default="v1",
+                      choices=("v1", "deprec_first"))
     burn.add_argument("--rate-rule", dest="rate_rule", default="marginal")
     burn.add_argument("--kernel-policy", dest="kernel_policy", default="exact_lut")
     burn.add_argument("--progress", type=int, default=0)

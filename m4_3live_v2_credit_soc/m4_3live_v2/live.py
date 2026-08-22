@@ -35,6 +35,7 @@ from dataclasses import replace
 from pathlib import Path
 
 from .model import Config, Intervention, Simulation
+from .tension import AGGREGATE_COLUMNS, TENSION_COLUMNS, aggregate_rows
 
 __all__ = [
     "LiveSession",
@@ -64,6 +65,10 @@ STREAM_COLUMNS = (
     "mkt_rounds",
     "mkt_blocked_dir",
     "mkt_blocked_tiny",
+    "mkt_reversed",
+    "mkt_volume_rev",
+    "K_share_creditors",
+    "corr_marg_net",
     "mkt_surplus",
     "n_avalanches",
     "max_avalanche",
@@ -73,8 +78,20 @@ STREAM_COLUMNS = (
 )
 
 
+def _write_csv(path: Path, columns, rows: list[dict]) -> None:
+    with open(path, "w", newline="", encoding="utf-8") as handle:
+        writer = csv.DictWriter(handle, fieldnames=list(columns))
+        writer.writeheader()
+        writer.writerows(rows)
+
+
 def write_series(simulation: Simulation, directory: str | Path) -> Path:
-    """Écrit series.csv, tech_series.csv et kernel.json d'une simulation."""
+    """Écrit series.csv, tech_series.csv, tension.csv, tension_agg.csv et
+    kernel.json d'une simulation.
+
+    Les deux fichiers de tension sont écrits pour TOUT run, sans intervention
+    manuelle et sans post-traitement (§4.1) : leurs colonnes sont calculées
+    dans `Simulation.step` sur l'état exact du pas."""
     directory = Path(directory)
     directory.mkdir(parents=True, exist_ok=True)
     path = directory / "series.csv"
@@ -87,10 +104,12 @@ def write_series(simulation: Simulation, directory: str | Path) -> Path:
         writer.writerows(rows)
     tech_rows = simulation.tech_series
     if tech_rows:
-        with open(directory / "tech_series.csv", "w", newline="", encoding="utf-8") as handle:
-            writer = csv.DictWriter(handle, fieldnames=list(tech_rows[0]))
-            writer.writeheader()
-            writer.writerows(tech_rows)
+        _write_csv(directory / "tech_series.csv", list(tech_rows[0]), tech_rows)
+    tension_rows = simulation.tension_series
+    if tension_rows:
+        _write_csv(directory / "tension.csv", TENSION_COLUMNS, tension_rows)
+        _write_csv(directory / "tension_agg.csv", AGGREGATE_COLUMNS,
+                   aggregate_rows(tension_rows))
     (directory / "kernel.json").write_text(
         json.dumps(simulation.kernel.describe(), indent=2, ensure_ascii=False),
         encoding="utf-8",
@@ -123,6 +142,7 @@ def save_snapshot(simulation: Simulation, path: str | Path) -> Path:
         "status": simulation.status,
         "series": simulation.series,
         "tech_series": simulation.tech_series,
+        "tension_series": simulation.tension_series,
         "deaths": simulation.deaths,
         "avalanches": simulation.avalanches,
         "avalanche_members": simulation.avalanche_members,
@@ -159,6 +179,7 @@ def load_snapshot(path: str | Path, config: Config | None = None) -> Simulation:
     simulation.status = payload["status"]
     simulation.series = list(payload["series"])
     simulation.tech_series = list(payload["tech_series"])
+    simulation.tension_series = list(payload["tension_series"])
     simulation.deaths = list(payload["deaths"])
     simulation.avalanches = list(payload["avalanches"])
     simulation.avalanche_members = list(payload["avalanche_members"])
@@ -169,6 +190,8 @@ def load_snapshot(path: str | Path, config: Config | None = None) -> Simulation:
     simulation.default_tech = payload["default_tech"]
     simulation._avalanche_id_counter = payload["avalanche_id_counter"]
     simulation._pending = []
+    simulation._amplitude_probe = {}
+    simulation._amplitude_log = []
     simulation._lock = threading.Lock()
     return simulation
 
@@ -349,10 +372,14 @@ class LiveSession:
             "t_start": self.simulation.t,
             "fixed_rules": {
                 "phase_order": (
-                    "interventions_births_shock_production_interest_"
+                    "interventions_births_shock_production_depreciation_"
+                    "interest_market_bankruptcy_measures"
+                    if self.simulation.config.phase_order == "deprec_first"
+                    else "interventions_births_shock_production_interest_"
                     "depreciation_market_bankruptcy_measures"
                 ),
-                "principal_rule": "joint_production_optimum (delta = h(C) - K_b)",
+                "principal_rule": "joint_production_optimum (delta = h(C) - K_a)",
+                "loan_direction": self.simulation.config.loan_direction,
                 "rate_rule": self.simulation.config.rate_rule,
                 "pool_size": 2,
                 "bankruptcy": "cancel_and_destroy",
