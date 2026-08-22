@@ -1,5 +1,6 @@
 #!/bin/bash
-# Non-régression de simulation_lab après l'ajout de l'aiguillage /live (§6).
+# Non-régression de simulation_lab après l'ajout de l'aiguillage /live2.
+# Les deux lignées coexistent : /live (v1) et /live2 (v2) doivent répondre.
 # On EXÉCUTE réellement les commandes et les routes, on ne relit pas le code.
 # Sortie : results/analysis/nonregression.txt
 set -u
@@ -52,8 +53,10 @@ SERVER=$!
 trap 'kill $SERVER 2>/dev/null' EXIT
 sleep 4
 for u in / /launch /results /static/app.css /static/app.js /api/models /api/system \
-         "/api/runs?scope=active" /api/jobs /live /live/static/live.js /live/static/live.css \
-         /api/live/meta /api/live/sessions /inexistant; do
+         "/api/runs?scope=active" /api/jobs \
+         /live /live/static/live.js /live/static/live.css /api/live/meta /api/live/sessions \
+         /live2 /live2/static/live.js /live2/static/live.css /api/live2/meta /api/live2/sessions \
+         /inexistant; do
   code=$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:$PORT$u")
   printf "%-28s %s\n" "$u" "$code" | tee -a "$REPORT"
 done

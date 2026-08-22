@@ -344,3 +344,82 @@ sur quoi elle portait, le nombre de défauts, qu'elle annonçait nul et qui l'es
 Elle a manqué le canal réel parce qu'elle ne regardait que les défauts — la
 note d'origine parlait de « taux de défaut », et cette focalisation a orienté
 la prédiction vers la seule grandeur que le levier ne touche pas.
+
+---
+
+## 22 août 2026 — vérification finale, sur le moteur effectivement livré
+
+**Parité, troisième passe.** 8000 pas × 26 colonnes contre
+`m4_3__d1__baseline__seed0` : **écart maximal NUL**, **9 369 224** appels au
+noyau — *le même nombre* que la passe du lot B, ce qui confirme qu'aucune des
+additions ultérieures (sonde d'amplitude aux naissances, `n_probe`, sonde de
+statistiques de marché) ne déplace un appel. 747 s.
+Trace : `results/analysis/parity_final_full.log`.
+
+**Coût, seconde mesure.** Sur le moteur livré : v1 passe de 111,6 à
+119,8 ms/pas (×1,073) avec 120 153 clefs pour 1031 vivantes ; v2 de 115,6 à
+93,1 ms/pas (×0,805) avec 1023 clefs. 445 s contre 383 s au total.
+**L'instrumentation n'est pas mesurable** à ce niveau de bruit : l'écart entre
+les deux mesures de v2 (378 s puis 383 s) est du même ordre que celui des deux
+mesures de v1 (444 s puis 445 s), et v1 n'a pas changé d'une ligne.
+
+**Suite complète, 12 fichiers, tous verts** :
+
+| test | statut |
+|---|---|
+| `test_institution.py` | ✓ |
+| `test_scopes.py` | ✓ |
+| `test_surplus_rate.py` | ✓ |
+| `test_loan_direction.py` | ✓ |
+| `test_tension.py` | ✓ |
+| `test_amplitude.py` | ✓ |
+| `test_replay.py` | ✓ |
+| `test_resume_divergence.py` | ✓ |
+| `test_scale_covariance.py` | ✓ |
+| `test_v1_equivalence.py` | ✓ |
+| `test_parity_m4_3.py --full` | ✓ |
+| `test_web_live.py` | ✓ |
+
+Trace : `results/analysis/suite.log`.
+
+**Rapports compilés** en trois passes après suppression des `.aux`/`.toc` :
+aucun `!` dans le journal, aucune référence non définie, aucune commande
+indéfinie. `conception_m4_3live_v2.pdf` (23 pages),
+`rapport_final.pdf` (27 pages).
+
+**Aucune macro sans source n'est citée** dans le corps des deux rapports :
+`scripts/make_numbers.py` en engendre 484, dont 10 valent `---` faute de
+source — et aucune de ces dix n'apparaît dans un `.tex` (vérifié par
+expression régulière).
+
+---
+
+## Écarts au prompt, signalés
+
+1. **Séquencement git.** Le prompt §8 demande que les lots qui changent le
+   modèle soient séparés dans l'historique. L'historique comporte le fork,
+   puis le lot A seul, puis **les lots B, C et E groupés** : ils ont été
+   écrits dans une même passe sur un seul fichier. L'attribution des verdicts
+   n'en dépend pas — elle est assurée par des drapeaux d'exécution
+   (`loan_direction`, `phase_order`) mesurés en campagne appariée dans le même
+   binaire, ce qui est plus fort qu'une séparation d'historique.
+2. **Pilotage « dans un vrai navigateur ».** Le prompt §10 demande de piloter
+   une session dans un navigateur et de vérifier visuellement les graphiques.
+   Il n'y a pas de navigateur ici. Ce qui a été fait à la place, et qui est
+   vérifiable : `tests/test_web_live.py` démarre le serveur, sert la page,
+   contrôle la présence des huit éléments d'IHM dans le HTML, crée une
+   session par HTTP, la fait tourner, lui soumet une intervention, relit
+   l'état par la route qu'emploie le navigateur, vérifie que les douze
+   colonnes tracées sont dans la charge utile, et écrit les fichiers de
+   sortie. **Le rendu graphique lui-même n'est pas testé**, et c'est dit dans
+   les deux rapports.
+3. **Contradiction ROADMAP / prompt, signalée.** La feuille de route §1.2
+   écrit δ = 0,03 là où le prompt et `model.py` disent δ = 0,01. C'est la
+   valeur du code qui a été employée. Et la feuille de route §2.2 propose que
+   le bras `null` crée une technologie distincte de paramètres identiques :
+   cette proposition est **sans objet**, le prompt §3.3 supprimant le bras
+   `null` — elle aurait de plus cassé la parité, en routant les paires sur la
+   branche « même γ » plutôt que sur la branche « identité ».
+4. **§9 de la feuille de route reste vide.** Les annotations de
+   `conception_m4_3live.pdf` ne sont pas sur le disque (0 objet
+   `/Subtype/Text`). Rien n'a été inventé pour combler ce trou.

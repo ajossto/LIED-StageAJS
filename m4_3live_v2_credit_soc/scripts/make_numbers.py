@@ -276,6 +276,27 @@ def main() -> int:
         macros["costSaving"] = french(
             100 * (1 - float(v2["total_seconds"]) / float(v1["total_seconds"])), 1)
 
+    # -- coût du moteur du lot A, lu dans son journal ----------------------
+    # La table publiée décrit le moteur LIVRÉ ; celle-ci décrit le moteur du
+    # lot A, c'est-à-dire avant l'instrumentation. Les deux sont rapportées
+    # pour que le lecteur voie ce que l'instrumentation coûte.
+    import re as _re
+
+    log = ANALYSIS / "cost_profile.log"
+    if log.exists():
+        for line in log.read_text(encoding="utf-8").splitlines():
+            match = _re.match(
+                r"(v\d) : ([\d.]+) ms/pas au début, ([\d.]+) ms/pas à la fin "
+                r"\(×([\d.]+)\) ; (\d+) clefs pour (\d+) vivantes ; (\d+) s",
+                line)
+            if not match:
+                continue
+            tag = {"v1": "Vone", "v2": "Vtwo"}[match.group(1)]
+            macros[f"lotAcost{tag}Early"] = french(float(match.group(2)), 1)
+            macros[f"lotAcost{tag}Late"] = french(float(match.group(3)), 1)
+            macros[f"lotAcost{tag}Growth"] = french(float(match.group(4)), 3)
+            macros[f"lotAcost{tag}Total"] = integer(float(match.group(7)))
+
     # -- survivantes -------------------------------------------------------
     for direction in ("free", "richest_lends"):
         tag = "Free" if direction == "free" else "Vone"

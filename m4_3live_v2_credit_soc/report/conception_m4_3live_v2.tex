@@ -317,6 +317,18 @@ se contracte après le transitoire initial, et v1 le subit aussi --- chez lui,
 il est masqué par la croissance des clefs mortes. Le fait à retenir est que la
 taille du carnet mort ne pilote plus rien.
 
+\paragraph{Ce que l'instrumentation coûte.} La table ci-dessus décrit le
+moteur \emph{livré}, instrumentation comprise. La même mesure faite sur le
+moteur du lot A seul --- avant la tension native, les corrélations par entité
+et la sonde d'amplitude --- donne \lotAcostVtwoEarly{} puis
+\lotAcostVtwoLate{}~ms/pas ($\times\lotAcostVtwoGrowth$) et
+\lotAcostVtwoTotal{}~s au total, contre \costVtwoEarly{},
+\costVtwoLate{}~ms/pas et \costVtwoTotal{}~s pour le moteur livré.
+\fait{} \textbf{L'instrumentation n'est pas mesurable} à ce niveau de bruit :
+l'écart est du même ordre que celui du moteur v1 entre les deux mesures
+(\lotAcostVoneTotal{}~s puis \costVoneTotal{}~s), qui n'a pourtant pas changé
+d'une ligne.
+
 \section{La borne de transfert supprimée}
 \label{sec:plafond}
 
@@ -474,7 +486,13 @@ sémantiques ne se confondent pas.
   \fait{} \textbf{Résultat : parité reconduite, écart maximal
   \parityLotBCENul{}}, sur le moteur v2 complet avec le sens libre par défaut
   (\parityLotBCESeconds{}~s,
-  \code{results/analysis/parity\_lotBCE\_full.log}).
+  \code{results/analysis/parity\_lotBCE\_full.log}). \textbf{Et repassée une
+  troisième fois sur le moteur effectivement livré}, après l'ajout de la sonde
+  d'amplitude aux naissances et de la sonde de statistiques de marché : écart
+  maximal \parityFinalNul{}, \parityFinalCalls{} appels au noyau ---
+  \emph{le même nombre}, ce qui confirme qu'aucune de ces additions ne
+  déplace un appel (\parityFinalSeconds{}~s,
+  \code{results/analysis/parity\_final\_full.log}).
 \item[Parité conditionnelle (lot E).] Le défaut \code{phase\_order = "v1"} doit
   la préserver --- il la préserve, c'est la mesure ci-dessus. La branche
   \code{"deprec\_first"} ne la préserve pas, par construction.
