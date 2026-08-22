@@ -92,6 +92,13 @@ OBSERVABLES = (
     ("corr_marg_net", "corr(rendement marginal, position nette)"),
     ("corr_K_net", "corr(capital, position nette)"),
     ("defaults_window", "fenêtre de bascule (prédiction §3.2)"),
+    ("destroyed", "capital détruit par les faillites"),
+    ("claim_losses", "créances effacées par les faillites"),
+    ("mkt_surplus", "surplus coopératif créé au pas"),
+    ("roots_insolvency", "racines d'insolvabilité"),
+    ("roots_liquidity", "racines de liquidité"),
+    ("mkt_rounds", "paires tirées"),
+    ("book_keys", "clefs du carnet"),
 )
 
 
@@ -243,20 +250,48 @@ def analyse_lot_D(window_name: str) -> dict:
                        "tension", "loan_volume", "interest_paid", "defaults",
                        "reversed_share", "blocked_share", "volume_rev_share",
                        "K_share_creditors", "corr_marg_net", "corr_K_net",
-                       "jensen", "n_loans", "tech0_alive"):
+                       "jensen", "n_loans", "tech0_alive", "destroyed",
+                       "claim_losses", "mkt_surplus", "roots_insolvency",
+                       "defaults", "book_keys"):
             entry["levels_free"][column] = absolute(free, sorted(free), column)
             entry.setdefault("levels_v1", {})[column] = absolute(v1, sorted(v1), column)
             if v1:
                 entry["paired_free_vs_v1"][column] = paired(free, v1, seeds, column)
         payload["arms"][arm] = entry
 
+    # CONTRÔLE DE STATIONNARITÉ, calibré et non postulé.
+    #
+    # Un seuil fixe hérité d'une autre fenêtre ne transfère pas : sur une
+    # fenêtre de 1000 pas, les quarts font 250 pas, et le rapport du dernier
+    # quart au précédent a un écart-type de graine à graine de l'ordre de
+    # 3 %. La bande [0,99 ; 1,01] rejetterait alors le CONTRÔLE lui-même,
+    # c'est-à-dire un bras dont on sait qu'il est stationnaire. On teste donc
+    # la MOYENNE du rapport sur les graines contre 1, avec sa statistique de
+    # Student — et on rapporte l'étendue par run comme plancher de bruit,
+    # sans en faire un critère.
     for (direction, arm), cells in sorted(by_cell.items()):
-        for seed, summary in sorted(cells.items()):
-            ratios = {c: summary.get(f"stat_{c}") for c in ("K_tot", "pop", "prod_tot")}
-            if any(r is None or not (0.99 <= r <= 1.01) for r in ratios.values()):
-                payload["stationarity"].append(
-                    {"direction": direction, "arm": arm, "seed": seed, **ratios}
-                )
+        seeds_here = sorted(cells)
+        entry = {"direction": direction, "arm": arm, "n": len(seeds_here)}
+        flagged = False
+        for column in ("K_tot", "pop", "prod_tot"):
+            values = [cells[seed][f"stat_{column}"] for seed in seeds_here
+                      if f"stat_{column}" in cells[seed]]
+            values = [v for v in values if v == v]
+            if len(values) < 2:
+                continue
+            mean = sum(values) / len(values)
+            variance = sum((v - mean) ** 2 for v in values) / (len(values) - 1)
+            se = math.sqrt(variance / len(values))
+            critical = STUDENT.get((len(values) - 1, 0.05), 2.201)
+            entry[column] = {
+                "mean": mean, "se": se, "min": min(values), "max": max(values),
+                "t": (mean - 1.0) / se if se > 0 else float("inf"),
+                "t_crit_5pct": critical,
+                "stationnaire": abs(mean - 1.0) <= critical * se,
+            }
+            flagged = flagged or not entry[column]["stationnaire"]
+        entry["stationnaire"] = not flagged
+        payload["stationarity"].append(entry)
     return payload
 
 
@@ -277,18 +312,85 @@ def analyse_lot_E(window_name: str) -> dict:
     payload["levels"]["treated_defaults"] = absolute(treated, seeds, "defaults")
     payload["levels"]["treated_window"] = absolute(treated, seeds, "defaults_window")
 
-    # PRÉDICTION A PRIORI (§3.2), écrite depuis le bras de RÉFÉRENCE seul :
-    # le nombre de débitrices dans la fenêtre de bascule est le nombre de
-    # défauts supplémentaires attendus au premier ordre.
+    # PRÉDICTION A PRIORI (§3.2), écrite depuis le bras de RÉFÉRENCE seul.
+    #
+    # 1. Une débitrice bascule en défaut si et seulement si son capital tombe
+    #    dans la fenêtre (1-δ)K < dû ≤ K. Le moteur compte cet ensemble dans
+    #    le bras de référence : c'est `defaults_window`. La prédiction du
+    #    nombre de défauts sous l'ordre inverse est donc
+    #    `defaults + defaults_window`.
+    # 2. Indépendamment des défauts, l'échange des deux phases REDISTRIBUE
+    #    exactement δ × (intérêts servis) par pas, des débitrices vers les
+    #    créancières, et conserve le capital total du pas. Preuve : sous
+    #    l'ordre v1 une débitrice finit à (1-δ)(K - dû), sous l'ordre inverse
+    #    à (1-δ)K - dû ; l'écart est -δ·dû. Symétriquement une créancière
+    #    gagne +δ·versement. Les deux se compensent exactement.
     base = payload["levels"]["reference_defaults"]["mean"]
     extra = payload["levels"]["reference_window"]["mean"]
+    interest = absolute(reference, seeds, "interest_paid")["mean"]
+    delta = 0.01
     payload["prediction"] = {
         "defauts_reference": base,
         "fenetre_de_bascule": extra,
         "defauts_predits": base + extra,
-        "hausse_relative_predite": extra / base if base else float("nan"),
+        "hausse_relative_predite": (extra / base) if base else None,
         "hausse_relative_mesuree": payload["paired"]["defaults"]["mean"],
+        "defauts_mesures": absolute(treated, seeds, "defaults")["mean"],
+        "redistribution_par_pas": delta * interest,
+        "interets_servis_par_pas": interest,
+        "part_du_capital_redistribuee": (
+            delta * interest / absolute(reference, seeds, "K_tot")["mean"]
+        ),
     }
+    payload["service_ratio"] = service_ratio_distribution(delta)
+    return payload
+
+
+def service_ratio_distribution(delta: float) -> dict:
+    """Distribution du rapport capital/dû à l'instant du service, lue sur les
+    snapshots d'amorçage. C'est la donnée qui rend la prédiction du §3.2
+    calculable AVANT de lancer le bras traité : la fenêtre de bascule est
+    l'intervalle [1, 1/(1-δ)], et elle est vide si le minimum du rapport lui
+    est très supérieur."""
+    import sys as _sys
+
+    _sys.path.insert(0, str(ROOT))
+    from m4_3live_v2.live import load_snapshot
+
+    ratios: list[float] = []
+    for snapshot in sorted((CAMPAIGN / "burn").glob("seed*/snapshot_t*.pkl")):
+        simulation = load_snapshot(snapshot)
+        book = simulation.book
+        population = simulation.population
+        for borrower, loans in book.by_borrower.items():
+            if not loans or not population.alive[borrower]:
+                continue
+            due = book.due[borrower]
+            if due > 0:
+                ratios.append(population.K[borrower] / due)
+    if not ratios:
+        return {}
+    ratios.sort()
+    n = len(ratios)
+    threshold = 1.0 / (1.0 - delta)
+    out = {
+        "n_debitrices": n,
+        "min": ratios[0],
+        "p1": ratios[n // 100],
+        "p5": ratios[n // 20],
+        "mediane": ratios[n // 2],
+        "max": ratios[-1],
+        "seuil_de_bascule": threshold,
+        "n_dans_la_fenetre": sum(1 for r in ratios if r < threshold),
+        "marge": ratios[0] / threshold,
+    }
+    with open(ANALYSIS / "service_ratio.csv", "w", newline="", encoding="utf-8") as handle:
+        writer = csv.writer(handle)
+        writer.writerow(["rapport_capital_sur_du"])
+        writer.writerows([[f"{r:.10g}"] for r in ratios])
+    return out
+
+
     return payload
 
 
@@ -617,7 +719,18 @@ def main(argv=None) -> int:
                 }
                 for arm in sorted(lot_d["arms"])
             },
-            "runs_hors_stationnarite": len(lot_d["stationarity"]),
+            "bras_hors_stationnarite": [
+                f"{e['direction']}/{e['arm']}" for e in lot_d["stationarity"]
+                if not e["stationnaire"]
+            ],
+            "bras_testes": len(lot_d["stationarity"]),
+            "etendue_du_rapport": {
+                column: [
+                    min(e[column]["min"] for e in lot_d["stationarity"] if column in e),
+                    max(e[column]["max"] for e in lot_d["stationarity"] if column in e),
+                ]
+                for column in ("K_tot", "pop", "prod_tot")
+            },
             "lot_E": lot_e["prediction"],
         }
     (ANALYSIS / "verdicts.json").write_text(

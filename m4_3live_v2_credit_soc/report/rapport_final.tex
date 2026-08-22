@@ -66,19 +66,39 @@ position nette créancière et \survFreeOldInterest\,\% de leur revenu vient des
 intérêts, contre \survFreeNewInterest\,\% pour la population de la technologie
 dominante. C'est le régime que le programme cherchait à produire.
 
-\textbf{Sur les agrégats, l'effet est faible et il faut le dire.} À l'échelle
-du système, libérer le sens du prêt déplace la production de
-\diffProdAhcentCinquanteTransition\,\% dans la fenêtre de transition et de
-\diffProdAhcentCinquanteResiduel\,\% dans le régime résiduel, appariés par
-graine sur \nSeeds{} graines. Le sens du prêt \emph{redistribue} plus qu'il ne
-produit.
+\textbf{Et l'effet agrégé est négatif, ce qui n'était pas attendu.} Chaque
+échange pris isolément augmente la production jointe de sa paire --- c'est la
+définition même de l'institution. Pourtant, à l'échelle du système et pendant
+la transition, libérer le sens du prêt fait \emph{baisser} la production de
+\diffProdAhcentCinquanteTransition\,\% ($t = \tProdAhcentCinquanteTransition$
+sur \nSeeds{} graines appariées) et le capital de
+\diffKtotAhcentCinquanteTransition\,\%. Le canal est mesuré : les paires que
+l'ancienne règle refusait traitent désormais, le nombre de contrats vivants
+monte de \diffNLoansAhcentCinquanteTransition\,\% et la rotation du crédit de
+\diffRotAhcentCinquanteTransition\,\%, ce qui alourdit le service perpétuel,
+augmente la mortalité de \diffMortAhcentCinquanteTransition\,\% et détruit du
+capital. \textbf{Un marché plus complet est ici un marché plus fragile.}
 
-\textbf{Une prédiction écrite avant la mesure, et ce qu'elle a attrapé.}
-Échanger le service des intérêts et la dépréciation devait faire basculer en
-défaut toute débitrice dont le capital tombe dans une fenêtre étroite. Le
-moteur compte cette fenêtre dans le bras de référence lui-même :
-\lotEWindowResiduel{} débitrices par pas, soit \lotEPctPredictedResiduel\,\% de
-hausse prédite. Mesuré : \lotEPctMeasuredResiduel\,\%.
+\textbf{Une régularité de la lignée précédente est mise en défaut.} Cette
+lignée avait établi que la mortalité suit la rotation du crédit en
+$(\text{rotation})^{1{,}337}$, à mieux d'un pour cent près et pour quatre
+leviers indépendants. Le sens du prêt est un cinquième levier, et il n'y obéit
+pas : la hausse de rotation observée prédirait
+\lawPredAhcentCinquanteTransition\,\% de mortalité, on en mesure
+\diffMortAhcentCinquanteTransition\,\%, soit un facteur dix.
+
+\textbf{Une prédiction écrite avant la mesure, et ce qu'elle a réfuté.}
+Échanger le service des intérêts et la dépréciation devait, disait-on, faire
+monter le taux de défaut. Le moteur compte la fenêtre de bascule dans le bras
+de référence lui-même : elle est \textbf{vide}, sur
+\ratioNResiduel{} observations de débitrices, parce que la plus endettée
+d'entre elles détient encore \ratioMinResiduel{} fois ce qu'elle doit là où il
+faudrait descendre sous \ratioSeuilResiduel{}. Aucun défaut de liquidité n'est
+possible à cette dépréciation, et aucun n'est observé. L'échange des deux
+phases n'est pourtant pas neutre : il \emph{redistribue} exactement
+$\delta \times$ (intérêts servis) des débitrices vers les créancières, soit
+\lotERedistributionResiduel{} joules par pas, et cette redistribution suffit à
+déplacer la production de \lotEProdResiduel\,\%.
 
 \textbf{Et la question théorique.} La rotation du crédit
 $\text{loan\_volume}/K_{\text{tot}}$ prédisait la mortalité à mieux d'un pour
@@ -268,16 +288,34 @@ il faut lire « plus de paires mixtes ». Deux fenêtres sont donc rapportées :
 \item[régime résiduel] --- $t \in\ ]t_0+1000,\ t_0+2000]$, le plateau.
 \end{description}
 
-\subsection{Contrôle de stationnarité}
+\subsection{Contrôle de stationnarité, calibré et non postulé}
+\label{sec:stationnarite}
 
-Avant de lire un niveau, on rapporte pour chaque run le rapport de la moyenne
-du dernier quart de la fenêtre à celle du quart précédent, sur $K_{\text{tot}}$,
-la population et la production agrégée. La borne d'acceptation est
-$[0{,}99\ ;\ 1{,}01]$. \fait{} Dans la fenêtre résiduelle,
-\nNonStationnaireResiduel{} runs sur l'ensemble de la campagne sortent de ces
-bornes ; dans la fenêtre de transition, \nNonStationnaireTransition{} --- ce
-qui est attendu et sans conséquence, puisque cette fenêtre n'est pas lue comme
-un niveau.
+Avant de lire un niveau, on forme pour chaque run le rapport de la moyenne du
+dernier quart de la fenêtre à celle du quart précédent, sur $K_{\text{tot}}$,
+la population et la production agrégée.
+
+\fait{} \textbf{Le seuil hérité de la lignée précédente ne transfère pas, et
+c'est mesuré.} Sur une fenêtre de mille pas, les quarts font deux cent
+cinquante pas, et le rapport a un écart-type de graine à graine de l'ordre de
+trois pour cent : sur la fenêtre résiduelle, il s'étend de
+\spanStatKtotResiduelMin{} à \spanStatKtotResiduelMax{} pour
+$K_{\text{tot}}$. Une bande fixe $[0{,}99\ ;\ 1{,}01]$ rejetterait donc onze
+des douze graines du \emph{contrôle} --- un bras dont on sait qu'il est
+stationnaire, puisqu'il ne subit aucune intervention. Appliquer un tel seuil
+aurait produit un « défaut de stationnarité » qui n'aurait mesuré que la
+longueur de la fenêtre.
+
+\inference{} Le critère employé est donc celui que la statistique impose : la
+\emph{moyenne} du rapport sur les \nSeeds{} graines est testée contre 1 avec
+sa statistique de Student, au même seuil que le reste du rapport. L'étendue
+par run est rapportée à côté, comme plancher de bruit, et non comme critère.
+
+\fait{} Sur la fenêtre résiduelle, \nNonStationnaireResiduel{} bras sur
+\nBrasTestesResiduel{} échouent ce test ; sur la fenêtre de transition,
+\nNonStationnaireTransition{} sur \nBrasTestesTransition{} --- ce qui est
+attendu et sans conséquence, puisque cette fenêtre n'est jamais lue comme un
+niveau.
 
 \section{Le régime que le sens libre rend possible}
 \label{sec:regime}
@@ -387,11 +425,104 @@ apparié. Le trait vertical marque $t_0$.}
 \end{figure}
 
 \fait{} La corrélation entre capital et position nette est le diagnostic le
-plus lisible : sous la règle ancienne elle est mécaniquement positive --- la
-plus riche prête, donc détenir des créances et être riche vont ensemble ---
-tandis que sous le sens libre elle devient négative pendant toute la phase de
-conversion technologique. L'écart apparié sur cette grandeur vaut
-\diffCorrKAhcentCinquanteTransition\,\% dans la fenêtre de transition.
+plus lisible : sous la règle ancienne, détenir des créances et être riche vont
+ensemble par construction, tandis que sous le sens libre la relation se
+déplace nettement. L'écart apparié sur cette grandeur vaut
+\diffCorrKAhcentCinquanteTransition\,\% dans la fenêtre de transition, et
+celui sur la corrélation entre \emph{rendement marginal} et position nette
+vaut \diffCorrMargAhcentCinquanteTransition\,\% --- c'est cette seconde
+corrélation qui dit que ce sont désormais les entités de faible rendement
+marginal qui détiennent les créances.
+
+\subsection{Pourquoi la production baisse alors que chaque échange l'augmente}
+\label{sec:paradoxe}
+
+\fait{} Le résultat qui demande le plus d'explication est celui-ci : dans la
+fenêtre de transition du bras \code{new\_A150}, la production agrégée est
+\emph{plus basse} de \diffProdAhcentCinquanteTransition\,\% sous le sens libre
+($t = \tProdAhcentCinquanteTransition$), et le capital total de
+\diffKtotAhcentCinquanteTransition\,\%. C'est contre-intuitif : par
+construction de l'institution, chaque échange conclu augmente la production
+jointe de sa paire d'un surplus positif (éq.~\ref{eq:surplus}).
+
+\inference{} La chaîne causale se lit dans les colonnes, et chaque maillon est
+mesuré et apparié.
+
+\begin{enumerate}
+\item \textbf{Plus d'échanges.} Les paires que l'ancienne règle refusait
+  traitent désormais. Le nombre de contrats vivants monte de
+  \diffNLoansAhcentCinquanteTransition\,\% et la rotation du crédit de
+  \diffRotAhcentCinquanteTransition\,\%.
+\item \textbf{Donc plus de service perpétuel.} Un contrat impose un versement
+  $q\,r$ \emph{à chaque pas, indéfiniment}. Les intérêts versés montent de
+  \diffIntAhcentCinquanteTransition\,\%.
+\item \textbf{Donc plus de faillites.} La mortalité par entité monte de
+  \diffMortAhcentCinquanteTransition\,\%, et la population baisse de
+  \diffPopAhcentCinquanteTransition\,\%.
+\item \textbf{Et une faillite détruit le capital.} La règle de faillite du
+  modèle est \emph{cancel and destroy} : les dettes de la défunte sont
+  effacées --- perte sèche pour ses créancières --- et son capital est détruit,
+  pas redistribué.
+\end{enumerate}
+
+\inference{} Le gain instantané de chaque transaction est donc réel mais
+\emph{local et récurrent en sens inverse} : le surplus est un flux de
+production par pas, tandis que le service qu'il crée est une charge par pas
+qui survit à la disparition de son motif. \textbf{Un marché plus complet est
+ici un marché plus fragile.} C'est un résultat du modèle, pas une thèse
+générale : il tient à ce que ce modèle détruise le capital des faillies au
+lieu de le transmettre.
+
+\incertitude{} Cette lecture est cohérente avec toutes les colonnes mesurées,
+mais elle n'est pas \emph{démontrée} : il faudrait, pour cela, une ablation
+qui coupe un maillon --- par exemple des faillites qui transmettent le capital
+au lieu de le détruire --- et elle n'a pas été faite.
+
+\subsection{Une régularité de la lignée précédente mise en défaut}
+\label{sec:loi-en-defaut}
+
+La lignée précédente a établi que la mortalité par entité et par pas suit la
+rotation du crédit selon
+$\text{morts}/\text{pop} \propto (\text{rotation})^{1{,}337}$, avec
+$R^2 = 0{,}998$, un écart médian de $0{,}41$\,\% et un biais par levier compris
+entre $-1{,}7$\,\% et $+0{,}7$\,\% --- sur quatre leviers indépendants ($K_0$
+seul, $\delta$ seul, $A$ seul, $A$ et $K_0$ ensemble). C'est cette régularité
+qui, dans cette lignée, désignait la rotation comme le canal.
+
+\fait{} Le sens du prêt est un cinquième levier, et il ne s'y range pas. Dans
+la fenêtre de transition :
+
+\begin{center}\footnotesize
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+\textbf{bras} & \textbf{rotation} & \textbf{mortalité prédite} &
+\textbf{mortalité mesurée} \\
+\midrule
+\code{new\_A150} & \diffRotAhcentCinquanteTransition\,\% &
+\lawPredAhcentCinquanteTransition\,\% &
+\diffMortAhcentCinquanteTransition\,\% \\
+\code{new\_A075} & \diffRotAzeroSeptCinqTransition\,\% &
+\lawPredAzeroSeptCinqTransition\,\% & \diffMortAzeroSeptCinqTransition\,\% \\
+\code{new\_g060} & \diffRotGammaSixZeroTransition\,\% &
+\lawPredGammaSixZeroTransition\,\% & \diffMortGammaSixZeroTransition\,\% \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent La loi sur-prédit la mortalité d'un facteur 3 à 10 sur les trois
+bras.
+
+\incertitude{} \textbf{Ce n'est pas encore une réfutation, et il faut le dire
+précisément.} La loi de la lignée précédente est une relation d'\emph{état
+stationnaire}, ajustée sur des runs qui y sont ; la fenêtre de transition
+n'est pas un état stationnaire. Dans le régime résiduel, où la comparaison
+serait légitime, le levier n'agit presque plus --- les écarts appariés sur la
+rotation y sont de l'ordre de $0{,}1$\,\% --- de sorte que le test n'a pas de
+prise. \inference{} La situation est donc : \emph{le seul régime où ce levier
+agit fortement est un régime où la loi n'a pas à s'appliquer}. Trancher
+demanderait un dispositif qui maintienne deux technologies en coexistence
+stationnaire, ce que la portée « nouvelles » ne fait pas et que la portée
+partielle --- hors périmètre ici --- ne faisait pas non plus.
 
 \section{L'ordre des phases, contre une prédiction écrite d'avance}
 \label{sec:ordre}
@@ -412,22 +543,72 @@ que la prédiction est écrite avant que le bras traité n'existe.
 
 \input{tables/lot_e_prediction}
 
-\subsection{Ce que la prédiction a et n'a pas attrapé}
+\subsection{La fenêtre est vide, et on peut dire de combien}
 
-\fait{} Le bras de référence compte \lotEBaseResiduel{} défauts de liquidité
-par pas et \lotEWindowResiduel{} débitrices dans la fenêtre de bascule, soit
-une hausse prédite de \lotEPctPredictedResiduel\,\%. La hausse mesurée sur le
-bras apparié est de \lotEPctMeasuredResiduel\,\%.
+La condition~\eqref{eq:fenetre} porte sur le rapport $K/\mathrm{d\hat u}$ :
+une débitrice bascule si et seulement si ce rapport tombe dans
+$[1,\ 1/(1-\delta)]$. À $\delta = 0{,}01$, cet intervalle est
+$[1\ ;\ \ratioSeuilResiduel]$. La distribution de ce rapport est lue sur les
+\nSeeds{} snapshots d'amorçage, \emph{avant} de lancer quoi que ce soit.
 
-\inference{} L'écart entre prédiction et mesure ne vient pas d'une erreur de
-la condition~\eqref{eq:fenetre}, qui est exacte au premier ordre, mais de ce
-que la prédiction ignore : un défaut supplémentaire retire du capital, ce qui
-déplace la distribution du rapport capital/dû au pas suivant, et peut aussi
-bien amplifier qu'amortir. La prédiction attrape l'ordre de grandeur et le
-signe ; elle n'attrape pas la rétroaction.
+\begin{center}\footnotesize
+\begin{tabular}{@{}lrrrrr@{}}
+\toprule
+\textbf{observations} & \textbf{minimum} & \textbf{1\textsuperscript{er} c.} &
+\textbf{5\textsuperscript{e} c.} & \textbf{médiane} & \textbf{maximum} \\
+\midrule
+\ratioNResiduel{} débitrices & \ratioMinResiduel{} & \ratioPoneResiduel{} &
+\ratioPfiveResiduel{} & \ratioMedResiduel{} & \ratioMaxResiduel{} \\
+\bottomrule
+\end{tabular}
+\end{center}
 
-\fait{} L'effet sur les agrégats est de \lotEProdResiduel\,\% sur la production
-et \lotEDeathsResiduel\,\% sur la mortalité.
+\fait{} La débitrice la plus tendue de tout le corpus détient encore
+\ratioMinResiduel{} fois ce qu'elle doit, soit \ratioMargeResiduel{} fois le
+seuil de bascule. \textbf{Zéro} observation tombe dans la fenêtre.
+La prédiction est donc : \emph{aucun défaut de liquidité supplémentaire}. Et
+c'est ce qu'on mesure --- \lotEMeasuredDefaultsResiduel{} défaut par pas dans
+le bras traité, comme dans le bras de référence.
+
+\inference{} \textbf{L'attente initiale --- « échanger ces deux phases devrait
+faire augmenter le taux de défaut » --- est donc réfutée, et pour une raison
+qu'on peut chiffrer} : à cette dépréciation, le levier ne peut pas mordre. Il
+faudrait pour cela un $\delta$ tel que $(1-\delta) \times \ratioMinResiduel{}
+< 1$, c'est-à-dire $\delta > 0{,}69$ --- ou bien un régime bien plus endetté,
+où le service approcherait le capital.
+
+\subsection{Ce que l'échange fait à la place : une redistribution exacte}
+
+\fait{} L'ordre des phases n'est pourtant pas neutre, et l'effet est
+significatif : la production baisse de \lotEProdResiduel\,\%
+($t = \lotETProdResiduel$), le capital de \lotEKtotResiduel\,\%, la population
+de \lotEPopResiduel\,\%, et la mortalité monte de \lotEDeathsResiduel\,\%
+($t = \lotETDeathsResiduel$).
+
+\inference{} Le canal est exact et se démontre en deux lignes. Sous l'ordre
+\code{v1}, une débitrice finit le pas à $(1-\delta)(K - \mathrm{d\hat u})$ ;
+sous l'ordre inverse, à $(1-\delta)K - \mathrm{d\hat u}$. L'écart est
+$-\delta\,\mathrm{d\hat u}$ : elle perd davantage. Symétriquement, une
+créancière reçoit son versement \emph{après} la dépréciation au lieu
+d'\emph{avant}, et gagne $+\delta \times$ versement. Les deux se compensent
+exactement, donc \textbf{le capital total du pas est rigoureusement le même} :
+l'échange des phases est une \emph{pure redistribution} des débitrices vers
+les créancières, d'un montant de $\delta \times$ (intérêts servis) par pas.
+
+\fait{} Numériquement, les intérêts servis valent \lotEInterestResiduel{}
+joules par pas dans le bras de référence, donc la redistribution vaut
+\lotERedistributionResiduel{} joules par pas, soit
+\lotERedistShareResiduel\,\% du capital total \emph{à chaque pas}. C'est peu
+sur un pas et beaucoup sur mille : c'est ce qui explique qu'un changement
+conservatif au pas déplace les agrégats de plusieurs pour cent à l'horizon de
+la fenêtre.
+
+\inference{} \textbf{Ce que la prédiction a attrapé, et ce qu'elle a manqué.}
+Elle a attrapé exactement ce sur quoi elle portait : le nombre de défauts de
+liquidité, qu'elle annonçait nul et qui l'est. Elle a manqué le canal réel,
+parce qu'elle ne regardait que les défauts --- la note d'origine parlait de
+« taux de défaut », et c'est cette focalisation qui a orienté la prédiction
+vers la seule grandeur que le levier ne touche pas.
 
 \section{L'instrumentation, et ce qu'elle a corrigé}
 \label{sec:instrumentation-resultats}
@@ -677,24 +858,37 @@ Ce rapprochement n'est pas testé ici : il désigne où chercher.
 \item \textbf{La règle « la plus riche prête » interdisait une part
   substantielle des échanges optimaux.} Dans la fenêtre de transition,
   \pctReversalAhcentCinquanteTransition\,\% des rondes concluent, sous le sens
-  libre, un prêt que l'ancienne règle refusait.
+  libre, un prêt que l'ancienne règle refusait, et ces prêts portent
+  \pctVolumeRevAhcentCinquanteTransition\,\% du volume échangé.
 \item \textbf{Le régime nouveau est celui qui était annoncé, et il est
-  durable.} Une poignée d'entités de faible rendement marginal cèdent leur
-  capital et vivent de l'intérêt ; elles survivent indéfiniment sous le sens
-  libre et s'éteignent sous l'ancienne règle.
-\item \textbf{Mais son effet agrégé est faible.} Le sens du prêt redistribue
-  davantage qu'il ne produit : les écarts appariés sur la production et la
-  population sont de l'ordre du pour cent.
-\item \textbf{L'ordre des phases se comporte comme prédit, en ordre de
-  grandeur.} La fenêtre de bascule, comptée dans le bras de référence
-  lui-même, annonce le signe et l'ordre de grandeur de la hausse des défauts ;
-  elle n'attrape pas la rétroaction.
+  durable.} Des entités de faible rendement marginal cèdent leur capital et
+  vivent de l'intérêt. Sous le sens libre il en survit
+  \techZeroFreeAhcentCinquanteResiduel{} à l'horizon de la fenêtre ; sous
+  l'ancienne règle, \techZeroVoneAhcentCinquanteResiduel{}.
+\item \textbf{Mais l'effet agrégé est négatif, et le canal est mesuré.}
+  Pendant la transition, la production baisse de
+  \diffProdAhcentCinquanteTransition\,\% et le capital de
+  \diffKtotAhcentCinquanteTransition\,\%. Plus de contrats
+  (\diffNLoansAhcentCinquanteTransition\,\%), donc plus de service perpétuel,
+  donc plus de faillites (\diffMortAhcentCinquanteTransition\,\%), et une
+  faillite \emph{détruit} le capital dans ce modèle. \textbf{Un marché plus
+  complet y est un marché plus fragile.}
+\item \textbf{Une régularité de la lignée précédente ne survit pas au nouveau
+  levier} --- sans qu'on puisse encore parler de réfutation, parce que le seul
+  régime où le levier agit fortement n'est pas stationnaire
+  (§\ref{sec:loi-en-defaut}).
+\item \textbf{L'attente sur l'ordre des phases est réfutée, avec sa raison
+  chiffrée.} Aucun défaut de liquidité supplémentaire n'est possible à
+  $\delta = 0{,}01$ : la débitrice la plus tendue du corpus détient
+  \ratioMinResiduel{} fois ce qu'elle doit. Le levier agit par un autre canal,
+  exact : une redistribution de $\delta \times$ (intérêts servis) des
+  débitrices vers les créancières, à capital total conservé.
 \item \textbf{La rotation du crédit est l'inégalité des capitaux.}
-  $\text{rotation} = \rho\,\bar G$, avec $\bar G$ le Gini moyenné sur la phase
-  de marché. C'est une identité de structure, pas un ajustement, et elle
-  ramène la question « qu'est-ce qui détermine la rotation ? » à « qu'est-ce
-  qui détermine l'inégalité des capitaux ? », pour laquelle un bilan de
-  variance donne une réponse au bon ordre de grandeur.
+  $\text{rotation} = \rho\,\bar G$, avec $\bar G$ le coefficient de Gini
+  moyenné sur la phase de marché. C'est une identité de structure, pas un
+  ajustement, et elle ramène la question « qu'est-ce qui détermine la
+  rotation ? » à « qu'est-ce qui détermine l'inégalité des capitaux ? », pour
+  laquelle un bilan de variance donne une réponse au bon ordre de grandeur.
 \end{enumerate}
 
 \section{Limites}

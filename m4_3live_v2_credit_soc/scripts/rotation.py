@@ -520,6 +520,44 @@ def cmd_analyse(window: int = 1000) -> int:
                        [row["rotation"] for row in with_gini]),
         ))
 
+    # CONTRÔLE §14.2 : un ajustement groupé peut n'être que la droite qui
+    # joint les lignes de base des familles. On ajuste donc À L'INTÉRIEUR de
+    # chaque famille de levier et on compare les exposants au groupé ; et on
+    # rapporte le biais résiduel de chaque famille de runs, ce qui teste si un
+    # levier NOUVEAU (ici la règle de sens) sort de la loi établie.
+    pooled = fits[0][1]
+    by_lever = {}
+    if with_gini:
+        levers = {}
+        for row in with_gini:
+            cell = row["run"].split("/")[0]
+            levers.setdefault(cell.split("_")[0], []).append(row)
+        for lever, group in sorted(levers.items()):
+            if len(group) < 3:
+                continue
+            by_lever[lever] = loglog_fit(
+                [predicted_cv(r) * r["rho"] for r in group],
+                [r["rotation"] for r in group],
+            )
+    residual_bias = {}
+    if pooled.get("n", 0) >= 3:
+        for key in ("family", "loan_direction"):
+            groups: dict[str, list[float]] = {}
+            for row in records:
+                predicted = pooled["factor"] * row["rotation"] ** pooled["slope"]
+                if predicted > 0:
+                    groups.setdefault(str(row[key]), []).append(
+                        row["deaths_per_pop"] / predicted - 1.0)
+            residual_bias[key] = {
+                name: {
+                    "n": len(values),
+                    "biais_median": sorted(values)[len(values) // 2],
+                    "min": min(values),
+                    "max": max(values),
+                }
+                for name, values in sorted(groups.items())
+            }
+
     closure = fits[-1][1] if with_gini else {}
     summary = {
         "window": window,
@@ -535,6 +573,8 @@ def cmd_analyse(window: int = 1000) -> int:
             abs(row["product"] / row["rotation"] - 1.0) for row in records
         ),
         "fits": {label: fit for label, fit in fits},
+        "fits_par_levier": by_lever,
+        "biais_residuel": residual_bias,
     }
     if with_gini:
         gaps = [row["f3_transfer_over_Kmean"] / row["gini_logmean"] - 1.0 for row in with_gini]

@@ -112,17 +112,33 @@ def main() -> int:
                                  ("deaths_per_pop", "Mort"), ("rotation", "Rot"),
                                  ("interest_paid", "Int"),
                                  ("K_share_creditors", "KCred"),
-                                 ("corr_K_net", "CorrK")):
+                                 ("corr_K_net", "CorrK"),
+                                 ("corr_marg_net", "CorrMarg"),
+                                 ("K_tot", "Ktot"), ("n_loans", "NLoans"),
+                                 ("destroyed", "Destroyed"),
+                                 ("mkt_surplus", "Surplus"),
+                                 ("tension", "Tension"),
+                                 ("tech0_alive", "TechZero")):
                 macros[f"diff{name}{short}{label}"] = french(
                     100 * dig(paired, column, "mean", default=float("nan")), 2, sign=True)
                 macros[f"se{name}{short}{label}"] = french(
                     100 * dig(paired, column, "se", default=float("nan")))
                 macros[f"t{name}{short}{label}"] = french(
                     dig(paired, column, "t", default=float("nan")))
-    macros["nNonStationnaireTransition"] = integer(
-        dig(verdicts, "transition", "runs_hors_stationnarite", default=float("nan")))
-    macros["nNonStationnaireResiduel"] = integer(
-        dig(verdicts, "residuel", "runs_hors_stationnarite", default=float("nan")))
+    for label, key in (("Transition", "transition"), ("Residuel", "residuel")):
+        flagged = dig(verdicts, key, "bras_hors_stationnarite", default=None)
+        tested = dig(verdicts, key, "bras_testes", default=None)
+        macros[f"nNonStationnaire{label}"] = (
+            integer(len(flagged)) if flagged is not None else MISSING)
+        macros[f"nBrasTestes{label}"] = integer(tested) if tested else MISSING
+        span = dig(verdicts, key, "etendue_du_rapport", default={})
+        for column, name in (("K_tot", "Ktot"), ("pop", "Pop"), ("prod_tot", "Prod")):
+            if column in span:
+                macros[f"spanStat{name}{label}Min"] = french(span[column][0], 4)
+                macros[f"spanStat{name}{label}Max"] = french(span[column][1], 4)
+            else:
+                macros[f"spanStat{name}{label}Min"] = MISSING
+                macros[f"spanStat{name}{label}Max"] = MISSING
 
     # -- lot E : la prédiction --------------------------------------------
     for label, payload in (("Transition", lot_e_tr), ("Residuel", lot_e_res)):
@@ -142,6 +158,48 @@ def main() -> int:
         macros[f"lotEProd{label}"] = french(
             100 * dig(payload, "paired", "prod_tot", "mean", default=float("nan")),
             2, sign=True)
+        macros[f"lotEPop{label}"] = french(
+            100 * dig(payload, "paired", "pop", "mean", default=float("nan")), 2, sign=True)
+        macros[f"lotEKtot{label}"] = french(
+            100 * dig(payload, "paired", "K_tot", "mean", default=float("nan")), 2, sign=True)
+        macros[f"lotETProd{label}"] = french(
+            dig(payload, "paired", "prod_tot", "t", default=float("nan")))
+        macros[f"lotETDeaths{label}"] = french(
+            dig(payload, "paired", "deaths_per_pop", "t", default=float("nan")))
+        macros[f"lotEMeasuredDefaults{label}"] = french(
+            prediction.get("defauts_mesures"), 3)
+        macros[f"lotERedistribution{label}"] = integer(
+            prediction.get("redistribution_par_pas"))
+        macros[f"lotEInterest{label}"] = integer(
+            prediction.get("interets_servis_par_pas"))
+        macros[f"lotERedistShare{label}"] = french(
+            100 * prediction["part_du_capital_redistribuee"], 4
+        ) if prediction.get("part_du_capital_redistribuee") is not None else MISSING
+        ratio = payload.get("service_ratio", {})
+        for key, name in (("n_debitrices", "N"), ("min", "Min"), ("p1", "Pone"),
+                          ("p5", "Pfive"), ("mediane", "Med"), ("max", "Max"),
+                          ("seuil_de_bascule", "Seuil"), ("marge", "Marge")):
+            value = ratio.get(key)
+            digits = 0 if name == "N" else 2
+            macros[f"ratio{name}{label}"] = (
+                integer(value) if name == "N" else french(value, digits + 2)
+            ) if value is not None else MISSING
+        macros[f"ratioInWindow{label}"] = integer(
+            ratio.get("n_dans_la_fenetre")) if ratio else MISSING
+
+    # -- la loi de v1 mise à l'épreuve par le levier nouveau ---------------
+    for label, payload in (("Transition", lot_d_tr), ("Residuel", lot_d_res)):
+        for arm, short in (("new_A150", "AhcentCinquante"),
+                           ("new_A075", "AzeroSeptCinq"),
+                           ("new_g060", "GammaSixZero")):
+            paired = dig(payload, "arms", arm, "paired_free_vs_v1", default={})
+            rot = dig(paired, "rotation", "mean", default=None)
+            mort = dig(paired, "deaths_per_pop", "mean", default=None)
+            if rot is None or mort is None or rot != rot:
+                macros[f"lawPred{short}{label}"] = MISSING
+                continue
+            macros[f"lawPred{short}{label}"] = french(
+                100 * ((1 + rot) ** 1.337 - 1), 2, sign=True)
 
     # -- lot F : la rotation ----------------------------------------------
     macros["rotNRuns"] = integer(rotation.get("n_runs"))
