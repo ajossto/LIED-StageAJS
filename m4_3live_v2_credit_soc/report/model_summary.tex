@@ -71,8 +71,10 @@ signalée ci-dessous.
 \code{phase\_order} vaut \code{"v1"} par défaut --- l'ordre ci-dessus, celui
 de M4.3 et de M4.3Live --- ou \code{"deprec\_first"}, qui déprécie avant de
 servir les intérêts. Sous cette seconde valeur, le capital disponible au
-moment de payer est réduit d'un facteur $1-\delta$. La conséquence est
-mesurée au §\ref{sec:ordre}.
+moment de payer est réduit d'un facteur $1-\delta$ : bascule en défaut de
+liquidité toute débitrice dont le capital $K$ vérifie
+$(1-\delta)K < \mathrm{d\hat u} \le K$. Le rapport de résultats mesure cet
+effet contre cette prédiction.
 
 Un identifiant d'entité n'est jamais réutilisé ; une entité morte le reste.
 
@@ -135,7 +137,7 @@ entités en position nette créancière. \\
 le rendement marginal $\gamma_i A_i K_i^{\gamma_i-1}$ et la position nette
 $\text{créances}_i - \text{dettes}_i$. \\
 \code{defaults\_window} & fenêtre de bascule & Nombre de débitrices dont le
-statut changerait si l'on échangeait les phases 5 et 6 (§\ref{sec:ordre}). \\
+statut changerait si l'on échangeait les phases 5 et 6 de §\ref{sec:phases}. \\
 \bottomrule
 \end{tabular}
 \end{center}

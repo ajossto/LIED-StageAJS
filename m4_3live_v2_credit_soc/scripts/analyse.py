@@ -1,4 +1,4 @@
-"""Analyse des campagnes v2 : verdict du lot D (sens du prêt) et du lot E
+r"""Analyse des campagnes v2 : verdict du lot D (sens du prêt) et du lot E
 (ordre des phases).
 
 CE QUI EST COMPARÉ, ET COMMENT
@@ -22,6 +22,27 @@ run et chaque grandeur parmi K_tot, pop et prod_tot, on rapporte le rapport
 de la moyenne du dernier quart de la fenêtre à celle du quart précédent. Un
 bras hors de [0,99 ; 1,01] n'a pas atteint son régime : il donne un
 transitoire, pas un niveau, et le script le dit au lieu de le taire.
+
+DEUX FENÊTRES, ET POURQUOI
+--------------------------------------------------------------------------
+La portée `new` ne renouvelle pas la cohorte d'origine : les entités déjà
+vivantes gardent leur technologie et meurent sans être remplacées à
+l'identique. La durée de vie moyenne d'une entité est
+`population / λ ≈ 1030/30 ≈ 34` pas, donc la cohorte d'origine s'effondre en
+quelques centaines de pas. Le phénomène que la campagne mesure — les paires
+mixtes, donc les prêts à contre-sens — vit sur cette échelle de temps, pas
+sur celle de la fenêtre entière.
+
+Lire un seul niveau moyenné sur 1000 pas mélangerait donc une transition
+intense et un régime résiduel, et donnerait « pas d'effet » là où il y a
+« plus de paires mixtes ». Le script rapporte donc DEUX fenêtres :
+
+- **transition**, $t \in\ ]t_0,\ t_0+200]$ — là où le régime nouveau est
+  massif. Ce n'est PAS un régime stationnaire, et le contrôle de
+  stationnarité y est attendu hors bornes : c'est un transitoire, il est
+  rapporté comme tel ;
+- **régime résiduel**, $t \in\ ]t_0+1000,\ t_0+2000]$ — le plateau, où la
+  cohorte d'origine est réduite à quelques entités.
 
     python3 scripts/analyse.py           # lots D et E
     python3 scripts/analyse.py --window 1000
@@ -86,12 +107,19 @@ def _mean(values) -> float:
     return sum(values) / len(values) if values else float("nan")
 
 
-def summarise_run(directory: Path, window: int) -> dict | None:
+WINDOWS = {
+    "transition": (T0, T0 + 200),
+    "residuel": (T0 + 1000, T0 + 2000),
+}
+
+
+def summarise_run(directory: Path, bounds: tuple[int, int]) -> dict | None:
+    lo, hi = bounds
     rows = read_csv(directory / "series.csv")
-    rows = [row for row in rows if int(row["t"]) > T0]
-    if len(rows) < window:
+    tail = [row for row in rows if lo < int(row["t"]) <= hi]
+    window = hi - lo
+    if len(tail) < window:
         return None
-    tail = rows[-window:]
     out: dict = {}
     for column, _ in OBSERVABLES:
         if column not in tail[0]:
@@ -107,7 +135,7 @@ def summarise_run(directory: Path, window: int) -> dict | None:
     )
     out["volume_rev_share"] = out["mkt_volume_rev"] / out["loan_volume"]
     tension = read_csv(directory / "tension_agg.csv")
-    tension = [row for row in tension if int(row["t"]) > T0][-window:]
+    tension = [row for row in tension if lo < int(row["t"]) <= hi]
     if tension:
         out["tension"] = _mean(float(row["tension"]) for row in tension)
         out["K_eq"] = _mean(float(row["K_eq"]) for row in tension)
@@ -117,15 +145,27 @@ def summarise_run(directory: Path, window: int) -> dict | None:
         last = _mean(float(row[column]) for row in tail[-quarter:])
         before = _mean(float(row[column]) for row in tail[-2 * quarter:-quarter])
         out[f"stat_{column}"] = last / before if before else float("nan")
+    # Survie de la cohorte d'origine : effectif de la technologie 0 au dernier
+    # pas de la fenêtre. C'est la mesure directe du régime nouveau.
+    tech_rows = read_csv(directory / "tech_series.csv")
+    if tech_rows:
+        last_t = max(int(row["t"]) for row in tech_rows if int(row["t"]) <= hi)
+        at_last = [row for row in tech_rows if int(row["t"]) == last_t]
+        out["tech0_alive"] = _mean(
+            float(row["n_alive"]) for row in at_last if int(row["tech"]) == 0
+        )
+        if out["tech0_alive"] != out["tech0_alive"]:
+            out["tech0_alive"] = 0.0
+        out["n_tech_alive"] = float(len([r for r in at_last if float(r["n_alive"]) > 0]))
     return out
 
 
-def collect(root: Path, window: int) -> dict[tuple, dict]:
+def collect(root: Path, bounds: tuple[int, int]) -> dict[tuple, dict]:
     out: dict[tuple, dict] = {}
     for marker in sorted(root.rglob("summary.json")):
         directory = marker.parent
         payload = json.loads(marker.read_text(encoding="utf-8"))
-        summary = summarise_run(directory, window)
+        summary = summarise_run(directory, bounds)
         if summary is None:
             continue
         key = tuple(directory.relative_to(root).parts)
@@ -177,14 +217,16 @@ def absolute(runs: dict, seeds, column: str) -> dict:
 
 
 # --------------------------------------------------------------------------
-def analyse_lot_D(window: int) -> dict:
-    runs = collect(CAMPAIGN / "arms", window)
+def analyse_lot_D(window_name: str) -> dict:
+    bounds = WINDOWS[window_name]
+    runs = collect(CAMPAIGN / "arms", bounds)
     by_cell: dict[tuple[str, str], dict[int, dict]] = {}
     for (direction, arm, seed_dir), summary in runs.items():
         seed = int(seed_dir.replace("seed", ""))
         by_cell.setdefault((direction, arm), {})[seed] = summary
     arms = sorted({arm for _, arm in by_cell})
-    payload: dict = {"window": window, "arms": {}, "stationarity": []}
+    payload: dict = {"window": window_name, "bounds": list(bounds),
+                     "arms": {}, "stationarity": []}
 
     for arm in arms:
         free = by_cell.get(("free", arm), {})
@@ -201,8 +243,9 @@ def analyse_lot_D(window: int) -> dict:
                        "tension", "loan_volume", "interest_paid", "defaults",
                        "reversed_share", "blocked_share", "volume_rev_share",
                        "K_share_creditors", "corr_marg_net", "corr_K_net",
-                       "jensen", "n_loans"):
+                       "jensen", "n_loans", "tech0_alive"):
             entry["levels_free"][column] = absolute(free, sorted(free), column)
+            entry.setdefault("levels_v1", {})[column] = absolute(v1, sorted(v1), column)
             if v1:
                 entry["paired_free_vs_v1"][column] = paired(free, v1, seeds, column)
         payload["arms"][arm] = entry
@@ -217,13 +260,15 @@ def analyse_lot_D(window: int) -> dict:
     return payload
 
 
-def analyse_lot_E(window: int) -> dict:
-    control = collect(CAMPAIGN / "arms" / "free" / "control", window)
-    deprec = collect(CAMPAIGN / "phase", window)
+def analyse_lot_E(window_name: str) -> dict:
+    bounds = WINDOWS[window_name]
+    control = collect(CAMPAIGN / "arms" / "free" / "control", bounds)
+    deprec = collect(CAMPAIGN / "phase", bounds)
     reference = {int(k[0].replace("seed", "")): v for k, v in control.items()}
     treated = {int(k[1].replace("seed", "")): v for k, v in deprec.items()}
     seeds = sorted(set(reference) & set(treated))
-    payload = {"window": window, "paired_seeds": seeds, "paired": {}, "levels": {}}
+    payload = {"window": window_name, "bounds": list(bounds),
+               "paired_seeds": seeds, "paired": {}, "levels": {}}
     for column in ("defaults", "deaths_per_pop", "prod_tot", "pop", "K_tot",
                    "rotation", "interest_paid", "tension"):
         payload["paired"][column] = paired(treated, reference, seeds, column)
@@ -316,7 +361,7 @@ def figure_lot_D(payload: dict, path: Path) -> None:
     plt.close(figure)
 
 
-def figure_creditors(window: int, path: Path) -> None:
+def figure_creditors(path: Path) -> None:
     import matplotlib
 
     matplotlib.use("Agg")
@@ -361,38 +406,80 @@ def figure_creditors(window: int, path: Path) -> None:
     plt.close(figure)
 
 
-def write_tables(lot_d: dict, lot_e: dict) -> None:
+def write_tables(lot_d_transition: dict, lot_d_residuel: dict, lot_e: dict) -> None:
     TABLES.mkdir(parents=True, exist_ok=True)
 
     def pct(value: float, digits: int = 2) -> str:
-        if value != value:
+        if value is None or value != value:
             return "---"
         return f"{100 * value:+.{digits}f}".replace(".", ",")
 
-    lines = [r"\begin{tabular}{lrrrr}", r"\toprule",
-             r"bras & production & population & mortalité & rotation \\",
-             r"\midrule"]
-    for arm in sorted(lot_d["arms"]):
-        entry = lot_d["arms"][arm]["paired_free_vs_v1"]
-        if not entry:
-            continue
-        cells = []
-        for column in ("prod_tot", "pop", "deaths_per_pop", "rotation"):
-            fit = entry[column]
-            cells.append(f"${pct(fit['mean'])} \\pm {pct(fit['se']).lstrip('+')}$\\,\\%")
-        lines.append(r"\code{" + arm.replace("_", r"\_") + "} & " + " & ".join(cells) + r" \\")
-    lines += [r"\bottomrule", r"\end{tabular}"]
-    (TABLES / "lot_d_paired.tex").write_text("\n".join(lines) + "\n", encoding="utf-8")
+    def plain(value: float, digits: int = 2) -> str:
+        if value is None or value != value:
+            return "---"
+        return f"{value:.{digits}f}".replace(".", ",")
 
+    # -- Tableau 1 : le régime nouveau, par bras et par fenêtre -------------
+    lines = [r"\begin{tabular}{llrrrr}", r"\toprule",
+             r"bras & fenêtre & prêts à contre-sens & volume à contre-sens "
+             r"& \multicolumn{2}{c}{cohorte d'origine vivante} \\",
+             r"\cmidrule(lr){5-6}",
+             r" &  & (\% des rondes) & (\% du volume) & sens libre & règle v1 \\",
+             r"\midrule"]
+    for arm in sorted(lot_d_transition["arms"]):
+        if not lot_d_transition["arms"][arm]["paired_free_vs_v1"]:
+            continue
+        for label, payload in (("transition", lot_d_transition),
+                               ("résiduel", lot_d_residuel)):
+            levels = payload["arms"][arm]["levels_free"]
+            v1 = payload["arms"][arm]["levels_v1"]
+            lines.append(
+                r"\code{" + arm.replace("_", r"\_") + "} & " + label + " & "
+                + plain(100 * levels["reversed_share"]["mean"]) + " & "
+                + plain(100 * levels["volume_rev_share"]["mean"]) + " & "
+                + plain(levels["tech0_alive"]["mean"], 1) + " & "
+                + plain(v1["tech0_alive"]["mean"], 1) + r" \\"
+            )
+        lines.append(r"\addlinespace")
+    lines += [r"\bottomrule", r"\end{tabular}"]
+    (TABLES / "lot_d_regime.tex").write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+    # -- Tableau 2 : les écarts appariés ------------------------------------
+    for label, payload, name in (("transition", lot_d_transition, "lot_d_paired_transition"),
+                                 ("résiduel", lot_d_residuel, "lot_d_paired_residuel")):
+        lines = [r"\begin{tabular}{lrrrr}", r"\toprule",
+                 r"bras & production & population & mortalité & rotation \\",
+                 r"\midrule"]
+        for arm in sorted(payload["arms"]):
+            entry = payload["arms"][arm]["paired_free_vs_v1"]
+            if not entry:
+                continue
+            cells = []
+            for column in ("prod_tot", "pop", "deaths_per_pop", "rotation"):
+                fit = entry[column]
+                star = ""
+                if fit["t"] == fit["t"] and fit.get("t_crit_1pct"):
+                    if abs(fit["t"]) > fit["t_crit_1pct"]:
+                        star = r"$^{\ast\ast}$"
+                    elif abs(fit["t"]) > fit["t_crit_5pct"]:
+                        star = r"$^{\ast}$"
+                cells.append(f"${pct(fit['mean'])} \\pm {pct(fit['se']).lstrip('+')}$"
+                             + star)
+            lines.append(r"\code{" + arm.replace("_", r"\_") + "} & "
+                         + " & ".join(cells) + r" \\")
+        lines += [r"\bottomrule", r"\end{tabular}"]
+        (TABLES / f"{name}.tex").write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+    # -- Tableau 3 : la prédiction du lot E ---------------------------------
     prediction = lot_e["prediction"]
     lines = [r"\begin{tabular}{lr}", r"\toprule",
              r"grandeur & valeur \\", r"\midrule",
              r"défauts par pas, ordre \code{v1} & "
-             + f"{prediction['defauts_reference']:.2f}".replace(".", ",") + r" \\",
+             + plain(prediction["defauts_reference"]) + r" \\",
              r"fenêtre de bascule mesurée dans ce même bras & "
-             + f"{prediction['fenetre_de_bascule']:.2f}".replace(".", ",") + r" \\",
+             + plain(prediction["fenetre_de_bascule"]) + r" \\",
              r"\textbf{défauts prédits sous \code{deprec\_first}} & "
-             + f"{prediction['defauts_predits']:.2f}".replace(".", ",") + r" \\",
+             + plain(prediction["defauts_predits"]) + r" \\",
              r"hausse relative \emph{prédite} & "
              + pct(prediction["hausse_relative_predite"]) + r"\,\% \\",
              r"hausse relative \emph{mesurée} & "
@@ -401,32 +488,141 @@ def write_tables(lot_d: dict, lot_e: dict) -> None:
     (TABLES / "lot_e_prediction.tex").write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
+def figure_horizon(path: Path) -> None:
+    """Le régime nouveau en fonction de l'horizon, moyenné sur les graines.
+
+    C'est la figure qui justifie les deux fenêtres : la part des rondes
+    conclues à contre-sens décroît d'un facteur ~17 en 400 pas, puis plafonne.
+    L'échelle de temps est celle du renouvellement de la population, pas celle
+    de la fenêtre d'observation."""
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    try:
+        from simulation_lab.plot_utils import apply_style
+
+        apply_style()
+    except Exception:
+        pass
+
+    figure, axes = plt.subplots(1, 2, figsize=(11, 4))
+    palette = {"new_A150": "#294c60", "new_A075": "#c1440e", "new_g060": "#7a9e9f"}
+    block = 50
+    for arm, colour in palette.items():
+        root = CAMPAIGN / "arms" / "free" / arm
+        seeds = sorted(root.glob("seed*"))
+        if not seeds:
+            continue
+        curves_share, curves_tech = [], []
+        for seed_dir in seeds:
+            rows = [r for r in read_csv(seed_dir / "series.csv") if int(r["t"]) > T0]
+            tech = read_csv(seed_dir / "tech_series.csv")
+            by_t = {}
+            for row in tech:
+                if int(row["tech"]) == 0:
+                    by_t[int(row["t"])] = float(row["n_alive"])
+            share, alive = [], []
+            for start in range(0, len(rows) - block + 1, block):
+                chunk = rows[start:start + block]
+                rounds = sum(float(r["mkt_rounds"]) for r in chunk)
+                share.append(sum(float(r["mkt_reversed"]) for r in chunk) / rounds
+                             if rounds else float("nan"))
+                alive.append(_mean(by_t.get(int(r["t"]), 0.0) for r in chunk))
+            curves_share.append(share)
+            curves_tech.append(alive)
+        length = min(len(c) for c in curves_share)
+        steps = [T0 + block * (i + 0.5) for i in range(length)]
+        mean_share = [_mean(c[i] for c in curves_share) for i in range(length)]
+        mean_tech = [_mean(c[i] for c in curves_tech) for i in range(length)]
+        axes[0].plot(steps, [100 * v for v in mean_share], color=colour, lw=1.2, label=arm)
+        axes[1].plot(steps, mean_tech, color=colour, lw=1.2, label=arm + " (sens libre)")
+        v1_dir = CAMPAIGN / "arms" / "richest_lends" / arm
+        v1_curves = []
+        for seed_dir in sorted(v1_dir.glob("seed*")):
+            tech = read_csv(seed_dir / "tech_series.csv")
+            by_t = {int(r["t"]): float(r["n_alive"]) for r in tech if int(r["tech"]) == 0}
+            rows = [r for r in read_csv(seed_dir / "series.csv") if int(r["t"]) > T0]
+            alive = []
+            for start in range(0, len(rows) - block + 1, block):
+                chunk = rows[start:start + block]
+                alive.append(_mean(by_t.get(int(r["t"]), 0.0) for r in chunk))
+            v1_curves.append(alive)
+        if v1_curves:
+            n = min(length, min(len(c) for c in v1_curves))
+            axes[1].plot(steps[:n], [_mean(c[i] for c in v1_curves) for i in range(n)],
+                         color=colour, lw=1.0, ls="--", label=arm + " (règle v1)")
+
+    for bounds, label, colour in ((WINDOWS["transition"], "transition", "#d9d0c1"),
+                                  (WINDOWS["residuel"], "régime résiduel", "#c9d6d5")):
+        for axis in axes:
+            axis.axvspan(bounds[0], bounds[1], color=colour, alpha=0.5, zorder=0)
+        axes[0].text(0.5 * (bounds[0] + bounds[1]), axes[0].get_ylim()[1], label,
+                     fontsize=6, ha="center", va="top")
+    axes[0].set_ylabel("prêts à contre-sens / rondes (%)")
+    axes[0].set_title("(a) le régime nouveau décroît puis plafonne", fontsize=9)
+    axes[1].set_yscale("symlog")
+    axes[1].set_ylabel("entités de l'ancienne technologie vivantes")
+    axes[1].set_title("(b) la cohorte d'origine survit sous le sens libre,\n"
+                      "s'éteint sous la règle v1", fontsize=9)
+    for axis in axes:
+        axis.set_xlabel("t (pas)")
+        axis.grid(True, alpha=0.2)
+        axis.legend(fontsize=6)
+    figure.suptitle("Horizon du régime que le sens libre rend possible")
+    figure.tight_layout()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    figure.savefig(path, dpi=130, bbox_inches="tight")
+    plt.close(figure)
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--window", type=int, default=1000)
     args = parser.parse_args(argv)
     ANALYSIS.mkdir(parents=True, exist_ok=True)
 
-    lot_d = analyse_lot_D(args.window)
-    (ANALYSIS / "lot_d.json").write_text(
-        json.dumps(lot_d, indent=2, ensure_ascii=False), encoding="utf-8")
-    figure_lot_D(lot_d, FIGURES / "lot_d_paired.png")
-    figure_creditors(args.window, FIGURES / "creditors.png")
+    payload = {}
+    for name in WINDOWS:
+        lot_d = analyse_lot_D(name)
+        lot_e = analyse_lot_E(name)
+        (ANALYSIS / f"lot_d_{name}.json").write_text(
+            json.dumps(lot_d, indent=2, ensure_ascii=False), encoding="utf-8")
+        (ANALYSIS / f"lot_e_{name}.json").write_text(
+            json.dumps(lot_e, indent=2, ensure_ascii=False), encoding="utf-8")
+        payload[name] = (lot_d, lot_e)
 
-    lot_e = analyse_lot_E(args.window)
-    (ANALYSIS / "lot_e.json").write_text(
-        json.dumps(lot_e, indent=2, ensure_ascii=False), encoding="utf-8")
-    write_tables(lot_d, lot_e)
+    lot_d_res, lot_e_res = payload["residuel"]
+    lot_d_tr, _ = payload["transition"]
+    figure_lot_D(lot_d_tr, FIGURES / "lot_d_paired.png")
+    figure_creditors(FIGURES / "creditors.png")
+    figure_horizon(FIGURES / "horizon.png")
+    write_tables(lot_d_tr, lot_d_res, lot_e_res)
 
-    print(json.dumps({"lot_D": {arm: {
-        "n_free": lot_d["arms"][arm]["n_seeds_free"],
-        "n_v1": lot_d["arms"][arm]["n_seeds_richest_lends"],
-        "prod": lot_d["arms"][arm]["paired_free_vs_v1"].get("prod_tot", {}).get("mean"),
-        "reversed_share": lot_d["arms"][arm]["levels_free"]["reversed_share"]["mean"],
-    } for arm in sorted(lot_d["arms"])},
-        "runs_non_stationnaires": len(lot_d["stationarity"]),
-        "lot_E": lot_e["prediction"]},
-        indent=2, ensure_ascii=False))
+    digest = {}
+    for name, (lot_d, lot_e) in payload.items():
+        digest[name] = {
+            "bornes": lot_d["bounds"],
+            "bras": {
+                arm: {
+                    "n_free": lot_d["arms"][arm]["n_seeds_free"],
+                    "n_v1": lot_d["arms"][arm]["n_seeds_richest_lends"],
+                    "part_contre_sens": lot_d["arms"][arm]["levels_free"]["reversed_share"]["mean"],
+                    "tech0_vivantes_libre": lot_d["arms"][arm]["levels_free"]["tech0_alive"]["mean"],
+                    "tech0_vivantes_v1": lot_d["arms"][arm]["levels_v1"]["tech0_alive"]["mean"],
+                    "prod_apparie": lot_d["arms"][arm]["paired_free_vs_v1"].get(
+                        "prod_tot", {}).get("mean"),
+                    "prod_t": lot_d["arms"][arm]["paired_free_vs_v1"].get(
+                        "prod_tot", {}).get("t"),
+                }
+                for arm in sorted(lot_d["arms"])
+            },
+            "runs_hors_stationnarite": len(lot_d["stationarity"]),
+            "lot_E": lot_e["prediction"],
+        }
+    (ANALYSIS / "verdicts.json").write_text(
+        json.dumps(digest, indent=2, ensure_ascii=False), encoding="utf-8")
+    print(json.dumps(digest, indent=2, ensure_ascii=False))
     return 0
 
 
