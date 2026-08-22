@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any
 
 from simulation_lab.contracts import BaseSimulationModel
-from simulation_lab.settings import MODELS_DIR, ensure_directories
+from simulation_lab.settings import MODELS_DIR, ensure_directories, model_is_archived
 
 
 class ModelRegistry:
@@ -21,12 +21,20 @@ class ModelRegistry:
             model = _load_model_from_file(model_file)
             if model.model_id in self._models:
                 raise ValueError(f"model_id dupliqué: {model.model_id}")
+            model.archived = model_is_archived(model.model_id)
             self._models[model.model_id] = model
 
-    def list_models(self) -> list[BaseSimulationModel]:
-        priority = {"modele_sans_banque_wip": 0, "claude3_v2": 1}
+    def list_models(self, scope: str = "active") -> list[BaseSimulationModel]:
+        if scope not in {"active", "archived", "all"}:
+            raise ValueError(f"Périmètre de modèles inconnu: {scope}")
+        models = self._models.values()
+        if scope == "active":
+            models = (model for model in models if not model.archived)
+        elif scope == "archived":
+            models = (model for model in models if model.archived)
+        priority = {"m4b_credit_soc_mini": 0}
         return sorted(
-            self._models.values(),
+            models,
             key=lambda item: (priority.get(item.model_id, 10), item.display_name.lower()),
         )
 
@@ -35,6 +43,12 @@ class ModelRegistry:
             return self._models[model_id]
         except KeyError as exc:
             raise KeyError(f"Modèle introuvable: {model_id}") from exc
+
+    def get_launchable(self, model_id: str) -> BaseSimulationModel:
+        model = self.get(model_id)
+        if model.archived:
+            raise ValueError(f"Le modèle {model_id} est archivé et ne peut plus être lancé.")
+        return model
 
 
 def _load_model_from_file(model_file: Path) -> BaseSimulationModel:

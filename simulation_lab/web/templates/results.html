@@ -10,7 +10,7 @@
   <header class="topbar">
     <div>
       <h1>Simulation Lab</h1>
-      <p class="muted">Navigation dans les modélisations passées</p>
+      <p class="muted">Résultats M4B et archives historiques</p>
     </div>
     <nav class="topnav">
       <a class="nav-link" href="/launch">Lancement</a>
@@ -23,7 +23,7 @@
       <div class="toolbar">
         <div>
           <h2>Exécutions en cours</h2>
-          <p class="help">Même file de jobs que dans l’onglet lancement.</p>
+          <p class="help">Même suivi en direct que dans l’onglet lancement : progression, état économique, alertes et bouton d’arrêt.</p>
         </div>
       </div>
       <div id="jobs-list" class="jobs-list compact-jobs"></div>
@@ -42,6 +42,7 @@
       </div>
       <div class="filter-row">
         <button class="secondary" data-scope="active">Actives</button>
+        <button class="secondary" data-scope="archived">Archivées</button>
         <button class="secondary" data-scope="trash">Corbeille</button>
         <label class="flag-filter"><input type="checkbox" id="filter-important"> !! Importantes</label>
         <label class="flag-filter"><input type="checkbox" id="filter-keep"> ♥ Gardées</label>
@@ -106,7 +107,10 @@
     <section class="panel">
       <h2>Détail</h2>
       <div id="run-detail" class="detail muted">Sélectionnez une simulation.</div>
-      <div id="artifacts-grid" class="artifacts-grid"></div>
+      <div id="artifacts-tabs" class="artifacts-tabs">
+        <div class="artifacts-tab-nav" id="artifacts-tab-nav"></div>
+        <div class="artifacts-tab-content" id="artifacts-tab-content"></div>
+      </div>
     </section>
   </main>
   <script src="/static/app.js"></script>

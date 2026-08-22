@@ -22,6 +22,15 @@ const state = {
 };
 
 const PARAMETER_HELP = {
+  lam: "Intensité moyenne λ des naissances de Poisson par pas.",
+  delta: "Fraction du capital productif dépréciée à chaque pas.",
+  sigma: "Volatilité du choc multiplicatif individuel, de moyenne un.",
+  K0: "Capital productif attribué à chaque nouvelle entité.",
+  k: "Nombre d’entités du marché local parmi lesquelles sont choisies la prêteuse et l’emprunteuse.",
+  T: "Nombre maximal de pas simulés.",
+  pop_max: "Seuil de sécurité sur le nombre d’entités vivantes.",
+  snapshot_every: "Fréquence des instantanés individuels et réseau ; 0 conserve seulement l’état final.",
+  individual_every: "Fréquence des mesures longitudinales individuelles ; 0 les désactive.",
   alpha: "Coefficient de productivité de référence. Dans les WIP récents, les entités tirent surtout alpha dans [alpha_min, alpha_max].",
   alpha_min: "Borne basse du tirage initial de productivité individuelle alpha.",
   alpha_max: "Borne haute du tirage initial de productivité individuelle alpha.",
@@ -63,6 +72,15 @@ const PARAMETER_SYMBOLS = {
 };
 
 const KEY_PARAMETER_NAMES = [
+  "T",
+  "lam",
+  "sigma",
+  "delta",
+  "K0",
+  "k",
+  "pop_max",
+  "snapshot_every",
+  "individual_every",
   "duree_simulation",
   "seed",
   "alpha_min",
@@ -155,7 +173,11 @@ function groupParameters(parameters) {
   parameters.forEach((parameter) => {
     const name = parameter.name;
     let group = "Autres";
-    if (/(alpha|productiv)/.test(name)) group = "Productivité";
+    if (["lam", "K0", "pop_max"].includes(name)) group = "Population";
+    else if (["k"].includes(name)) group = "Crédit et marché";
+    else if (["delta", "sigma"].includes(name)) group = "Dynamique";
+    else if (["T", "snapshot_every", "individual_every"].includes(name)) group = "Exécution et mesures";
+    else if (/(alpha|productiv)/.test(name)) group = "Productivité";
     else if (/(theta|mu|credit|taux|emprunt|pool|lender|ratio_endettement|liquide_passif)/.test(name)) group = "Crédit et marché";
     else if (/(creation|entites|inne_initial|liquide_initial)/.test(name)) group = "Population initiale";
     else if (/(depreciation|reliquefaction)/.test(name)) group = "Dépréciation et liquidité";
@@ -178,7 +200,8 @@ function readParameters() {
 }
 
 async function loadModels() {
-  state.models = await fetchJSON("/api/models");
+  const modelScope = page() === "launch" ? "active" : "all";
+  state.models = await fetchJSON(`/api/models?scope=${modelScope}`);
   const select = document.getElementById("model-select");
   if (!select) {
     return;
@@ -301,10 +324,17 @@ function renderJobCard(job) {
         <strong>${modelDisplayName(job.model_id)}</strong>
         <span class="pill ${job.status === "failed" ? "trash" : active ? "important" : "readonly"}">${job.status}</span>
       </div>
-      <div class="run-meta">${job.label || job.job_type} | ${job.created_at}</div>
-      <div>${job.message || "-"}</div>
+      <div class="run-meta">${escapeHtml(job.label || job.job_type)} | ${escapeHtml(job.created_at)}</div>
+      <div>${escapeHtml(job.message || "-")}</div>
       <div class="mini-progress"><span style="width:${job.progress || 0}%"></span></div>
       <div class="run-meta">${Math.round(job.progress || 0)}%${job.error ? ` | ${escapeHtml(job.error)}` : ""}</div>
+      ${renderTelemetrySummary(job)}
+      ${renderJobAlerts(job.alerts)}
+      ${job.telemetry && Object.keys(job.telemetry).length ? `
+        <details class="live-details">
+          <summary>Déroulé et bilan en direct</summary>
+          ${renderTelemetryDetails(job)}
+        </details>` : ""}
       ${job.logs?.length ? `<details class="job-log"><summary>Derniers logs</summary><pre>${escapeHtml(job.logs.slice(-8).join("\n"))}</pre></details>` : ""}
       <div class="inline-actions job-actions">
         ${active ? `<button class="secondary compact-button" data-cancel-job="${job.job_id}" ${job.cancel_requested ? "disabled" : ""}>${job.cancel_requested ? "Annulation demandée" : "Avorter"}</button>` : ""}
@@ -336,11 +366,129 @@ function renderJob(job) {
     };
   }
   card.innerHTML = `
-    <div><strong>${job.model_id}</strong></div>
-    <div>${job.message || "-"}</div>
+    <div><strong>${escapeHtml(modelDisplayName(job.model_id))}</strong></div>
+    <div>${escapeHtml(job.message || "-")}</div>
     <div class="run-meta">Statut: ${job.status} | Progression: ${Math.round(job.progress || 0)}%</div>
-    <div class="run-meta">${job.logs.slice(-5).join("<br>")}</div>
+    ${renderJobAlerts(job.alerts)}
+    ${renderTelemetryDetails(job)}
+    ${job.logs?.length ? `<div class="run-meta">${escapeHtml(job.logs.slice(-5).join("\n")).replaceAll("\n", "<br>")}</div>` : ""}
   `;
+}
+
+function renderTelemetrySummary(job) {
+  const metric = job.telemetry || {};
+  if (!Object.keys(metric).length) return "";
+  if (metric.phase === "batch") {
+    return `<div class="live-summary-grid">
+      ${liveMetric("Terminées", `${metric.completed_runs ?? 0} / ${metric.total_runs ?? "-"}`)}
+      ${liveMetric("Encore actives", metric.running_runs ?? "-")}
+    </div>`;
+  }
+  return `<div class="live-summary-grid">
+    ${liveMetric("Pas", `${metric.t ?? 0} / ${metric.t_total ?? "-"}`)}
+    ${liveMetric("Population", metric.population !== undefined ? formatLiveNumber(metric.population) : "—")}
+    ${liveMetric("Valeur nette", metric.net_worth_j !== undefined ? `${formatLiveNumber(metric.net_worth_j)} J` : "—")}
+    ${liveMetric("Temps restant", formatDuration(metric.eta_seconds))}
+  </div>`;
+}
+
+function renderTelemetryDetails(job) {
+  const metric = job.telemetry || {};
+  if (!Object.keys(metric).length) {
+    return `<p class="muted">Les premières mesures arrivent après le premier pas.</p>`;
+  }
+  if (metric.phase === "batch") return renderTelemetrySummary(job);
+  const metrics = [
+    ["Phase", telemetryPhaseLabel(metric.phase)],
+    ["Pas simulé", `${metric.t ?? 0} / ${metric.t_total ?? "-"}`],
+    ["Temps écoulé", formatDuration(metric.elapsed_seconds, false)],
+    ["Temps restant estimé", formatDuration(metric.eta_seconds)],
+    ["Vitesse", metric.steps_per_second !== undefined ? `${formatLiveNumber(metric.steps_per_second)} pas/s` : "—"],
+    ["Population", metric.population !== undefined ? `${formatLiveNumber(metric.population)} / ${formatLiveNumber(metric.population_limit)}` : "—"],
+    ["Charge de la limite", metric.population_load_pct !== undefined ? `${metric.population_load_pct.toFixed(1)} %` : "—"],
+    ["Variation population (20 pas)", signedValue(metric.population_change_20)],
+    ["Prêts actifs", formatLiveNumber(metric.loans)],
+    ["Capital", joules(metric.capital_j)],
+    ["Valeur nette", joules(metric.net_worth_j)],
+    ["Variation valeur nette (20 pas)", signedValue(metric.net_worth_change_20_j, " J")],
+    ["Dette", joules(metric.debt_j)],
+    ["Dette / actifs", metric.debt_assets_ratio !== undefined ? `${(100 * metric.debt_assets_ratio).toFixed(1)} %` : "—"],
+    ["Naissances cumulées", formatLiveNumber(metric.births_total)],
+    ["Décès cumulés / dernier pas", `${formatLiveNumber(metric.deaths_total)} / ${formatLiveNumber(metric.deaths_step)}`],
+    ["Avalanches cumulées / dernier pas", `${formatLiveNumber(metric.avalanches_total)} / ${formatLiveNumber(metric.avalanches_step)}`],
+    ["Avalanche max. dernier pas / run", `${formatLiveNumber(metric.max_avalanche_step)} / ${formatLiveNumber(metric.max_avalanche_seen)}`],
+    ["État du modèle", metric.model_status || "—"],
+  ].filter(([, value]) => value !== "— / —");
+  return `
+    <div class="live-metrics-grid">
+      ${metrics.map(([label, value]) => liveMetric(label, value)).join("")}
+    </div>
+    ${renderTelemetryHistory(job.telemetry_history || [])}
+  `;
+}
+
+function renderTelemetryHistory(history) {
+  const rows = history.filter((item) => item.phase === "simulation").slice(-12);
+  if (rows.length < 2) return "";
+  return `<div class="telemetry-history-wrap">
+    <div class="run-meta">12 derniers points de contrôle</div>
+    <table class="telemetry-history">
+      <thead><tr><th>Pas</th><th>Pop.</th><th>Prêts</th><th>Valeur nette</th><th>Décès</th><th>Avalanches</th></tr></thead>
+      <tbody>${rows.map((item) => `<tr>
+        <td>${formatLiveNumber(item.t)}</td>
+        <td>${formatLiveNumber(item.population)}</td>
+        <td>${formatLiveNumber(item.loans)}</td>
+        <td>${joules(item.net_worth_j)}</td>
+        <td>${formatLiveNumber(item.deaths_total)}</td>
+        <td>${formatLiveNumber(item.avalanches_total)}</td>
+      </tr>`).join("")}</tbody>
+    </table>
+  </div>`;
+}
+
+function renderJobAlerts(alerts = []) {
+  if (!alerts.length) return "";
+  return `<div class="job-alerts">${alerts.map((alert) => `<div>${escapeHtml(alert)}</div>`).join("")}</div>`;
+}
+
+function liveMetric(label, value) {
+  return `<div class="live-metric"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value ?? "—")}</strong></div>`;
+}
+
+function telemetryPhaseLabel(phase) {
+  return ({ initialisation: "Initialisation", simulation: "Simulation", figures: "Génération des figures", batch: "Batch" })[phase] || phase || "—";
+}
+
+function formatDuration(seconds, estimate = true) {
+  if (seconds === null || seconds === undefined || !Number.isFinite(Number(seconds))) {
+    return estimate ? "calcul…" : "—";
+  }
+  const total = Math.max(0, Math.round(Number(seconds)));
+  if (total < 60) return `${total} s`;
+  const minutes = Math.floor(total / 60);
+  const remainder = total % 60;
+  if (minutes < 60) return `${minutes} min ${remainder} s`;
+  const hours = Math.floor(minutes / 60);
+  return `${hours} h ${minutes % 60} min`;
+}
+
+function formatLiveNumber(value) {
+  if (value === null || value === undefined || !Number.isFinite(Number(value))) return "—";
+  const number = Number(value);
+  const absolute = Math.abs(number);
+  if ((absolute >= 1e7) || (absolute > 0 && absolute < 0.001)) return number.toExponential(2);
+  return number.toLocaleString("fr-FR", { maximumFractionDigits: 2 });
+}
+
+function joules(value) {
+  const formatted = formatLiveNumber(value);
+  return formatted === "—" ? formatted : `${formatted} J`;
+}
+
+function signedValue(value, suffix = "") {
+  if (value === null || value === undefined || !Number.isFinite(Number(value))) return "—";
+  const number = Number(value);
+  return `${number > 0 ? "+" : ""}${formatLiveNumber(number)}${suffix}`;
 }
 
 async function refreshRuns() {
@@ -481,7 +629,7 @@ function isStudyRecord(run) {
 }
 
 function renderStudyActions(run) {
-  if (!isStudyRecord(run)) return "";
+  if (run.archived || !isStudyRecord(run)) return "";
   const artifacts = run.artifacts || [];
   const hasMacro = artifacts.some((a) => a.label === "macro_overview.png" && a.relative_path.includes("legacy_output"));
   const hasCompact = artifacts.some((a) => a.label === "compact_timeseries.json");
@@ -521,7 +669,7 @@ function makeSpark(values, W, H, color) {
 
 async function renderCompactTimeseries(run) {
   const artifact = (run.artifacts || []).find((a) => a.label === "compact_timeseries.json");
-  const container = document.getElementById("compact-timeseries-chart");
+  const container = document.getElementById("compact-timeseries-plot");
   if (!artifact || !container) return;
   const url = `/api/runs/${encodeURIComponent(run.run_id)}/artifact?path=${encodeURIComponent(artifact.relative_path)}`;
   try {
@@ -581,7 +729,7 @@ function renderMultiSeedGroups(groups) {
               </div>
             `).join("")}
           </div>
-          <div class="multiseed-overlay-chart" id="overlay-${escapeAttr(g.fp.slice(0, 32).replace(/[^a-z0-9]/gi, "_"))}">
+          <div class="multiseed-overlay-plot" id="overlay-${escapeAttr(g.fp.slice(0, 32).replace(/[^a-z0-9]/gi, "_"))}">
             <div class="muted" style="font-size:0.8rem">Cliquez sur un groupe pour charger les trajectoires superposées.</div>
           </div>
         </div>
@@ -616,8 +764,8 @@ function bindMultiSeedInteractions(list) {
 const SEED_COLORS = ["#4e9af1", "#e07b39", "#57a64b", "#b07aa1", "#e05c5c", "#5cb8b0", "#c4a240", "#888888"];
 
 async function loadMultiSeedOverlay(group) {
-  const chartId = "overlay-" + group.fp.slice(0, 32).replace(/[^a-z0-9]/gi, "_");
-  const container = document.getElementById(chartId);
+  const plotId = "overlay-" + group.fp.slice(0, 32).replace(/[^a-z0-9]/gi, "_");
+  const container = document.getElementById(plotId);
   if (!container) return;
   container.innerHTML = `<div class="muted">Chargement des trajectoires…</div>`;
 
@@ -758,13 +906,14 @@ function renderRunCard(run, compact = false) {
   return `
     <div class="run-card ${run.run_id === state.selectedRunId ? "active" : ""}" data-run-id="${escapeAttr(run.run_id)}" role="button" tabindex="0">
       <div class="run-card-actions">
-        <button class="icon-action ${run.trashed ? "is-active" : ""}" data-action="trash" data-run-id="${escapeAttr(run.run_id)}" title="Corbeille" ${run.origin === "external" || run.trashed ? "disabled" : ""}>x</button>
+        <button class="icon-action ${run.trashed ? "is-active" : ""}" data-action="trash" data-run-id="${escapeAttr(run.run_id)}" title="Corbeille" ${!run.deletable || run.trashed ? "disabled" : ""}>x</button>
         <button class="icon-action ${run.important ? "is-active" : ""}" data-action="important" data-run-id="${escapeAttr(run.run_id)}" title="Important">!!</button>
         <button class="icon-action ${run.keep ? "is-active" : ""}" data-action="keep" data-run-id="${escapeAttr(run.run_id)}" title="À garder"><3</button>
       </div>
       ${run.preview_artifact && !compact ? `<img class="run-thumb" src="/api/runs/${encodeURIComponent(run.run_id)}/artifact?path=${encodeURIComponent(run.preview_artifact)}" alt="preview">` : ""}
       <div class="pill-row">
         ${run.important ? `<span class="pill important">Importante</span>` : ""}
+        ${run.archived ? `<span class="pill readonly">Archivée</span>` : ""}
         ${run.trashed ? `<span class="pill trash">Corbeille</span>` : ""}
         ${run.origin === "external" ? `<span class="pill readonly">Historique</span>` : ""}
       </div>
@@ -842,7 +991,7 @@ async function handleQuickAction(runId, action) {
       method: "POST",
       body: JSON.stringify({ keep: !run.keep }),
     });
-  } else if (action === "trash" && run.origin !== "external" && !run.trashed) {
+  } else if (action === "trash" && run.deletable && !run.trashed) {
     await fetchJSON(`/api/runs/${encodeURIComponent(runId)}/trash`, {
       method: "POST",
       body: JSON.stringify({}),
@@ -864,19 +1013,29 @@ async function loadRunDetail() {
     return;
   }
   const run = await fetchJSON(`/api/runs/${encodeURIComponent(state.selectedRunId)}`);
+  if (run.archived && state.scope === "active") {
+    state.scope = "archived";
+    await refreshRuns();
+  }
   renderRunDetail(run);
 }
 
 function renderRunDetail(run) {
   const detail = document.getElementById("run-detail");
-  const grid = document.getElementById("artifacts-grid");
-  if (!detail || !grid) {
+  const tabNav = document.getElementById("artifacts-tab-nav");
+  const tabContent = document.getElementById("artifacts-tab-content");
+  if (!detail) {
     return;
   }
+  const main = document.querySelector("main.results-grid");
+  if (main) main.classList.toggle("list-expanded", !run);
+  const list = document.getElementById("runs-list");
+  if (list) list.classList.toggle("compact-runs", !run);
   if (!run) {
     detail.innerHTML = "Sélectionnez une simulation.";
     detail.classList.add("muted");
-    grid.innerHTML = "";
+    if (tabNav) tabNav.innerHTML = "";
+    if (tabContent) tabContent.innerHTML = "";
     return;
   }
   detail.classList.remove("muted");
@@ -891,6 +1050,7 @@ function renderRunDetail(run) {
           <dt>Origine</dt><dd>${run.origin}</dd>
           <dt>Seed</dt><dd>${run.seed ?? "-"}</dd>
           <dt>Statut</dt><dd>${run.status}</dd>
+          <dt>Archivée</dt><dd>${run.archived ? "oui" : "non"}</dd>
           <dt>Importante</dt><dd>${run.important ? "oui" : "non"}</dd>
           <dt>Corbeille</dt><dd>${run.trashed ? "oui" : "non"}</dd>
           <dt>Commentaire</dt><dd><pre>${escapeHtml(run.comment || "")}</pre></dd>
@@ -917,7 +1077,7 @@ function renderRunDetail(run) {
       </div>
     </div>
     ${renderRunActions(run)}
-    <div id="compact-timeseries-chart"></div>
+    <div id="compact-timeseries-plot"></div>
   `;
   bindRunActions(run);
   bindAnnotationSave(run);
@@ -928,13 +1088,14 @@ function renderRunDetail(run) {
 function renderRunQuickNote(run) {
   const params = run.parameters || {};
   const items = [
-    ["Durée", params.duree_simulation ?? params.steps],
+    ["Durée", params.T ?? params.duree_simulation ?? params.steps],
     ["Seed", run.seed ?? params.seed],
     ["α", formatAlphaRange(params)],
-    ["k", params.n_candidats_pool],
+    ["k", params.k ?? params.n_candidats_pool],
     ["θ", params.theta],
     ["f", params.fraction_taux_emprunteur],
-    ["λ", params.lambda_creation],
+    ["λ", params.lam ?? params.lambda_creation],
+    ["K₀", params.K0],
   ].filter(([, value]) => value !== undefined && value !== null && value !== "");
   return `<div class="quick-note">${items.map(([label, value]) => `
     <div><span>${label}</span><strong>${escapeHtml(formatValue(value))}</strong></div>
@@ -982,7 +1143,7 @@ function renderRunActions(run) {
         <button id="locate-run" class="secondary">Localiser dans le finder</button>
         <button id="toggle-important">${run.important ? "Retirer !! importante" : "Marquer !! importante"}</button>
         <button id="toggle-keep">${run.keep ? "Retirer étoile" : "Marquer étoile"}</button>
-        ${run.origin !== "external" && !run.trashed ? `<button id="trash-run" class="secondary">Corbeille</button>` : ""}
+        ${run.deletable && !run.trashed ? `<button id="trash-run" class="secondary">Corbeille</button>` : ""}
       </div>
     </details>
   `;
@@ -995,7 +1156,10 @@ function renderRunActions(run) {
       </div>
     `;
   }
-  return baseMenu + (run.origin === "external" ? `<p class="muted">Simulation historique : annotations persistantes autorisées, suppression désactivée.</p>` : "") + renderStudyActions(run);
+  const archiveNotice = run.archived
+    ? `<p class="muted">Simulation archivée : consultation et annotations autorisées, suppression désactivée.</p>`
+    : "";
+  return baseMenu + archiveNotice + renderStudyActions(run);
 }
 
 function bindRunActions(run) {
@@ -1111,18 +1275,91 @@ function bindAnnotationSave(run) {
   });
 }
 
+const ARTIFACT_GROUP_NAMES = {
+  figures: "Graphiques",
+  analyse_par_classe: "Analyse par classe",
+  detail_vie_entites: "Vies individuelles",
+  csv: "Données CSV",
+};
+const ARTIFACT_GROUP_ORDER = [
+  "Graphiques",
+  "Analyse par classe",
+  "Vies individuelles",
+  "Données CSV",
+  "Résumé",
+  "Logs",
+];
+
+function _artifactGroupKey(relativePath) {
+  const parts = relativePath.split("/");
+  const parent = parts.length >= 2 ? parts[parts.length - 2] : "racine";
+  if (ARTIFACT_GROUP_NAMES[parent]) return ARTIFACT_GROUP_NAMES[parent];
+  if (parent === "racine") return "Logs";
+  if (parent.startsWith("simu_") || parent === "legacy_output") return "Résumé";
+  return parent;
+}
+
+function _artifactCard(artifact, runId) {
+  const url = `/api/runs/${encodeURIComponent(runId)}/artifact?path=${encodeURIComponent(artifact.relative_path)}`;
+  if (artifact.kind === "image") {
+    return `<div class="artifact-card"><strong>${artifact.label}</strong><img src="${url}" alt="${artifact.label}"><div><a href="${url}" target="_blank">ouvrir</a></div></div>`;
+  }
+  return `<div class="artifact-card"><strong>${artifact.label}</strong><div class="artifact-kind">${artifact.kind}</div><div><a href="${url}" target="_blank">ouvrir</a></div></div>`;
+}
+
 function renderArtifacts(run) {
-  const grid = document.getElementById("artifacts-grid");
-  if (!grid) {
+  const nav = document.getElementById("artifacts-tab-nav");
+  const content = document.getElementById("artifacts-tab-content");
+  if (!nav || !content) return;
+
+  const artifacts = run.artifacts || [];
+  if (artifacts.length === 0) {
+    nav.innerHTML = "";
+    content.innerHTML = "<p class='muted'>Aucun artefact.</p>";
     return;
   }
-  grid.innerHTML = (run.artifacts || []).map((artifact) => {
-    const url = `/api/runs/${encodeURIComponent(run.run_id)}/artifact?path=${encodeURIComponent(artifact.relative_path)}`;
-    if (artifact.kind === "image") {
-      return `<div class="artifact-card"><strong>${artifact.label}</strong><img src="${url}" alt="${artifact.label}"><div><a href="${url}" target="_blank">ouvrir</a></div></div>`;
-    }
-    return `<div class="artifact-card"><strong>${artifact.label}</strong><div>${artifact.kind}</div><div><a href="${url}" target="_blank">ouvrir</a></div></div>`;
+
+  // Group by subfolder
+  const groups = {};
+  for (const artifact of artifacts) {
+    const key = _artifactGroupKey(artifact.relative_path);
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(artifact);
+  }
+
+  const sortedKeys = Object.keys(groups).sort((a, b) => {
+    const ia = ARTIFACT_GROUP_ORDER.indexOf(a);
+    const ib = ARTIFACT_GROUP_ORDER.indexOf(b);
+    if (ia >= 0 && ib >= 0) return ia - ib;
+    if (ia >= 0) return -1;
+    if (ib >= 0) return 1;
+    return a.localeCompare(b);
+  });
+
+  // Build nav buttons
+  nav.innerHTML = sortedKeys.map((groupName, i) =>
+    `<button class="artifact-tab-btn${i === 0 ? " active" : ""}" data-group="${groupName}">
+      ${groupName} <span class="artifact-count">${groups[groupName].length}</span>
+    </button>`
+  ).join("");
+
+  // Build content panes
+  content.innerHTML = sortedKeys.map((groupName, i) => {
+    const cards = groups[groupName].map((a) => _artifactCard(a, run.run_id)).join("");
+    return `<div class="artifact-tab-pane${i === 0 ? " active" : ""}" data-group="${groupName}">
+      <div class="artifact-section-grid">${cards}</div>
+    </div>`;
   }).join("");
+
+  // Wire up tab clicks
+  nav.querySelectorAll(".artifact-tab-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      nav.querySelectorAll(".artifact-tab-btn").forEach((b) => b.classList.remove("active"));
+      content.querySelectorAll(".artifact-tab-pane").forEach((p) => p.classList.remove("active"));
+      btn.classList.add("active");
+      content.querySelector(`.artifact-tab-pane[data-group="${btn.dataset.group}"]`).classList.add("active");
+    });
+  });
 }
 
 async function initLaunchPage() {
@@ -1143,6 +1380,8 @@ async function initResultsPage() {
   await refreshRuns();
   if (state.selectedRunId) {
     await loadRunDetail();
+  } else {
+    renderRunDetail(null);
   }
   document.getElementById("refresh-runs").addEventListener("click", async () => {
     await refreshJobs();
@@ -1240,6 +1479,7 @@ function escapeHtml(value) {
 function escapeAttr(value) {
   return escapeHtml(value).replaceAll('"', "&quot;");
 }
+
 
 async function init() {
   if (page() === "launch") {

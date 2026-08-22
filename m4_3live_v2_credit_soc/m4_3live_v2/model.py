@@ -198,6 +198,7 @@ class Config:
     lut_threshold: int = 1800
     lut_points: int = 65
     record_loan_events: bool = False
+    record_market_stats: bool = False
     record_deaths: bool = False
     record_avalanches: bool = False
 
@@ -556,6 +557,32 @@ def _sample(rng: np.random.Generator, n: int, k: int) -> np.ndarray:
         indices = rng.integers(0, n, size=k)
         if len(set(indices.tolist())) == k:
             return indices
+
+
+def gini(values: list[float]) -> float:
+    """Coefficient de Gini d'une liste de valeurs positives.
+
+    Définition employée : G = E|X − Y| / (2·E[X]) pour deux tirages
+    indépendants X, Y de la distribution empirique. La forme calculée ici est
+    la forme triée équivalente, en O(n log n) :
+
+        G = [ Σ_i (2i − n + 1)·x_(i) ] / (n · Σ_i x_i),   x_(i) triés croissants.
+
+    G = 0 : tous les capitaux égaux. G → 1 : toute la masse sur une entité.
+    Retourne NaN si la somme est nulle ou négative.
+    """
+    n = len(values)
+    if n < 2:
+        return float("nan")
+    ordered = sorted(values)
+    total = 0.0
+    weighted = 0.0
+    for index, value in enumerate(ordered):
+        total += value
+        weighted += (2 * index - n + 1) * value
+    if total <= 0.0:
+        return float("nan")
+    return weighted / (n * total)
 
 
 def _pearson(n: int, sum_x: float, sum_y: float,
@@ -985,6 +1012,7 @@ class Simulation:
         self.series: list[dict] = []
         self.tech_series: list[dict] = []
         self.tension_series: list[dict] = []
+        self.market_stats: list[dict] = []
         self.avalanches: list[dict] = []
         self.avalanche_members: list[dict] = []
         self.deaths: list[dict] = []
@@ -1296,7 +1324,40 @@ class Simulation:
             )
             depreciated = _depreciate(population, alive, config)
 
+        # §5 — statistiques de la phase de marché, pour l'étude de la
+        # rotation du crédit. Hors circuit : aucune valeur calculée ici
+        # n'est relue par le moteur, aucun tirage n'est consommé, et RIEN
+        # n'est ajouté à `series` — les colonnes vont dans un fichier
+        # séparé. Le tri d'un Gini coûte O(N log N), du même ordre que la
+        # phase de marché elle-même : le drapeau est donc à False par défaut.
+        if config.record_market_stats:
+            pool_before = [
+                entity for entity in population.living()
+                if not population.defaulted[entity]
+            ]
+            capitals_before = [population.K[entity] for entity in pool_before]
+            gini_before = gini(capitals_before)
+            mean_before = (
+                sum(capitals_before) / len(capitals_before) if capitals_before else float("nan")
+            )
+
         market, events = _run_market(population, book, config, self.kernel, self.rng, self.t)
+
+        if config.record_market_stats:
+            capitals_after = [population.K[entity] for entity in pool_before]
+            self.market_stats.append(
+                {
+                    "t": self.t,
+                    "pool": len(pool_before),
+                    "rounds": market["rounds"],
+                    "new_loans": market["new_loans"],
+                    "volume": market["volume"],
+                    "K_pool_before": sum(capitals_before),
+                    "K_mean_before": mean_before,
+                    "gini_before": gini_before,
+                    "gini_after": gini(capitals_after),
+                }
+            )
         if events:
             self.loan_events.extend(events)
         dead, ledger = _resolve_bankruptcies(population, book)

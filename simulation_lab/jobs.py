@@ -74,7 +74,14 @@ class JobState:
     batch_id: str | None = None
     run_ids: list[str] = field(default_factory=list)
     logs: deque[str] = field(default_factory=lambda: deque(maxlen=200))
+    telemetry: dict[str, Any] = field(default_factory=dict)
+    telemetry_history: deque[dict[str, Any]] = field(
+        default_factory=lambda: deque(maxlen=40)
+    )
+    alerts: list[str] = field(default_factory=list)
     error: str = ""
+    started_at: str | None = None
+    last_update_at: str | None = None
     finished_at: str | None = None
     cancel_requested: bool = False
 
@@ -92,7 +99,12 @@ class JobState:
             "batch_id": self.batch_id,
             "run_ids": self.run_ids,
             "logs": list(self.logs),
+            "telemetry": self.telemetry,
+            "telemetry_history": list(self.telemetry_history),
+            "alerts": self.alerts,
             "error": self.error,
+            "started_at": self.started_at,
+            "last_update_at": self.last_update_at,
             "finished_at": self.finished_at,
             "cancel_requested": self.cancel_requested,
         }
@@ -124,6 +136,7 @@ class JobManager:
         return job.to_dict()
 
     def submit_single(self, *, model_id: str, parameters: dict[str, Any], seed: int, label: str = "") -> dict[str, Any]:
+        self.registry.get_launchable(model_id)
         job = JobState(
             job_id=self._new_job_id(),
             job_type="single",
@@ -153,6 +166,7 @@ class JobManager:
         base_seed: int | None,
         label: str = "",
     ) -> dict[str, Any]:
+        self.registry.get_launchable(model_id)
         job = JobState(
             job_id=self._new_job_id(),
             job_type="batch",
@@ -173,8 +187,14 @@ class JobManager:
         return job.to_dict()
 
     def _run_single_job(self, job_id: str, model_id: str, parameters: dict[str, Any], seed: int, label: str) -> None:
-        self._update_job(job_id, status="running", message="Lancement de la simulation", progress=2.0)
-        model = self.registry.get(model_id)
+        self._update_job(
+            job_id,
+            status="running",
+            message="Lancement de la simulation",
+            progress=2.0,
+            started_at=_utc_now(),
+        )
+        model = self.registry.get_launchable(model_id)
         validated = model.validate_parameters(parameters)
         effective_parameters = _effective_parameters(model, validated, seed)
         metadata = self.storage.create_run(model_id=model_id, parameters=effective_parameters, seed=seed, label=label)
@@ -295,6 +315,20 @@ class JobManager:
             updates["progress"] = progress
         if message:
             updates["message"] = message
+        if "alerts" in payload:
+            updates["alerts"] = list(payload.get("alerts") or [])
+        telemetry = payload.get("telemetry")
+        if isinstance(telemetry, dict):
+            snapshot = {
+                "recorded_at": _utc_now(),
+                "progress": progress,
+                **telemetry,
+            }
+            with self._lock:
+                job = self._jobs[job_id]
+                job.telemetry = dict(telemetry)
+                job.telemetry_history.append(snapshot)
+                job.last_update_at = snapshot["recorded_at"]
         if updates:
             self._update_job(job_id, **updates)
 
@@ -308,7 +342,13 @@ class JobManager:
         base_seed: int | None,
         label: str,
     ) -> None:
-        self._update_job(job_id, status="running", message="Préparation du batch", progress=1.0)
+        self._update_job(
+            job_id,
+            status="running",
+            message="Préparation du batch",
+            progress=1.0,
+            started_at=_utc_now(),
+        )
         seeds = generate_seeds(run_count, base_seed=base_seed)
         try:
             payload = execute_batch(
@@ -319,10 +359,8 @@ class JobManager:
                 seeds=seeds,
                 label=label,
                 max_workers=max_workers,
-                progress_callback=lambda update: self._update_job(
-                    job_id,
-                    progress=update.get("progress", 0.0),
-                    message=update.get("message", "Batch en cours"),
+                progress_callback=lambda update: self._apply_batch_progress(
+                    job_id, update
                 ),
                 should_cancel=lambda: self._is_cancel_requested(job_id),
             )
@@ -330,7 +368,13 @@ class JobManager:
                 job_id,
                 status="completed",
                 progress=100.0,
-                message="Batch terminé",
+                message=(
+                    "Batch terminé — erreur de génération des figures"
+                    if payload.get("postprocess_error")
+                    else "Batch et figures agrégées terminés"
+                    if payload.get("postprocess")
+                    else "Batch terminé"
+                ),
                 batch_id=payload["batch_id"],
                 run_ids=payload["run_ids"],
                 finished_at=_utc_now(),
@@ -364,11 +408,31 @@ class JobManager:
         with self._lock:
             self._jobs[job_id].logs.append(clean)
 
+    def _apply_batch_progress(self, job_id: str, update: dict[str, Any]) -> None:
+        completed = int(update.get("completed_runs", 0))
+        total = int(update.get("total_runs", 0))
+        telemetry = {
+            "phase": "batch",
+            "completed_runs": completed,
+            "total_runs": total,
+            "running_runs": max(0, total - completed),
+        }
+        self._apply_progress_payload(
+            job_id,
+            {
+                "progress": update.get("progress", 0.0),
+                "message": update.get("message", "Batch en cours"),
+                "telemetry": telemetry,
+                "alerts": [],
+            },
+        )
+
     def _update_job(self, job_id: str, **updates: Any) -> None:
         with self._lock:
             job = self._jobs[job_id]
             for key, value in updates.items():
                 setattr(job, key, value)
+            job.last_update_at = _utc_now()
 
     def _is_cancel_requested(self, job_id: str) -> bool:
         with self._lock:

@@ -46,35 +46,26 @@ MODEL_ID = "m4_3live_v2_credit_soc"
 # (racine sous results/, gabarit d'identifiant, étiquette, rôle)
 GROUPS = (
     ("campaign/burn", "m4_3live_v2__burn__{seed}", "amorçage/{seed}",
-     "amorçage partagé 0 → t₀, source des snapshots"),
-    ("campaign/arms", "m4_3live_v2__arm__{cell}__{seed}", "campagne/{cell}/{seed}",
-     "bras de la campagne §7"),
-    ("ablation_k0", "m4_3live_v2__ablation__{cell}__{seed}", "ablation K0/{cell}/{seed}",
-     "ablation sur le capital de naissance"),
-    ("tension_sweep", "m4_3live_v2__tension__{cell}__{seed}", "balayage tension/{cell}/{seed}",
-     "balayage à trois leviers pour tester la tension comme paramètre d'état"),
-    ("time_rescaling", "m4_3live_v2__temps__{cell}__{seed}", "recalage temporel/{cell}/{seed}",
-     "covariance de pas de temps : λ×2, δ → 2δ−δ², σ → √2σ"),
+     "amorçage partagé 0 → t₀ = 2000, source des snapshots des deux règles"),
+    ("campaign/phase", "m4_3live_v2__phase__{cell}__{seed}", "ordre des phases/{cell}/{seed}",
+     "lot E : dépréciation avant service des intérêts, apparié au contrôle"),
+    ("rotation_sweep", "m4_3live_v2__rotation__{cell}__{seed}", "rotation/{cell}/{seed}",
+     "lot F : balayage instrumenté (Gini du capital) pour fermer la rotation"),
 )
-# Les runs rangés par γ PUIS par bras ont un niveau d'arborescence de plus :
-# ils sont traités à part.
+# Les bras du lot D sont rangés par RÈGLE DE SENS puis par bras : un niveau
+# d'arborescence de plus, traité à part.
 NESTED = (
-    ("scaling_gamma", "m4_3live_v2__scaling__{gamma}__{cell}__{seed}",
-     "loi d'échelle/{gamma}/{cell}/{seed}",
-     "test de la loi ε = 1/(1-γ)"),
-    ("scaling_theory", "m4_3live_v2__covariance__{gamma}__{cell}__{seed}",
-     "covariance d'échelle/{gamma}/{cell}/{seed}",
-     "vérification directe de la covariance d'échelle"),
-    ("tension_vs_A", "m4_3live_v2__tensionA__{gamma}__{cell}__{seed}",
-     "tension contre A/{gamma}/{cell}/{seed}",
-     "balayage en A à K0 fixé : l'exposant dlnT/dlnA dépend-il de γ ?"),
+    ("campaign/arms", "m4_3live_v2__arm__{outer}__{cell}__{seed}",
+     "campagne/{outer}/{cell}/{seed}",
+     "lot D : campagne A/B appariée, sens du prêt libre contre règle v1"),
 )
 
 PANELS = (
     ("prod_tot", None, "production agrégée prod_tot"),
     ("K_tot", "pop", "capital K_tot (gauche) et population pop (droite)"),
     ("deaths", "defaults", "morts (gauche) et défauts de liquidité (droite)"),
-    ("loan_volume", "mkt_blocked_dir", "volume de prêt (gauche) et paires bloquées (droite)"),
+    ("loan_volume", "mkt_volume_rev", "volume prêté (gauche) et volume prêté dans le sens\n"
+     "que la règle v1 interdisait (droite)"),
 )
 
 
@@ -121,7 +112,7 @@ def make_figure(run_dir: Path, label: str, interventions: list[dict], force: boo
         axis.set_title(title, fontsize=9)
         axis.set_xlabel("t (pas)")
         axis.grid(True, alpha=0.2)
-    figure.suptitle(f"M4.3Live — {label}  (n={len(time_axis)} pas)")
+    figure.suptitle(f"M4.3Live-v2 — {label}  (n={len(time_axis)} pas)")
     figure.tight_layout()
     target.parent.mkdir(parents=True, exist_ok=True)
     figure.savefig(target, dpi=130, bbox_inches="tight")

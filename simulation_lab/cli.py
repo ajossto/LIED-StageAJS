@@ -14,8 +14,10 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Pilotage local de simulations.")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
-    subparsers.add_parser("list-models", help="Lister les modèles détectés.")
-    subparsers.add_parser("list-runs", help="Lister les simulations enregistrées.")
+    models_parser = subparsers.add_parser("list-models", help="Lister les modèles détectés.")
+    models_parser.add_argument("--scope", choices=["active", "archived", "all"], default="all")
+    runs_parser = subparsers.add_parser("list-runs", help="Lister les simulations enregistrées.")
+    runs_parser.add_argument("--scope", choices=["active", "archived", "all"], default="all")
 
     run_parser = subparsers.add_parser("run", help="Lancer une simulation unique.")
     run_parser.add_argument("--model", required=True, dest="model_id")
@@ -54,9 +56,10 @@ def main() -> None:
     storage = RunStorage()
 
     if args.command == "list-models":
-        payload = [model.describe() for model in registry.list_models()]
+        payload = [model.describe() for model in registry.list_models(scope=args.scope)]
     elif args.command == "list-runs":
-        payload = storage.list_runs()
+        archived = None if args.scope == "all" else args.scope == "archived"
+        payload = storage.list_runs(archived=archived)
     elif args.command == "run":
         payload = execute_single(
             storage,

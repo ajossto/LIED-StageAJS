@@ -30,64 +30,45 @@ from simulation_lab.settings import RUNS_DIR  # noqa: E402
 OUT = ROOT / "results" / "analysis"
 TABLES = ROOT / "report" / "tables"
 
-# Où chaque groupe de runs apparaît, et pour quoi faire.
+# Où chaque groupe de runs apparaît, et pour quoi faire. Les renvois sont des
+# SECTIONS, jamais des numéros de figure : les numéros de figure bougent dès
+# qu'une section est insérée, et v1 s'y est fait piéger.
 USAGE = {
     "burn": (
         "amorçage",
-        "§3.2 (protocole), source des snapshots à $t_0$ de tous les bras",
-        "amorçage partagé 0 → 2000",
+        "protocole ; source des snapshots à $t_0 = 2000$ de tous les bras",
+        "amorçage partagé 0 → 2000, homogène, commun aux deux règles de sens",
     ),
-    "control": ("campagne §4", "§4 (résultats), §3.3 (appariement)", "référence inerte"),
-    "null": ("campagne §4", "§4, §3.3 (plancher de bruit)", "plancher de bruit, référence des bras fraction"),
-    "frac_A150_phi20": ("campagne §4", "§4 (résultats), §3.4 (calibration)", "cellule principale, φ=0,2, A×1,5"),
-    "frac_A125_phi20": ("campagne §4", "§4 (résultats)", "échelle d'amplitude, A×1,25"),
-    "frac_A150_phi05": ("campagne §4", "§4 (résultats)", "échelle d'intensité, φ=0,05"),
-    "frac_A150_phi50": ("campagne §4", "§4 (résultats), §3.4 (calibration)", "échelle d'intensité, φ=0,5"),
-    "all_A150": ("campagne §4", "§4 (résultats), §5 (ablation), §6.5", "hausse globale, intensité 1"),
-    "new_A150": ("campagne §4", "§4 (résultats), §5 (ablation), §6.5", "vintage technologique"),
-    "frac_g060_phi20": ("campagne §4", "§4 (résultats), §3.4 (calibration)", "levier γ, exerce le régime (c) du noyau"),
-    "abl_control": ("ablation K0", "§5", "contrôle apparié de l'ablation"),
-    "abl_A150": ("ablation K0", "§5", "réplique de all_A150 avec âges au décès"),
-    "abl_A150_K0aut": ("ablation K0", "§5", "A×1,5 + K0×2,25 (échelle autarcique)"),
-    "abl_A150_K0obs": ("ablation K0", "§5", "A×1,5 + K0×1,45 (échelle observée)"),
-    "abl_K0aut": ("ablation K0", "§5", "K0×2,25 seul"),
-    "burn_scaling": ("loi d'échelle", "§7.2", "amorçage propre à chaque gamma"),
-    "control_scaling": ("loi d'échelle", "§7.2", "contrôle apparié, par γ"),
-    "A150_K0comp": ("loi d'échelle", "§7.2",
-                    "A×1,5 + K0 compensé à l'échelle autarcique"),
-    "sweep_control": ("balayage tension", "§6.4", "contrôle apparié du balayage"),
-    "ref_cov": ("covariance", "§7.1", "référence A=1 du test de covariance"),
-    "covariant_cov": ("covariance", "§7.1",
-                      "A×1,5 et K0×c : la seule compensation exacte"),
-    "naif_cov": ("covariance", "§7.1", "A×1,5, K0 inchangé"),
-    "lineaire_cov": ("covariance", "§7.1",
-                     "A×1,5 et K0×1,5 : mauvais exposant"),
-    "ref_temps": ("recalage temporel", "§7.3",
-                  "référence : λ=30, δ=0,01, σ=0,01, A=1, ρ=1, 2000 pas"),
-    "litteral_temps": ("recalage temporel", "§7.3",
-                       "énoncé brut : λ×2, δ→2δ−δ², σ→√2σ, 1000 pas"),
-    "sans_marche_temps": ("recalage temporel", "§7.3",
-                          "énoncé brut + A×2, ρ inchangé — isole le rôle de ρ"),
-    "complet_temps": ("recalage temporel", "§7.3",
-                      "recalage complet : + A×2 et ρ×2"),
-    "complet_s4_temps": ("recalage temporel", "§7.3",
-                         "recalage complet à s=4 : sépare le terme en δ du "
-                         "terme de marché"),
-    "control_tensA": ("tension contre A", "§6.5",
-                      "contrôle apparié du balayage en A, par γ"),
-    "ref_dfin_temps": ("recalage temporel", "§7.3",
-                       "référence à δ = 0,002 : discriminant des deux sources "
-                       "du résidu"),
-    "complet_dfin_temps": ("recalage temporel", "§7.3",
-                           "recalage complet à δ = 0,002 — écarte la "
-                           "discrétisation, désigne le marché"),
+    "free/control": ("lot D", "campagne A/B ; contrôle de stationnarité",
+                     "référence inerte sous sens libre"),
+    "free/all_A150": ("lot D", "campagne A/B",
+                      "hausse globale $A\\times1{,}5$ : reste homogène, donc "
+                      "insensible à la règle de sens"),
+    "free/new_A150": ("lot D", "campagne A/B ; régime nouveau",
+                      "vintage $A\\times1{,}5$, sens libre"),
+    "free/new_A075": ("lot D", "campagne A/B",
+                      "vintage $A\\times0{,}75$, sens libre"),
+    "free/new_g060": ("lot D", "campagne A/B",
+                      "vintage $\\gamma : 0{,}5 \\to 0{,}6$, sens libre ; "
+                      "exerce le régime (c) du noyau"),
+    "richest_lends/new_A150": ("lot D", "campagne A/B",
+                               "même bras sous la règle v1 « la plus riche prête »"),
+    "richest_lends/new_A075": ("lot D", "campagne A/B",
+                               "même bras sous la règle v1"),
+    "richest_lends/new_g060": ("lot D", "campagne A/B",
+                               "même bras sous la règle v1"),
+    "deprec_first": ("lot E", "ordre des phases",
+                     "dépréciation avant service des intérêts, apparié au contrôle"),
 }
 
-#: Bras du balayage : leur rôle se lit sur le levier employé.
-SWEEP_LEVERS = {
-    "K0": ("balayage tension", "§6.4", "levier K0 seul, niveau de tension"),
-    "delta": ("balayage tension", "§6.4", "levier δ seul, niveau de tension"),
-    "A": ("balayage tension", "§6.4", "levier A seul, niveau de tension"),
+#: Cellules du balayage de rotation : leur rôle se lit sur le levier employé.
+ROTATION_LEVERS = {
+    "base": "régime de référence, avec le Gini du capital instrumenté",
+    "lam": "levier $\\lambda$ (taux de naissance) seul",
+    "rho": "levier $\\rho$ (taux d'appariement) seul",
+    "sigma": "levier $\\sigma$ (choc multiplicatif) seul",
+    "K0": "levier $K_0$ (capital de naissance) seul",
+    "delta": "levier $\\delta$ (dépréciation) seul",
 }
 
 # Runs d'AUTRES lignées cités par les rapports.
@@ -95,15 +76,15 @@ EXTERNAL = [
     {
         "run_id": "m4_3__d1__baseline__seed0",
         "groupe": "référence M4.3",
-        "usage": "conception §5.2 (parité bit à bit) ; §4 (reprise)",
-        "role": "run M4.3 stocké servant de référence de parité et de divergence",
+        "usage": "conception (parité bit à bit sur 8000 pas) ; lots A et B",
+        "role": "run M4.3 stocké servant de référence de parité",
         "seed": "0",
         "statut": "completed",
     },
     {
         "run_id": "m4_3__d1__baseline__seed1",
         "groupe": "référence M4.3",
-        "usage": "rapport §3.1 (justification de $t_0$)",
+        "usage": "protocole (justification de $t_0$)",
         "role": "t_converge_int_in = 948, lu dans son analysis.json",
         "seed": "1",
         "statut": "completed",
@@ -111,23 +92,15 @@ EXTERNAL = [
     {
         "run_id": "m4_3__d1__baseline__seed2",
         "groupe": "référence M4.3",
-        "usage": "rapport §3.1 (justification de $t_0$)",
+        "usage": "protocole (justification de $t_0$)",
         "role": "t_converge_int_in = 841, lu dans son analysis.json",
         "seed": "2",
         "statut": "completed",
     },
-    {
-        "run_id": "m4_3__d1__rho_2__seed0",
-        "groupe": "référence M4.3",
-        "usage": "conception §6 (falsification du rapport de divergence)",
-        "role": "série volontairement discordante, pour vérifier que l'écart est détecté",
-        "seed": "0",
-        "statut": "completed",
-    },
 ]
 
-KEYS = ("gamma", "A", "lam", "delta", "sigma", "K0", "loan_direction", "phase_order",
-        "rate_rule", "kernel_policy")
+KEYS = ("gamma", "A", "lam", "delta", "sigma", "K0", "rho", "loan_direction",
+        "phase_order", "rate_rule", "kernel_policy")
 
 
 def short_parameters(parameters: dict) -> str:
@@ -145,40 +118,30 @@ def short_parameters(parameters: dict) -> str:
 
 
 def cell_of(run_id: str) -> str:
+    """Cellule d'un run, lue sur son identifiant.
+
+    Quatre familles : `burn__seedN`, `arm__<règle>__<bras>__seedN`,
+    `phase__<ordre>__seedN`, `rotation__<cellule>__seedN`.
+    """
     parts = run_id.split("__")
-    if parts[1] == "burn":
+    family = parts[1]
+    if family == "burn":
         return "burn"
-    if parts[1] == "scaling":
-        # m4_3live_v2__scaling__<gamma>__<cellule>__<graine>
-        return "burn_scaling" if parts[3] == "burn" else f"{parts[3]}_scaling" \
-            if parts[3] == "control" else parts[3]
-    if parts[1] == "covariance":
-        # m4_3live_v2__covariance__<gamma>__<variante>__<graine>
-        return f"{parts[3]}_cov"
-    if parts[1] == "tensionA":
-        # m4_3live_v2__tensionA__<gamma>__<bras>__<graine>
-        return f"{parts[3]}_tensA"
-    if parts[1] == "temps":
-        # m4_3live_v2__temps__<variante>__<graine> — le suffixe évite la collision
-        # avec les cellules `ref` / `control` des autres familles.
-        return f"{parts[2]}_temps"
+    if family == "arm":
+        return f"{parts[2]}/{parts[3]}"
     return parts[2]
 
 
 def usage_of(cell: str) -> tuple[str, str, str]:
-    """Les bras du balayage sont paramétrés (`K0_400`, `delta_0.02`…) : leur
-    rôle se déduit du levier, pas d'une table exhaustive."""
     if cell in USAGE:
         return USAGE[cell]
-    if cell.endswith("_tensA"):
-        # A_0.75_tensA, A_2_tensA… : la valeur imposée de A est dans le nom.
-        value = cell[len("A_"):-len("_tensA")]
-        return ("tension contre A", "§6.5",
-                f"A = {value.replace('.', ',')} à K0 fixé, exposant dlnT/dlnA")
     lever = cell.split("_")[0]
-    if lever in SWEEP_LEVERS:
-        group, usage, role = SWEEP_LEVERS[lever]
-        return group, usage, f"{role} ({cell.replace('_', ' = ')})"
+    if lever in ROTATION_LEVERS:
+        value = cell[len(lever) + 1:].replace(".", ",")
+        detail = ROTATION_LEVERS[lever]
+        if value:
+            detail += f" ($= {value}$)"
+        return "lot F", "rotation du crédit (décomposition et fermeture)", detail
     return "—", "—", "—"
 
 
@@ -292,14 +255,21 @@ def main() -> int:
         r"",
         r"\noindent Tous ces runs sont ouvrables dans \code{simulation\_lab} "
         r"(\code{python3 -m simulation\_lab.cli gui}, page « Résultats », "
-        r"lignée \code{m4\_3live\_credit\_soc}), avec leur \code{series.csv}, "
-        r"leur \code{tech\_series.csv}, leur journal d'interventions et une figure "
+        r"lignée \code{m4\_3live\_v2\_credit\_soc}), avec leur \code{series.csv}, "
+        r"leur \code{tech\_series.csv}, leurs \code{tension.csv} et "
+        r"\code{tension\_agg.csv}, leur journal d'interventions et une figure "
         r"\code{figures/macro\_overview.png}. Le tableau complet, avec les paramètres "
         r"et le statut de chaque run, est dans "
         r"\code{results/analysis/traceability.csv}.",
     ]
     (TABLES / "traceability.tex").write_text("\n".join(lines) + "\n", encoding="utf-8")
-    print(f"{len(rows)} runs dans l'annexe de traçabilité")
+    orphans = [row["run_id"] for row in rows if row["role"] == "—"]
+    if orphans:
+        raise SystemExit(
+            "annexe de traçabilité incomplète : "
+            f"{len(orphans)} run(s) sans rôle, dont {orphans[:3]}"
+        )
+    print(f"{len(rows)} runs dans l'annexe de traçabilité, 0 sans rôle")
     print(f"  {OUT / 'traceability.csv'}")
     print(f"  {TABLES / 'traceability.tex'}")
     return 0

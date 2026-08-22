@@ -11,7 +11,7 @@ from uuid import uuid4
 
 from simulation_lab.contracts import Artifact, SimulationResult
 from simulation_lab.contracts import collect_artifacts
-from simulation_lab.settings import BASKET_DIR, BATCHES_DIR, CATALOG_FILE, LEGACY_RESULT_SOURCES, ROOT_DIR, RUNS_DIR, ensure_directories
+from simulation_lab.settings import BASKET_DIR, BATCHES_DIR, CATALOG_FILE, LEGACY_RESULT_SOURCES, ROOT_DIR, RUNS_DIR, ensure_directories, model_is_archived
 
 
 def utc_now() -> str:
@@ -47,6 +47,7 @@ class RunStorage:
             "important": False,
             "trashed": False,
             "trashed_at": None,
+            "archived": model_is_archived(model_id),
             "created_at": utc_now(),
             "updated_at": utc_now(),
             "summary": {},
@@ -100,7 +101,7 @@ class RunStorage:
         self.write_metadata(self.run_dir(run_id), metadata)
         return metadata
 
-    def list_runs(self) -> list[dict[str, Any]]:
+    def list_runs(self, archived: bool | None = None) -> list[dict[str, Any]]:
         ensure_directories()
         runs: list[dict[str, Any]] = []
         for meta_file in sorted(RUNS_DIR.glob("*/run.json"), reverse=True):
@@ -111,10 +112,14 @@ class RunStorage:
                 payload.setdefault("keep_supported", True)
                 payload.setdefault("preview_artifact", (_select_preview_artifact(payload.get("artifacts", [])) or {}).get("relative_path"))
                 payload = self._apply_catalog(payload)
-                runs.append(payload)
+                if archived is None or payload["archived"] is archived:
+                    runs.append(payload)
             except Exception:
                 continue
-        runs.extend(self.list_external_runs())
+        external = [] if archived is False else self.list_external_runs()
+        if archived is not None and external:
+            external = [run for run in external if run["archived"] is archived]
+        runs.extend(external)
         runs.sort(key=lambda item: item.get("created_at", ""), reverse=True)
         return runs
 
@@ -188,6 +193,8 @@ class RunStorage:
         if run_id.startswith("external__"):
             raise ValueError("Suppression désactivée pour les simulations externes existantes.")
         metadata = self.read_metadata(run_id)
+        if metadata.get("archived"):
+            raise ValueError("Une simulation archivée ne peut pas être mise à la corbeille.")
         if metadata.get("trashed"):
             raise ValueError("Cette simulation est déjà dans la corbeille.")
         run_dir = self.run_dir(run_id)
@@ -331,11 +338,11 @@ class RunStorage:
 
     def _detect_model_id_from_path(self, path: Path) -> str:
         lower = path.as_posix().lower()
-        if "/claude3-v2/" in lower:
+        if "/anciens_modeles/claude3-v2/" in lower:
             return "claude3_v2"
         if "/modèle_sans_banque_wip/" in lower or "/mod%c3%a8le_sans_banque_wip/" in lower:
             return "modele_sans_banque_wip"
-        if "/claude/" in lower or lower.endswith("/claude"):
+        if "/anciens_modeles/claude/" in lower or lower.endswith("/claude"):
             return "claude_historique"
         for model_id, roots in LEGACY_RESULT_SOURCES.items():
             for root in roots:
@@ -375,6 +382,15 @@ class RunStorage:
         self._save_catalog()
 
     def _apply_catalog(self, payload: dict[str, Any]) -> dict[str, Any]:
+        payload["archived"] = model_is_archived(payload.get("model_id"))
+        payload["archive_inherited"] = True
+        payload["archive_reason"] = (
+            "Modèle historique remplacé par m4b_credit_soc_mini"
+            if payload["archived"]
+            else ""
+        )
+        if payload["archived"]:
+            payload["deletable"] = False
         entry = self._catalog.get(payload["run_id"], {})
         if "label" in entry:
             payload["label"] = entry["label"]
@@ -399,6 +415,8 @@ class RunStorage:
 
     def clean_csv(self, run_id: str) -> dict[str, Any]:
         """Supprime les CSV bruts d'un run d'étude après vérification des conditions."""
+        if self.read_metadata(run_id).get("archived"):
+            raise ValueError("Le nettoyage est désactivé pour les simulations archivées.")
         run_dir = self._managed_run_dir(run_id)
         has_macro = any(run_dir.glob("legacy_output/*/figures/macro_overview.png"))
         has_compact = (run_dir / "compact_timeseries.json").exists()
@@ -419,10 +437,19 @@ class RunStorage:
 
     def regen_graphs(self, run_id: str) -> dict[str, Any]:
         """Lance populate_lab_full_graphs.py en arrière-plan pour ce run."""
+        if self.read_metadata(run_id).get("archived"):
+            raise ValueError("La régénération est désactivée pour les simulations archivées.")
         run_dir = self._managed_run_dir(run_id)
         if not (run_dir / "record.json").exists():
             raise ValueError("Ce run n'est pas un run d'étude de sensibilité (record.json absent).")
-        populate_script = ROOT_DIR / "modele-27-04-WIP" / "studies" / "sensitivity" / "populate_lab_full_graphs.py"
+        populate_script = (
+            ROOT_DIR
+            / "anciens_modeles"
+            / "modele-27-04-WIP"
+            / "studies"
+            / "sensitivity"
+            / "populate_lab_full_graphs.py"
+        )
         if not populate_script.exists():
             raise FileNotFoundError(f"Script introuvable : {populate_script}")
         python = ROOT_DIR / ".venv" / "bin" / "python3"

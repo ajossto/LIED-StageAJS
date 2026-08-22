@@ -222,7 +222,7 @@ class LiveRouter:
             return True
 
         parts = path.strip("/").split("/")
-        if len(parts) != 5 or parts[:3] != ["api", "live", "sessions"]:
+        if len(parts) != 5 or parts[:3] != ["api", "live2", "sessions"]:
             handler.send_error(HTTPStatus.NOT_FOUND)
             return True
         session_id, action = unquote(parts[3]), parts[4]

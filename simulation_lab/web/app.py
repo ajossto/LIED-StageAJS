@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import math
 import mimetypes
 import webbrowser
 from http import HTTPStatus
@@ -8,13 +9,34 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, unquote, urlparse
 
+from simulation_lab import live as live_routes
+from simulation_lab import live_v2 as live_v2_routes
 from simulation_lab.jobs import JobManager
 from simulation_lab.models.discovery import ModelRegistry
 from simulation_lab.runs.storage import RunStorage
 from simulation_lab.settings import APP_NAME, DEFAULT_HOST, DEFAULT_PORT, ROOT_DIR, cpu_count, recommended_workers
 
 
+def _json_safe(value):
+    """Convertit les flottants non finis en ``null`` JSON.
+
+    Les fichiers de résultats scientifiques peuvent contenir des NaN lorsque
+    certaines statistiques ne sont pas calculables.  Le module ``json`` de
+    Python les émet par défaut sous forme de ``NaN``, alors que les navigateurs
+    refusent cette extension non standard dans ``response.json()``.
+    """
+    if isinstance(value, float):
+        return value if math.isfinite(value) else None
+    if isinstance(value, dict):
+        return {key: _json_safe(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_json_safe(item) for item in value]
+    return value
+
+
 class SimulationLabHTTPServer(ThreadingHTTPServer):
+    allow_reuse_address = True
+
     def __init__(self, server_address):
         super().__init__(server_address, SimulationLabHandler)
         self.registry = ModelRegistry()
@@ -27,6 +49,13 @@ class SimulationLabHandler(BaseHTTPRequestHandler):
 
     def do_GET(self) -> None:
         parsed = urlparse(self.path)
+        # M4.3Live : aiguillage additif, isolé, avant toute branche existante.
+        if live_routes.owns(parsed.path):
+            return live_routes.dispatch(self, parsed, "GET")
+        # M4.3Live-v2 : second aiguillage, routes /live2 — les deux lignées
+        # coexistent, aucune n'est débranchée.
+        if live_v2_routes.owns(parsed.path):
+            return live_v2_routes.dispatch(self, parsed, "GET")
         if parsed.path in {"/", "/launch"}:
             return self._serve_file(ROOT_DIR / "simulation_lab" / "web" / "templates" / "launch.html", "text/html; charset=utf-8")
         if parsed.path == "/results":
@@ -34,7 +63,13 @@ class SimulationLabHandler(BaseHTTPRequestHandler):
         if parsed.path.startswith("/static/"):
             return self._serve_file(ROOT_DIR / "simulation_lab" / "web" / parsed.path.lstrip("/"))
         if parsed.path == "/api/models":
-            return self._json_response([model.describe() for model in self.server.registry.list_models()])
+            scope = parse_qs(parsed.query).get("scope", ["all"])[0]
+            try:
+                models = self.server.registry.list_models(scope=scope)
+            except ValueError as exc:
+                self.send_error(HTTPStatus.BAD_REQUEST, str(exc))
+                return
+            return self._json_response([model.describe() for model in models])
         if parsed.path == "/api/system":
             return self._json_response({
                 "cpu_count": cpu_count(),
@@ -45,9 +80,14 @@ class SimulationLabHandler(BaseHTTPRequestHandler):
             scope = parse_qs(parsed.query).get("scope", ["active"])[0]
             if scope == "trash":
                 return self._json_response(self.server.storage.list_trash())
+            if scope in {"archive", "archived"}:
+                return self._json_response(self.server.storage.list_runs(archived=True))
             if scope == "all":
                 return self._json_response(self.server.storage.list_runs() + self.server.storage.list_trash())
-            return self._json_response(self.server.storage.list_runs())
+            if scope == "active":
+                return self._json_response(self.server.storage.list_runs(archived=False))
+            self.send_error(HTTPStatus.BAD_REQUEST, f"Périmètre de runs inconnu: {scope}")
+            return
         if parsed.path == "/api/jobs":
             return self._json_response(self.server.jobs.list_jobs())
         if parsed.path.startswith("/api/jobs/"):
@@ -62,28 +102,42 @@ class SimulationLabHandler(BaseHTTPRequestHandler):
 
     def do_POST(self) -> None:
         parsed = urlparse(self.path)
+        # M4.3Live : aiguillage AVANT la lecture du corps, que le routeur
+        # lit lui-même (aucune branche existante n'est modifiée).
+        if live_routes.owns(parsed.path):
+            return live_routes.dispatch(self, parsed, "POST")
+        if live_v2_routes.owns(parsed.path):
+            return live_v2_routes.dispatch(self, parsed, "POST")
         try:
             body = self._read_json_body()
         except ValueError as exc:
             self.send_error(HTTPStatus.BAD_REQUEST, str(exc))
             return
         if parsed.path == "/api/jobs/run":
-            payload = self.server.jobs.submit_single(
-                model_id=body["model_id"],
-                parameters=body.get("parameters", {}),
-                seed=int(body["seed"]),
-                label=body.get("label", ""),
-            )
+            try:
+                payload = self.server.jobs.submit_single(
+                    model_id=body["model_id"],
+                    parameters=body.get("parameters", {}),
+                    seed=int(body["seed"]),
+                    label=body.get("label", ""),
+                )
+            except (KeyError, ValueError) as exc:
+                self.send_error(HTTPStatus.BAD_REQUEST, str(exc))
+                return
             return self._json_response(payload, status=HTTPStatus.CREATED)
         if parsed.path == "/api/jobs/batch":
-            payload = self.server.jobs.submit_batch(
-                model_id=body["model_id"],
-                parameters=body.get("parameters", {}),
-                run_count=int(body["run_count"]),
-                max_workers=int(body["max_workers"]),
-                base_seed=body.get("base_seed"),
-                label=body.get("label", ""),
-            )
+            try:
+                payload = self.server.jobs.submit_batch(
+                    model_id=body["model_id"],
+                    parameters=body.get("parameters", {}),
+                    run_count=int(body["run_count"]),
+                    max_workers=int(body["max_workers"]),
+                    base_seed=body.get("base_seed"),
+                    label=body.get("label", ""),
+                )
+            except (KeyError, ValueError) as exc:
+                self.send_error(HTTPStatus.BAD_REQUEST, str(exc))
+                return
             return self._json_response(payload, status=HTTPStatus.CREATED)
         if parsed.path.startswith("/api/jobs/") and parsed.path.endswith("/cancel"):
             job_id = unquote(parsed.path.split("/")[3])
@@ -131,7 +185,11 @@ class SimulationLabHandler(BaseHTTPRequestHandler):
             return self._json_response(payload)
         if parsed.path.startswith("/api/runs/") and parsed.path.endswith("/trash"):
             run_id = unquote(parsed.path.split("/")[3])
-            self.server.storage.delete_run(run_id)
+            try:
+                self.server.storage.delete_run(run_id)
+            except ValueError as exc:
+                self.send_error(HTTPStatus.CONFLICT, str(exc))
+                return
             return self._json_response({"trashed": run_id})
         if parsed.path.startswith("/api/trash/") and parsed.path.endswith("/restore"):
             run_id = unquote(parsed.path.split("/")[3])
@@ -161,7 +219,12 @@ class SimulationLabHandler(BaseHTTPRequestHandler):
             raise ValueError(f"JSON invalide: {exc.msg}") from exc
 
     def _json_response(self, payload, status: HTTPStatus = HTTPStatus.OK) -> None:
-        data = json.dumps(payload, indent=2, ensure_ascii=False).encode("utf-8")
+        data = json.dumps(
+            _json_safe(payload),
+            indent=2,
+            ensure_ascii=False,
+            allow_nan=False,
+        ).encode("utf-8")
         self.send_response(status)
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Content-Length", str(len(data)))

@@ -13,15 +13,21 @@ BATCHES_DIR = DATA_DIR / "batches"
 CATALOG_FILE = DATA_DIR / "catalog.json"
 DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = 8777
+ACTIVE_MODEL_IDS = frozenset({"m4b_credit_soc_mini", "m4_2_credit_soc", "m4_2b_credit_soc", "m4_3_credit_soc", "m4_3live_credit_soc"})
 LEGACY_RESULT_SOURCES = {
     "modele_sans_banque_wip": [
-        ROOT_DIR / "Modèle_sans_banque_wip" / "resultats",
-        ROOT_DIR / "Modèle_sans_banque_wip" / "src" / "resultats",
+        ROOT_DIR / "anciens_modeles" / "Modèle_sans_banque" / "resultats",
+        ROOT_DIR / "anciens_modeles" / "Modèle_sans_banque" / "src" / "resultats",
     ],
     "claude3_v2": [
-        ROOT_DIR / "claude3-v2" / "src" / "resultats",
+        ROOT_DIR / "anciens_modeles" / "claude3-v2" / "src" / "resultats",
     ],
 }
+
+
+def model_is_archived(model_id: str | None) -> bool:
+    """Classe tous les modèles hors cibles actives (M4B, M4.2) dans les archives."""
+    return model_id not in ACTIVE_MODEL_IDS
 
 
 def ensure_directories() -> None:

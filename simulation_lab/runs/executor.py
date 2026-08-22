@@ -17,7 +17,7 @@ def generate_seeds(run_count: int, base_seed: int | None = None) -> list[int]:
 
 
 def execute_single(storage: RunStorage, registry: ModelRegistry, *, model_id: str, parameters: dict[str, Any], seed: int, label: str = "") -> dict[str, Any]:
-    model = registry.get(model_id)
+    model = registry.get_launchable(model_id)
     validated = model.validate_parameters(parameters)
     effective_parameters = _effective_parameters(model, validated, seed)
     metadata = storage.create_run(model_id=model_id, parameters=effective_parameters, seed=seed, label=label)
@@ -47,7 +47,8 @@ def execute_batch(
     progress_callback: Callable[[dict[str, Any]], None] | None = None,
     should_cancel: Callable[[], bool] | None = None,
 ) -> dict[str, Any]:
-    model = registry.get(model_id)
+    model = registry.get_launchable(model_id)
+    batch_hook = getattr(model, "finalize_batch", None)
     validated = model.validate_parameters(parameters)
     effective_parameters = _effective_parameters(model, validated, None)
     batch = storage.create_batch(model_id=model_id, parameters=effective_parameters, seeds=seeds, label=label)
@@ -80,17 +81,35 @@ def execute_batch(
                 progress_callback({
                     "completed_runs": completed,
                     "total_runs": len(run_ids),
-                    "progress": (completed / len(run_ids)) * 100.0 if run_ids else 100.0,
+                    "progress": (
+                        (completed / len(run_ids)) * (90.0 if batch_hook else 100.0)
+                        if run_ids else (90.0 if batch_hook else 100.0)
+                    ),
                     "message": f"Batch {completed}/{len(run_ids)} terminé",
                 })
     batch["run_ids"] = run_ids
     storage.write_batch(batch)
+    if batch_hook is not None:
+        if progress_callback is not None:
+            progress_callback({
+                "completed_runs": len(run_ids),
+                "total_runs": len(run_ids),
+                "progress": 92.0,
+                "message": "Génération des figures agrégées du lot",
+            })
+        try:
+            batch["postprocess"] = batch_hook(
+                batch, progress_callback=progress_callback
+            )
+        except Exception as exc:
+            batch["postprocess_error"] = str(exc)
+        storage.write_batch(batch)
     return batch
 
 
 def _run_model(*, model_id: str, parameters: dict[str, Any], seed: int, run_dir: str, run_label: str = "") -> SimulationResult:
     registry = ModelRegistry()
-    model = registry.get(model_id)
+    model = registry.get_launchable(model_id)
     output_dir = Path(run_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
     return model.run(parameters=parameters, output_dir=output_dir, seed=seed, run_label=run_label)

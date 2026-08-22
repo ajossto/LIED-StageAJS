@@ -57,6 +57,7 @@ class BaseSimulationModel:
     display_name: str
     description: str
     tags: list[str]
+    archived: bool
 
     def __init__(self) -> None:
         if not getattr(self, "model_id", ""):
@@ -64,6 +65,7 @@ class BaseSimulationModel:
         self.display_name = getattr(self, "display_name", self.model_id)
         self.description = getattr(self, "description", "")
         self.tags = list(getattr(self, "tags", []))
+        self.archived = bool(getattr(self, "archived", False))
 
     def parameter_specs(self) -> list[ParameterSpec]:
         raise NotImplementedError
@@ -83,6 +85,8 @@ class BaseSimulationModel:
             "display_name": self.display_name,
             "description": self.description,
             "tags": self.tags,
+            "archived": self.archived,
+            "launchable": not self.archived,
             "parameters": [spec.to_dict() for spec in self.parameter_specs()],
         }
 
