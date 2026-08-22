@@ -1,0 +1,1684 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[french]{babel}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb}
+\usepackage[margin=2.35cm]{geometry}
+\usepackage{booktabs,longtable,tabularx}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{microtype}
+\usepackage{float}
+\usepackage{hyperref}
+% Caractères Unicode présents dans les fragments générés (noms de fenêtres).
+\DeclareUnicodeCharacter{2264}{\ensuremath{\le}}
+\DeclareUnicodeCharacter{2265}{\ensuremath{\ge}}
+\DeclareUnicodeCharacter{03C3}{\ensuremath{\sigma}}
+\DeclareUnicodeCharacter{03B3}{\ensuremath{\gamma}}
+\DeclareUnicodeCharacter{03C6}{\ensuremath{\varphi}}
+
+\hypersetup{colorlinks=true,linkcolor=blue!45!black,urlcolor=blue!45!black}
+\setlist{nosep}
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\Kaut}{K^{*}_{\mathrm{aut}}}
+\newcommand{\fait}{\textbf{[Fait observé]}}
+\newcommand{\inference}{\textbf{[Inférence]}}
+\newcommand{\hyp}{\textbf{[Hypothèse]}}
+\newcommand{\incertitude}{\textbf{[Incertitude]}}
+
+\title{M4.3Live --- rapport de résultats\\
+\large Effet rebond : réponse de la production agrégée à une hausse
+locale ou globale de la puissance d'extraction}
+\author{Programme M4.3Live --- dossier \code{m4\_3live\_credit\_soc}}
+\date{17 août 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+L'objectif de cette itération est d'\emph{observer} un éventuel effet
+rebond, pas de l'expliquer (prompt §1). Le verdict n'est pas un mot : il
+dépend de la portée de l'intervention \emph{et} de l'horizon
+d'observation, et les deux dimensions donnent des réponses opposées.
+
+\textbf{À portée partielle et court horizon, l'effet rebond est
+observé} : la production agrégée répond 2,3 à 2,9 fois plus fort que la
+réponse strictement proportionnelle, avec une significativité de 3 à
+48$\sigma$ selon l'intensité, contre un bras de contrôle qui consomme
+exactement le même flux aléatoire. \textbf{À portée globale et régime établi, l'effet est
+inverse} : une hausse uniforme de 50\,\% du coefficient $A$ ne produit que
+$+36{,}1 \pm 0{,}4$\,\% de production agrégée, soit $0{,}72$ fois la
+réponse proportionnelle --- et la décomposition montre pourquoi la
+somme est sous-proportionnelle alors que chaque entité, elle,
+sur-répond : la production par entité est multipliée par $1{,}80$ (pour
+un choc de $1{,}50$) mais la population se contracte de 25\,\%.
+\textbf{À portée partielle et long horizon, la question n'est pas
+tranchable} : la cohorte traitée s'éteint, l'intensité de traitement tend
+vers zéro et le dénominateur de toute élasticité disparaît.
+
+\textbf{Mais le signe du résultat global tient à une convention}, et une
+ablation dédiée le montre (§\ref{sec:ablation}) : la contraction de
+population n'est pas un effet de la technologie, c'est un effet d'échelle du
+capital de naissance $K_0$, resté fixe pendant que le système grandissait.
+Compenser $K_0$ l'annule entièrement --- population $\times1{,}005$ --- et
+la réponse devient alors fortement super-proportionnelle,
+$\varepsilon = 2{,}02$. L'explication concurrente, un service d'intérêts
+alourdi, est \emph{réfutée} : rapporté à la production, le service baisse.
+\textbf{Cette élasticité suit une loi} (§\ref{sec:loi}) :
+$\varepsilon = 1/(1-\gamma)$, l'exposant de l'échelle autarcique, vérifié à
+mieux que 1,3~\% en $\gamma = 0{,}4$, $0{,}5$ et $0{,}6$ --- et
+\emph{démontrée} : le modèle est covariant d'échelle, une hausse de $A$
+accompagnée de $K_0 \to c\,K_0$ avec $c = (A'/A)^{1/(1-\gamma)}$ redonne la
+même simulation à l'échelle $c$ près, ce qui se vérifie à la précision
+machine.
+
+\textbf{Une grandeur unique, la « tension » $T = \Kaut/K_{\text{eq}}$,
+résume ces effets d'échelle} (§\ref{sec:tension}) : le rapport entre le
+capital d'équilibre d'une entité isolée et le capital auquel le système
+tourne réellement. Le système observé tourne à un treizième de son échelle
+autarcique, et la mortalité y suit $T^{0{,}67}$ à $1{,}4$\,\% près sur une
+plage $\times15$ atteinte par trois leviers différents --- deux
+interventions sans rapport ($K_0/4$ et $A\times2$) qui amènent à la même
+tension donnent la même mortalité à $0{,}5$\,\% près. \textbf{Mais la tension
+n'est pas un paramètre d'état} : un balayage à quatre leviers la met en
+échec sur la dépréciation $\delta$, où elle varie d'un facteur 13 pour une
+mortalité qui ne bouge que de 14\,\%. Ce qui aligne les quatre leviers est
+l'intensité de rotation du crédit, avec $R^2 = 0{,}998$ --- une variable
+endogène, qui désigne le canal sans le démontrer.
+
+Un résultat méthodologique conditionne les précédents : le raisonnement du
+prompt (§2) selon lequel la portée \code{fraction} « fixe l'intensité de
+traitement » ne tient pas dans ce modèle. La part de production détenue
+par la cohorte traitée passe de $0{,}198$ à $0{,}022$ en 2000 pas. Les
+deux portées dérivent ; \code{fraction} dérive vers le bas.
+\end{abstract}
+
+\tableofcontents
+
+\input{model_summary}
+
+\section{Ce qui est mesuré}
+
+La puissance d'extraction d'une entité est portée par $A$ et $\gamma$ dans
+$A\,K^{\gamma}$. $A$ est le levier primaire : il multiplie linéairement la
+production à capital donné, quel que soit ce capital. $\gamma$ est le levier
+secondaire, et son effet dépend du capital : passer de $\gamma$ à
+$\gamma'$ multiplie la production par $K^{\gamma'-\gamma}$. \fait{} Dans le
+régime observé, $K/\text{entité} \approx 773$, donc l'augmenter augmente
+bien la production, mais d'un facteur qui n'est pas choisi : il faut le
+mesurer.
+
+\paragraph{Trois quantités, et un exemple pour les fixer.} Tout ce rapport
+tourne autour de trois nombres. On les définit ici une fois, puis on les
+illustre immédiatement sur le bras principal de la campagne.
+
+\begin{description}
+\item[$h$, l'\emph{horizon}] --- le nombre de pas écoulés depuis
+  l'intervention. $h=1$ est le pas où l'intervention agit pour la première
+  fois, $h=200$ est deux cents pas plus tard. Toutes les courbes de ce
+  rapport sont en $h$, jamais en $t$, pour que les bras se superposent.
+\item[$m$, l'\emph{amplitude}] --- de combien la production d'une entité
+  \emph{traitée} est multipliée, à capital inchangé :
+  $m = A' K^{\gamma'} / A K^{\gamma}$. Pour un levier sur $A$, $m = A'/A$
+  exactement. Pour un levier sur $\gamma$, $m = K^{\gamma'-\gamma}$ dépend
+  du capital et doit être mesuré.
+\item[$p$, la \emph{part traitée}] --- la fraction de la production agrégée
+  que les entités traitées auraient produite \emph{sans} traitement (part
+  \og ex ante \fg{}).
+\end{description}
+
+\noindent\emph{Exemple.} Bras \code{frac\_A150\_phi20} : on tire 20\,\% des
+entités vivantes et on multiplie leur $A$ par $1{,}5$, donc $m = 1{,}5$. Ces
+entités produisaient $p = 19{,}84\,\%$ de la production totale. Si rien
+d'autre ne bougeait dans le système, la production agrégée augmenterait de
+$(m-1)\,p = 0{,}5 \times 0{,}1984 = 9{,}92\,\%$ --- c'est ce qu'on appelle la
+réponse \textbf{strictement proportionnelle}. Elle sert de mètre étalon :
+
+\begin{equation}
+E(h) \;=\; \frac{\big[\mathrm{prod}_{\text{traité}}(h)-\mathrm{prod}_{\text{réf}}(h)\big]
+/\;\mathrm{prod}_{\text{réf}}(h)}{(m-1)\,p(h)}
+\;=\;
+\frac{\text{réponse observée à l'horizon } h}{\text{réponse strictement proportionnelle}},
+\label{eq:elasticite}
+\end{equation}
+avec $p(h)$ remesuré à chaque pas, car la cohorte traitée change de poids au
+fil du temps. Ainsi $E = 1$ signifie \emph{la production a monté d'exactement
+ce que les entités traitées produisent de plus, ni plus ni moins} ;
+$E = 2{,}5$ signifie qu'elle a monté deux fois et demie plus que cela, donc
+que les entités \emph{non} traitées en ont profité aussi --- c'est ce qu'on
+appelle ici un \textbf{rebond}. $E < 1$ signale au contraire que le système
+a absorbé une partie du gain.
+
+\paragraph{Deux pièges de dénominateur, tous deux corrigés.} D'abord,
+\code{tech\_series} mesure la part de production \emph{après} application
+du levier ; si $p$ est la part ex ante, la part observée vaut
+$s = mp/(1+(m-1)p)$. On inverse cette relation ($p = s/(m-(m-1)s)$) avant
+tout calcul : sur le bras ci-dessus, $s = 27{,}08\,\%$ alors que
+$p = 19{,}84\,\%$ ; utiliser $s$ directement gonflerait le dénominateur de
+$36\,\%$ à l'horizon 1, et diviserait donc $E$ par $1{,}36$. Ensuite, sur un levier en
+$\gamma$ l'amplitude n'est pas le rapport des exposants mais
+$K^{\Delta\gamma}$, qui dépend du capital ; elle est donc \emph{mesurée} et
+non imposée. \fait{} Ces deux corrections ne reposent plus sur une
+inversion : $m$ et $p$ sont désormais mesurés \emph{entité par entité} au
+pas de l'intervention (\autoref{sec:validation}), et la formule d'inversion
+est vérifiée par cette mesure au lieu d'être supposée.
+
+\section{Protocole}
+
+\subsection{Fenêtre, horizon, graines}
+
+\fait{} $t_0 = 2000$, fenêtre $W = 2000$ pas, 5 graines par cellule.
+Justification lue dans des résultats \emph{déjà sur disque}, sans
+remesurer la relaxation (le prompt §7 l'interdit) : les trois graines
+baseline de M4.3 rapportent $t_{\text{converge}}$ = 1016 / 948 / 841 pour
+\code{int\_in}, leur variable la plus lente
+(\code{simulation\_lab\_data/runs/m4\_3\_\_d1\_\_baseline\_\_seed*/analysis.json}),
+et \code{prod\_tot} lui-même est stationnaire par blocs de 500 dès
+$t \approx 500$ (moyennes de blocs entre 31\,300 et 32\,100 sur les trois
+graines). $t_0=2000$ laisse donc un facteur 2 sur la variable la plus
+lente. La fenêtre $W=2000$ vaut environ $38\times$ le temps
+d'autocorrélation intégré de \code{prod\_tot} (52 pas, mesuré sur la queue
+de ces mêmes séries).
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{figures/window_choice.png}
+\caption{D'où viennent $t_0$ et $W$. À gauche, \code{prod\_tot} moyenné par
+blocs de 500 pas sur les trois graines baseline de M4.3 : le niveau est
+stationnaire dès $t \approx 500$, bien avant $t_0$, et les traits pointillés
+situent le $t_{\text{converge}}$ de la variable la plus lente du modèle. À
+droite, l'autocorrélation qui dimensionne la fenêtre. Toutes ces séries
+étaient déjà sur disque ; aucune relaxation n'a été remesurée. Données :
+\code{results/analysis/window\_choice.json}.}
+\label{fig:fenetre}
+\end{figure}
+
+\subsection{Neuf bras, un amorçage partagé}
+
+Un seul run $0 \to t_0$ par graine ; tous les bras sont branchés sur son
+\emph{snapshot}. Les bras d'une même graine sont donc rigoureusement
+identiques jusqu'à $t_0$ et ne divergent qu'à l'intervention.
+
+\begin{center}\footnotesize
+\begin{tabular}{@{}llll@{}}
+\toprule
+\textbf{Bras} & \textbf{Portée} & \textbf{Levier} & \textbf{Rôle} \\
+\midrule
+\code{control} & --- & --- & référence inerte \\
+\code{null} & fraction $\varphi=0{,}2$ & aucun & plancher de bruit \\
+\code{frac\_A150\_phi20} & fraction $\varphi=0{,}2$ & $A\times1{,}5$ & cellule principale \\
+\code{frac\_A125\_phi20} & fraction $\varphi=0{,}2$ & $A\times1{,}25$ & échelle d'amplitude \\
+\code{frac\_A150\_phi05} & fraction $\varphi=0{,}05$ & $A\times1{,}5$ & échelle d'intensité \\
+\code{frac\_A150\_phi50} & fraction $\varphi=0{,}5$ & $A\times1{,}5$ & échelle d'intensité \\
+\code{all\_A150} & toutes & $A\times1{,}5$ & hausse globale \\
+\code{new\_A150} & nouvelles & $A\times1{,}5$ & vintage technologique \\
+\code{frac\_g060\_phi20} & fraction $\varphi=0{,}2$ & $\gamma: 0{,}5\to0{,}6$ & régime (c) du noyau \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\fait{} 45 runs, tous terminés avec le statut \code{ok}, tous à
+$t_{\text{final}} = 4000$, aucun carnet incohérent, aucune transaction
+plafonnée (vérifications automatiques dans \code{scripts/analyse.py}, qui
+refuse d'analyser une campagne incomplète plutôt que de moyenner des
+séries tronquées).
+
+\subsection{L'appariement : pourquoi le bras \code{null} est indispensable}
+
+Le prompt (§2) impose que le tirage de la cohorte \code{fraction} utilise
+le générateur de la simulation. Ce tirage \emph{consomme} le flux
+aléatoire : dès le pas de l'intervention, un bras \code{fraction} n'a plus
+la même suite pseudo-aléatoire qu'un contrôle inerte, et ses naissances
+diffèrent immédiatement. Comparer un bras \code{fraction} au contrôle
+mélangerait donc le traitement et un simple décalage de flux.
+
+Le bras \code{null} lève exactement cette confusion : il tire la même
+cohorte, dans le même état du générateur, et ne lui applique rien (la
+valeur assignée est la valeur courante). C'est la référence appariée des
+bras \code{fraction}. Les bras \code{all} et \code{new}, qui ne consomment
+aucun tirage, sont appariés au contrôle. Le contraste
+contrôle\,$\leftrightarrow$\,\code{null} ne contient aucun traitement :
+c'est le \textbf{plancher de bruit}.
+
+\fait{} Moyennes de fenêtre du contraste contrôle\,$\leftrightarrow$\,%
+\code{null} : $-1{,}01\pm1{,}25$\,\% ($h\le50$), $-0{,}92\pm1{,}08$\,\%,
+$-0{,}17\pm0{,}47$\,\%, $+0{,}37\pm0{,}45$\,\% --- toutes à moins de
+$1\sigma$ de zéro.\footnote{\label{note:sigma}\textbf{Ce que « $x\,\sigma$ »
+veut dire dans ce rapport, et ce que cela ne veut pas dire.} Chaque cellule
+est mesurée sur $n = 5$ graines appariées. Pour une quantité $X$ (typiquement
+l'écart relatif de \code{prod\_tot} entre un bras et sa référence, moyenné
+sur une fenêtre), on dispose des $n$ valeurs par graine $X_1,\dots,X_n$. On
+rapporte la moyenne $\bar X$ et l'\textbf{erreur-type}
+$\mathrm{SE} = s/\sqrt{n}$ où $s^2 = \frac{1}{n-1}\sum_i (X_i-\bar X)^2$ est
+la variance d'échantillon. Ce qu'on note « $x\,\sigma$ » est le rapport
+$x = \bar X / \mathrm{SE}$. Comme $\sigma$ est \emph{estimé} sur les mêmes
+5 valeurs et non connu, ce rapport ne suit pas une loi normale mais une loi
+de \textbf{Student à $n-1 = 4$ degrés de liberté}. Les seuils sont donc
+sensiblement plus exigeants que les seuils normaux familiers : pour rejeter
+« l'effet est nul » au risque 5\,\% il faut $|x| \ge 2{,}78$ et non
+$1{,}96$ ; au risque 1\,\%, $|x| \ge 4{,}60$ et non $2{,}58$. Une mesure à
+$3{,}2\,\sigma$ est significative à 5\,\% mais \emph{pas} à 1\,\%
+($p \approx 3{,}3\,\%$), là où la lecture normale suggérerait $0{,}1\,\%$.
+Une mesure à $5{,}4\,\sigma$ l'est à 1\,\% ($p \approx 0{,}6\,\%$). Ces
+seuils s'appliquent à chaque chiffre en $\sigma$ du rapport. L'appariement
+par graine est ce qui rend $n=5$ utilisable : il élimine la variance
+commune aux deux bras, et l'incertitude portée ici est celle du
+\emph{contraste}, pas celle du niveau.} Le décalage de flux n'introduit donc aucun biais
+systématique, mais il fixe une résolution : une moyenne de fenêtre plus
+petite que $\sim$1\,\% de \code{prod\_tot} n'est pas interprétable
+(\autoref{fig:noise}). Sur un pas isolé, la bande est de
+\input{tables/noise_floor.tex}\unskip.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{figures/noise_floor.png}
+\caption{Plancher de bruit : écart du bras \code{null} au contrôle, cinq
+graines. Aucun traitement n'est appliqué ; tout l'écart vient du décalage
+de flux aléatoire dû au tirage de la cohorte.}
+\label{fig:noise}
+\end{figure}
+
+\subsection{Validation de la chaîne de mesure}
+\label{sec:validation}
+
+\paragraph{Pourquoi l'horizon 1 est un test exact, et non approché.}
+À l'horizon 1, l'écart relatif observé doit valoir \emph{exactement} l'effet
+mécanique $(m-1)p$. L'argument est celui-ci, et il mérite d'être déroulé
+parce qu'il n'est pas évident : le choc multiplicatif frappe \emph{après}
+l'intervention et \emph{avant} la production, ce qui pourrait laisser croire
+que l'égalité n'est vraie qu'en moyenne, à la loi des grands nombres près.
+Elle est en fait exacte, pour une raison d'appariement. L'intervention ne
+touche que $(A,\gamma)$ : au pas $h=1$, l'ensemble des vivantes, son ordre
+d'itération et l'état du générateur sont \emph{identiques} dans le bras
+traité et dans sa référence appariée. Le même vecteur de chocs $\xi$ frappe
+donc les mêmes capitaux dans les deux bras, et les capitaux post-choc
+$K_i e^{\xi_i}$ sont eux aussi identiques. Le rapport
+$\sum A' (K_ie^{\xi_i})^{\gamma'} / \sum A (K_ie^{\xi_i})^{\gamma}$ est alors
+l'amplitude exacte de ce pas-là : le choc ne se simplifie pas terme à terme,
+il est simplement \emph{commun aux deux bras}, ce qui suffit. C'est un test,
+pas un résultat.
+
+\paragraph{$m$ et $p$ sont désormais mesurés, pas reconstruits.} \fait{} La
+première version de ce rapport déduisait l'amplitude et la part traitée des
+seules séries agrégées, en inversant $s = mp/(1+(m-1)p)$ --- une
+reconstruction correcte, mais qui suppose la formule qu'elle sert à
+vérifier. Les deux quantités sont maintenant mesurées \emph{entité par
+entité} (\code{scripts/exact\_amplitude.py}). Le moteur n'a pas été modifié
+pour cela : après le pas $t_0{+}1$, la production individuelle
+$\mathrm{prod}_i = A' K_i^{\gamma'}$ est en mémoire, donc le capital au
+moment de produire se retrouve exactement par
+$K_i = (\mathrm{prod}_i/A')^{1/\gamma'}$ --- un aller-retour flottant, pas
+une approximation --- et l'on peut écrire la production
+\emph{contrefactuelle} $A K_i^{\gamma}$ de chaque entité traitée sous son
+ancienne technologie.
+
+\input{tables/exact_amplitude.tex}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{figures/calibration_h1.png}
+\caption{Calibration de la chaîne de mesure. À gauche, l'écart relatif
+observé à l'horizon 1 contre l'effet mécanique prédit : les sept bras
+s'alignent sur la première bissectrice sur deux ordres de grandeur d'effet.
+À droite, l'amplitude du levier mesurée entité par entité, comparée à celle
+imposée. Le bras $\gamma$ n'a pas d'amplitude imposée : la sienne vaut
+$K^{\Delta\gamma}$, mesurée à $1{,}9462$.
+Données : \code{results/analysis/exact\_amplitude.csv}.}
+\label{fig:calibration}
+\end{figure}
+
+\fait{} Les amplitudes mesurées valent $1{,}500000$, $1{,}250000$,
+$1{,}500000$, $1{,}500000$ et $1{,}500000$ pour les cinq bras à levier sur
+$A$ --- les valeurs imposées, à six décimales --- et $1{,}000000$ pour le
+bras \code{null}, qui n'applique rien. \fait{} Le bras \code{all\_A150}
+donne une part traitée de $1{,}000000$ exactement : les entités nées au pas
+de l'intervention reçoivent elles aussi la nouvelle technologie par défaut,
+et aucune production n'échappe au traitement. \fait{} Le bras $\gamma$ donne
+une amplitude effective de $1{,}946184$ : le passage
+$\gamma: 0{,}5 \to 0{,}6$ n'est \emph{pas} un choc de même taille que
+$A\times1{,}5$, il est presque deux fois plus fort, ce qui interdit de le
+comparer aux bras $A$ comme s'il s'agissait de la même amplitude.
+
+\fait{} \textbf{L'ancienne reconstruction est validée par la mesure} : elle
+donnait $1{,}500001$, $1{,}250000$, $1{,}500002$, $1{,}500001$ et
+$1{,}946203$ --- à $1{,}5\times10^{-5}$ près en relatif de la mesure directe.
+L'inversion ex post / ex ante était donc juste ; elle n'est simplement plus
+nécessaire. \fait{} Et le test lui-même passe à la précision machine :
+$E(h{=}1) = 1$ sur les six bras à levier, avec un écart maximal à 1 de
+$1{,}0\times10^{-15}$. L'exactitude annoncée au paragraphe précédent est
+donc vérifiée, pas seulement argumentée.
+
+\section{Résultats}
+
+\input{tables/campaign_windows.tex}
+
+\subsection{Portée partielle, court horizon : rebond observé}
+
+\fait{} Sur la fenêtre d'impact ($h\le50$), tous les bras \code{fraction}
+répondent nettement plus fort que la proportionnalité :
+
+\begin{center}
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+\textbf{Bras} & \textbf{écart} & \textbf{significativité} & \textbf{élasticité $E$} \\
+\midrule
+\code{frac\_A150\_phi05} & $+6{,}84 \pm 2{,}17$\,\% & $3{,}2\sigma$ & $2{,}40$ \\
+\code{frac\_A125\_phi20} & $+13{,}02 \pm 1{,}46$\,\% & $8{,}9\sigma$ & $2{,}86$ \\
+\code{frac\_A150\_phi20} & $+24{,}73 \pm 1{,}19$\,\% & $20{,}7\sigma$ & $2{,}32$ \\
+\code{frac\_A150\_phi50} & $+65{,}46 \pm 2{,}65$\,\% & $24{,}7\sigma$ & $2{,}78$ \\
+\code{frac\_g060\_phi20} & $+66{,}79 \pm 1{,}40$\,\% & $47{,}7\sigma$ & $2{,}44$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\fait{} $E$ reste compris entre $2{,}3$ et $2{,}9$ à travers deux
+amplitudes ($\times1{,}25$ et $\times1{,}5$), trois intensités
+($\varphi = 0{,}05$, $0{,}2$, $0{,}5$) et deux leviers ($A$ et $\gamma$),
+sans tendance monotone ni en $\varphi$ ni en amplitude.
+\incertitude{} La dispersion de $E$ dans cette plage n'est pas
+interprétable en l'état : la cellule $\varphi=0{,}05$, la plus basse en
+intensité, n'est mesurée qu'à $3{,}2\sigma$, ce qui, lu correctement en
+Student à 4 degrés de liberté (note~\ref{note:sigma}), vaut $p = 3{,}3\,\%$
+--- significatif au risque 5\,\%, mais pas à 1\,\%. Ce qui est solide est le
+\emph{signe et l'ordre de grandeur} --- une amplification d'un facteur
+$\approx$2,5 --- pas son classement d'une cellule à l'autre. Le pic n'est pas au bord de la
+fenêtre --- la \autoref{fig:response} montre qu'il est atteint vers
+$h \approx 30$ pour les bras $A$ et vers $h \approx 100$ pour le bras
+$\gamma$, ce dernier culminant à $+130$\,\%.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{figures/response_prod.png}
+\caption{Réponse appariée de \code{prod\_tot}. En haut, portée
+\code{fraction} contre le bras \code{null} ; en bas, portées globales
+contre le contrôle. La bande grise est le plancher de bruit. Les bras
+partiels reviennent dans la bande vers $h\approx250$ ; les bras globaux
+s'installent sur un plateau très au-dessus.}
+\label{fig:response}
+\end{figure}
+
+\subsection{Portée partielle, long horizon : non tranchable}
+
+\fait{} Au-delà de $h\approx300$, tous les bras \code{fraction} à levier
+sur $A$ rentrent dans la bande de bruit : $-1{,}8\sigma$ à $+0{,}7\sigma$
+sur les fenêtres « moyen » et « établi ». \textbf{Ce ne sont pas des
+effets négatifs : ce sont des non-résultats.}
+
+La raison est structurelle et se lit directement sur l'intensité de
+traitement observée (\autoref{fig:share}, panneau de gauche) : la part de
+production détenue par la cohorte traitée passe de $0{,}198$ (ex ante, à
+$h{=}1$) à $0{,}166$, puis $0{,}055$, puis $0{,}022$ sur les quatre
+fenêtres. La cohorte s'éteint par renouvellement de la population, et
+\emph{aucune naissance ne la reconstitue} --- c'est la sémantique même de
+la portée \code{fraction}, qui ne modifie pas la valeur par défaut à la
+naissance. Le dénominateur de \eqref{eq:elasticite} tend vers zéro ;
+l'élasticité y devient un rapport $0/0$, ce qui est la raison pour
+laquelle les courbes de la \autoref{fig:share} sont coupées dès que la
+réponse proportionnelle attendue passe sous 2\,\% de \code{prod\_tot}.
+
+\paragraph{Le retour à zéro passe par un creux, et ce creux se lit.}
+Rappel de ce qu'on regarde : pour chaque bras \code{fraction}, la courbe est
+l'écart relatif de \code{prod\_tot} entre le bras et sa référence appariée,
+tracé en fonction de l'horizon $h$. Elle part de l'effet mécanique à $h=1$,
+monte jusqu'à un pic vers $h\approx30$, puis redescend à mesure que la
+cohorte traitée s'éteint. La question est : \emph{comment} redescend-elle ?
+
+\fait{} Elle ne redescend pas jusqu'à zéro pour s'y arrêter --- elle
+\textbf{passe en dessous}. Les deux bras les plus intenses atteignent un
+minimum franchement négatif avant de remonter : $-7{,}76 \pm 2{,}01$\,\% à
+$h = 195$ pour $\varphi = 0{,}5$, et $-12{,}98 \pm 2{,}40$\,\% à $h = 303$
+pour le bras $\gamma$ (soit $3{,}9\sigma$ et $5{,}4\sigma$,
+note~\ref{note:sigma} : significatifs à 5\,\% tous les deux, à 1\,\%
+seulement pour le second). Autrement dit, pendant plusieurs centaines de
+pas, un système qu'on a rendu \emph{plus} productif produit \emph{moins}
+qu'un système qu'on n'a pas touché.
+
+\fait{} Ce que montrent les autres agrégats au fond du creux :
+
+\begin{center}\footnotesize
+\begin{tabular}{@{}lrr@{}}
+\toprule
+au fond du creux & $\varphi = 0{,}5$ ($h=195$) & bras $\gamma$ ($h=303$) \\
+\midrule
+production \code{prod\_tot} & $-7{,}8$\,\% & $-13{,}0$\,\% \\
+population \code{pop}       & $-20{,}7$\,\% & $-39{,}1$\,\% \\
+capital agrégé \code{K\_tot} & $-9{,}1$\,\% & $-5{,}9$\,\% \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\inference{} La population s'effondre bien plus que le capital : il y a donc
+beaucoup moins d'entités, mais chacune est bien plus riche. Ce n'est pas une
+pénurie de capital, c'est une pénurie d'\emph{entités}. L'explication
+disponible est d'échelle : pendant le pic, le capital moyen par entité a
+monté, alors que le capital de naissance $K_0$ est resté à sa valeur de
+départ ; les entrantes naissent donc relativement plus pauvres dans un
+système devenu plus grand, et une partie d'entre elles ne survit pas assez
+longtemps pour compenser. Le §\ref{sec:ablation} isole ce mécanisme en
+régime établi et le teste directement --- ici il n'est qu'une lecture
+transitoire, cohérente avec ce qui suit.
+
+\paragraph{Une prémisse du prompt que les données contredisent.} Le §2 du
+prompt retient la portée \code{fraction} pour le protocole principal au
+motif que \code{new} « a une intensité de traitement qui dérive dans le
+temps » alors que \code{fraction} « fixe l'intensité au moment de la
+mesure ». \fait{} Dans ce modèle, les deux dérivent : \code{new} monte de
+$0$ à $1$ en $\sim$600 pas, \code{fraction} descend de $\varphi$ vers $0$
+en $\sim$300 pas. \inference{} La portée \code{fraction} ne répond donc à
+la question que sur les premières centaines de pas ; c'est \code{all} et
+\code{new}, dont l'intensité converge vers 1, qui portent la version à
+intensité fixe de la question. Le protocole a été conservé tel quel --- il
+donne les deux réponses --- mais la lecture des résultats doit tenir compte
+de cette correction.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{figures/share_elasticity.png}
+\caption{À gauche, intensité de traitement réellement observée (part de
+\code{prod\_tot} détenue par les entités traitées). À droite, élasticité
+normalisée ; la ligne pointillée est la réponse strictement
+proportionnelle.}
+\label{fig:share}
+\end{figure}
+
+\fait{} Une exception : le bras $\gamma$ reste à $+2{,}30 \pm 0{,}30$\,\%
+($7{,}6\sigma$) en régime établi, avec une cohorte encore à $0{,}029$ de
+part ex ante. \inference{} Les entités à $\gamma$ élevé sont d'autant plus
+avantagées que leur capital est grand ($K^{0{,}1}$ croissant) ; leur
+cohorte se maintient mieux, et son amplitude effective \emph{augmente} avec
+le temps. \incertitude{} C'est aussi ce qui rend l'élasticité de ce bras à
+long horizon ($0{,}83$) la moins fiable du tableau : son dénominateur
+suppose une amplitude gelée à sa valeur de $h{=}1$.
+
+\subsection{Portée globale, régime établi : réponse sous-proportionnelle}
+
+C'est la cellule où l'intensité de traitement est fixe et vaut 1, donc
+celle où l'élasticité est la mieux définie.
+
+\fait{} Une hausse uniforme de 50\,\% de $A$ donne, en régime établi
+($h\in[1001,2000]$) :
+$+36{,}06 \pm 0{,}41$\,\% ($87{,}9\sigma$) pour la portée \code{all}, et
+$+36{,}53 \pm 0{,}53$\,\% ($69{,}3\sigma$) pour la portée \code{new}. Les
+deux portées convergent, comme attendu, puisque leur population finit
+entièrement traitée ; elles ne diffèrent que par le transitoire. Soit une
+élasticité normalisée de $0{,}72$--$0{,}73$, et en élasticité
+logarithmique :
+
+\input{tables/campaign_global.tex}
+
+\paragraph{D'où vient ce $0{,}72$ : le calcul, déroulé.} La production
+agrégée est le produit de deux facteurs, l'effectif et la production
+moyenne : $\mathrm{prod\_tot} = \mathrm{pop} \times
+\overline{\mathrm{prod}}$. Le levier agit sur les deux, en sens
+\emph{contraires}. \fait{} Mesuré, bras rapporté à son contrôle apparié :
+
+\begin{center}\footnotesize
+\begin{tabular}{@{}lrl@{}}
+\toprule
+grandeur & rapport bras/contrôle & \\
+\midrule
+population \code{pop} & $\times\,0{,}754$ & il y a moins d'entités \\
+production par entité $\overline{\mathrm{prod}}$ & $\times\,1{,}802$
+  & chacune produit plus \\
+\midrule
+production agrégée \code{prod\_tot} & $\times\,1{,}359$
+  & $= 0{,}754 \times 1{,}802$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent (rapports mesurés sur les bras d'ablation, qui portent les mêmes
+interventions que \code{all\_A150} avec les diagnostics de mortalité en
+plus ; fenêtre $h \in [1001,2000]$.) Le $\times1{,}359$ agrégé est donc
+exactement le produit des deux mouvements, et la sous-proportionnalité
+($1{,}359 < 1{,}500$) vient entièrement de la contraction de population.
+
+\inference{} Reste à comprendre pourquoi une entité produit $\times1{,}802$
+alors qu'on n'a multiplié $A$ que par $1{,}5$. La réponse est qu'elle n'a
+pas gardé le même capital. Sa production vaut $A K^{\gamma}$ ; le levier
+multiplie $A$ par $1{,}50$, et le capital moyen par entité a lui aussi monté.
+De combien ? Le capital agrégé fait $\times1{,}090$ et la population
+$\times0{,}754$, donc le capital \emph{par entité} fait
+$1{,}090/0{,}754 = 1{,}446$ (773 joules par entité dans le contrôle, 1118
+dans le bras). La production par entité doit alors faire
+\[
+\underbrace{1{,}50}_{\text{effet de } A}
+\;\times\;
+\underbrace{1{,}446^{\gamma}}_{\text{effet du capital, } \gamma = 0{,}5}
+= 1{,}50 \times \sqrt{1{,}446} = 1{,}50 \times 1{,}202 = 1{,}804 ,
+\]
+à comparer au $1{,}802$ mesuré : le compte y est à $0{,}1$\,\% près. La
+sur-réponse individuelle n'a donc rien de mystérieux --- c'est le levier,
+plus l'accumulation de capital qu'il déclenche.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{figures/levels_established.png}
+\caption{Régime établi : écart au bras apparié pour chaque bras.}
+\label{fig:levels}
+\end{figure}
+
+\subsection{Canaux observés}
+
+Le prompt (§1) donne trois canaux comme grille de lecture, sans en faire
+un livrable. Les mesures suivantes les documentent ; elles ne constituent
+pas une attribution causale.
+
+\paragraph{Production directe et accumulation de capital.} La production
+s'ajoute au capital de l'entité \emph{avant} la phase de marché du même
+pas. \fait{} Sur \code{all\_A150} en régime établi, le capital par entité
+monte de 45\,\% --- soit une avancée partielle vers la nouvelle échelle
+autarcique, qui passe de $\Kaut = 9801$ à $22\,052$ quand $A$ passe de
+$1{,}0$ à $1{,}5$ ($\Kaut = [A(1-\delta)/\delta]^{1/(1-\gamma)}$).
+
+\paragraph{Échanges : le sens du prêt éteint des paires entières.}
+\fait{} Dans les bras à population hétérogène, le compteur
+\code{mkt\_blocked\_dir} --- paires où l'optimum de production jointe
+voudrait faire circuler le capital du pauvre vers le riche, ce que le
+marché interdit --- atteint 22,6\,\% des rounds (\code{frac\_A150\_phi20},
+$h\le50$), 37,3\,\% ($\varphi=0{,}5$) et 36,4\,\% (\code{new\_A150},
+$h\le50$), et redescend vers zéro à mesure que la population
+s'homogénéise. \fait{} Sur \code{all\_A150}, population homogène, ce
+compteur est \emph{exactement} nul --- somme rigoureusement nulle sur les
+$5 \times 2000 = 10\,000$ lignes de série du bras. \inference{} Ce canal
+est donc une conséquence de l'\emph{hétérogénéité}, pas du niveau de $A$ :
+les entités dopées accumulent, deviennent le côté riche de leurs paires, et
+cessent alors de prêter.
+
+\paragraph{Faillites.} Les taux ci-dessous sont donnés dans les deux bases,
+parce que la population du bras traité est 25\,\% plus petite : lus en
+valeur absolue, ils paraissent stables ; rapportés à la population, ils ne
+le sont pas du tout.
+
+\fait{} Sur \code{all\_A150} en régime établi :
+
+\begin{center}
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+& \textbf{contrôle} & \textbf{\code{all\_A150}} & \textbf{rapport} \\
+\midrule
+morts par pas (absolu) & $29{,}96$ & $29{,}99$ & $\times1{,}001$ \\
+morts par pas et par 1000 entités & $26{,}50$ & $35{,}19$ & $\times1{,}328$ \\
+racines d'insolvabilité par pas (absolu) & $6{,}37$ & $7{,}36$ & $\times1{,}155$ \\
+racines d'insolvabilité par 1000 entités & $5{,}64$ & $8{,}64$ & $\times1{,}532$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\inference{} Le nombre absolu de morts par pas est fixé par le flux de
+naissances : à l'état stationnaire il vaut $\lambda=30$ quoi qu'il arrive.
+Ce qui change réellement est le \emph{taux} : un tiers de morts en plus par
+entité et par pas, et une insolvabilité en hausse de 53\,\% par entité --- donc
+des durées de vie plus courtes, ce qui est exactement l'autre face de la
+contraction de population.
+
+\paragraph{Une explication séduisante, et fausse.} Le candidat immédiat est
+un service d'intérêts alourdi : le taux dérive du rendement marginal
+$A\gamma K^{\gamma-1}$, proportionnel à $A$, et le service rapporté au
+capital monte effectivement de $0{,}0407$ à $0{,}0491$ ($+21$\,\%). Mais
+c'est le mauvais dénominateur. \fait{} Rapporté à ce que les entités
+\emph{produisent} --- la grandeur qui décide si elles peuvent payer --- le
+service \textbf{baisse} : $1{,}128$ dans le contrôle contre $1{,}093$ dans le
+bras traité. Le service est plus léger, pas plus lourd. \inference{}
+L'attribution au service d'intérêts est donc réfutée par les données mêmes
+qui semblaient la soutenir ; elle figurait dans une version antérieure de ce
+rapport, elle est retirée. Le §\ref{sec:ablation} traite la question par une
+ablation dédiée.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{figures/service_denominator.png}
+\caption{Pourquoi l'explication par le service d'intérêts ne tient pas. Le
+même service, deux dénominateurs, deux conclusions opposées : rapporté au
+capital il monte de 21~\%, rapporté à la production --- ce que l'entité peut
+effectivement payer --- il baisse de 3~\%. Données :
+\code{results/analysis/service\_denominator.json}.}
+\label{fig:denominateur}
+\end{figure}
+
+\fait{} Les autres écarts du bras global, pour mémoire : le nombre de
+contrats actifs tombe à $\times0{,}602$ et le nombre de prêts par entité de
+$30{,}4$ à $24{,}3$ ; le surplus coopératif créé par le marché fait
+$\times1{,}92$.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{figures/channels.png}
+\caption{Trois canaux. \textbf{Volume de prêt} : les portées globales
+s'installent à $+35$\,\%, les portées partielles reviennent à zéro.
+\textbf{Paires refusées par le sens du prêt} : le canal n'existe que sous
+hétérogénéité et s'éteint avec elle ; il disparaîtra avec la règle qui le
+crée, mais tant qu'elle est là il est réel. \textbf{Capital agrégé} :
+l'échelle est coupée à $+0{,}7$ parce que tout se joue en dessous ; l'encart
+donne la vue d'ensemble, où l'on voit le seul dépassement, celui du bras
+$\gamma$ pendant son transitoire. Le panneau « morts par pas » de la version
+précédente a été retiré : à l'état stationnaire le flux de morts est fixé
+par le flux de naissances et vaut $\lambda$ quoi qu'il arrive --- c'est le
+\emph{taux} qui porte l'information, et il est traité au §\ref{sec:ablation}
+et à la \autoref{fig:tension_mortalite}.}
+\label{fig:channels}
+\end{figure}
+
+\subsection{Une statistique qui ne dépend d'aucune fenêtre}
+
+\paragraph{Le problème.} Toutes les élasticités données jusqu'ici sont des
+moyennes sur une fenêtre d'horizons ($h\le50$, $h\in[1001,2000]$\dots). Le
+choix de ces fenêtres est défendable, mais il reste un choix : un lecteur
+peut légitimement demander ce que devient le résultat si l'on découpe
+autrement. On donne donc une seconde statistique qui n'a pas de fenêtre du
+tout.
+
+\paragraph{L'idée, en mots.} Au lieu de comparer une moyenne de réponses à
+une moyenne de prédictions, on additionne \emph{tous} les joules gagnés sur
+tout l'horizon, on additionne \emph{tous} les joules que la
+proportionnalité stricte aurait prédits sur le même horizon, et on divise
+l'un par l'autre :
+\begin{equation}
+E_{\text{cum}} \;=\;
+\frac{\text{total des joules effectivement gagnés}}
+     {\text{total des joules prédits par la proportionnalité}}
+\;=\;
+\frac{\displaystyle\sum_{h} \Delta\mathrm{prod}(h)}
+     {\displaystyle\sum_{h} (m-1)\,p(h)\,\mathrm{prod}_{\text{réf}}(h)} .
+\label{eq:cumule}
+\end{equation}
+La somme au numérateur est l'aire sous la courbe de réponse ; celle au
+dénominateur est l'aire sous la courbe de la réponse proportionnelle. Leur
+rapport se lit comme les $E$ de fenêtre : $1$ = proportionnel, $>1$ =
+rebond, $<1$ = absorbé. Aucun découpage n'y intervient, et les horizons où
+l'effet est gros pèsent naturellement plus que ceux où il est petit.
+
+\fait{} Sur les bras à intensité de traitement stable :
+$E_{\text{cum}} = 0{,}744 \pm 0{,}002$ (\code{all\_A150}) et
+$0{,}765 \pm 0{,}008$ (\code{new\_A150}) --- soit environ trois quarts de la
+réponse proportionnelle, en accord avec les $0{,}72$--$0{,}73$ des fenêtres
+établies. \fait{} Sur les bras partiels : $1{,}116 \pm 0{,}050$
+(\code{frac\_g060\_phi20}) et $0{,}638 \pm 0{,}082$
+(\code{frac\_A150\_phi50}).
+
+\incertitude{} \textbf{Cette statistique cesse d'être exploitable dès que la
+cohorte traitée s'éteint.} Pour les bras \code{fraction} de faible
+intensité, la longue traîne d'horizons où $p(h) \approx 0$ contribue
+presque zéro au dénominateur mais du bruit au numérateur :
+$E_{\text{cum}} = 0{,}04 \pm 0{,}13$ pour $\varphi=0{,}2$, un chiffre qui ne
+mesure rien. \inference{} $E_{\text{cum}}$ confirme donc les élasticités de
+fenêtre là où celles-ci sont définies --- portées globales, et bras partiels
+tant que la cohorte pèse --- sans les remplacer, et sans rien sauver là où
+elles ne le sont pas.
+
+\section{Ablation : d'où vient la contraction de population ?}
+\label{sec:ablation}
+
+Le §3.3 laisse une question ouverte, et le §3.5 vient d'en écarter la
+réponse la plus naturelle. Il reste une hypothèse, désignée par les données
+elles-mêmes : le capital de naissance $K_0$ est \emph{fixe} alors que
+l'échelle du système bouge. \fait{} Une entité neuve vaut 3,23~\% du capital
+moyen dans le contrôle, contre 2,24~\% dans le bras traité --- elle naît
+relativement plus pauvre, dans un système plus grand.
+
+\subsection{Plan de l'ablation}
+
+Cinq bras, mêmes graines et mêmes snapshots à $t_0$ que la campagne
+principale, donc directement comparables à elle. Le facteur de compensation
+$2{,}25 = A^{1/(1-\gamma)} = 1{,}5^{2}$ est celui qui laisse invariant le
+rapport $K_0/\Kaut$ ; c'est la convention déjà employée par M4.3 pour ses
+cellules compensées. Le facteur $1{,}45$ est le rapport \emph{observé} des
+capitaux par entité --- une compensation a posteriori plutôt qu'a priori.
+
+Ces bras enregistrent en plus l'âge au décès de chaque entité, ce que la
+campagne principale ne faisait pas, afin de répondre directement à « qui
+meurt en plus ? ». \fait{} Le drapeau d'enregistrement n'écrit que dans une
+liste : le bras \code{abl\_control} reproduit \code{control} \textbf{bit à
+bit} sur six colonnes et 5 graines (écart maximal exactement nul), ce qui
+vérifie que la mesure supplémentaire ne perturbe rien.
+
+\subsection{Résultat}
+
+\input{tables/ablation_k0.tex}
+
+\fait{} Compenser $K_0$ à l'échelle autarcique \textbf{annule complètement}
+la contraction : la population revient à $\times1{,}005 \pm 0{,}005$ de son
+contrôle, et tous les diagnostics de mortalité avec elle (durée de vie
+$37{,}9$ contre $37{,}7$ pas, racines d'insolvabilité $\times1{,}018$ contre
+$\times1{,}155$ sans compensation ; tableau ci-dessus). Le bras à
+compensation partielle ($\times1{,}45$) se place entre les deux sur chacun
+de ces indicateurs.
+
+\inference{} Ce retour au contrôle n'est pas une coïncidence numérique :
+c'est la manifestation d'une \textbf{covariance d'échelle} du modèle, déjà
+connue de la lignée sous la forme « on peut multiplier $A$ et $K_0$ de façon
+cohérente sans changer le fonctionnement du système ». Le §\ref{sec:echelle}
+la démontre et la met à l'épreuve. Ce qui est nouveau ici, et ce qui compte
+pour le verdict, n'est donc pas que la compensation marche, mais que
+\emph{sans elle} un simple choc sur $A$ contracte la population de 25\,\% :
+$K_0$ n'est pas un paramètre neutre qu'on peut laisser à sa valeur pendant
+qu'on bouge la technologie.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{figures/ablation_k0_levels.png}
+\caption{Ablation sur le capital de naissance. Dans le panneau de gauche, la
+courbe du bras compensé à l'échelle autarcique (rouge) revient se superposer
+au contrôle (gris), tandis que le bras à $K_0$ fixe (bleu) s'installe 25~\%
+en dessous. Données : \code{results/ablation\_k0/}.}
+\label{fig:ablation}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{figures/ablation_k0_survival.png}
+\caption{Âge au décès, fenêtre $h \in [1001, 2000]$, cinq graines cumulées.
+Le surcroît de mortalité du bras à $K_0$ fixe est concentré \emph{aux tout
+premiers pas de vie} ; au-delà de vingt pas les distributions se
+superposent. Compenser $K_0$ ramène la courbe sur celle du contrôle. Barres
+d'incertitude de Poisson.}
+\label{fig:survie}
+\end{figure}
+
+\subsection{Ce que cela change au verdict}
+
+\fait{} Avec $K_0$ compensé, la production agrégée répond
+$\times2{,}267 \pm 0{,}011$ à un choc $\times1{,}5$ sur $A$, soit une
+élasticité logarithmique $\varepsilon = 2{,}018$. \inference{} Cette valeur
+n'est pas quelconque : $1/(1-\gamma) = 2$ exactement. C'est l'exposant de
+l'échelle autarcique $\Kaut \propto A^{1/(1-\gamma)}$, et la production y
+vaut $A\,K^{\gamma} \propto A \cdot A^{\gamma/(1-\gamma)} = A^{1/(1-\gamma)}$.
+Autrement dit : \textbf{quand le capital de naissance suit l'échelle, le
+système entier se remet à l'échelle de sa référence autarcique}, et la
+réponse est fortement super-proportionnelle --- élasticité normalisée
+$E = 2{,}53$.
+
+Les deux chiffres --- $\varepsilon = 0{,}76$ à $K_0$ fixe,
+$\varepsilon = 2{,}02$ à $K_0$ compensé --- ne se contredisent pas : ils
+répondent à deux questions différentes, et il faut choisir laquelle on pose.
+
+\begin{center}
+\begin{tabularx}{\textwidth}{@{}lX@{}}
+\toprule
+\textbf{Question posée} & \textbf{Réponse mesurée} \\
+\midrule
+« La technologie des entités s'améliore de 50~\%, mais les entrants restent
+dotés comme avant. » & Réponse \textbf{sous}-proportionnelle,
+$\varepsilon = 0{,}76$. Le gain par entité est réel ($\times1{,}80$) mais la
+population se contracte d'un quart, parce que les nouveaux nés sont devenus
+relativement trop petits pour survivre. \\
+\addlinespace
+« L'économie entière, dotation des entrants comprise, monte d'un cran
+technologique. » & Réponse \textbf{super}-proportionnelle,
+$\varepsilon = 2{,}02 = 1/(1-\gamma)$. La population est inchangée, et la
+production suit exactement l'échelle autarcique. \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+Cette coïncidence à 0,9~\% près ne vaudrait rien sur un seul point : elle est
+mise à l'épreuve en deux autres $\gamma$ au §\ref{sec:loi}, où la loi prédit
+des valeurs franchement différentes.
+
+\fait{} Enfin, $K_0$ est un levier puissant en lui-même : le bras
+$K_0 \times 2{,}25$ \emph{seul}, à technologie inchangée, fait
+$\times1{,}358$ en population et $\times1{,}694$ en production.
+
+\section{La tension : une seule grandeur pour lire l'état du système}
+\label{sec:tension}
+
+Les sections précédentes ont fait apparaître la même chose sous trois noms :
+un capital de naissance devenu trop petit, une population qui se contracte,
+des durées de vie qui raccourcissent. Cette section propose une grandeur
+unique qui les résume, et la met à l'épreuve.
+
+\subsection{Définition}
+
+Une entité \emph{isolée} --- sans marché, sans dette --- a un capital
+d'équilibre exact. À chaque pas son capital devient
+$(K + A K^{\gamma})(1-\delta)$, dont le point fixe est l'échelle autarcique
+déjà rencontrée :
+\begin{equation}
+\Kaut \;=\; \left[\frac{A\,(1-\delta)}{\delta}\right]^{1/(1-\gamma)} .
+\label{eq:kaut}
+\end{equation}
+C'est une référence purement paramétrique : elle ne dépend ni de la
+population, ni du crédit, ni de l'histoire du run.
+
+En face, on veut l'échelle à laquelle le système tourne \emph{réellement}.
+On la définit par la production. Le \textbf{capital équivalent} $K_{\text{eq}}$
+est le capital qu'auraient toutes les entités d'un groupe technologique si,
+à production agrégée et effectif identiques, elles étaient toutes au même
+capital :
+\begin{equation}
+\mathrm{prod} \;=\; n\,A\,K_{\text{eq}}^{\gamma}
+\qquad\Longleftrightarrow\qquad
+K_{\text{eq}} \;=\; \left(\frac{\mathrm{prod}}{n\,A}\right)^{1/\gamma} .
+\label{eq:keq}
+\end{equation}
+La \textbf{tension} est le rapport des deux :
+\begin{equation}
+T \;=\; \frac{\Kaut}{K_{\text{eq}}} .
+\label{eq:tension}
+\end{equation}
+$T = 1$ : le système tourne à son échelle autarcique. $T > 1$ : il tourne
+\emph{en dessous}, le capital y est maintenu bas par tout ce que l'autarcie
+ignore --- le service des intérêts, la mortalité, le renouvellement par des
+naissances petites. $T < 1$ : il porte plus de capital que la technologie
+seule ne le soutiendrait.
+
+\paragraph{Trois conventions, énoncées parce qu'elles ne sont pas neutres.}
+\emph{(i)} $\Kaut$ ignore le service des intérêts --- c'est sa définition,
+et c'est ce qui fait de $T$ la mesure de tout ce qui n'est pas la
+technologie. \emph{(ii)} $K_{\text{eq}}$ \textbf{n'est pas} le capital
+moyen : $K^{\gamma}$ étant concave, la moyenne des productions est
+inférieure à la production de la moyenne, donc
+$K_{\text{eq}} \le \overline{K}$ par Jensen, avec égalité seulement si tous
+les capitaux sont égaux. Le rapport $K_{\text{eq}}/\overline{K}$ est donc
+lui-même une mesure d'inégalité interne, et il est rapporté à côté de la
+tension. \emph{(iii)} Le calcul est fait par groupe technologique, seul
+niveau où $A$ et $\gamma$ sont définis ; l'agrégat d'un run à technologies
+multiples est la moyenne des tensions pondérée par la production.
+
+\paragraph{Comment elle est calculée, et sur quelles données.} La tension
+est un \emph{dérivé} des séries déjà écrites : \code{tech\_series.csv}
+fournit $(\mathrm{prod}, n, A, \gamma)$ par groupe et par pas, et
+\code{series.csv} les morts. \fait{} Elle a donc pu être calculée sur les 93
+runs déjà terminés, sans en relancer un seul et sans toucher au moteur
+(\code{scripts/tension.py}, \code{scripts/tension\_figures.py}). Chaque run
+porte désormais \code{tension.csv}, \code{tension\_agg.csv} et
+\code{figures/tension.png}, consultables dans \code{simulation\_lab}.
+\incertitude{} Un point de méthode, reporté dans la colonne \code{basis} de
+chaque fichier : \code{tech\_series} donne l'effectif de \emph{fin} de pas,
+alors que la production a été calculée avant les morts du pas. L'effectif
+producteur est donc reconstitué par $n + \mathrm{deaths}$ --- exact tant
+qu'une seule technologie est vivante, donc pour tous les runs de contrôle,
+d'amorçage, d'ablation et de loi d'échelle. Quand plusieurs technologies
+coexistent, les morts sont imputées au prorata de l'effectif ; sur les bras
+\code{fraction} le groupe traité pèse moins de 2\,\% de la production, et
+l'erreur est bornée par les $\approx$30 morts du pas.
+
+\subsection{Ce qu'elle vaut, et ce qu'elle sépare}
+
+\fait{} Dans le régime de référence ($\gamma = 0{,}5$, $A = 1$,
+$\delta = 0{,}01$, $K_0 = 25$), $\Kaut = 9801$ et $K_{\text{eq}} \approx 735$ :
+la tension vaut $T = 13{,}32 \pm 0{,}02$. \textbf{Le système tourne à un
+treizième de son échelle autarcique.} \fait{} L'écart de Jensen y est faible
+($K_{\text{eq}}/\overline{K} = 0{,}97$) : les capitaux sont proches les uns
+des autres, la tension n'est pas un artefact d'inégalité interne.
+
+\input{tables/tension_arms.tex}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{figures/tension_arms.png}
+\caption{Tension en régime établi, campagne et ablation. Le trait pointillé
+est le contrôle. À gauche, seuls les bras à portée globale déplacent la
+tension --- les bras \code{fraction} restent sur le contrôle, leur cohorte
+traitée étant devenue négligeable. À droite, l'ablation : $K_0$ compensé à
+l'échelle autarcique (rouge) ramène la tension exactement sur le contrôle,
+$K_0$ fixe la porte à 21. Données :
+\code{results/analysis/tension\_arms.csv}.}
+\label{fig:tension_arms}
+\end{figure}
+
+\fait{} La compensation de $K_0$ conserve la tension à $0{,}5$\,\% près :
+$13{,}26 \pm 0{,}02$ pour \code{abl\_A150\_K0aut} contre
+$13{,}32 \pm 0{,}02$ pour son contrôle, alors que le même choc sans
+compensation la porte à $21{,}12 \pm 0{,}04$. \inference{} C'est la lecture
+la plus directe du §\ref{sec:ablation} : ce que la compensation préserve,
+c'est cette grandeur sans dimension, et c'est pourquoi tous les diagnostics
+la suivent.
+
+\subsection{Mortalité et durée de vie contre tension}
+
+\fait{} Rapportées à la tension plutôt qu'aux paramètres, la mortalité et la
+durée de vie s'ordonnent. Sur les 100 runs à $\gamma = 0{,}5$ et
+$\delta = 0{,}01$ --- couvrant une plage de tension de $3{,}1$ à $45{,}6$,
+soit un facteur $15$, obtenue par trois interventions différentes ($A$ seul,
+$K_0$ seul, $A$ et $K_0$ ensemble) --- le taux de mortalité suit
+\begin{equation}
+\frac{\text{morts}}{\text{population}\cdot\text{pas}} \;\propto\; T^{0{,}668},
+\qquad R^2_{\log\text{-}\log} = 0{,}9885 ,
+\label{eq:mortalite}
+\end{equation}
+avec un écart médian à l'ajustement de $1{,}4\,\%$. \fait{} Et les trois
+leviers s'accordent : leurs biais respectifs valent $-0{,}7\,\%$,
+$-4{,}3\,\%$ et $+0{,}4\,\%$. \inference{} À $\delta$ fixé, il est donc
+indifférent \emph{par quel chemin} on a atteint un niveau de tension : seul
+le niveau compte. \fait{} La durée de vie moyenne, qui est l'inverse du
+taux, passe de $114{,}9$ pas à $T = 3{,}1$ à $18{,}3$ pas à $T = 45{,}5$.
+
+\fait{} Le cas le plus net est celui de deux bras qui n'ont rien en commun
+que leur tension : diviser $K_0$ par 4 ($K_0 = 6{,}25$) et doubler $A$
+($A = 2$) --- deux interventions sans rapport --- amènent le système à
+$T = 29{,}46$ et $T = 29{,}61$. Leur mortalité vaut $0{,}04282$ et
+$0{,}04304$, leur durée de vie $23{,}35$ et $23{,}23$ pas, leur population
+701 et 696. \emph{Le système ne se souvient pas de ce qu'on lui a fait ;
+il ne connaît que sa tension.} --- tant que $\delta$ ne bouge pas.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{figures/tension_mortality.png}
+\caption{Note [22] du relecteur : mortalité contre tension, \textbf{un
+panneau par $\gamma$}, un point par run, axes absolus partagés. L'étoile
+pleine est la ligne de base du panneau, les étoiles creuses celles des deux
+autres $\gamma$ : les trois familles ne travaillent pas autour du même point.
+Chaque encart rejoue le panneau en écart à \emph{sa} base, seule façon de
+séparer les bras qui se superposent sur les axes absolus. La durée de vie est
+l'inverse exact du taux ($\sum \text{pop}/\sum \text{morts}$ contre
+$\sum \text{morts}/\sum \text{pop}$) : elle est portée en second axe, à
+droite, et non en second nuage. Aucun ajustement n'est tracé --- voir
+ci-dessous. Le bras \code{frac\_g060} porte $\gamma = 0{,}5$ en configuration
+mais traite $20\,\%$ des entités à $\gamma = 0{,}6$ ; il a son propre
+marqueur. Données : \code{results/analysis/tension\_runs.csv}.}
+\label{fig:tension_mortalite}
+\end{figure}
+
+\incertitude{} \textbf{Pourquoi aucune droite n'est tracée.} Une version
+antérieure de cette figure superposait les trois $\gamma$ dans un seul plan
+et y traçait quatre ajustements. Les trois ajustements par $\gamma$ étaient
+sans objet : à $\gamma = 0{,}4$ et $\gamma = 0{,}6$, les neuf runs
+disponibles couvrent une plage de tension de $0{,}6\,\%$ et $1{,}0\,\%$
+respectivement --- ce sont des runs à l'échelle compensée, faits pour
+\emph{ne pas} déplacer la tension (§\ref{sec:echelle}). Une droite y ajuste
+du bruit de graine.
+
+\fait{} Le quatrième ajustement, « tous $\gamma$ confondus », méritait un
+examen plus sérieux : avec $R^2 = 0{,}72$ sur une plage de tension de $2{,}8$
+à $88{,}9$, il avait l'air d'une loi. Il n'en est pas une, et on peut le
+montrer sans rien ajuster. Les trois lignes de base valent
+$(T, \text{morts/pop}) = (4{,}25 ; 0{,}01415)$, $(13{,}32 ; 0{,}02650)$ et
+$(88{,}56 ; 0{,}04918)$. La droite qui passe par ces \emph{trois points
+seuls} a pour exposant
+\[
+\frac{\ln(0{,}04918/0{,}01415)}{\ln(88{,}56/4{,}25)} = 0{,}410 ,
+\]
+contre $0{,}396$ pour l'ajustement sur les $127$ runs. \inference{} Les deux
+coïncident à $3{,}5\,\%$ : l'ajustement global ne mesure aucune réponse à la
+tension, il mesure le déplacement de la base avec $\gamma$. C'est pourquoi la
+figure porte les bases des autres $\gamma$ en marqueurs creux --- la droite
+qu'on retirait joignait ces trois étoiles, et rien d'autre.
+
+\incertitude{} \textbf{Reste donc une seule relation défendable, et une
+réserve décisive.} La loi de puissance en $T^{0{,}668}$ ($R^2 = 0{,}9885$)
+n'est établie qu'à $\gamma = 0{,}5$ \emph{et} $\delta$ fixé ; elle est
+ajustée et tracée en §\ref{sec:tension_test} et à la
+figure~\ref{fig:tension_sweep}, sur l'échantillon qui balaie effectivement la
+tension. Extrapolée à $\gamma = 0{,}6$, elle prédirait à $T = 88{,}6$ un taux
+de $0{,}090$ quand le mesuré vaut $0{,}049$. Et la restriction « à $\delta$
+fixé » n'est pas cosmétique : c'est l'objet de la sous-section suivante.
+
+\subsection{La tension est-elle un paramètre d'état ? Non : le test qui
+échoue}
+\label{sec:tension_test}
+
+\paragraph{Le test.} Si la tension résume vraiment l'état du système, alors
+n'importe quelle façon de la déplacer doit produire la même mortalité. On a
+donc appliqué au même état à $t_0 = 2000$, sur les mêmes snapshots
+d'amorçage, \textbf{quatre leviers indépendants} : $K_0$ seul (de 3 à 400,
+base 25), $\delta$ seul (de $0{,}005$ à $0{,}04$, base $0{,}01$), $A$ seul
+(de $0{,}75$ à $2{,}0$), et $A$ et $K_0$ ensemble. Trente-neuf runs
+supplémentaires, trois graines chacun. Le levier $\delta$ est le plus
+exigeant, parce qu'il entre \emph{dans la définition même} de $\Kaut$
+autant que dans la dynamique.
+
+\input{tables/tension_sweep.tex}
+
+\fait{} \textbf{Le test échoue, et il échoue exactement sur $\delta$.} Sur
+les quatre leviers réunis (109 runs), l'ajustement en tension tombe à
+$R^2 = 0{,}58$, avec un biais de $+36\,\%$ sur les seuls bras $\delta$ ---
+jusqu'à $+102\,\%$ sur un point. La raison se lit directement sur les
+niveaux : faire varier $\delta$ d'un facteur 8 déplace la tension d'un
+facteur $13{,}4$ ($T = 37{,}3$ à $\delta = 0{,}005$, $T = 2{,}8$ à
+$\delta = 0{,}04$) et ne déplace le taux de mortalité que de $14\,\%$
+($0{,}0254$ à $0{,}0289$). La loi établie à $\delta$ fixé prédirait
+$0{,}0524$ et $0{,}0092$ : elle se trompe d'un facteur 2 dans un sens et 3
+dans l'autre.
+
+\fait{} Le contre-exemple symétrique du précédent le montre sans aucune
+statistique : $\delta = 0{,}04$ donne $T = 2{,}78$ et $K_0 = 400$ donne
+$T = 3{,}12$ --- deux tensions presque égales. Leurs mortalités valent
+$0{,}0289$ et $0{,}0087$, un facteur $3{,}3$ ; leurs durées de vie $34{,}6$
+et $114{,}9$ pas ; leurs populations 1043 et 3427. \emph{À tension égale,
+deux systèmes entièrement différents.}
+
+\inference{} \textbf{La tension n'est donc pas un paramètre d'état du
+modèle.} C'est un \emph{diagnostic d'échelle}, valide et précis tant que la
+dépréciation ne bouge pas. La raison est visible dans
+\eqref{eq:kaut} : $\Kaut$ dépend de $\delta$ à la puissance
+$1/(1-\gamma) = 2$, soit bien plus fortement que ne dépend d'elle ce qui
+tue réellement les entités.
+
+\paragraph{Ce qui, en revanche, aligne les quatre leviers.} \fait{} La même
+mortalité, rapportée à l'\textbf{intensité de rotation du crédit} ---
+principal transféré au pas, divisé par le capital agrégé --- donne
+\begin{equation}
+\frac{\text{morts}}{\text{population}\cdot\text{pas}}
+\;\propto\;
+\left(\frac{\code{loan\_volume}}{\code{K\_tot}}\right)^{1{,}337},
+\qquad R^2_{\log\text{-}\log} = 0{,}9982 ,
+\label{eq:rotation}
+\end{equation}
+avec un écart médian de $0{,}41\,\%$, un écart maximal de $4{,}9\,\%$, et un
+biais par levier compris entre $-1{,}7\,\%$ et $+0{,}7\,\%$ --- $\delta$
+compris.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{figures/tension_sweep.png}
+\caption{Le test des quatre leviers. À gauche, la tension : les leviers
+d'échelle ($A$, $K_0$) tombent sur une droite, les points $\delta$
+(triangles) s'en écartent franchement --- la tension leur attribue une
+variation de mortalité qui n'a pas lieu. À droite, la même mortalité contre
+la rotation du crédit : les quatre leviers se confondent sur une seule loi
+de puissance. Données :
+\code{results/analysis/tension\_runs.csv}.}
+\label{fig:tension_sweep}
+\end{figure}
+
+\incertitude{} \textbf{Ce résultat ne doit pas être sur-interprété, et voici
+pourquoi.} La rotation du crédit n'est pas un paramètre : c'est une variable
+d'état \emph{endogène}, mesurée sur le même run que la mortalité.
+\eqref{eq:rotation} est donc une régularité descriptive entre deux sorties,
+pas une loi de contrôle : elle ne dit pas comment obtenir une mortalité
+donnée, elle dit que \emph{si} l'on connaît le débit du marché du crédit
+rapporté au stock de capital, on connaît la mortalité à $0{,}4\,\%$ près, quel
+que soit le paramètre qu'on a bougé pour l'obtenir. \inference{} Ce que cela
+suggère --- sans le démontrer --- est que le canal par lequel les paramètres
+tuent est le crédit, et que la tension n'est un bon prédicteur que dans la
+mesure où elle suit ce débit. Établir le lien dans l'autre sens, des
+paramètres vers la rotation, est le prolongement naturel de ce travail et
+n'est pas fait ici.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{figures/tension_trajectoires.png}
+\caption{Trajectoires de trois bras contrastés. À gauche, la tension dans le
+temps : le bras à $K_0$ compensé reste sur le contrôle, celui à $K_0$ fixe
+saute à l'intervention. À droite, le même trajet dans le plan
+(tension, mortalité) : le système quitte un point d'équilibre, décrit une
+boucle transitoire, et s'installe sur un autre.}
+\label{fig:tension_traj}
+\end{figure}
+
+\subsection{Ce que $A$ fait à la tension : l'exposant n'est pas 1}
+\label{sec:tension_vs_A}
+
+\paragraph{L'observation.} À la lecture de la
+figure~\ref{fig:tension_traj}, le relecteur note que multiplier $A$ par
+$1{,}5$ semble multiplier la tension par $1{,}5$, et demande si cela vaut en
+général. \fait{} C'est presque vrai, et l'écart est systématique : le bras
+\code{all\_A150} porte la tension de $13{,}32$ à $21{,}12$, soit
+$\times 1{,}586$ et non $\times 1{,}5$ --- $5{,}7\,\%$ de trop, toujours dans
+le même sens.
+
+\fait{} Sur les quatre valeurs $A \in \{0{,}75;\,1{,}25;\,1{,}5;\,2{,}0\}$
+appliquées au même $t_0$ à $K_0$ fixé, la relation est une loi de puissance
+propre --- et son exposant n'est pas $1$ :
+\[
+T \propto A^{1{,}145}, \qquad R^2_{\log\text{-}\log} = 0{,}9999
+\qquad (\gamma = 0{,}5) .
+\]
+
+\paragraph{L'exposant n'est pas libre.} \fait{} Il se déduit des deux
+définitions. De $\Kaut = [A(1-\delta)/\delta]^{1/(1-\gamma)}$ et
+$K_{\text{eq}} = (\text{prod}/(n A))^{1/\gamma}$, en dérivant
+$\ln T = \ln \Kaut - \ln K_{\text{eq}}$ par rapport à $\ln A$ :
+\begin{equation}
+\frac{\mathrm{d}\ln T}{\mathrm{d}\ln A}
+\;=\;
+\frac{1}{1-\gamma} \;-\; \frac{1}{\gamma}\bigl(\varepsilon_{\text{prod}}
+- \eta_{\text{pop}} - 1\bigr) ,
+\label{eq:exposant_tension}
+\end{equation}
+où $\varepsilon_{\text{prod}} = \mathrm{d}\ln(\text{prod})/\mathrm{d}\ln A$
+et $\eta_{\text{pop}} = \mathrm{d}\ln n/\mathrm{d}\ln A$ se mesurent sur les
+mêmes runs. \incertitude{} Il faut être clair sur ce qu'est
+\eqref{eq:exposant_tension} : c'est une \textbf{réécriture des définitions},
+pas une hypothèse. Le résidu de $10^{-3}$ entre les deux membres du tableau
+ci-dessous mesure la propreté de l'aller-retour numérique
+($\text{prod} = n A K_{\text{eq}}^{\gamma}$ inverse exactement la définition
+de $K_{\text{eq}}$), et non la validité de l'identité --- qui ne pouvait pas
+être fausse.
+
+\paragraph{Ce qui rend le résultat non trivial.} \fait{} Les deux élasticités
+sont \emph{presque insensibles à $\gamma$} :
+$\varepsilon_{\text{prod}}$ vaut $0{,}64$, $0{,}71$ et $0{,}75$, et
+$\eta_{\text{pop}}$ vaut $-0{,}72$, $-0{,}72$ et $-0{,}75$, pour
+$\gamma = 0{,}4$, $0{,}5$ et $0{,}6$. \inference{} Toute la dépendance en
+$\gamma$ de l'exposant vient donc des deux facteurs \emph{géométriques}
+$1/(1-\gamma)$ et $1/\gamma$ de \eqref{eq:exposant_tension}, et non d'un
+changement de comportement du système. C'est ce qui la rend prévisible.
+
+\input{tables/tension_vs_A.tex}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{figures/tension_vs_A.png}
+\caption{À gauche, la tension contre $A$ à $K_0$ fixé, un trait par $\gamma$,
+rapportée à la ligne de base de chaque famille ; le tireté est la droite de
+pente 1 que l'observation supposait. Le carré est le contre-point décisif :
+la même hausse $A \times 1{,}5$ \emph{avec} $K_0$ compensé ne déplace pas la
+tension. À droite, l'exposant mesuré contre celui que donne
+\eqref{eq:exposant_tension}. Données :
+\code{results/analysis/tension\_vs\_A.csv}.}
+\label{fig:tension_vs_A}
+\end{figure}
+
+\paragraph{Réponse.} \fait{} Non, $A \times x$ n'implique pas $T \times x$.
+L'exposant vaut $0{,}776$, $1{,}145$ et $1{,}673$ pour
+$\gamma = 0{,}4$, $0{,}5$ et $0{,}6$ --- il double presque sur cette plage,
+avec un $R^2$ d'au moins $0{,}9999$ dans les trois cas. \inference{}
+Il ne passe par $1$ qu'au voisinage de $\gamma \approx 0{,}46$ : la
+coïncidence observée est une propriété du $\gamma$ de référence, pas du
+modèle. À $\gamma = 0{,}6$, $A \times 2$ multiplie la tension par $3{,}21$.
+
+\fait{} \textbf{Et c'est entièrement un phénomène à $K_0$ fixé.} Sous
+compensation, la covariance d'échelle (§\ref{sec:echelle}) impose
+$\varepsilon_{\text{prod}} = 1/(1-\gamma)$ et $\eta_{\text{pop}} = 0$ ;
+\eqref{eq:exposant_tension} donne alors
+\[
+\frac{1}{1-\gamma} - \frac{1}{\gamma}\left(\frac{1}{1-\gamma} - 1\right)
+= \frac{1}{1-\gamma} - \frac{1}{1-\gamma} = 0 .
+\]
+Mesuré : $-0{,}012$ pour \code{abl\_A150\_K0aut}, contre $+1{,}137$ pour le
+même choc sans compensation. \inference{} L'apparent « $A\times x
+\Rightarrow T \times x$ » n'est donc pas une propriété de $A$ : c'est une
+propriété du \emph{décalage} entre l'échelle du système et un capital de
+naissance qu'on a laissé derrière.
+
+\incertitude{} \textbf{Ce que la prédiction a et n'a pas attrapé.} L'exposant
+attendu avait été écrit avant de lancer les runs, en supposant
+$\varepsilon_{\text{prod}} - \eta_{\text{pop}} \approx 1{,}43$ constant :
+$0{,}59$ à $\gamma = 0{,}4$ et $1{,}78$ à $\gamma = 0{,}6$. Le sens est
+confirmé --- l'exposant s'éloigne franchement de 1 des deux côtés --- mais
+les valeurs sont respectivement $0{,}776$ et $1{,}673$, parce que
+$\varepsilon_{\text{prod}} - \eta_{\text{pop}}$ n'est pas tout à fait
+constant : il vaut $1{,}356$, $1{,}433$ et $1{,}501$. \inference{} Cette
+lente dérive n'est pas expliquée ici, et c'est la seule chose que ce test
+laisse ouverte.
+
+\section{La loi d'échelle $\varepsilon = 1/(1-\gamma)$}
+\label{sec:loi}
+
+\subsection{Pourquoi cet exposant : la covariance d'échelle}
+\label{sec:echelle}
+
+L'exposant $1/(1-\gamma)$ n'est pas un ajustement empirique : il se déduit
+du modèle, et l'argument tient en une page. \textbf{Le modèle est covariant
+d'échelle.}
+
+\paragraph{L'énoncé.} Posons
+\begin{equation}
+c \;=\; \left(\frac{A'}{A}\right)^{1/(1-\gamma)} ,
+\label{eq:facteur}
+\end{equation}
+et remplaçons \emph{simultanément} $A \to A'$ et $K_0 \to c\,K_0$, en
+laissant $\gamma$, $\delta$, $\sigma$, $\lambda$ et la graine inchangés.
+Alors la simulation obtenue est \emph{exactement} la simulation d'origine
+avec tous les capitaux multipliés par $c$.
+
+\paragraph{La vérification, phase par phase.} Il suffit de suivre un capital
+$K \mapsto cK$ à travers les huit phases d'un pas.
+
+\begin{center}\footnotesize
+\begin{tabularx}{\textwidth}{@{}lX@{}}
+\toprule
+\textbf{Phase} & \textbf{Effet du changement d'échelle} \\
+\midrule
+Naissances & Injection $K_0 \to c\,K_0$ par construction. Le nombre de
+naissances, tiré en $\mathrm{Poisson}(\lambda)$, est inchangé. \\
+Choc & Multiplicatif : $cK \cdot e^{\xi}$, même $\xi$, donc $\times c$. \\
+Production & $A'(cK)^{\gamma} = A' c^{\gamma} K^{\gamma}$, et
+\eqref{eq:facteur} donne $c^{1-\gamma} = A'/A$, donc $A'c^{\gamma} = cA$ :
+la production est $\times c$. \emph{C'est ici, et seulement ici, que
+l'exposant $1/(1-\gamma)$ est requis.} \\
+Taux d'intérêt & La règle marginale évalue $\gamma A K^{\gamma-1}$, qui
+devient $\gamma A' c^{\gamma-1} K^{\gamma-1} = \gamma (A'c^{\gamma}/c)
+K^{\gamma-1} = \gamma A K^{\gamma-1}$ : \textbf{invariant}. Un taux est un
+nombre sans dimension. \\
+Service & Principal $\times$ taux $= (cq)\,r$, donc $\times c$. \\
+Dépréciation & Linéaire : $\times c$. \\
+Institution & $\delta^{*} = h(C)-K$ avec $h$ homogène de degré 1 à
+technologies fixées, donc $\times c$. \\
+Faillites & Comparaisons entre grandeurs toutes en $c$ : les mêmes entités
+meurent, aux mêmes pas. \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\noindent Aucune phase ne consomme le générateur différemment --- naissances,
+chocs et appariements du marché tirent le même nombre de valeurs, dans le
+même ordre. Les deux simulations sont donc la même, à l'échelle $c$ près, et
+\[
+\mathrm{prod\_tot}(A') = c \cdot \mathrm{prod\_tot}(A)
+\quad\Longrightarrow\quad
+\varepsilon = \frac{\mathrm{d}\ln \mathrm{prod\_tot}}{\mathrm{d}\ln A}
+= \frac{\ln c}{\ln (A'/A)} = \frac{1}{1-\gamma}.
+\]
+
+\paragraph{Ce qui empêche l'exactitude parfaite.} Trois constantes du moteur
+sont dimensionnées et ne sont pas rééchelonnées : \code{MIN\_LOAN}
+($10^{-9}$, transfert jugé négligeable), \code{ZERO\_TOL} (capital jugé nul)
+et le plafond de transfert. Une paire dont le transfert optimal tombe entre
+$\texttt{MIN\_LOAN}$ et $c\cdot\texttt{MIN\_LOAN}$ est refusée d'un côté et
+acceptée de l'autre : c'est la seule origine possible d'un écart.
+
+\paragraph{La vérification.} On lance depuis $t = 0$, à graine identique,
+quatre variantes par $\gamma$ : la référence ($A=1$, $K_0=25$), la
+compensation covariante ($A=1{,}5$, $K_0 = 25\,c$), l'absence de
+compensation ($K_0$ inchangé), et une compensation au mauvais exposant
+($K_0 \times 1{,}5$). On compare chaque trajectoire à celle de la référence
+multipliée par $c$.
+
+\fait{} La compensation covariante est exacte \textbf{à la précision
+machine} : l'écart maximal sur 800 pas vaut $5{,}2\cdot10^{-15}$ sur
+\code{prod\_tot} et $1{,}3\cdot10^{-15}$ sur \code{K\_tot} à
+$\gamma = 0{,}5$, et la population est \emph{rigoureusement identique}
+(écart exactement nul) --- les mêmes entités meurent aux mêmes pas, comme
+l'argument le prédit. L'élasticité mesurée vaut $2{,}0000$ et $1{,}6667$,
+c'est-à-dire $1/(1-\gamma)$ à toutes les décimales. \fait{} Les deux autres
+compensations s'écartent de $24$ à $58\,\%$, et donnent
+$\varepsilon = 0{,}71$ (aucune compensation) et $1{,}34$ (mauvais exposant).
+\fait{} Le compteur \code{mkt\_blocked\_tiny} \emph{diffère} bien entre
+référence et bras covariant (8 contre 7 à $\gamma=0{,}5$) : les seuils
+dimensionnés mordent effectivement, mais sur des transferts inférieurs à
+$10^{-9}$ joule, d'où le résidu à $10^{-15}$ et non à zéro.
+
+\input{tables/scaling_theory.tex}
+
+\incertitude{} \textbf{Cette exactitude ne s'étend pas au protocole de la
+sous-section suivante}, et il ne faut pas confondre les deux. La covariance
+vaut pour deux simulations lancées \emph{depuis $t=0$} avec des paramètres
+homothétiques. La campagne §\ref{sec:loi} fait autre chose : elle branche
+l'intervention à $t_0$ sur un état qui, lui, est encore à l'ancienne
+échelle, et mesure la réponse pendant que le système s'y adapte. Les
+$\pm1{,}3\,\%$ résiduels qu'on y trouve ne viennent donc pas des constantes
+dimensionnées --- celles-ci pèsent $10^{-15}$ --- mais de la relaxation
+incomplète et du nombre fini de graines. Leurs signes alternés
+($-1{,}2$\,\%, $+0{,}9$\,\%, $-0{,}1$\,\%) sont cohérents avec du bruit et
+non avec un biais de seuil.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{figures/scaling_covariance.png}
+\caption{Vérification directe de la covariance. À gauche, $\gamma = 0{,}5$ :
+la courbe de référence multipliée par $c$ (noir) et les trois compensations.
+Seule $K_0 \times c$ se superpose. À droite, l'écart maximal à la
+proportionnalité exacte pour les trois compensations et les trois $\gamma$,
+en échelle logarithmique. Données :
+\code{results/analysis/scaling\_theory.csv}.}
+\label{fig:covariance}
+\end{figure}
+
+\subsection{Mise à l'épreuve sur trois valeurs de $\gamma$}
+
+Une égalité vérifiée en un point n'est pas une loi. L'ablation donne
+$\varepsilon = 2{,}018$ pour $\gamma = 0{,}5$, où $1/(1-\gamma)$ vaut
+exactement 2 ; on rejoue donc le même protocole --- $A \times 1{,}5$ sur
+toutes les entités, capital de naissance compensé par $A^{1/(1-\gamma)}$ ---
+en $\gamma = 0{,}4$ et $\gamma = 0{,}6$, où la loi prédit $1{,}667$ et
+$2{,}500$. Chaque $\gamma$ reçoit son propre amorçage de 2000 pas et son
+propre contrôle apparié ; aucune intervention ne consomme de tirage, donc
+l'appariement est exact.
+
+\fait{} Contrôle préalable : l'amorçage est bien stationnaire à $t_0$ pour
+ces deux nouveaux $\gamma$ --- le rapport entre la moyenne du dernier quart
+de l'amorçage et celle du quart précédent vaut $1{,}0014$ et $0{,}9993$.
+Le $t_0$ calibré sur $\gamma = 0{,}5$ y est donc valide.
+
+\input{tables/scaling_gamma.tex}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{figures/scaling_gamma.png}
+\caption{La loi d'échelle sur trois valeurs de $\gamma$. À gauche, les
+élasticités mesurées contre la courbe $1/(1-\gamma)$ ; à droite, l'écart
+relatif à la loi. Données : \code{results/analysis/scaling\_gamma.json}.}
+\label{fig:loi}
+\end{figure}
+
+\fait{} La loi est vérifiée à $-1{,}2$~\%, $+0{,}9$~\% et $-0{,}1$~\% près sur
+une plage où $\varepsilon$ lui-même varie de $1{,}65$ à $2{,}50$ --- soit une
+variation de 52~\% de la quantité prédite, capturée à mieux que 1,3~\%.
+\fait{} Et à chaque $\gamma$, la population reste celle de son contrôle
+($\times0{,}993$, $\times1{,}005$, $\times0{,}999$) : la compensation
+neutralise l'effet de population partout, pas seulement en $\gamma = 0{,}5$.
+
+\inference{} L'énoncé qui résiste à ce test est donc : \textbf{lorsque le
+capital de naissance suit l'échelle technologique, la production agrégée du
+système se comporte comme son échelle autarcique}, $A^{1/(1-\gamma)}$ --- une
+loi de puissance dont l'exposant est fixé par le seul rendement d'échelle de
+la fonction de production, et non par les paramètres du marché du crédit.
+\incertitude{} Testée ici sur $\gamma \in \{0{,}4;\,0{,}5;\,0{,}6\}$, à une
+seule amplitude ($A \times 1{,}5$) et un seul jeu de paramètres de
+population. Rien n'établit qu'elle survive à un $\gamma$ proche de 0 ou de 1,
+ni à une amplitude très différente.
+
+\subsection{Covariance de pas de temps : $\delta$, $\sigma$ et $\lambda$ ne
+sont pas des paramètres de forme}
+\label{sec:temps}
+
+La covariance d'échelle du §\ref{sec:echelle} dit ce qui se passe quand on
+change l'unité de \emph{capital}. Il en existe une seconde, qui dit ce qui se
+passe quand on change l'unité de \emph{temps}, et qui a été proposée par le
+relecteur sous cette forme : \emph{si l'on double $\lambda$, que l'on remplace
+$\delta$ par $2\delta - \delta^2$ et $\sigma$ par $\sqrt{2}\,\sigma$, alors un
+pas neuf vaut deux pas anciens} --- la population resterait la même, la
+production serait grossièrement doublée.
+
+\paragraph{Trois substitutions qui composent exactement.} \fait{} Les trois
+formules proposées sont exactes, et chacune pour une raison différente.
+
+\begin{description}
+\item[Dépréciation.] Deux pas font $K(1-\delta)^2$ ; un pas neuf fait
+  $K(1-\delta')$. L'égalité $1 - (2\delta - \delta^2) = (1-\delta)^2$ est une
+  identité algébrique : \emph{aucune approximation}.
+\item[Choc.] Le moteur tire $\xi \sim \mathcal{N}(-\sigma^2/2, \sigma)$ puis
+  applique $K \leftarrow K e^{\xi}$ (\code{model.py:880--884}). Deux pas
+  composent $e^{\xi_1 + \xi_2}$ avec
+  $\xi_1 + \xi_2 \sim \mathcal{N}(-\sigma^2, \sigma\sqrt{2})$ ; un pas neuf
+  avec $\sigma' = \sqrt{2}\sigma$ tire
+  $\mathcal{N}(-\sigma'^2/2, \sigma') = \mathcal{N}(-\sigma^2, \sqrt{2}\sigma)$.
+  Les deux lois coïncident, \emph{y compris la correction de dérive} --- qui
+  est précisément la partie qu'un facteur $\sqrt{2}$ naïf raterait.
+\item[Naissances.] Le moteur tire $\text{Poisson}(\lambda)$
+  (\code{model.py:864}). Deux pas donnent
+  $\text{Poisson}(\lambda) + \text{Poisson}(\lambda) = \text{Poisson}(2\lambda)$,
+  un pas neuf $\text{Poisson}(2\lambda)$ : exact en loi.
+\end{description}
+
+\paragraph{Deux flux par pas que l'énoncé ne mentionne pas.} \fait{} Deux
+phases du pas sont des \emph{débits}, et ne figurent pas dans la liste. La
+\textbf{production} : deux pas anciens produisent $\approx 2AK^{\gamma}$, un
+pas neuf n'en produit que $AK^{\gamma}$ --- il manque un facteur 2 sur $A$.
+Le \textbf{marché} : le moteur fait $R = \lfloor \rho N \rfloor$ rondes
+d'appariement par pas (\code{model.py:497}), donc deux pas font $2\rho N$
+rondes et un pas neuf $\rho N$ --- il manque un facteur 2 sur $\rho$.
+\inference{} Et $A$ porte les deux flux monétaires à la fois : le taux
+d'intérêt vaut $\gamma A K^{\gamma-1}$, donc doubler $A$ double aussi le
+service par pas, ce qu'exige la composition.
+
+\fait{} La conséquence se calcule avant de simuler. Le point fixe autarcique
+passe de $[A(1-\delta)/\delta]^{1/(1-\gamma)}$ à
+$[A'(1-\delta)^2/(2\delta - \delta^2)]^{1/(1-\gamma)}$, soit un facteur
+\[
+\left[\frac{A'}{A}\cdot\frac{1-\delta}{2-\delta}\right]^{\frac{1}{1-\gamma}}
+\;=\;
+\begin{cases}
+0{,}2475 & \text{sans } A' = 2A ,\\[2pt]
+0{,}9900 & \text{avec } A' = 2A .
+\end{cases}
+\]
+\inference{} Le recalage n'est donc \textbf{jamais exact}. Ce déplacement-là
+est d'ordre $\delta$ et s'annulerait avec lui --- mais il ne vaut que
+$1\,\%$, et on verra plus bas que le résidu mesuré est dix fois plus grand :
+$\Kaut$ n'est pas la source principale de l'erreur. Sans le facteur sur $A$,
+en revanche, il n'y a plus de petit paramètre du tout : l'échelle autarcique
+est divisée par 4.
+
+\paragraph{Ce que la mesure donne.} Quatre bras lancés depuis $t = 0$, trois
+graines, comparés à \emph{temps ancien égal} --- le pas $t$ d'un bras rapide
+répond au pas $2t$ de la référence, et les flux des bras rapides sont divisés
+par 2 pour être rapportés au pas ancien. \fait{} Contrôle préalable : les
+quatre bras sont stationnaires à l'arrivée, le rapport du dernier quart au
+quart précédent valant $0{,}993$ à $1{,}003$ sur \code{K\_tot},
+\code{pop} et \code{prod\_tot} --- les niveaux ci-dessous sont des niveaux et
+non des transitoires.
+
+\input{tables/time_rescaling.tex}
+
+\noindent\footnotesize Chaque cellule est le rapport de l'observable à celle
+du bras \code{ref} à temps ancien égal, moyenné sur la fenêtre des 800
+derniers pas anciens ; le $\pm$ est l'écart-type sur les trois graines. Un
+recalage parfait donnerait $1$ partout. Dernière ligne : le déplacement de
+$\Kaut$ calculé analytiquement, sans simuler.\normalsize
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{figures/time_rescaling.png}
+\caption{Recalage temporel, graine 0. À gauche et au centre, les niveaux en
+temps ancien ; à droite, le rapport à la référence, qu'une échelle
+logarithmique rendrait invisible. Données :
+\code{results/analysis/time\_rescaling.json}.}
+\label{fig:temps}
+\end{figure}
+
+\fait{} \textbf{L'énoncé brut ne conserve pas le système.} La population monte
+à $\times 1{,}853$, la production par pas ancien tombe à $\times 0{,}701$, la
+durée de vie s'allonge à $\times 1{,}859$ et la tension passe de $13{,}3$ à
+$5{,}7$ ($\times 0{,}434$). \inference{} Le capital total, lui, ne bouge
+presque pas ($\times 1{,}058$) --- non parce que le système est conservé, mais
+parce que les deux effets se compensent : chaque entité est deux fois plus
+petite et il y en a presque deux fois plus. C'est un piège de lecture
+qu'il vaut la peine de nommer : \emph{sur cette transformation, \code{K\_tot}
+est l'observable la moins informative de toutes}.
+
+\fait{} \textbf{Avec les deux flux, le recalage tient.} Population
+$\times 1{,}067$, morts par pas ancien $\times 1{,}003$, durée de vie
+$\times 1{,}064$, tension $\times 0{,}943$, production par pas ancien
+$\times 1{,}118$ --- soit, par pas \emph{neuf}, une production multipliée par
+$2{,}24$. \inference{} Les trois prédictions du relecteur sont donc vérifiées
+dans leur substance : population inchangée à $7\,\%$ près, production
+« grossièrement multipliée par deux », changements marginaux. Elles ne le sont
+pas dans leur lettre : sans $A \times 2$ ni $\rho \times 2$, aucune des trois
+ne tient.
+
+\fait{} Le rôle de $\rho$ se lit sur le bras intermédiaire : avec
+$A \times 2$ mais $\rho$ inchangé, la population est déjà rattrapée
+($\times 1{,}145$) mais le nombre de prêts actifs tombe à $\times 0{,}690$ ---
+le marché du crédit tourne deux fois moins vite que le reste du système.
+Le rétablir ramène ce nombre à $\times 1{,}167$.
+
+\incertitude{} \textbf{Ce qui reste, et d'où ça vient.} Le résidu de $6$ à
+$17\,\%$ du bras complet n'est pas du bruit : les $\pm$ du tableau sont des
+écarts-types sur trois graines, et ils valent $0{,}4$ à $1{,}4\,\%$ sur ce
+bras. Il a deux sources, et \textbf{ce n'est pas la première qui domine}.
+
+\fait{} La discrétisation calculée plus haut déplace $\Kaut$ de $1{,}0\,\%$.
+Le résidu observé vaut $11{,}8\,\%$ sur la production, $15{,}8\,\%$ sur le
+capital et $16{,}7\,\%$ sur le nombre de prêts : \textbf{un ordre de grandeur
+au-dessus}. \inference{} La discrétisation en $\delta$ n'explique donc au
+mieux qu'un dixième de l'écart. Le reste vient de la seconde source, la
+\textbf{phase de marché, qui ne se compose pas} : deux rondes de $\rho N$
+appariements ne valent pas une ronde de $2\rho N$, parce que les appariements
+de la seconde voient l'état laissé par la première --- des prêts déjà noués,
+des capitaux déjà déplacés. Aucun choix de paramètres ne répare cela.
+
+\paragraph{Deux tests, dont un qui ne tranche pas.} La transformation se
+généralise sans difficulté à un \emph{pas de recalage} $s$ quelconque --- le
+nombre de pas anciens comprimés en un :
+\[
+\delta_s = 1 - (1-\delta)^s, \quad \sigma_s = \sigma\sqrt{s}, \quad
+\lambda_s = s\lambda, \quad A_s = sA, \quad \rho_s = s\rho .
+\]
+
+\fait{} \textbf{Premier test : $s = 4$.} Le résidu triple --- production
+$+11{,}8\,\%$ puis $+34{,}6\,\%$, capital $+15{,}8\,\%$ puis $+48{,}0\,\%$,
+prêts actifs $+16{,}7\,\%$ puis $+53{,}9\,\%$. \incertitude{} \textbf{Cela ne
+prouve rien}, et il faut le dire : le déplacement de $\Kaut$ triple lui aussi
+($1{,}0\,\%$ puis $3{,}0\,\%$), parce que les deux termes croissent en
+$(s-1)$ --- un pas neuf recouvre $s-1$ compositions manquées, qu'il s'agisse
+de dépréciation ou d'appariement. Le test est compatible avec les deux
+explications. Ce qu'il montre seulement, c'est que le rapport reste stable :
+le terme de $\Kaut$ pèse $8\,\%$ du résidu à $s = 2$ comme à $s = 4$.
+
+\fait{} \textbf{Second test : $\delta$ divisé par 5, à $s = 2$ inchangé.}
+Celui-là sépare, parce que le terme de discrétisation est proportionnel à
+$\delta$ tandis que le marché ne le voit pas. À $\delta = 0{,}002$, $\Kaut$
+ne se déplace plus que de $0{,}20\,\%$ au lieu de $1{,}00\,\%$ --- exactement
+cinq fois moins. Si le résidu était de discrétisation, il devrait tomber d'un
+facteur 5 ; s'il vient du marché, il ne doit pas bouger.
+
+\input{tables/time_rescaling_stride.tex}
+
+\fait{} \textbf{Le résidu ne bouge pas.} À $\delta$ cinq fois plus petit, la
+production passe de $+11{,}8\,\%$ à $+15{,}0\,\%$, le capital de
+$+15{,}8\,\%$ à $+22{,}1\,\%$, les prêts actifs de $+16{,}7\,\%$ à
+$+17{,}5\,\%$ --- aucune décroissance, et même une légère hausse, quand la
+prédiction « discrétisation » demandait une division par 5.
+\inference{} La discrétisation en $\delta$ est donc écartée comme source
+principale : \textbf{le résidu vient de la phase de marché}. Ce n'est plus
+une explication par élimination, c'est une prédiction quantitative qui a été
+mise à l'épreuve et qui a survécu au bon test après avoir échappé au mauvais.
+
+\inference{} C'est exactement ce qui distingue ce modèle d'une équation
+différentielle, et c'est un résultat en soi : \textbf{le pas de temps n'est
+pas qu'une unité, c'est aussi le grain auquel le marché se réapparie}. Un
+recalage temporel exact demanderait de composer les appariements eux-mêmes,
+c'est-à-dire de savoir ce que $s$ rondes successives font qu'une ronde $s$
+fois plus grosse ne fait pas --- question ouverte, et probablement le vrai
+contenu de la limite en temps continu de ce modèle.
+
+\inference{} \textbf{Ce que l'on retient pour la suite.} Les paramètres du
+modèle se rangent en deux classes. $\delta$, $\sigma$, $\lambda$, $A$ et
+$\rho$ sont des grandeurs \emph{par pas} : elles se recalent avec l'unité de
+temps, et une part de leur effet apparent n'est qu'un changement d'unité.
+$\gamma$, $K_0$, la règle de transfert et la règle de taux sont des grandeurs
+\emph{de forme} : elles n'en dépendent pas. Rapproché du
+§\ref{sec:echelle}, cela fait deux groupes de covariance --- un sur le
+capital, un sur le temps --- qui réduisent d'autant le nombre de paramètres
+réellement libres du modèle.
+
+\section{Verdict}
+
+\begin{center}
+\begin{tabularx}{\textwidth}{@{}lXX@{}}
+\toprule
+& \textbf{court horizon} ($h \lesssim 300$) & \textbf{régime établi} ($h \ge 1001$) \\
+\midrule
+\textbf{portée partielle} (\code{fraction}) &
+\textbf{Effet rebond OBSERVÉ.} Réponse 2,3 à 2,9 fois la réponse
+proportionnelle, 3 à 48$\sigma$, stable sur deux amplitudes, trois
+intensités et deux leviers. &
+\textbf{NON TRANCHABLE.} La cohorte traitée s'éteint (part de production
+$0{,}198 \to 0{,}022$) ; les écarts restent sous $2\sigma$ et le
+dénominateur de l'élasticité disparaît. \\
+\addlinespace
+\textbf{portée globale} (\code{all}, \code{new}), $K_0$ fixe &
+\textbf{Rebond transitoire observé} : $E = 2{,}18$ à $h\le50$
+($+108{,}8$\,\% pour un choc de $+50$\,\%). &
+\textbf{Effet INVERSE.} $E = 0{,}72$--$0{,}73$ ($88\sigma$) : $+36{,}1$\,\%
+de production pour $+50$\,\% de $A$. Par entité $\times1{,}80$, mais
+population $\times0{,}754$. \\
+\addlinespace
+\textbf{portée globale}, $K_0$ compensé à l'échelle (§\ref{sec:ablation}) &
+Rebond transitoire également. &
+\textbf{Rebond ÉTABLI, fort.} $E = 2{,}53$, $\varepsilon = 2{,}02 =
+1/(1-\gamma)$ : $+126{,}7$\,\% de production pour $+50$\,\% de $A$,
+à population inchangée. \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\noindent Trois lectures s'imposent, dans cet ordre :
+
+\begin{enumerate}
+\item \textbf{Le rebond existe dans ce modèle, mais c'est un phénomène de
+  transitoire.} Toutes les portées et toutes les amplitudes produisent la
+  même amplification de facteur $\approx$2,5 dans les dizaines de pas qui
+  suivent l'intervention.
+\item \textbf{En régime établi à dotation de naissance inchangée, une
+  hausse globale de la puissance d'extraction rend le système plus petit.}
+  L'agrégat capte moins que proportionnellement la hausse, non parce que les
+  entités produisent moins, mais parce qu'il y en a un quart de moins.
+\item \textbf{Cette contraction n'est pas un effet de la technologie : c'est
+  un effet d'échelle du capital de naissance.} L'ablation du
+  §\ref{sec:ablation} l'annule entièrement en faisant suivre $K_0$, et la
+  réponse devient alors fortement super-proportionnelle. Le signe même du
+  résultat global dépend donc d'une convention --- ce que le prompt laissait
+  ouvert et que cette itération a tranché par la mesure.
+\item \textbf{Une intervention partielle ne laisse pas de trace
+  permanente.} Sans mécanisme de transmission aux naissances, la cohorte
+  dopée est absorbée par le renouvellement en quelques centaines de pas.
+\item \textbf{Une grandeur résume ces effets d'échelle, et une seule
+  hypothèse la met en défaut.} La tension $T = \Kaut/K_{\text{eq}}$
+  (§\ref{sec:tension}) rend la mortalité prévisible à $1{,}4\,\%$ près sur
+  une plage de tension $\times15$ obtenue par trois leviers différents ---
+  \emph{à condition que la dépréciation soit fixe}. Le levier $\delta$ la met
+  en échec sans ambiguïté (§\ref{sec:tension_test}). Ce que les quatre
+  leviers alignent, en revanche, c'est la rotation du crédit, avec
+  $R^2 = 0{,}998$. \incertitude{} C'est une variable endogène : elle désigne
+  le canal, elle ne le démontre pas.
+\item \textbf{L'exposant $1/(1-\gamma)$ n'est pas un ajustement.} Il découle
+  d'une covariance d'échelle exacte du modèle, démontrée au
+  §\ref{sec:echelle} et vérifiée numériquement à la précision machine. Les
+  écarts résiduels de la loi empirique s'expliquent par les seules
+  constantes dimensionnées non rééchelonnées du moteur.
+\end{enumerate}
+
+\section{Limites}
+
+\begin{itemize}
+\item \textbf{Observation, pas attribution.} Conformément au §1 du prompt,
+  aucune décomposition causale n'est revendiquée. Les canaux du §3.5 sont
+  des mesures concomitantes.
+\item \textbf{Un seul jeu de paramètres de population.} $\lambda=30$,
+  $\delta=0{,}01$, $\sigma=0{,}01$, $K_0=25$, $\gamma=0{,}5$, $A=1$. Le §2
+  du prompt suggérait d'explorer d'autres régimes de population/marché en
+  axe secondaire ; cela n'a pas été fait et reste ouvert.
+\item \textbf{Cinq graines, et ce que cela coûte.} Suffisant pour les effets
+  à 20--88$\sigma$, juste suffisant pour distinguer les fenêtres longues du
+  bruit. Avec $n=5$, la statistique $\bar X/\mathrm{SE}$ suit une Student à
+  4 degrés de liberté et non une normale (note~\ref{note:sigma}) : le seuil
+  à 5\,\% est $2{,}78$ et non $1{,}96$. Aucune conclusion de ce rapport ne
+  bascule à cette lecture, mais la marge est mince sur la cellule
+  $\varphi=0{,}05$ ($3{,}2\sigma$, $p=3{,}3\,\%$). Douze graines
+  ramèneraient le seuil à $2{,}20$ pour un coût de calcul multiplié par
+  $2{,}4$.
+\item \textbf{$K_0$ délibérément non co-varié.} Une hausse de $A$ déplace
+  l'échelle autarcique ($\Kaut \propto A^{1/(1-\gamma)}$) : les bras
+  globaux changent donc simultanément l'extraction et la tension du
+  système par rapport à cette échelle. La décision et son motif sont
+  documentés dans le rapport de conception ; le caveat demeure, et le
+  §\ref{sec:ablation} en mesure la conséquence.
+\item \textbf{La tension est mesurée, pas instrumentée.} $K_{\text{eq}}$ est
+  reconstitué depuis les agrégats de \code{tech\_series}, dont l'effectif
+  est celui de \emph{fin} de pas ; l'effectif producteur est reconstruit
+  (colonne \code{basis}), exactement quand une seule technologie est
+  vivante, au prorata sinon. Enregistrer l'effectif et le capital
+  producteurs directement dans le moteur rendrait la mesure exacte en toute
+  circonstance ; cela demande une modification du moteur, écartée ici.
+\item \textbf{Amplitude dérivante du bras $\gamma$.} $K^{\Delta\gamma}$
+  croît avec le capital ; l'élasticité de ce bras à long horizon est la
+  plus fragile du tableau.
+\item \textbf{Une seule institution testée en campagne.}
+  \code{transfer\_cap="optimum"} et \code{rate\_rule="marginal"}. Les deux
+  variantes implémentées (plafond à l'égalisation, taux au partage du
+  surplus) n'ont été piloté-es que ponctuellement.
+\item \textbf{Le régime (c) n'est exercé que par un bras.} Le chemin
+  coûteux du noyau (exposants différents, table 1D) est bien sollicité,
+  mais par une seule cellule.
+\end{itemize}
+
+\section{Reproduire}
+
+\begin{quote}\footnotesize
+\begin{verbatim}
+cd /home/anatole/jupyter/m4_3live_credit_soc
+python3 scripts/campaign.py burn     # 5 amorçages 0 -> t0=2000  (~220 s, 5 procs)
+python3 scripts/campaign.py arms     # 9 bras x 5 graines        (~1865 s, 6 procs)
+python3 scripts/ablation_k0.py run   # 5 bras x 5 graines        (~1287 s, 6 procs)
+python3 scripts/scaling_gamma.py run # loi d'echelle, 2 gammas
+python3 scripts/tension_sweep.py run # balayage a trois leviers  (~3900 s, 6 procs)
+python3 scripts/scaling_theory.py    # covariance d'echelle      (~600 s, 6 procs)
+python3 scripts/tension_vs_A.py run  # balayage en A, 2 gammas   (~1200 s, 6 procs)
+python3 scripts/time_rescaling.py    # covariance de pas de temps (~390 s, 6 procs)
+
+python3 scripts/analyse.py           # metriques, figures, controles d'integrite
+python3 scripts/exact_amplitude.py   # amplitude exacte, entite par entite (~15 s)
+python3 scripts/tension_figures.py   # tension.csv + figure, tous les runs
+python3 scripts/tension_analysis.py  # lecture croisee de la tension
+python3 scripts/tension_vs_A.py      # exposant dlnT/dlnA, par gamma
+python3 scripts/verification_figures.py
+python3 scripts/make_report_tables.py
+python3 scripts/import_to_simulation_lab.py
+python3 scripts/make_traceability.py
+\end{verbatim}
+\end{quote}
+
+Données brutes : \code{results/campaign/}. Métriques agrégées :
+\code{results/analysis/metrics.json} et \code{windows.csv}. Chaque bras
+conserve son \code{interventions.jsonl}, rejouable à l'identique par
+\code{driver/headless.py replay}.
+
+\end{document}

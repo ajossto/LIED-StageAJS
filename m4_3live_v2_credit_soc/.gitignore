@@ -1,0 +1,14 @@
+# Résultats de simulation (regénérables ; snapshots de plusieurs Mo)
+results/
+
+# Artefacts LaTeX
+*.aux
+*.log
+*.out
+*.toc
+*.fls
+*.fdb_latexmk
+
+# Python
+__pycache__/
+*.pyc

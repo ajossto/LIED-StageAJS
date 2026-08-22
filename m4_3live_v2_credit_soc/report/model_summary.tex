@@ -1,0 +1,210 @@
+% Section partagée par les deux rapports M4.3Live : le modèle et les
+% notations, pour que chaque document se lise sans accès au code ni aux
+% rapports des lignées antérieures.
+\section{Le modèle, et les notations employées}
+\label{sec:modele}
+
+\subsection{Ce que simule M4.3Live}
+
+Le modèle décrit une population d'entités économiques abstraites qui
+échangent une ressource unique, le \emph{joule}, assimilée ici à un capital.
+Il n'y a ni monnaie, ni banque centrale, ni prix : seulement des capitaux,
+une fonction de production, et des prêts bilatéraux perpétuels.
+
+Une entité $i$ est entièrement décrite par trois nombres : son capital
+$K_i \ge 0$ et sa \emph{technologie} $(A_i, \gamma_i)$, qui fixe la quantité
+qu'elle produit à chaque pas de temps,
+\begin{equation}
+\text{production de } i \;=\; A_i\,K_i^{\gamma_i},
+\qquad A_i > 0,\quad 0 < \gamma_i < 1 .
+\label{eq:production}
+\end{equation}
+L'exposant $\gamma_i < 1$ rend les rendements \emph{marginaux} décroissants :
+un joule supplémentaire rapporte d'autant moins que le capital est déjà
+grand ($\partial^2/\partial K^2 < 0$). La production, elle, continue de
+croître avec le capital --- doubler le capital augmente la production, mais
+de moins du double. C'est cette concavité qui crée un intérêt à déplacer du
+capital d'une entité riche vers une entité pauvre --- le fondement même du
+marché du crédit du modèle.
+
+\subsection{Un pas de temps}
+
+Chaque pas déroule huit phases, dans cet ordre invariable :
+
+\begin{enumerate}
+\item \textbf{Interventions} --- les changements de paramètres demandés en
+  direct sont appliqués (propre à M4.3Live ; voir §\ref{sec:portees} pour
+  leurs portées).
+\item \textbf{Naissances} --- un nombre $\mathrm{Poisson}(\lambda)$ d'entités
+  neuves apparaissent, chacune dotée du capital de naissance $K_0$.
+\item \textbf{Choc} --- chaque capital est multiplié par $e^{\xi}$ avec
+  $\xi \sim \mathcal{N}(-\sigma^2/2,\ \sigma^2)$, un choc multiplicatif
+  d'espérance 1 (il ne crée ni ne détruit de richesse en moyenne).
+  \emph{Ordre de grandeur.} L'écart typique se lit sur
+  $\mathbb{E}|\xi| = \sigma\sqrt{2/\pi}$ à la correction de moyenne près
+  ($-\sigma^2/2$, négligeable ici) : à $\sigma = 0{,}01$, la valeur employée
+  dans tout ce programme, $\mathbb{E}|\xi| \approx 8{,}0\times10^{-3}$, donc
+  un pas multiplie un capital par $1 \pm 0{,}8\,\%$ en moyenne, et par
+  $1 \pm 2{,}0\,\%$ dans 5\,\% des cas. Le choc est un bruit de fond, pas un
+  moteur : sur les 2000 pas d'un amorçage, sa contribution \emph{nette}
+  cumulée (\code{shock\_gain}) vaut $-0{,}41\,\%$ du capital agrégé final,
+  et aucun pas isolé ne déplace \code{K\_tot} de plus de $0{,}16\,\%$.
+\item \textbf{Production} --- chaque entité produit selon
+  \eqref{eq:production} et \emph{ajoute intégralement} sa production à son
+  propre capital.
+\item \textbf{Service des intérêts} --- chaque emprunteuse doit
+  $\mathrm{due} = \sum_k q_k r_k$, somme sur ses contrats du principal $q_k$
+  fois le taux $r_k$. Si son capital ne suffit pas, elle paie ce qu'elle
+  peut, tombe à zéro et est marquée en \emph{défaut de liquidité}.
+\item \textbf{Dépréciation} --- chaque capital est multiplié par $1-\delta$.
+\item \textbf{Marché du crédit} --- $\lfloor \eta(N) \rfloor$ tirages de
+  paires, où $N$ est le nombre d'entités éligibles et
+  $\eta_{\rho,\beta}(N) = \rho\,N_{\text{ref}}(N/N_{\text{ref}})^{\beta}$
+  (la baseline $\rho=1$, $\beta=1$ donne simplement $\eta(N)=N$). Dans chaque
+  paire, la plus riche est la \emph{prêteuse}, la plus pauvre
+  l'\emph{emprunteuse} ; le prêt ne va jamais dans l'autre sens. Un contrat
+  transfère un principal $q$ et fixe un taux $r$, tous deux gelés à vie.
+\item \textbf{Faillites en cascade} --- toute entité dont la valeur nette
+  $K + \text{créances} - \text{dettes}$ devient négative, ou qui est en
+  défaut de liquidité, meurt : ses dettes sont annulées (perte sèche pour
+  ses prêteuses, qui peuvent tomber à leur tour) et son capital est détruit.
+  On itère jusqu'à point fixe.
+\end{enumerate}
+
+Un identifiant d'entité n'est jamais réutilisé ; une entité morte le reste.
+
+\subsection{Notations}
+
+\begin{center}\footnotesize
+\begin{tabular}{@{}llp{8.6cm}@{}}
+\toprule
+\textbf{Symbole} & \textbf{Nom} & \textbf{Définition} \\
+\midrule
+$K_i$ & capital & Ressource détenue par l'entité $i$. \\
+$A_i$ & coefficient d'extraction & Facteur multiplicatif de la production
+\eqref{eq:production}. \textbf{Levier primaire} de ce programme. \\
+$\gamma_i$ & exposant d'extraction & Exposant de la production : il fixe le
+rendement d'échelle. C'est lui qui rend les rendements \emph{marginaux}
+décroissants ($0<\gamma<1$), et non le niveau de la production, qui croît
+toujours avec le capital. Levier secondaire de ce programme. \\
+$(A_i,\gamma_i)$ & technologie & Couple fixé à la naissance, jamais modifié
+sauf par une intervention. Reçoit un identifiant entier interne. \\
+$\lambda$ & taux de naissance & Espérance du nombre d'entités créées par pas. \\
+$K_0$ & capital de naissance & Capital dont une entité neuve est dotée. \\
+$\delta$ & dépréciation & Fraction du capital perdue à chaque pas. \\
+$\sigma$ & amplitude du choc & Écart-type du choc multiplicatif log-normal. \\
+$N$ & taille du bassin & Nombre d'entités éligibles au marché à ce pas. \\
+$x,\ y$ & capitaux de la paire & $x = K_b$ (emprunteuse), $y = K_\ell$
+(prêteuse), avec $y > x$ par la règle de marché. \\
+$C$ & somme conservée & $C = x+y$ ; le transfert la laisse inchangée. \\
+$q$ & principal & Montant transféré par le contrat. \\
+$r$ & taux & Service versé par pas, perpétuel : l'emprunteuse doit $q\,r$ à
+chaque pas, indéfiniment. \\
+$\delta^{*}$ & transfert optimal & Principal qui maximise la production
+jointe de la paire (§\ref{sec:modele}, éq.~\ref{eq:transfert}). \\
+$\lambda^{*}$ & part optimale & Part de $C$ revenant à l'emprunteuse à
+l'optimum ; $h(C) = C\lambda^{*}$ est son capital optimal. \\
+$\Kaut$ & échelle autarcique & $[A(1-\delta)/\delta]^{1/(1-\gamma)}$ : capital
+auquel production et dépréciation s'équilibrent sans marché. Repère
+d'échelle du système. \\
+\code{prod\_tot} & production agrégée & Somme des productions du pas.
+\textbf{Variable d'intérêt de ce programme.} \\
+\code{K\_tot}, \code{pop} & agrégats & Capital total et effectif vivant. \\
+\code{deaths} & morts & Entités mortes au pas (racines + victimes de cascade). \\
+\code{defaults} & défauts & Entités en défaut de liquidité au pas. \\
+\code{roots\_insolvency} & racines d'insolvabilité & Entités dont la valeur
+nette est passée sous zéro par leurs propres pertes (à distinguer des
+victimes de cascade). \\
+\code{loan\_volume} & volume de prêt & Somme des principaux transférés au pas. \\
+\code{mkt\_rounds} & tirages & Nombre de paires tirées au pas. \\
+\code{mkt\_blocked\_dir} & paires refusées & Paires où $\delta^{*} \le 0$ :
+l'optimum voudrait faire circuler le capital du pauvre vers le riche, ce que
+le sens du prêt interdit. \textbf{Compteur propre à M4.3Live.} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{L'institution de principal de M4.3Live}
+
+C'est le seul point où M4.3Live diffère de son prédécesseur M4.3. Là où M4.3
+transférait la moitié de l'écart de capital, $q = (y-x)/2$, M4.3Live
+transfère le montant qui maximise la production \emph{jointe} de la paire
+immédiatement après l'échange :
+\begin{equation}
+\delta^{*} \;=\; \arg\max_{-x \le \delta \le y}\;
+A_b\,(x+\delta)^{\gamma_b} + A_\ell\,(y-\delta)^{\gamma_\ell}
+\;=\; h(C) - x,
+\qquad h(C) = C\,\lambda^{*}.
+\label{eq:transfert}
+\end{equation}
+Trois conséquences importent pour lire les deux rapports :
+
+\begin{enumerate}
+\item Quand les deux entités partagent la \emph{même} technologie,
+  $\lambda^{*} = 1/2$ et $\delta^{*} = (y-x)/2$ exactement : la baseline
+  homogène de M4.3Live \emph{est} celle de M4.3.
+\item Dès que les technologies diffèrent, $\lambda^{*} \ne 1/2$ et le partage
+  est pondéré en faveur de celle dont le \emph{rendement marginal est le plus
+  élevé au capital considéré}. Il n'existe pas de « meilleure »
+  technologie dans l'absolu : à exposants inégaux, l'ordre des rendements
+  marginaux $\gamma A K^{\gamma-1}$ s'inverse avec le capital. Un $\gamma$
+  élevé l'emporte aux grands capitaux, un $A$ élevé aux petits, et il existe
+  toujours un capital de croisement. C'est pourquoi $\lambda^{*}$ dépend de
+  $C$ et non seulement des paramètres.
+\item $\delta^{*}$ peut être \emph{négatif}. Comme $\delta^{*} = C\lambda^{*} - x$,
+  on a exactement
+  \[ \delta^{*} \le 0 \iff \frac{x}{C} \ge \lambda^{*} , \]
+  c'est-à-dire : dès que la prêteuse est celle dont le rendement marginal est
+  le plus élevé, l'optimum voudrait lui envoyer du capital, et la paire ne
+  traite pas. C'est le compteur \code{mkt\_blocked\_dir}, et c'est un canal à
+  part entière, pas un détail numérique.
+\end{enumerate}
+
+\paragraph{Surplus coopératif.} Le \textbf{surplus coopératif} d'une paire
+est le gain de production \emph{jointe} que l'échange produit, à capital
+total inchangé :
+\begin{equation}
+S(x,y) \;=\;
+\underbrace{A_b (x+q)^{\gamma_b} + A_\ell (y-q)^{\gamma_\ell}}
+          _{\text{après le transfert}}
+\;-\;
+\underbrace{A_b\,x^{\gamma_b} + A_\ell\,y^{\gamma_\ell}}_{\text{avant}}
+\;\ge\; 0 ,
+\label{eq:surplus}
+\end{equation}
+où $q$ est le principal effectivement transféré --- égal à $\delta^{*}$ sauf
+quand le plafond mord. La positivité est immédiate quand $q = \delta^{*}$ :
+$\delta^{*}$ maximise le premier terme et $\delta = 0$ est admissible ; sous
+plafond elle reste vraie car $q$ est entre $0$ et $\delta^{*}$ et le premier
+terme est concave en $\delta$. $S$ est nul exactement quand la paire est
+déjà à l'optimum ($x/C = \lambda^{*}$), et les paires refusées ne
+contribuent pas. La colonne \code{mkt\_surplus} des séries est la somme de
+$S$ sur les paires traitées au pas. C'est un \emph{flux de
+production par pas}, homogène à \code{prod\_tot}, et non un stock de
+capital : le marché ne crée aucun joule, il déplace du capital vers l'endroit
+où il produit davantage.
+
+\subsection{Les trois portées d'intervention}
+\label{sec:portees}
+
+Une intervention change un paramètre \emph{pendant} qu'une simulation
+tourne. Sa \textbf{portée} dit qui elle touche :
+
+\begin{description}
+\item[\code{all} (toutes)] --- rétroactif \emph{et} prospectif : toutes les
+  entités vivantes reçoivent la nouvelle valeur, et la valeur par défaut à la
+  naissance change aussi.
+\item[\code{new} (nouvelles)] --- \emph{vintage} technologique : seule la
+  valeur par défaut à la naissance change. Les entités déjà vivantes gardent
+  la leur pour toujours ; la population se convertit par renouvellement.
+\item[\code{fraction} (une fraction $\varphi$)] --- une fraction $\varphi$
+  des entités vivantes est tirée au sort une fois, et elle seule est
+  modifiée. \textbf{La valeur par défaut à la naissance n'est pas touchée} :
+  aucune naissance ne vient reconstituer la cohorte traitée.
+\end{description}
+
+Certaines combinaisons n'ont pas de sens et sont refusées explicitement :
+$K_0$ n'existe qu'au moment de la naissance, donc \code{all} et \code{new} y
+sont le même objet et \code{fraction} n'a pas d'objet ; $\lambda$, $\delta$,
+$\sigma$, $\rho$ sont des paramètres de population et non des attributs
+d'entité, donc \code{new} y est un alias explicite de \code{all}.

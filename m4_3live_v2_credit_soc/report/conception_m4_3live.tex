@@ -1,0 +1,802 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[french]{babel}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb}
+\usepackage[margin=2.35cm]{geometry}
+\usepackage{booktabs,longtable,tabularx}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{microtype}
+\usepackage{float}
+\usepackage{hyperref}
+% Caractères Unicode présents dans les fragments générés (noms de fenêtres).
+\DeclareUnicodeCharacter{2264}{\ensuremath{\le}}
+\DeclareUnicodeCharacter{2265}{\ensuremath{\ge}}
+\DeclareUnicodeCharacter{03C3}{\ensuremath{\sigma}}
+\DeclareUnicodeCharacter{03B3}{\ensuremath{\gamma}}
+\DeclareUnicodeCharacter{03C6}{\ensuremath{\varphi}}
+
+\hypersetup{colorlinks=true,linkcolor=blue!45!black,urlcolor=blue!45!black}
+\setlist{nosep}
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\Kaut}{K^{*}_{\mathrm{aut}}}
+\newcommand{\fait}{\textbf{[Fait observé]}}
+\newcommand{\inference}{\textbf{[Inférence]}}
+\newcommand{\hyp}{\textbf{[Hypothèse]}}
+\newcommand{\incertitude}{\textbf{[Incertitude]}}
+
+\title{M4.3Live --- rapport de conception\\
+\large Institution de principal « production jointe maximale »,
+interventions en direct, déterminisme}
+\author{Programme M4.3Live --- dossier \code{m4\_3live\_credit\_soc}}
+\date{17 août 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Ce document justifie les décisions d'architecture de M4.3Live et tranche,
+explicitement, les huit points que le prompt laissait ouverts (§11). Les
+résultats scientifiques sont dans \code{report/rapport\_final.pdf} ; on ne
+trouvera ici que ce qui concerne la construction du système.
+
+Trois décisions structurent le reste. \textbf{(1)} L'institution de
+principal est routée sur des identifiants \emph{entiers} de technologie,
+et le cas « même technologie » applique littéralement $(K_\ell-K_b)/2$ :
+la baseline homogène de M4.3Live est donc bit à bit celle de M4.3 par
+construction, ce qui a été vérifié sur les 8000 pas et les 26 colonnes
+d'un run stocké. \textbf{(2)} La compilation des tables du noyau est
+\emph{synchrone}, contre la suggestion du rapport d'architecture de la
+déporter sur un thread : c'est la condition pour que le rejeu d'un journal
+d'interventions soit strictement identique. \textbf{(3)} Le chemin
+« tiède » du rapport est implémenté et testé, mais n'est pas le défaut :
+son erreur mesurée sur le domaine réel est de $9{,}8\cdot10^{-2}$ unité de
+capital, sept ordres de grandeur au-dessus de la table cubique, pour un
+gain de débit que la part du noyau dans le coût d'un pas ne justifie pas.
+\end{abstract}
+
+\tableofcontents
+
+\input{model_summary}
+
+\section{Objet et périmètre}
+
+M4.3Live succède à M4.3 (\code{m4\_3\_credit\_soc}) mais n'en est pas une
+extension : l'institution de principal change de nature. Là où M4.3
+transfère la moitié de l'écart de capital d'une paire, M4.3Live transfère
+le montant qui \emph{maximise la production jointe} des deux entités
+immédiatement après l'échange. À cela s'ajoutent deux capacités
+nouvelles : des technologies $(A,\gamma)$ par entité, et la modification
+de paramètres pendant qu'une simulation tourne.
+
+Le périmètre scientifique est celui du §7 du prompt --- observer un
+éventuel effet rebond --- et rien de plus. Ce rapport ne traite que la
+construction ; le verdict d'observation est dans le rapport de résultats.
+
+\section{L'institution de principal}
+
+\subsection{Le problème}
+
+Pour une paire (emprunteuse $b$, prêteuse $\ell$) de capitaux $x=K_b$ et
+$y=K_\ell$ et de technologies $(A_b,\gamma_b)$ et $(A_\ell,\gamma_\ell)$,
+le transfert $\delta$ retenu résout
+\begin{equation}
+\max_{-x\le\delta\le y}\; A_b\,(x+\delta)^{\gamma_b} + A_\ell\,(y-\delta)^{\gamma_\ell},
+\qquad 0<\gamma<1 .
+\label{eq:probleme}
+\end{equation}
+L'objectif est strictement concave en $\delta$ et sa dérivée diverge vers
+$+\infty$ en $\delta\to-x$ comme vers $-\infty$ en $\delta\to y$ :
+l'optimum est intérieur et unique. En posant $C=x+y$ (somme conservée par
+l'échange) et $h(C)=C\lambda^{*}$ le capital optimal attribué à
+l'emprunteuse, la solution s'écrit exactement $\delta^{*}=h(C)-x$ : à
+couple de technologies fixé, toute la non-linéarité tient dans la seule
+variable $C$ (rapport d'architecture §6, Hessien exactement de rang un).
+
+\subsection{Trois régimes, routés sur des entiers}
+
+\begin{description}
+\item[(a) même technologie.] Déclenché par l'égalité des
+  \emph{identifiants} \code{s\_b == s\_l} (\code{m4\_3live/kernel.py},
+  \code{PrincipalKernel.solve}), et non par un test $\lambda^{*}=1/2$ sur
+  des flottants. Le code applique alors la formule littérale
+  $\delta=0{,}5\,(y-x)$, exactement celle de
+  \code{m4\_3\_credit\_soc/m4\_3/model.py:288-289}.
+\item[(b) $\gamma$ égaux, $A$ différents.] Forme fermée exacte,
+  \[\lambda^{*}=\frac{A_b^{1/(1-\gamma)}}{A_b^{1/(1-\gamma)}+A_\ell^{1/(1-\gamma)}},\]
+  dont le logarithme n'est payé qu'une fois, à la création du couple de
+  technologies.
+\item[(c) $\gamma$ différents.] Pas de forme fermée. Avec
+  $u=(\gamma_\ell-\gamma_b)/(2-\gamma_b-\gamma_\ell)$ et
+  $t=t_0+u\ln C$, la condition d'optimalité s'écrit
+  $t=-z/2+u\,L(z)$ avec $L(z)=\ln(2\cosh(z/2))$, puis
+  $\lambda^{*}=\sigma(z)$.
+\end{description}
+
+\paragraph{Le piège du régime (b), et pourquoi le routage entier compte.}
+$\lambda^{*}=1/2$ \emph{si et seulement si} $A_b=A_\ell$ en plus de
+$\gamma_b=\gamma_\ell$. Une intervention qui ne modifie que $A$ --- le
+levier primaire de toute la campagne --- fait donc immédiatement sortir
+toute paire mixte du régime (a) vers un partage \emph{pondéré}. Avec
+$A_b=1{,}5$, $A_\ell=1{,}0$, $\gamma=0{,}5$ : $\lambda^{*}=0{,}692$, et
+sur la paire $(x,y)=(400,1200)$ le transfert vaut $707{,}7$ contre
+$400{,}0$ pour la règle arithmétique (\code{tests/test\_institution.py}).
+Router le régime (a) sur $\lambda^{*}=1/2$ plutôt que sur l'identité des
+technologies aurait fait de la parité avec M4.3 une coïncidence numérique
+au lieu d'une propriété de construction ; le prompt (§3.6) distingue
+explicitement les deux, d'où le choix retenu.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{figures/institution_regimes.png}
+\caption{L'institution, rendue visible. À gauche, le transfert $\delta^{*}$
+en fonction de la part de capital détenue par l'emprunteuse, à $C$ fixé à la
+médiane du domaine réel de M4.3. La droite grise est le régime (a), qui
+s'annule exactement à l'égalité des capitaux. Doper l'\emph{emprunteuse}
+déplace le zéro vers la droite ; doper la \emph{prêteuse} le déplace vers la
+gauche, ouvrant une bande où $\delta^{*} \le 0$ et où le marché refuse de
+traiter. À droite, le rapport à la règle arithmétique de M4.3. Données :
+\code{results/conception/institution\_curves.csv}.}
+\label{fig:institution}
+\end{figure}
+
+\paragraph{Le seuil de refus est exactement $\lambda^{*}$.} Puisque
+$\delta^{*} = C\lambda^{*} - x$, la paire ne traite pas dès que
+$x/C \ge \lambda^{*}$. \fait{} Pour une prêteuse dopée $A\times1{,}5$ à
+$\gamma$ égal, $\lambda^{*} = 1/(1+1{,}5^{2}) = 0{,}3077$ : toutes les paires
+où l'emprunteuse détient plus de 30,8~\% du capital commun sont refusées,
+soit 38,5~\% des paires si $x/C$ est uniforme sur $[0, 1/2]$. Pour une
+prêteuse dopée $\gamma: 0{,}5 \to 0{,}6$, le seuil tombe à $0{,}1408$, soit
+71,8~\% des paires. \inference{} C'est l'ordre de grandeur observé dans la
+campagne (§7) : \code{mkt\_blocked\_dir} y atteint 22 à 37~\% des tirages
+selon l'intensité du traitement.
+
+\paragraph{Résolution du régime (c).} $|u|<1$ tant que
+$\gamma\in\,]0,1[$, donc $F(z)=-z/2+uL(z)-t$ est strictement décroissante
+avec $|F'|\ge(1-|u|)/2>0$ : Newton depuis $z_0=-2t$ est sûr, et
+l'itération de point fixe $z\leftarrow-2t+2uL(z)$, globalement
+contractante de facteur $|u|$, sert de repli dès qu'un pas de Newton
+n'améliore pas $|F|$. La convergence est donc globale, sans encadrement ni
+bissection. \fait{} Résidu maximal $9{,}33\cdot10^{-15}$ sur une grille
+$t\in[-30,40]\times u\in[-0{,}9,0{,}9]$
+(\code{tests/test\_institution.py}).
+
+\paragraph{Vérification indépendante.} Le solveur de référence des tests
+n'est pas une autre écriture de la même machinerie : c'est une bissection
+sur la condition du premier ordre
+$A_b\gamma_b(x+\delta)^{\gamma_b-1}-A_\ell\gamma_\ell(y-\delta)^{\gamma_\ell-1}=0$.
+\fait{} Écart relatif maximal (rapporté à $C$) : $<10^{-14}$ sur 84 cas du
+régime (b), $2{,}27\cdot10^{-16}$ sur 35 cas du régime (c).
+
+\subsection{Le transfert peut être négatif --- un canal, pas un détail}
+
+Rien ne garantit $\delta^{*}>0$. Quand la prêteuse (la plus riche, par la
+règle de marché héritée, \code{m4\_3/model.py:357-361}) est celle dont le
+\emph{rendement marginal} $\gamma A K^{\gamma-1}$ est le plus élevé à son
+capital, l'optimum de production jointe voudrait faire circuler le capital
+\emph{du pauvre vers le riche} : $\delta^{*}<0$, et le sens du prêt interdit
+la transaction. Une intervention sur $A$ ne change donc pas seulement la
+taille des transferts : elle \textbf{éteint le prêt} dans les paires où
+l'entité dopée est la riche.
+
+\incertitude{} On évitera de parler de « meilleure technologie » : sous
+exposants inégaux il n'en existe pas dans l'absolu. L'ordre des rendements
+marginaux dépend du capital --- un $\gamma$ élevé l'emporte aux grands
+capitaux, un $A$ élevé aux petits --- et c'est précisément pour cela que
+$\lambda^{*}$ dépend de $C$ dans le régime (c).
+
+C'est pourquoi la série de M4.3Live sépare trois compteurs de refus là où
+M4.3 n'en avait aucun : \code{mkt\_blocked\_dir} ($\delta^{*}\le0$),
+\code{mkt\_blocked\_tiny} ($0<\delta^{*}<$ \code{MIN\_LOAN}) et
+\code{mkt\_blocked\_rate} (taux non strictement positif, possible sous la
+seule règle candidate du §\ref{sec:taux}). Sans cette séparation,
+l'effondrement du volume de prêt d'un bras traité serait ininterprétable.
+
+\subsection{Borne supérieure du transfert (décision ouverte §11)}
+\label{sec:plafond}
+
+Deux institutions étaient possibles : autoriser le transfert jusqu'à
+l'optimum $h(C)$, ou le plafonner à l'égalisation des capitaux. Le choix
+est \emph{économique}, pas numérique ; il ne pouvait donc pas être tranché
+sur la baseline, où $\lambda^{*}=1/2$ rend les deux plafonds identiques.
+Il a été piloté sur un bras \emph{traité} ($\varphi=0{,}2$, $A\times1{,}5$,
+600 pas depuis $t_0=2000$, graine 0).
+
+\fait{} Le plafond d'égalisation mord 149 fois au pas $h=1$, 24 fois à
+$h=5$, une fois à $h=25$ ; au-delà de $h=50$, il ne mord plus que 23 fois en
+550 pas, soit environ une transaction sur 29\,000.
+\inference{} La raison est mécanique et intéressante en soi : les entités
+dopées accumulent du capital et deviennent, en quelques dizaines de pas,
+le côté riche de presque toutes leurs paires. Or le plafond ne peut mordre
+que lorsque l'entité dopée est l'\emph{emprunteuse}. Passé ce transitoire,
+les paires mixtes basculent dans le régime $\delta^{*}\le0$ décrit
+ci-dessus, et \code{mkt\_blocked\_dir} se stabilise autour de 25~\% des
+rounds.
+
+\fait{} Aucun des deux plafonds ne déstabilise le système : statut
+\code{ok}, $0$ défaut de liquidité dans les deux cas, morts cumulées
+$18\,235$ (optimum) contre $17\,925$ (égalisation), production moyenne
+$32\,672$ contre $32\,154$.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{figures/cap_pilot.png}
+\caption{Pilote du plafond, pas à pas. À gauche, les transactions
+plafonnées s'effondrent en une vingtaine de pas. À droite, la part des
+tirages refusés par le sens du prêt suit la part traitée de la population :
+les paires mixtes ne sont plus plafonnées, elles sont refusées. Données :
+\code{results/conception/cap\_pilot\_steps.csv}.}
+\label{fig:cap}
+\end{figure}
+
+\textbf{Décision : \code{transfer\_cap = "optimum"}}, l'énoncé littéral de
+l'institution. Plafonner à l'égalisation reviendrait à ramener
+l'institution vers la règle arithmétique précisément dans les paires où
+elle en diffère --- donc à supprimer l'effet à observer --- pour un gain de
+stabilité nul dans le régime mesuré. Le plafond alternatif reste
+implémenté et sélectionnable en ablation.
+
+\subsection{Le transfert ne peut pas créer d'insolvabilité dans le pas}
+
+Le transfert baisse $K$ de $q$ et monte les créances de $q$ : la valeur
+nette $K+\text{créances}-\text{dettes}$ est inchangée. Il ne peut donc pas
+alimenter la cascade de faillites du même pas ; le seul risque d'une règle
+non plafonnée est reporté au pas suivant, par le canal de liquidité.
+\fait{} Vérifié (\code{tests/test\_institution.py}) : aucune valeur nette
+négative et aucune incohérence de carnet après 40 pas.
+
+\section{Cache du noyau : chaud, tiède, froid}
+\label{sec:cache}
+
+\subsection{Ce qui est implémenté}
+
+Une matrice dense \code{kernel[receveuse][donneuse]} d'identifiants entiers
+route un couple en $O(1)$. Les couples de régime (c) reçoivent une table
+1D de $h(C)$, indexée par l'exposant \code{frexp} de $C$ (une ligne par
+octave, grille uniforme en mantisse), interpolée par une cubique de
+Hermite dont les pentes viennent de la formule analytique
+$h'(C)=q\,h/S$, $S=p(C-h)+qh$ --- jamais d'une différence finie. Chaque
+ligne est compilée paresseusement, après un seuil d'usages de son exposant.
+
+\subsection{La table est correcte, et on le vérifie par l'ordre de convergence}
+
+\fait{} Erreur maximale de la table contre Newton exact, mesurée sur 400
+paires balayant tout le domaine réel de $C$ (quantiles 0,1~\% à 99,9~\% de
+M4.3, soit 192 à 2214) : $3{,}80\cdot10^{-5}$ / $2{,}61\cdot10^{-6}$ /
+$1{,}70\cdot10^{-7}$ / $1{,}05\cdot10^{-8}$ / $6{,}87\cdot10^{-10}$ pour
+9 / 17 / 33 / 65 / 129 nœuds par octave, soit des rapports successifs de
+$14{,}6$, $15{,}4$, $16{,}2$ et $15{,}3$. \inference{} L'ordre~4 observé
+confirme que la pente analytique est juste : une dérivée fausse dégraderait
+l'interpolation à l'ordre~2, et le test le détecterait
+(\code{test\_lut\_convergence\_order}).
+
+\incertitude{} Une précaution de mesure, apprise en la ratant d'abord :
+l'échantillon doit \emph{balayer} $C$. Un premier jeu de 120 paires gardait
+$C$ constant --- il ne sondait donc qu'un seul point de la table, dont
+l'erreur dépend de sa position fortuite dans son intervalle
+d'interpolation, et les rapports mesurés étaient erratiques (48,7 puis 6,3).
+Les chiffres ci-dessus sont un vrai supremum sur le domaine.
+
+Le défaut retenu est 65 nœuds, soit $1{,}05\cdot10^{-8}$ unité de capital sur
+tout le domaine, pour des capitaux de l'ordre de $10^{3}$.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.72\textwidth]{figures/kernel_convergence.png}
+\caption{Erreur de la table 1D contre Newton exact, en fonction du nombre de
+nœuds par octave. La pente mesurée suit l'ordre~4, pas l'ordre~2 : la dérivée
+analytique $h'(C)=q\,h/S$ qui alimente l'interpolation de Hermite est donc
+correcte. Le trait horizontal situe le chemin tiède. Données :
+\code{results/conception/lut\_convergence.json}.}
+\label{fig:convergence}
+\end{figure}
+
+\subsection{Pourquoi le chemin tiède n'est pas le défaut}
+
+Le rapport d'architecture prescrit, pendant la phase d'observation d'un
+couple, un noyau sans table : une étape de Newton depuis $z_0=-2t$
+(éq.~21). Il est implémenté et testé, sous
+\code{kernel\_policy="hybrid"}.
+
+\fait{} Son erreur mesurée sur le domaine réel de M4.3 (quantiles de $C$ :
+192 / 1590 / 2214) est de $9{,}8\cdot10^{-2}$ unité de capital --- du même
+ordre que le $2{,}5\cdot10^{-1}$ du banc du rapport, et sept ordres de
+grandeur au-dessus de la table.
+
+\textbf{Décision : \code{kernel\_policy = "exact\_lut"} par défaut} ---
+formes fermées pour (a) et (b), Newton exact pour (c) tant que la table
+n'existe pas, table ensuite. Le prompt (§3.2) autorise explicitement de
+s'écarter de l'architecture prescrite « sauf justification écrite d'un
+meilleur choix » ; la justification est double. D'une part, aucune
+approximation grossière n'entre alors jamais dans une trajectoire
+scientifique : la seule erreur résiduelle est celle, contrôlée à
+$1{,}5\cdot10^{-9}$, de l'interpolation. D'autre part --- et c'est
+l'argument décisif --- le gain de débit du chemin tiède est sans effet
+pratique, parce que le noyau ne domine pas le coût d'un pas.
+
+\subsection{Seuil d'amortissement recalibré, et sa portée réelle}
+\label{sec:seuil}
+
+\input{tables/bench_kernel.tex}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{figures/kernel_cost_precision.png}
+\caption{Débit et précision des chemins du noyau. Le chemin tiède est deux
+fois plus lent que la table tout en étant sept ordres de grandeur moins
+précis : il n'occupe aucun point utile du front. Données :
+\code{results/analysis/bench\_kernel.json}.}
+\label{fig:bench}
+\end{figure}
+
+\fait{} Le seuil d'amortissement mesuré sur cette machine (coût de
+compilation d'une ligne divisé par l'économie par appel de la table face à
+Newton exact) est de \textbf{\input{tables/bench_threshold.tex}\unskip}
+usages par ligne d'exposant --- vingt-cinq fois moins que les $\sim$1800
+du banc synthétique du rapport, parce que le Newton exact est ici plus
+coûteux (Python scalaire, avec l'évaluation supplémentaire du garde-fou)
+tandis que la compilation d'une ligne reste très bon marché
+($0{,}45$\,ms).
+
+\fait{} Mais la question ouverte du §11 se résout mieux autrement : sur un
+run réel de régime (c), le noyau représente
+\textbf{\input{tables/bench_share.tex}\unskip} du temps d'un pas
+($1268$ appels par pas, $114$\,ms par pas). Le pas est dominé par la phase
+d'intérêts, qui parcourt les $\sim$32\,000 contrats actifs du carnet.
+\inference{} La valeur exacte du seuil est donc sans portée pratique :
+entre 71 et 1800, l'écart de temps mural est inférieur à 1\,\% du coût
+d'une campagne. Le défaut \code{lut\_threshold} est laissé à \textbf{1800},
+la valeur avec laquelle toute la campagne du §7 a tourné ; l'abaisser
+maintenant déplacerait le point de bascule table/Newton, donc les
+trajectoires au niveau $10^{-9}$, pour un gain non mesurable. Ce qui
+compte est que le chemin chaud soit \emph{exact}, pas qu'il soit rapide.
+
+\subsection{Ce qui domine réellement le coût d'un pas}
+
+Puisque le noyau ne pèse que 1,3~\%, il vaut la peine de dire ce qui pèse le
+reste. \fait{} À population et carnet actifs constants, le coût d'un pas
+\emph{croît} : $96{,}3$\,ms à $t = 210$, $102{,}9$ à $t = 610$, $111{,}5$ à
+$t = 1010$, $115{,}3$ à $t = 1810$ (+20~\%), alors que le nombre de prêts
+actifs reste entre 31\,000 et 37\,000 et la population autour de 1100.
+\inference{} La seule quantité qui croît est le nombre de clefs du
+dictionnaire \code{by\_borrower}, que la phase d'intérêts parcourt
+intégralement à chaque pas : 6389 à $t = 210$, 54\,527 à $t = 1810$, dont
+98~\% pointent sur un ensemble \emph{vide}. Ce sont les entités mortes :
+\code{LoanBook.remove} retire l'identifiant du contrat mais ne supprime
+jamais la clef (comportement hérité tel quel de
+\code{m4\_3/model.py:191-202}).
+
+\fait{} C'est mesurable et c'est assumé : purger ces clefs changerait l'ordre
+d'itération de \code{by\_borrower}, donc l'ordre de sommation de
+\code{interest\_paid}, donc la parité bit à bit avec M4.3 (§\ref{sec:parite}
+et §\ref{sec:snapshot}, même arbitrage que pour l'ordre des ensembles).
+Conséquence pratique à connaître avant de dimensionner une campagne : le coût
+d'un run croît linéairement avec le nombre d'entités \emph{jamais nées},
+donc avec $\lambda \times T$, et pas seulement avec la taille instantanée du
+système. Données : \code{results/analysis/step\_cost\_growth.json}.
+
+\subsection{Ce qui n'est pas implémenté, et pourquoi}
+
+La LUT 2D globale du rapport n'est pas nécessaire ici : le support
+technologique est discret, donc chaque cellule est un problème 1D
+(rapport §11, même conclusion). L'« audit aléatoire » suggéré pour le
+chemin froid n'est pas implémenté \emph{dans} la boucle : il consommerait
+soit un tirage --- interdit, cela déplacerait la trajectoire --- soit un
+générateur séparé, qui casserait le rejeu. L'audit est fait hors ligne,
+dans les tests, où il compare table et Newton exact sur le domaine réel.
+
+\section{Déterminisme}
+
+Les trois garanties de cette section --- rejeu d'un journal, invariant de
+pause, aller-retour par snapshot --- se mesurent de la même façon : l'écart
+pas à pas à une trajectoire de référence. La \autoref{fig:determinisme} les
+met sur un même graphique.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.82\textwidth]{figures/determinism.png}
+\caption{Les trois garanties de déterminisme, mesurées sur une même
+trajectoire de 120 pas comportant deux interventions. Les trois écarts sont
+\emph{exactement} nuls et reposent donc au plancher du graphique, six ordres
+de grandeur sous l'epsilon machine. Données :
+\code{results/conception/determinism.csv}.}
+\label{fig:determinisme}
+\end{figure}
+
+\subsection{Compilation synchrone (contre la suggestion du rapport)}
+
+Le rapport d'architecture propose de déporter la construction d'une table
+sur un thread, avec remplacement atomique du pointeur (§7.2). \textbf{Cette
+suggestion est refusée.} Le moment où une table remplace Newton change la
+valeur retournée d'environ $10^{-9}$ ; si ce basculement dépend de
+l'ordonnancement d'un thread, deux exécutions du même journal divergent, et
+l'exigence de rejeu strictement identique (§4, §8) tombe. La compilation
+est donc exécutée en ligne, au point de déclenchement, lui-même déterminé
+par un compteur qui ne dépend que de la séquence simulée. Elle ne consomme
+aucun tirage : elle change la durée murale d'un pas, jamais sa trajectoire.
+
+\subsection{Rejeu d'un journal}
+
+Une intervention arrivée en HTTP est mise en file, puis appliquée au tout
+début du pas suivant, \emph{avant les naissances}, et journalisée avec le
+$t$ auquel elle a réellement pris effet. Le rejeu soumet chaque entrée du
+journal par le \emph{même} \code{Simulation.submit} : le chemin de code
+vérifié est celui de la production.
+
+\fait{} \code{tests/test\_replay.py} construit son journal à partir d'une
+\emph{vraie session en direct} --- quatre interventions couvrant les trois
+portées, soumises de façon asynchrone depuis le thread principal pendant
+que la boucle tournait, sans savoir à quel pas elle en était. Rejoué sans
+tête, ce journal reproduit les 120 pas à l'identique sur 16 colonnes, avec
+les mêmes $t$ effectifs \emph{et} les mêmes identifiants tirés.
+
+\subsection{Pause et pas-à-pas}
+
+La pause est une porte placée \emph{avant} \code{step()} : elle ne touche
+pas au générateur. \fait{} 80 pas entrecoupés de quatre pauses franches, et
+30 pas déclenchés un par un, produisent des trajectoires bit-identiques à
+une lecture continue.
+
+\subsection{Snapshots : une réserve mesurée et bornée}
+\label{sec:snapshot}
+
+Un snapshot emporte la population, le carnet, l'état du générateur, le
+registre de technologies \emph{et les compteurs d'usage du noyau} --- sans
+ces derniers, une branche restaurée compilerait ses tables à un autre
+indice d'appel et divergerait de la branche continuée.
+
+\fait{} Un aller-retour laisse la \textbf{dynamique bit-identique}
+($K_{\mathrm{tot}}$ à $0$ près sur 90 pas), mais \code{interest\_paid}
+peut différer au dernier bit ($2{,}1\cdot10^{-16}$ relatif).
+\inference{} Cause identifiée précisément : la phase d'intérêts parcourt
+\code{book.by\_borrower[borrower]}, un \code{set}, et CPython ne sérialise
+pas la disposition interne d'un ensemble ; après \code{pickle}, l'ordre
+d'itération change pour 225 des 467 ensembles mesurés. Cet ordre n'affecte
+\emph{aucun} capital --- chaque versement va à une prêteuse différente,
+donc dans un accumulateur différent --- seulement deux sommes de
+diagnostic, \code{interest\_paid} et \code{int\_out}.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.72\textwidth]{figures/snapshot_round_trip.png}
+\caption{Aller-retour par snapshot : écart à une simulation menée d'un
+trait. Le capital et la production restent \emph{exactement} nuls (tracés au
+plancher du graphique) ; seul \code{interest\_paid} bouge, au niveau de
+l'epsilon machine. Données :
+\code{results/conception/snapshot\_round\_trip.csv}.}
+\label{fig:snapshot}
+\end{figure}
+
+La réserve est sans conséquence pour le protocole : les bras d'une même
+graine sont chargés depuis le \emph{même} fichier, donc partagent la même
+disposition d'ensembles et coïncident exactement jusqu'à leur
+intervention. La corriger exigerait de remplacer les \code{set} par des
+structures ordonnées, donc de changer l'ordre de sommation hérité de M4.3
+et de perdre la parité. Elle est documentée plutôt que corrigée.
+
+\section{Fork indépendant et parité}
+
+\subsection{Indépendance}
+
+Aucun module de \code{m4\_3live\_credit\_soc} n'importe un autre moteur du
+dépôt. \code{m4\_3\_credit\_soc/m4\_3/model.py} est une \emph{référence
+structurelle lue}, pas une dépendance : listes parallèles jamais
+réindexées, carnet à agrégats incrémentaux, RNG
+\code{numpy.random.default\_rng(seed)}, ordre des phases, faillites
+cancel+destroy, pool $k\equiv2$ et $\eta_{\rho,\beta}(N)$ ont été
+reproduits à la lecture.
+
+\subsection{Parité, obtenue et vérifiée}
+\label{sec:parite}
+
+\fait{} Un run homogène de M4.3Live (graine 0, paramètres baseline,
+$T=8000$) reproduit \textbf{bit à bit} le run stocké
+\code{m4\_3\_credit\_soc} \code{m4\_3\_\_d1\_\_baseline\_\_seed0} :
+26 colonnes de série, 8000 pas, écart maximal nul --- pas même au dernier
+bit. Le noyau a servi $9\,366\,225$ fois, toutes sur le chemin identité.
+\inference{} Contrôle croisé : le rapport d'architecture dénombre
+$9\,366\,177$ événements de prêt sur ce même run, soit exactement 48 de
+moins ; ce sont les paires dont le principal tombe sous \code{MIN\_LOAN} et
+qui ne donnent donc pas de contrat.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{figures/parity_m4_3.png}
+\caption{Parité bit à bit. En haut, la trajectoire de M4.3Live en régime
+homogène superposée à celle du run M4.3 stocké --- les deux courbes sont la
+même. En bas, l'écart maximal pas à pas sur les 26 colonnes : il vaut
+exactement zéro, donc la courbe repose sur le plancher du graphique, deux
+ordres de grandeur sous l'epsilon machine. Données :
+\code{results/analysis/parity\_deviations\_8000.csv}.}
+\label{fig:parite}
+\end{figure}
+
+Le test est dans \code{tests/test\_parity\_m4\_3.py} (500 pas par défaut,
+les 8000 pas avec \code{--full}) : la mesure citée ici est reproductible
+depuis le dépôt, elle ne vit pas dans un script jetable.
+
+Le prompt (§3.6) n'exigeait plus cette parité. Elle a été conservée parce
+qu'elle est gratuite --- elle découle du routage entier --- et parce
+qu'elle vérifie d'un coup l'ordre des phases, la séquence exacte d'appels
+au générateur (Poisson, normale, puis le chemin rapide $k=2$ de
+l'échantillonnage) et la fonction de taux.
+
+\section{Sémantique des trois portées}
+
+\begin{description}
+\item[\code{all}] --- rétroactif \emph{et} prospectif : toutes les entités
+  vivantes reçoivent la nouvelle valeur, et la valeur par défaut à la
+  naissance est modifiée.
+\item[\code{new}] --- vintage technologique : seule la valeur par défaut à
+  la naissance change ; les entités déjà vivantes gardent la leur pour
+  toujours.
+\item[\code{fraction}] --- tirage unique de $\varphi$ des vivantes, avec le
+  générateur de la simulation. \textbf{La valeur par défaut à la naissance
+  n'est pas modifiée} : une entité née après $t_0$ reçoit l'ancienne
+  valeur. C'est ce qui garde l'intensité de traitement fixée au moment de
+  la mesure ; si \code{fraction} contaminait le défaut, elle se comporterait
+  comme \code{new} plus un tirage ponctuel. Vérifié explicitement
+  (\code{tests/test\_scopes.py}).
+\end{description}
+
+Les technologies se composent par coordonnée : une intervention \code{all}
+sur $A$ après une \code{fraction} sur $\gamma$ laisse les $\gamma$
+hétérogènes intacts, chaque entité recevant $(A_{\text{nouveau}},
+\gamma_i)$.
+
+\paragraph{Dégénérescences, affichées et non masquées.} \code{K0} n'existe
+qu'à la naissance : \code{all} et \code{new} sont identiques par
+construction (vérifié : trajectoires bit-identiques), et \code{fraction}
+n'a pas de sens. \code{lam}, \code{delta}, \code{sigma}, \code{rho},
+\code{eta\_beta}, \code{eta\_n\_ref} sont des paramètres de
+population/marché : \code{new} est un alias explicite de \code{all}
+(vérifié), \code{fraction} n'a pas de sens. Ces portées sans objet sont
+\emph{refusées} avec un message, et l'IHM affiche le texte de dégénérescence
+sous le sélecteur au lieu de le désactiver en silence. \code{target\_rule}
+est exclu de l'intervention : M4.3Live n'a qu'une institution de principal.
+
+\paragraph{Co-variation de $K_0$ (décision ouverte §11).} $K_0$ n'est
+\textbf{pas} co-varié automatiquement avec une intervention sur
+$A$/$\gamma$. Raison : le protocole principal agit par la portée
+\code{fraction} sur des entités \emph{déjà vivantes}, dont le capital est
+déterminé par leur histoire ; $K_0$ ne concerne que les naissances futures,
+identiques dans le bras traité et dans sa référence appariée. Co-varier
+introduirait un second changement simultané --- exactement la confusion que
+le prompt met en garde de créer. \incertitude{} Le caveat demeure et est
+signalé dans le rapport de résultats : une intervention sur $A$ déplace
+l'échelle autarcique $K^{*}_{\mathrm{aut}}=[A(1-\delta)/\delta]^{1/(1-\gamma)}
+\propto A^{1/(1-\gamma)}$, donc change la tension du système en même temps
+que l'extraction. L'option de co-variation reste disponible en émettant une
+intervention \code{K0} distincte.
+
+\section{Architecture « en direct »}
+
+\subsection{Un thread, pas un sous-processus}
+
+\code{simulation\_lab/jobs.py} lance ses runs batch en
+\code{multiprocessing.Process} (\code{jobs.py:24-51}). Ce modèle est
+inadapté ici : l'IHM interroge l'état toutes les demi-secondes et la
+population peut atteindre \code{pop\_max}$=30\,000$ entités ; faire
+transiter cet état par une \code{Queue} à chaque pas coûterait plus que le
+pas. Un \code{threading.Thread} partage l'état sans copie.
+
+\subsection{Aucun verrou en lecture}
+
+Le thread de boucle est le seul écrivain, et il n'\emph{ajoute} que des
+dictionnaires déjà complets à \code{series} / \code{tech\_series}.
+\code{list.append} et le découpage de liste étant atomiques sous le GIL, un
+lecteur ne peut jamais voir un enregistrement partiel. Seule la file
+d'interventions, écrite par un thread HTTP et lue par le thread de boucle,
+est protégée par un verrou.
+
+\subsection{Un point d'entrée unique}
+
+\code{Simulation.submit} est appelé aussi bien par l'IHM que par le pilote
+sans tête. C'est ce qui rend le test de rejeu probant : il ne compare pas
+un plan à lui-même, il rejoue le journal d'une session réelle.
+
+\subsection{Mécanisme de sondage (décision ouverte §11)}
+
+La convention existante de \code{simulation\_lab} (sondage HTTP périodique,
+cf. \code{web/static/app.js}) est reprise, avec deux adaptations dictées
+par le débit d'un direct : cadence de 500\,ms au lieu du rythme des jobs,
+et transfert \emph{incrémental} --- le client envoie \code{?since=<t>} et
+ne reçoit que les lignes postérieures, qu'il accumule localement. La charge
+utile reste ainsi bornée quelle que soit la longueur du run. Aucune
+dépendance nouvelle : \code{http.server}, JSON, et des graphiques dessinés
+en \code{canvas} 2D.
+
+\section{Intégration à simulation\_lab}
+
+\subsection{Isolation (décision ouverte §11)}
+
+Le choix était entre étendre le serveur existant et en lancer un second.
+\textbf{Décision : un seul serveur}, donc une seule adresse pour
+l'utilisateur, et un accès direct en lecture seule à
+\code{RunStorage} pour la reprise. L'isolation est obtenue autrement que
+par la séparation des processus : tout le code de M4.3Live vit dans son
+propre dossier (\code{m4\_3live\_credit\_soc/web/router.py}), et
+\code{simulation\_lab} ne gagne qu'un module minuscule
+(\code{simulation\_lab/live/}) plus deux lignes en tête de \code{do\_GET} et
+\code{do\_POST} (\code{web/app.py}). Aucune branche existante n'est
+modifiée. Le routeur est chargé \emph{par chemin de fichier}, ce qui évite
+d'introduire un nom de premier niveau générique (\code{web}) dans
+\code{sys.modules}, et son chargement est paresseux : si M4.3Live est
+absent ou cassé, \code{/live} renvoie 503 et le reste du laboratoire
+fonctionne exactement comme avant.
+
+\subsection{Non-régression}
+
+\input{tables/nonregression.tex}
+
+\section{Reprise depuis un run M4.3 et vérification de divergence}
+
+Une session peut repartir d'un run M4.3 déjà stocké : ses paramètres et sa
+graine sont lus dans les métadonnées, et le rejeu jusqu'à $t_0$ emprunte la
+boucle \emph{normale}, ce qui rend la progression visible dans l'IHM.
+
+M4.3Live étant un fork d'institution différente, rejouer un run stocké ne
+reproduit sa trajectoire que dans le régime homogène --- et rien ne le
+garantit hors de ce régime. Une reprise n'est donc \textbf{jamais}
+présentée comme identique sans mesure : dès que $t_0$ est atteint, le
+sondage d'état calcule et renvoie un rapport de divergence (nombre de pas
+comparés, identité bit à bit, premier pas fautif, écarts absolus par
+colonne, écart relatif maximal), écrit aussi dans
+\code{divergence.json}.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.72\textwidth]{figures/divergence_cases.png}
+\caption{Le rapport de divergence mis à l'épreuve sur trois cas. Il rend
+zéro quand la reprise est exacte, et il dénonce l'écart --- avec le pas et la
+colonne fautifs --- quand elle ne l'est pas. Données :
+\code{results/conception/divergence\_cases.json}.}
+\label{fig:divergence}
+\end{figure}
+
+\fait{} Résultats (\code{tests/test\_resume\_divergence.py}) :
+\begin{itemize}
+\item reprise homogène de \code{m4\_3\_\_d1\_\_baseline\_\_seed0} à
+  $t_0=400$ : écart maximal \emph{nul} sur 400 pas $\times$ 10 colonnes ;
+\item falsification --- confronté à la série d'un \emph{autre} run
+  (\code{rho\_2}), le même rapport signale la divergence dès $t=1$ sur
+  \code{n\_loans}, écart relatif maximal $5{,}79\cdot10^{-1}$. Le rapport
+  n'est donc pas un « toujours identique » décoratif ;
+\item après une intervention à $t=61$, la divergence est détectée à partir
+  de $t=61$ exactement, écart relatif maximal $10{,}0$ ;
+\item le pilote sans tête imprime le rapport \emph{et} l'écrit dans
+  \code{summary.json} --- il est rapporté, pas seulement calculé.
+\end{itemize}
+
+\section{Chantier taux / partage du surplus}
+\label{sec:taux}
+
+Le prompt (§3.4) ouvre une piste : faire que les entités se partagent le
+surplus coopératif au lieu d'utiliser le rendement marginal, via un
+paramètre de partage $p$. Il identifie correctement le vrai obstacle : ce
+n'est pas le partage, c'est la conversion d'une quantité en un taux
+perpétuel.
+
+\paragraph{L'hypothèse manquante, et notre lecture.} Le prompt décrit
+$\Delta$ comme « une quantité ponctuelle ». \hyp{} Sur les termes du
+modèle, ce n'en est pas une : la production $A K^{\gamma}$ est un
+\emph{flux par pas}, donc le surplus qu'engendre la réallocation est lui
+aussi un flux par pas, qui persiste tant que l'allocation persiste. On le
+gèle au moment du contrat --- exactement comme le taux marginal
+$m=A\gamma K^{\gamma-1}$ est déjà gelé au contrat dans M4.3 --- et on
+impose que le service perpétuel verse à la prêteuse sa part du surplus par
+pas :
+\[ r\,q = p\,\Delta \qquad\Longrightarrow\qquad r = \frac{p\,\Delta}{q}. \]
+C'est cette convention (« rente perpétuelle au surplus gelé ») qui rend le
+problème bien posé, sans horizon ni actualisation implicites. Si l'on
+tenait à la lecture ponctuelle du prompt, il faudrait au contraire
+introduire un taux d'actualisation arbitraire ; on a préféré expliciter la
+lecture qui n'en a pas besoin.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{figures/rate_rules.png}
+\caption{Les deux règles de taux sur le domaine réel. La règle candidate
+$r = p\Delta/q$ reste partout sous le taux marginal : elle allège le service
+au lieu de l'alourdir. Données : \code{results/conception/rate\_rules.csv}.}
+\label{fig:taux}
+\end{figure}
+
+\paragraph{Vérifications exigées.} \fait{} $r>0$ sur les 17 paires
+représentatives testées, et $\Delta\le0$ interdit le contrat (un taux nul
+serait rejeté par le contrôle de cohérence du carnet). \fait{} Le rapport
+$r/r_{\text{marginal}}$ vaut au plus $0{,}414$ sur un balayage complet du
+domaine (\autoref{fig:taux}) et $0{,}227$ sur les paires du test : le service est plus
+\emph{léger}, pas plus lourd --- le risque de pic de défauts mécanique
+signalé par le prompt ne se matérialise pas. \fait{} Sur 120 pas à graine
+identique, $0$ défaut sous les deux règles, intérêts versés
+$3\,011\,813$ (marginal) contre $295\,574$ (surplus).
+
+\textbf{Décision : chantier abouti mais désactivé par défaut.}
+\code{rate\_rule="marginal"} reste le mécanisme opérationnel, conformément
+au §3.4, et aucune cellule de la campagne n'utilise la règle candidate : la
+question du rebond est mesurable avec le mécanisme existant, et mélanger
+deux changements institutionnels rendrait le résultat illisible.
+
+\section{Récapitulatif des décisions laissées ouvertes (§11)}
+
+\begin{longtable}{@{}p{4.6cm}p{5.2cm}p{6.2cm}@{}}
+\toprule
+\textbf{Point ouvert} & \textbf{Décision} & \textbf{Motif} \\
+\midrule
+\endhead
+Nom du paquet & \code{m4\_3live\_credit\_soc} / \code{m4\_3live}, inchangé
+& Aucune gêne rencontrée. \\
+Serveur dédié vs extension & Extension isolée du serveur existant
+& Une seule adresse ; \code{RunStorage} accessible pour la reprise ;
+isolation obtenue par le dossier, pas par le processus (§7.1). \\
+Mécanisme de sondage & Convention \code{app.js}, cadence 500\,ms,
+transfert incrémental \code{?since=} & Charge utile bornée quelle que soit
+la longueur du run. \\
+Hétérogénéité au-delà de $A/\gamma$ & Non & Hors mandat par défaut ; le
+protocole §7 n'en a pas révélé le besoin. \\
+Co-variation de $K_0$ & Délibérément découplée, option manuelle
+& La portée \code{fraction} agit sur des entités dont $K$ est déjà
+déterminé ; co-varier ajouterait un second changement simultané. \\
+Borne du transfert & \code{optimum} (défaut), \code{equalization} en
+ablation & Piloté sur un bras traité : le plafond ne mord que $h\le25$,
+jamais ensuite (§\ref{sec:plafond}). \\
+Seuils chaud/tiède/froid & \code{exact\_lut} par défaut ; seuil mesuré à
+71, laissé à 1800 & L'erreur du chemin tiède est $10^{7}\times$ celle de la
+table, pour un gain sans effet : le noyau ne pèse que 1,3\,\% du coût d'un
+pas (§\ref{sec:seuil}). \\
+Chantier taux/$p$ & Abouti, hypothèse documentée, désactivé par défaut
+& Ne pas mélanger deux changements institutionnels dans la mesure du
+rebond (§\ref{sec:taux}). \\
+\bottomrule
+\end{longtable}
+
+\section{Tests}
+
+Assertions Python simples, convention du dépôt (pas de pytest).
+
+\begin{longtable}{@{}p{4.5cm}p{11.5cm}@{}}
+\toprule
+\textbf{Fichier} & \textbf{Ce qui est vérifié} \\
+\midrule
+\endhead
+\code{test\_institution.py} & Les trois régimes contre une bissection
+indépendante ; $\lambda^{*}\ne1/2$ dès que $A_b\ne A_\ell$ ; ordre de
+convergence 4 de la table ; erreur réelle du chemin tiède ; $\delta^{*}$
+est bien un maximum ; valeur nette préservée ; le compteur de refus par le
+sens du prêt se déclenche. \\
+\code{test\_scopes.py} & Les trois portées, la non-contamination du défaut
+de naissance par \code{fraction}, le déterminisme du tirage, les ids
+explicites sans tirage, les dégénérescences \code{K0} et population,
+le refus des portées sans objet, l'ordre intervention/naissances, la
+composition de deux interventions. \\
+\code{test\_replay.py} & Rejeu du journal d'une \emph{vraie} session en
+direct ; invariant de pause ; pas-à-pas ; aller-retour snapshot ;
+restauration du cache du noyau. \\
+\code{test\_resume\_divergence.py} & Reprise homogène bit à bit ;
+falsification du rapport ; divergence après intervention ; remontée du
+rapport jusqu'à l'appelant. \\
+\code{test\_surplus\_rate.py} & $r>0$, $r<r_{\text{marginal}}$, linéarité
+en $p$, blocage si $\Delta\le0$, absence de pic de défauts. \\
+\code{test\_parity\_m4\_3.py} & Parité bit à bit avec le run M4.3 stocké,
+sur les 26 colonnes de série, sans aucune tolérance ; 500 pas par défaut,
+les 8000 pas cités dans ce rapport avec \code{--full}. \\
+\bottomrule
+\end{longtable}
+
+\appendix
+\section{Annexe de traçabilité : les simulations citées}
+
+Toute simulation mentionnée dans ce rapport est identifiable par son
+\code{run\_id} et consultable dans \code{simulation\_lab}. Le tableau
+ci-dessous couvre les deux rapports du programme ; les figures et tableaux
+référencés dans la colonne « apparaît dans » sont ceux du rapport de
+résultats sauf mention contraire.
+
+\input{tables/traceability}
+
+\end{document}

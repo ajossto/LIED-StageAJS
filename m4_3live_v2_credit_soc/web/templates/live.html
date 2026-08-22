@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>M4.3Live-v2 - Direct</title>
+  <link rel="stylesheet" href="/static/app.css">
+  <link rel="stylesheet" href="/live2/static/live.css">
+</head>
+<body data-page="live">
+  <header class="topbar">
+    <div>
+      <h1>M4.3Live-v2 — direct (sens du prêt libre)</h1>
+      <p class="muted">Pilotage en direct d'une simulation M4.3Live : lecture, interventions, reprise depuis un run M4.3 stocké.</p>
+    </div>
+    <nav class="topnav">
+      <a class="nav-link" href="/launch">Lancement</a>
+      <a class="nav-link" href="/results">Résultats</a>
+      <a class="nav-link active" href="/live2">Direct</a>
+    </nav>
+  </header>
+
+  <main class="page-grid">
+    <div class="live-col live-col-left">
+      <div id="message" class="live-message" role="alert"></div>
+
+      <!-- Panneau 1 : Sessions -->
+      <section class="panel">
+        <div class="toolbar">
+          <h2>Sessions</h2>
+          <button id="btn-refresh-sessions" class="secondary compact-button">Rafraîchir</button>
+        </div>
+        <label for="session-select">Session en cours</label>
+        <select id="session-select">
+          <option value="">— aucune session sélectionnée —</option>
+        </select>
+
+        <div class="section-block">
+          <h3>Créer / reprendre une session</h3>
+          <label>Label</label>
+          <input id="create-label" type="text" placeholder="ex: essai_gamma">
+
+          <div class="pill-row create-mode-row">
+            <label class="radio-label"><input type="radio" name="create-mode" value="fresh" checked> Nouvelle</label>
+            <label class="radio-label"><input type="radio" name="create-mode" value="resume"> Reprendre un run M4.3</label>
+          </div>
+
+          <div id="create-fresh-block">
+            <div id="fresh-param-fields" class="field-grid"></div>
+            <button id="btn-create-fresh">Créer la session</button>
+          </div>
+
+          <div id="create-resume-block" class="hidden">
+            <label for="resume-run-select">Run M4.3 stocké</label>
+            <select id="resume-run-select"></select>
+            <label for="resume-t0">t₀ (pas de reprise)</label>
+            <input id="resume-t0" type="number" step="1" value="1000">
+            <button id="btn-create-resume">Reprendre</button>
+            <p class="help">La reprise n'est identique au run d'origine que dans le régime homogène ; l'écart mesuré est affiché dès que t₀ est atteint.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Panneau 2 : Lecture -->
+      <section class="panel">
+        <h2>Lecture</h2>
+        <div id="banner-area"></div>
+
+        <div class="toolbar wrap-toolbar">
+          <button id="btn-play">Lecture</button>
+          <button id="btn-pause" class="secondary">Pause</button>
+          <button id="btn-step1" class="secondary compact-button">+1 pas</button>
+          <button id="btn-step10" class="secondary compact-button">+10 pas</button>
+          <button id="btn-step100" class="secondary compact-button">+100 pas</button>
+        </div>
+
+        <div class="inline-form-row">
+          <div>
+            <label for="speed-input">Vitesse (pas/s, 0 = max)</label>
+            <input id="speed-input" type="number" step="any" min="0" value="0">
+          </div>
+          <button id="btn-speed" class="secondary compact-button">Appliquer</button>
+        </div>
+
+        <div class="inline-form-row">
+          <div>
+            <label for="extend-steps">Prolonger de</label>
+            <input id="extend-steps" type="number" step="1" min="1" value="2000">
+          </div>
+          <button id="btn-extend" class="secondary compact-button">Prolonger</button>
+        </div>
+
+        <div class="toolbar wrap-toolbar">
+          <button id="btn-snapshot" class="secondary">Snapshot</button>
+          <button id="btn-save" class="secondary">Écrire series.csv</button>
+        </div>
+        <div id="action-feedback" class="help"></div>
+
+        <div id="status-grid" class="live-metrics-grid">
+          <div class="live-metric"><span>t / T</span><strong id="status-t">—</strong></div>
+          <div class="live-metric"><span>statut</span><strong id="status-status">—</strong></div>
+          <div class="live-metric"><span>lecture</span><strong id="status-paused">—</strong></div>
+          <div class="live-metric"><span>pas/s mesurés</span><strong id="status-sps">—</strong></div>
+          <div class="live-metric"><span>interventions en file</span><strong id="status-pending">—</strong></div>
+        </div>
+        <p class="help" id="status-directory"></p>
+      </section>
+
+      <!-- Panneau 3 : Intervention -->
+      <section class="panel">
+        <h2>Intervention</h2>
+        <label for="intervene-param">Paramètre</label>
+        <select id="intervene-param"></select>
+
+        <label for="intervene-scope">Portée</label>
+        <select id="intervene-scope"></select>
+
+        <div id="degenerate-block" class="degenerate hidden"></div>
+        <div id="note-block" class="note hidden"></div>
+
+        <label for="intervene-value">Valeur</label>
+        <input id="intervene-value" type="number" step="any">
+
+        <div id="phi-wrap" class="hidden">
+          <label for="intervene-phi">φ (fraction tirée, dans ]0, 1])</label>
+          <input id="intervene-phi" type="number" step="any" min="0" max="1">
+        </div>
+
+        <label for="intervene-note">Note libre</label>
+        <input id="intervene-note" type="text" placeholder="raison de l'intervention (facultatif)">
+
+        <button id="btn-intervene">Envoyer</button>
+
+        <div class="live-summary-grid section-block">
+          <div class="live-metric"><span>A par défaut (naissance)</span><strong id="default-A-value">—</strong></div>
+          <div class="live-metric"><span>γ par défaut (naissance)</span><strong id="default-gamma-value">—</strong></div>
+        </div>
+      </section>
+
+      <!-- Panneau 4 : Divergence de reprise -->
+      <section id="divergence-panel" class="panel hidden">
+        <h2>Divergence de reprise</h2>
+        <div class="live-metrics-grid">
+          <div class="live-metric"><span>pas comparés</span><strong id="div-n-compared">—</strong></div>
+          <div class="live-metric"><span>identité</span><strong id="div-bit-identical">—</strong></div>
+          <div class="live-metric"><span>écart relatif max</span><strong id="div-max-relative">—</strong></div>
+        </div>
+        <div id="div-first-difference" class="hidden">
+          <h3>Premier écart</h3>
+          <div class="live-metrics-grid">
+            <div class="live-metric"><span>t</span><strong id="div-fd-t">—</strong></div>
+            <div class="live-metric"><span>colonne</span><strong id="div-fd-column">—</strong></div>
+            <div class="live-metric"><span>obtenu</span><strong id="div-fd-obtained">—</strong></div>
+            <div class="live-metric"><span>attendu</span><strong id="div-fd-expected">—</strong></div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <div class="live-col live-col-right">
+      <!-- Panneau 5 : Graphiques -->
+      <section class="panel">
+        <h2>Séries temporelles</h2>
+        <p class="help">Ligne verticale pointillée = intervention (nom du paramètre en petit). Survol d'un graphique = valeurs sous le curseur.</p>
+
+        <div class="chart-block">
+          <h3>Production agrégée <code>prod_tot</code></h3>
+          <canvas id="chart-prod" class="live-chart"></canvas>
+          <div id="legend-prod" class="chart-legend"></div>
+        </div>
+
+        <div class="chart-block">
+          <h3>Capital <code>K_tot</code> et population <code>pop</code></h3>
+          <canvas id="chart-kpop" class="live-chart"></canvas>
+          <div id="legend-kpop" class="chart-legend"></div>
+        </div>
+
+        <div class="chart-block">
+          <h3>Faillites : <code>deaths</code> et <code>defaults</code></h3>
+          <canvas id="chart-deaths" class="live-chart"></canvas>
+          <div id="legend-deaths" class="chart-legend"></div>
+        </div>
+
+        <div class="chart-block">
+          <h3>Marché : <code>loan_volume</code> et paires bloquées par le sens du prêt <code>mkt_blocked_dir</code></h3>
+          <canvas id="chart-market" class="live-chart"></canvas>
+          <div id="legend-market" class="chart-legend"></div>
+        </div>
+      </section>
+
+      <!-- Panneau 6 : Dispersion des technologies -->
+      <section class="panel">
+        <h2>Dispersion des technologies</h2>
+        <div class="live-summary-grid">
+          <div class="live-metric"><span>A moyen (population vivante)</span><strong id="mean-A-value">—</strong></div>
+          <div class="live-metric"><span>γ moyen (population vivante)</span><strong id="mean-gamma-value">—</strong></div>
+        </div>
+        <div class="table-wrap">
+          <table id="tech-table" class="live-table">
+            <thead>
+              <tr>
+                <th>tech</th><th>A</th><th>γ</th><th>vivantes</th><th>% pop</th><th>K</th><th>production</th><th>% production</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+
+        <h3>Cohortes de naissance, de part et d'autre de chaque intervention</h3>
+        <p class="help">Complémentaire du tableau ci-dessus : la technologie dit
+        <em>qui</em> est traité, la cohorte dit si les entités nées après une
+        intervention diffèrent de celles nées avant. Les deux coïncident pour la
+        portée « nouvelles », pas pour « fraction ».</p>
+        <div class="table-wrap">
+          <table id="cohort-table" class="live-table">
+            <thead>
+              <tr>
+                <th>intervention (t)</th><th>paramètre</th><th>portée</th>
+                <th>nées avant</th><th>A moyen avant</th><th>γ moyen avant</th>
+                <th>nées après</th><th>A moyen après</th><th>γ moyen après</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Panneau 7 : Journal des interventions -->
+      <section class="panel">
+        <h2>Journal des interventions</h2>
+        <div class="table-wrap">
+          <table id="journal-table" class="live-table">
+            <thead>
+              <tr>
+                <th>t</th><th>paramètre</th><th>portée</th><th>φ</th><th>ancienne valeur</th><th>nouvelle valeur</th><th>entités touchées</th><th>note</th><th></th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Panneau 8 : Compteurs du noyau -->
+      <section class="panel">
+        <h2>Compteurs du noyau de principal</h2>
+        <div id="kernel-counters" class="live-summary-grid"></div>
+      </section>
+    </div>
+  </main>
+
+  <script src="/live2/static/live.js"></script>
+</body>
+</html>
