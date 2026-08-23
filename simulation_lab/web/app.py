@@ -11,6 +11,7 @@ from urllib.parse import parse_qs, unquote, urlparse
 
 from simulation_lab import live as live_routes
 from simulation_lab import live_v2 as live_v2_routes
+from simulation_lab import live_v3 as live_v3_routes
 from simulation_lab.jobs import JobManager
 from simulation_lab.models.discovery import ModelRegistry
 from simulation_lab.runs.storage import RunStorage
@@ -56,6 +57,12 @@ class SimulationLabHandler(BaseHTTPRequestHandler):
         # coexistent, aucune n'est débranchée.
         if live_v2_routes.owns(parsed.path):
             return live_v2_routes.dispatch(self, parsed, "GET")
+        # M4.4Rebond : troisième aiguillage, routes /live3. Le plan M4.4 §0
+        # parle de « renommer » live_v2 en live_v3 ; ce serait débrancher
+        # l'IHM de v2, dont 153 runs et deux rapports publiés dépendent.
+        # C'est donc une ADDITION, comme les deux précédentes.
+        if live_v3_routes.owns(parsed.path):
+            return live_v3_routes.dispatch(self, parsed, "GET")
         if parsed.path in {"/", "/launch"}:
             return self._serve_file(ROOT_DIR / "simulation_lab" / "web" / "templates" / "launch.html", "text/html; charset=utf-8")
         if parsed.path == "/results":
@@ -108,6 +115,8 @@ class SimulationLabHandler(BaseHTTPRequestHandler):
             return live_routes.dispatch(self, parsed, "POST")
         if live_v2_routes.owns(parsed.path):
             return live_v2_routes.dispatch(self, parsed, "POST")
+        if live_v3_routes.owns(parsed.path):
+            return live_v3_routes.dispatch(self, parsed, "POST")
         try:
             body = self._read_json_body()
         except ValueError as exc:
