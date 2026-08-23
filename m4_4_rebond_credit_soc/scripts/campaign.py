@@ -125,6 +125,22 @@ RESULTS = ROOT / "results" / "campaign"
 BURN_DIR = RESULTS / "burn"
 ARM_DIR = RESULTS / "arms"
 PHASE_DIR = RESULTS / "phase"
+BARGAIN_DIR = RESULTS / "bargain"
+
+#: LE TAUX COMME VARIABLE DE PARTAGE (demande du 24 août 2026).
+#:
+#: Chaque bras branche le MÊME amorçage sur une valeur du partage p, en
+#: changeant la règle de taux à t₀. Les contrats hérités de l'amorçage gardent
+#: leur taux (ils sont perpétuels et leur taux est gelé au contrat) : l'effet
+#: ne se propage qu'au rythme du renouvellement du carnet, ce qui est le
+#: mécanisme même qu'on veut observer.
+#:
+#: `marginal` est le bras de référence : c'est la règle de toute la lignée
+#: antérieure. Il est relancé ici avec `record_rate_split` armé pour mesurer
+#: où elle se situe sur l'échelle — mesuré à p ≈ 0,52 sur 150 pas hors
+#: campagne (`tests/test_bargain_rate.py`), donc presque exactement au
+#: partage équitable, ce que personne n'avait établi.
+BARGAIN_SHARES = (0.0, 0.25, 0.5, 0.75, 1.0)
 
 
 def intervention(**kwargs) -> dict:
@@ -172,6 +188,46 @@ ARMS: dict[str, tuple[list[dict], tuple[str, ...]]] = {
 }
 
 
+#: LOT C — COUVERTURE DE QUEUE. Le pilote C0 mesure `n_tail` ≈ 247 par
+#: instantané sur le revenu d'intérêt à λ = 30, contre une cible dérivée de
+#: 400 (erreur-type de Hill ≤ 0,10 à α̂ ≈ 3). Le facteur manquant est 1,62.
+#:
+#: λ est de la PURE TAILLE FINIE selon M4B (intensivité à ±2 %) : le monter
+#: n'change pas la physique, seulement la statistique. Cette lignée le
+#: VÉRIFIE au lieu de l'hériter — c'est à cela que sert le bras `control` de
+#: cette campagne, comparé à son homologue à λ = 30.
+LAMBDA_COVERAGE = 50.0
+COVERAGE_DIR = RESULTS / "coverage"
+COVERAGE_BURN = COVERAGE_DIR / "burn"
+COVERAGE_ARMS = ("control", "all_A150")
+
+
+def burn_coverage(seed: int) -> dict:
+    directory = COVERAGE_BURN / f"seed{seed}"
+    snapshot = directory / f"snapshot_t{T0}.pkl"
+    if snapshot.exists():
+        return {"seed": seed, "skipped": True}
+    started = time.time()
+    simulation = Simulation(Config(**{**BASE, "lam": LAMBDA_COVERAGE},
+                                   seed=seed, T=T0))
+    simulation.run()
+    write_series(simulation, directory)
+    save_snapshot(simulation, snapshot)
+    return {"seed": seed, "t": simulation.t, "status": simulation.status,
+            "pop": simulation.series[-1]["pop"],
+            "wall_seconds": time.time() - started}
+
+
+def run_coverage(job: tuple[int, str]) -> dict:
+    seed, arm = job
+    plan, _ = ARMS[arm]
+    directory = COVERAGE_DIR / arm / f"seed{seed}"
+    return _run_cell(directory, seed, plan,
+                     {"loan_direction": "free", "lam": LAMBDA_COVERAGE},
+                     {"arm": arm, "lot": "coverage"},
+                     burn_dir=COVERAGE_BURN)
+
+
 def burn_one(seed: int) -> dict:
     directory = BURN_DIR / f"seed{seed}"
     snapshot = directory / f"snapshot_t{T0}.pkl"
@@ -198,13 +254,14 @@ def burn_one(seed: int) -> dict:
 
 
 def _run_cell(directory: Path, seed: int, plan: list[dict], overrides: dict,
-              label: dict) -> dict:
+              label: dict, burn_dir: Path | None = None,
+              window: int = WINDOW) -> dict:
     marker = directory / "summary.json"
     if marker.exists():
         return {**label, "seed": seed, "skipped": True}
     started = time.time()
-    snapshot = BURN_DIR / f"seed{seed}" / f"snapshot_t{T0}.pkl"
-    config = Config(**{**BASE, **INSTRUMENTATION, **overrides}, seed=seed, T=T0 + WINDOW)
+    snapshot = (burn_dir or BURN_DIR) / f"seed{seed}" / f"snapshot_t{T0}.pkl"
+    config = Config(**{**BASE, **INSTRUMENTATION, **overrides}, seed=seed, T=T0 + window)
     simulation = load_snapshot(snapshot, config=config)
     planned: dict[int, list[Intervention]] = {}
     for entry in plan:
@@ -257,6 +314,127 @@ def run_arm(job: tuple[int, str, str]) -> dict:
                      {"arm": arm, "direction": direction})
 
 
+def run_bargain(job: tuple[int, str]) -> dict:
+    """Un bras du lot « taux » : `marginal` (référence) ou `p=…`."""
+    seed, label = job
+    directory = BARGAIN_DIR / label / f"seed{seed}"
+    if label == "marginal":
+        overrides = {"rate_rule": "marginal", "record_rate_split": True}
+    else:
+        overrides = {
+            "rate_rule": "bargain",
+            "bargain_p": float(label.split("=")[1]),
+            "record_rate_split": True,
+        }
+    return _run_cell(directory, seed, [], {"loan_direction": "free", **overrides},
+                     {"arm": label, "lot": "bargain"})
+
+
+def bargain_jobs() -> list[tuple[int, str]]:
+    labels = ["marginal"] + [f"p={share:g}" for share in BARGAIN_SHARES]
+    return [(seed, label) for label in labels for seed in SEEDS]
+
+
+#: LE PARTAGE QUI ÉVOLUE EN COURS DE TRAJECTOIRE.
+#:
+#: Les bras statiques ci-dessus sont déjà des expériences de CHANGEMENT
+#: BRUSQUE : ils passent de la règle historique (p ≈ 0,52) à un p fixe, à t₀.
+#: Ce que la rampe ajoute, et qu'eux ne peuvent pas donner, c'est
+#: l'HYSTÉRÉSIS : le partage monte par paliers dans un bras, descend par les
+#: mêmes paliers dans l'autre, et l'on compare l'état aux mêmes valeurs de p.
+#: S'ils diffèrent, le système a une mémoire — ce qui est attendu, puisque les
+#: contrats déjà signés gardent leur taux, mais dont l'ampleur n'est pas
+#: connue.
+RAMP_LEVELS = (0.0, 0.25, 0.5, 0.75, 1.0)
+RAMP_STEP = WINDOW // len(RAMP_LEVELS)
+
+
+def ramp_plan(levels) -> list[dict]:
+    return [
+        intervention(param="bargain_p", value=level, scope="all",
+                     t=T0 + 1 + index * RAMP_STEP,
+                     note=f"palier {index + 1}/{len(levels)}")
+        for index, level in enumerate(levels)
+    ]
+
+
+def run_ramp(job: tuple[int, str]) -> dict:
+    seed, direction = job
+    levels = RAMP_LEVELS if direction == "up" else tuple(reversed(RAMP_LEVELS))
+    directory = BARGAIN_DIR / f"ramp_{direction}" / f"seed{seed}"
+    return _run_cell(
+        directory, seed, ramp_plan(levels),
+        {"loan_direction": "free", "rate_rule": "bargain",
+         "bargain_p": levels[0], "record_rate_split": True},
+        {"arm": f"ramp_{direction}", "lot": "bargain"},
+    )
+
+
+#: LOT E — TENTATIVE DE CONTRÔLE (plan §3.3).
+#:
+#: Un levier CONTRÔLE une grandeur si, et seulement si : sa réponse appariée
+#: a un signe constant sur toutes les graines ; elle est monotone sur une
+#: étendue mesurée d'au moins ×3 du levier ; et son exposant intra-famille
+#: survit au contrôle §14.2. Tout ce qui est plus faible est une corrélation.
+#:
+#: ρ est le candidat n°1 : M4.2B le désigne comme le levier le plus
+#: systématique sur α̂, et v2 établit `rotation = ρ·Ḡ`. L'étendue balayée est
+#: ×6, largement au-delà du ×3 exigé.
+RHO_LEVELS = (0.5, 1.0, 1.5, 2.0, 3.0)
+CONTROL_DIR = RESULTS / "control_rho"
+
+
+def run_rho(job: tuple[int, float]) -> dict:
+    seed, rho = job
+    directory = CONTROL_DIR / f"rho={rho:g}" / f"seed{seed}"
+    plan = [] if rho == 1.0 else [
+        intervention(param="rho", value=rho, scope="all")
+    ]
+    return _run_cell(directory, seed, plan, {"loan_direction": "free"},
+                     {"arm": f"rho={rho:g}", "lot": "control"})
+
+
+#: LOT F — POURQUOI b DÉPASSE LA VALEUR σ = 0 DE M4B.
+#:
+#: Le plan §3.2 énumère QUATRE différences de régime entre cette lignée et
+#: M4B : σ (0,01 contre 0,25), δ (0,01 contre 0,05), la taille du bassin
+#: d'appariement (2 contre [2 ; 10]) et l'institution de principal (production
+#: jointe contre arithmétique).
+#:
+#: \fait{} La quatrième est VIDE dans un régime homogène, et c'est
+#: démontrable : quand les deux entités d'une paire partagent la même
+#: technologie, l'optimum de production jointe vaut exactement (K_b − K_a)/2,
+#: c'est-à-dire la règle arithmétique. C'est le mécanisme même de la parité
+#: bit à bit avec M4.3. Les bras de ce lot étant homogènes, il ne reste que
+#: trois différences.
+#:
+#: \incertitude{} La troisième n'est pas balayable : `POOL_SIZE` est un choix
+#: constitutif du moteur, pas un paramètre, et le rendre variable serait une
+#: modification de comportement — hors de la discipline additive du fork.
+#: Elle est donc documentée comme non tentée, et non silencieusement omise.
+#:
+#: Restent σ et δ, tous deux intervenables. La fenêtre est DOUBLÉE pour ces
+#: bras : σ = 0,25 est un changement de régime, pas une perturbation, et
+#: 2000 pas ne suffiraient pas à y converger.
+ABLATION_DIR = RESULTS / "ablation"
+ABLATION_WINDOW = 4000
+ABLATION_ARMS = {
+    "sigma005": [intervention(param="sigma", value=0.05, scope="all")],
+    "sigma010": [intervention(param="sigma", value=0.10, scope="all")],
+    "sigma025": [intervention(param="sigma", value=0.25, scope="all")],
+    "delta005": [intervention(param="delta", value=0.05, scope="all")],
+    "m4b_like": [intervention(param="sigma", value=0.25, scope="all"),
+                 intervention(param="delta", value=0.05, scope="all")],
+}
+
+
+def run_ablation(job: tuple[int, str]) -> dict:
+    seed, arm = job
+    directory = ABLATION_DIR / arm / f"seed{seed}"
+    return _run_cell(directory, seed, ABLATION_ARMS[arm], {"loan_direction": "free"},
+                     {"arm": arm, "lot": "ablation"}, window=ABLATION_WINDOW)
+
+
 def run_phase(job: tuple[int, str]) -> dict:
     seed, order = job
     directory = PHASE_DIR / order / f"seed{seed}"
@@ -301,6 +479,33 @@ def main(argv: list[str]) -> int:
     if command in {"phase", "all"}:
         PHASE_DIR.mkdir(parents=True, exist_ok=True)
         _pool(run_phase, [(seed, "deprec_first") for seed in SEEDS], "bras du lot E")
+    if command == "bargain_pilot":
+        # Les deux extrêmes sur UNE graine, avant d'engager 72 cellules : le
+        # cas altruiste peut faire enfler la population, et `pop_max` est à
+        # 30 000. On mesure avant de lancer.
+        BARGAIN_DIR.mkdir(parents=True, exist_ok=True)
+        for label in ("p=0", "p=1"):
+            print(json.dumps(run_bargain((0, label)), ensure_ascii=False), flush=True)
+    if command in {"bargain", "all"}:
+        BARGAIN_DIR.mkdir(parents=True, exist_ok=True)
+        _pool(run_bargain, bargain_jobs(), "bras du lot « taux »")
+    if command in {"coverage", "all"}:
+        COVERAGE_BURN.mkdir(parents=True, exist_ok=True)
+        _pool(burn_coverage, list(SEEDS), f"amorçages λ = {LAMBDA_COVERAGE:g}")
+        _pool(run_coverage, [(seed, arm) for arm in COVERAGE_ARMS for seed in SEEDS],
+              "bras de couverture")
+    if command in {"rho", "all"}:
+        CONTROL_DIR.mkdir(parents=True, exist_ok=True)
+        _pool(run_rho, [(seed, rho) for rho in RHO_LEVELS for seed in SEEDS],
+              "bras du lot E (contrôle par ρ)")
+    if command in {"ablation", "all"}:
+        ABLATION_DIR.mkdir(parents=True, exist_ok=True)
+        _pool(run_ablation, [(seed, arm) for arm in ABLATION_ARMS for seed in SEEDS],
+              "bras du lot F (ablation vers M4B)")
+    if command in {"ramp", "all"}:
+        BARGAIN_DIR.mkdir(parents=True, exist_ok=True)
+        _pool(run_ramp, [(seed, direction) for direction in ("up", "down")
+                         for seed in SEEDS], "rampes de partage")
     return 0
 
 

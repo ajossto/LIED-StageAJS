@@ -237,8 +237,22 @@ def write_series(simulation: Simulation, directory: str | Path) -> Path:
     rows = simulation.series
     if not rows:
         return path
+    # Les colonnes sont l'UNION des clefs, pas celles de la première ligne.
+    # \fait{} Un bras branché sur un amorçage hérite des lignes de série de
+    # cet amorçage (`load_snapshot` restaure `series`), qui a pu être écrit
+    # par une version antérieure du moteur : la première ligne n'a alors pas
+    # les colonnes des dernières. Déduire l'en-tête de `rows[0]` faisait
+    # échouer l'écriture — rencontré le 24 août sur le premier bras du lot
+    # « taux », après l'ajout de `mkt_loss`/`mkt_rq`/`mkt_p_implied`.
+    # `restval` laisse la cellule vide là où la colonne n'existait pas
+    # encore, ce qui est exactement l'information disponible.
+    fieldnames = list(rows[-1])
+    for row in rows:
+        for name in row:
+            if name not in fieldnames:
+                fieldnames.append(name)
     with open(path, "w", newline="", encoding="utf-8") as handle:
-        writer = csv.DictWriter(handle, fieldnames=list(rows[0]))
+        writer = csv.DictWriter(handle, fieldnames=fieldnames, restval="")
         writer.writeheader()
         writer.writerows(rows)
     tech_rows = simulation.tech_series

@@ -112,7 +112,10 @@ ZERO_TOL = 1e-12
 K_FLOOR = 1e-9
 POOL_SIZE = 2
 
-RATE_RULES = ("marginal", "surplus_share")
+#: Règles de taux. `bargain` est l'ajout de M4.4 (demande du 24 août 2026) :
+#: le taux cesse d'être une formule et devient un PARAMÈTRE DE PARTAGE entre
+#: deux bornes économiques, décrites dans `bargain_rate`.
+RATE_RULES = ("marginal", "surplus_share", "bargain")
 
 #: Sens du prêt à l'intérieur d'une paire (§3.1 du prompt v2).
 #:
@@ -146,7 +149,14 @@ PHASE_ORDERS = ("v1", "deprec_first")
 # est affiché tel quel par l'IHM : aucun sélecteur ne ment sur ce qu'il fait.
 ENTITY_PARAMS = ("A", "gamma")
 BIRTH_PARAMS = ("K0",)
-POPULATION_PARAMS = ("lam", "delta", "sigma", "rho", "eta_beta", "eta_n_ref")
+#: `bargain_p` est un paramètre de POPULATION au sens de l'intervention : il
+#: ne s'attache à aucune entité, il gouverne le taux des contrats CONCLUS
+#: APRÈS. Les contrats déjà signés gardent leur taux — ils sont perpétuels et
+#: leur taux est gelé au contrat —, si bien qu'une intervention sur `bargain_p`
+#: ne se propage qu'au rythme du renouvellement du carnet. C'est ce qui rend
+#: l'expérience dynamique intéressante plutôt que triviale.
+POPULATION_PARAMS = ("lam", "delta", "sigma", "rho", "eta_beta", "eta_n_ref",
+                     "bargain_p")
 SCOPES = ("all", "new", "fraction")
 
 PARAM_SEMANTICS: dict[str, dict] = {
@@ -187,6 +197,13 @@ for _name in POPULATION_PARAMS:
         ),
         "note": "",
     }
+PARAM_SEMANTICS["bargain_p"]["note"] = (
+    "Partage du taux, sous rate_rule='bargain' UNIQUEMENT. 0 = altruisme : le "
+    "service couvre juste la perte de puissance extractrice de la donneuse, "
+    "qui fait une opération blanche. 1 = asservissement : le service prend "
+    "tout le gain de la receveuse, qui fait l'opération blanche. Ne s'applique "
+    "qu'aux contrats conclus APRÈS : les taux déjà signés sont gelés."
+)
 
 
 @dataclass(frozen=True)
@@ -218,6 +235,15 @@ class Config:
     phase_order: str = "v1"
     rate_rule: str = "marginal"
     surplus_share_p: float = 0.5
+    #: Partage de la règle `bargain` (M4.4) : 0 = altruisme (la donneuse fait
+    #: une opération blanche), 1 = asservissement (la receveuse fait une
+    #: opération blanche). Sans effet sous les autres règles de taux.
+    bargain_p: float = 0.5
+    #: Mesure, à chaque contrat, la perte de puissance extractrice et le
+    #: partage IMPLIQUÉ par la règle en vigueur — ce qui permet de situer la
+    #: règle historique `marginal` sur l'échelle de `bargain`. Coûte une
+    #: puissance de plus par contrat, d'où le drapeau.
+    record_rate_split: bool = False
     kernel_policy: str = "exact_lut"
     lut_threshold: int = 1800
     lut_points: int = 65
@@ -260,6 +286,8 @@ class Config:
             raise ValueError(f"rate_rule doit être dans {RATE_RULES}")
         if not 0.0 < self.surplus_share_p <= 1.0:
             raise ValueError("surplus_share_p doit être dans ]0, 1]")
+        if not 0.0 <= self.bargain_p <= 1.0:
+            raise ValueError("bargain_p doit être dans [0, 1] (0 = altruisme, 1 = asservissement)")
         if self.kernel_policy not in KERNEL_POLICIES:
             raise ValueError(f"kernel_policy doit être dans {KERNEL_POLICIES}")
         if self.panel_every < 0:
@@ -555,6 +583,62 @@ def pair_rate(
     return math.sqrt(marginal_1 * marginal_2)
 
 
+def extraction_loss(A: float, gamma: float, capital: float, principal: float) -> float:
+    """Perte de puissance extractrice de la donneuse, par pas.
+
+        L = A·K^γ − A·(K − q)^γ
+
+    C'est la production PAR PAS que la donneuse cesse de réaliser du fait
+    d'avoir cédé `q`, évaluée dans l'état du contrat. Elle est strictement
+    positive dès que q > 0, puisque K ↦ A·K^γ est strictement croissante.
+
+    Ce n'est pas le rendement marginal multiplié par q : la fonction est
+    CONCAVE, donc L/q ≥ A·γ·K^(γ−1), avec égalité seulement dans la limite
+    des transferts infinitésimaux. Cette distinction est tout l'objet de la
+    règle `bargain` — l'institution de principal de ce modèle ne fait pas de
+    transferts infinitésimaux, elle égalise les rendements marginaux.
+    """
+    remaining = max(capital - principal, 0.0)
+    return A * max(capital, K_FLOOR) ** gamma - A * max(remaining, K_FLOOR) ** gamma
+
+
+def bargain_rate(
+    principal: float,
+    loss: float,
+    surplus: float,
+    share: float,
+) -> float:
+    """Taux comme PARTAGE, entre deux bornes économiques (M4.4).
+
+    Le taux de `pair_rate` est une formule — la moyenne géométrique des
+    rendements marginaux — qui ne dit pas qui capte quoi. Cette règle le
+    remplace par un paramètre `p` ∈ [0, 1] qui interpole entre les deux
+    seules bornes que l'économie de la paire admet :
+
+        r · q  =  L  +  p · Δ
+
+    - `p = 0`, ALTRUISME : le service couvre exactement la perte de puissance
+      extractrice de la donneuse. La donneuse fait une OPÉRATION BLANCHE —
+      sa production plus l'intérêt reçu valent exactement ce qu'elle
+      produisait avant — et la receveuse garde tout le surplus coopératif.
+    - `p = 1`, ASSERVISSEMENT : le service vaut L + Δ = G, c'est-à-dire tout
+      le gain de la receveuse. C'est la receveuse qui fait l'opération
+      blanche, et la donneuse capte la totalité du surplus.
+
+    Les deux opérations blanches ne valent QU'AU MOMENT DU CONTRAT : le taux
+    est gelé là, comme celui de `pair_rate` et de `surplus_rate`, alors que
+    les capitaux des deux côtés continuent d'évoluer ensuite. Le dire est
+    important — « opération blanche » ne veut pas dire « sans conséquence ».
+
+    Le taux est strictement positif sur tout [0, 1] dès que L > 0, ce qui est
+    acquis pour tout transfert non nul : contrairement à `surplus_share`,
+    cette règle ne peut pas refuser une paire faute de taux.
+    """
+    if principal <= 0.0:
+        return 0.0
+    return (loss + share * surplus) / principal
+
+
 def surplus_rate(
     principal: float,
     surplus: float,
@@ -710,6 +794,12 @@ def _run_market(
         "reversed": 0,
         "volume_rev": 0.0,
         "surplus": 0.0,
+        # M4.4, `record_rate_split` : perte de puissance extractrice cumulée,
+        # service cumulé, et partage impliqué moyen.
+        "loss_total": 0.0,
+        "rq_total": 0.0,
+        "p_implied_sum": 0.0,
+        "p_implied_n": 0,
     }
     events: list[dict] = []
     if n < 2:
@@ -726,7 +816,10 @@ def _run_market(
     solve = kernel.solve
     free_direction = config.loan_direction == "free"
     use_surplus_rate = config.rate_rule == "surplus_share"
+    use_bargain_rate = config.rate_rule == "bargain"
     share = config.surplus_share_p
+    bargain_share = config.bargain_p
+    record_split = config.record_rate_split
     record_events = config.record_loan_events
     for _ in range(rounds):
         indices = _sample(rng, n, POOL_SIZE)
@@ -789,11 +882,19 @@ def _run_market(
             donor_capital,
             principal,
         )
+        loss = float("nan")
         if use_surplus_rate:
             rate = surplus_rate(principal, surplus, share)
             if rate <= 0.0:
                 market["blocked_rate"] += 1
                 continue
+        elif use_bargain_rate:
+            # M4.4 : le taux est un PARTAGE entre deux bornes économiques.
+            # Aucun refus possible ici : L > 0 dès que le transfert l'est.
+            loss = extraction_loss(
+                pop_A[donor], pop_g[donor], donor_capital, principal
+            )
+            rate = bargain_rate(principal, loss, surplus, bargain_share)
         else:
             rate = pair_rate(
                 donor_capital,
@@ -803,6 +904,19 @@ def _run_market(
                 pop_g[receiver],
                 pop_A[receiver],
             )
+        if record_split:
+            # Où se situe la règle EN VIGUEUR sur l'échelle de `bargain` ?
+            # p_impliqué = (r·q − L)/Δ : 0 = la donneuse fait une opération
+            # blanche, 1 = c'est la receveuse. Mesuré, jamais supposé.
+            if loss != loss:
+                loss = extraction_loss(
+                    pop_A[donor], pop_g[donor], donor_capital, principal
+                )
+            market["loss_total"] += loss
+            market["rq_total"] += rate * principal
+            if surplus > 0.0:
+                market["p_implied_sum"] += (rate * principal - loss) / surplus
+                market["p_implied_n"] += 1
 
         receiver_capital_after = receiver_capital + principal
         loan_id, merged = book.add(donor, receiver, principal, rate)
@@ -1558,6 +1672,15 @@ class Simulation:
                 "corr_marg_net": _pearson(n_alive, sum_m, sum_net, sum_mm, sum_nn, sum_mn),
                 "corr_K_net": _pearson(n_alive, sum_k, sum_net, sum_kk, sum_nn, sum_kn),
                 "mkt_surplus": market["surplus"],
+                # M4.4 — partage du taux (§ « le taux comme variable »).
+                # Nuls quand `record_rate_split` est éteint : ces colonnes
+                # n'entrent dans aucun calcul de trajectoire.
+                "mkt_loss": market["loss_total"],
+                "mkt_rq": market["rq_total"],
+                "mkt_p_implied": (
+                    market["p_implied_sum"] / market["p_implied_n"]
+                    if market["p_implied_n"] else float("nan")
+                ),
                 "n_tech_alive": sum(1 for count in population.tech_alive.values() if count > 0),
                 "mean_A": coefficient_sum / n_alive if n_alive else float("nan"),
                 "mean_gamma": exponent_sum / n_alive if n_alive else float("nan"),

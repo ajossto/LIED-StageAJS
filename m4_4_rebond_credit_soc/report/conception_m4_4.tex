@@ -1,0 +1,441 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[french]{babel}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb}
+\usepackage[margin=2.35cm]{geometry}
+\usepackage{booktabs,longtable,tabularx}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{microtype}
+\usepackage{float}
+\usepackage{hyperref}
+\DeclareUnicodeCharacter{2264}{\ensuremath{\le}}
+\DeclareUnicodeCharacter{2265}{\ensuremath{\ge}}
+\DeclareUnicodeCharacter{03C3}{\ensuremath{\sigma}}
+\DeclareUnicodeCharacter{03B3}{\ensuremath{\gamma}}
+\DeclareUnicodeCharacter{03BB}{\ensuremath{\lambda}}
+\DeclareUnicodeCharacter{03C1}{\ensuremath{\rho}}
+\DeclareUnicodeCharacter{03B4}{\ensuremath{\delta}}
+\DeclareUnicodeCharacter{03B1}{\ensuremath{\alpha}}
+\DeclareUnicodeCharacter{0394}{\ensuremath{\Delta}}
+
+\hypersetup{colorlinks=true,linkcolor=blue!45!black,urlcolor=blue!45!black}
+\setlist{nosep}
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\fait}{\textbf{[Fait observé]}}
+\newcommand{\inference}{\textbf{[Inférence]}}
+\newcommand{\hyp}{\textbf{[Hypothèse]}}
+\newcommand{\incertitude}{\textbf{[Incertitude]}}
+\input{numbers}
+
+\title{M4.4Rebond --- rapport de conception\\
+\large Ce que le moteur mesure de neuf, ce que cela coûte,\\
+et ce que la parité ne peut pas garantir}
+\author{Programme M4.4Rebond --- dossier \code{m4\_4\_rebond\_credit\_soc}}
+\date{24 août 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+M4.4 ne change pas le modèle : il le rend mesurable là où il ne l'était pas.
+Le moteur de M4.3Live-v2 produisait des cascades, des décès et des contrats
+sans jamais les écrire sur disque ; il savait photographier sa population
+mais aucune de ses boucles d'exécution n'empruntait le chemin qui le fait.
+Ce rapport décrit les quatre additions d'instrumentation qui corrigent cela,
+leur coût mesuré, et la seule addition qui change une règle du modèle --- le
+taux d'intérêt, qui cesse d'être une formule pour devenir un paramètre de
+partage entre deux bornes économiques.
+
+Il décrit aussi ce que la vérification centrale de cette lignée, la parité
+bit à bit, \emph{ne} couvre pas : rien de ce que M4.4 ajoute n'est relu par
+la trajectoire, donc rien de ce que M4.4 ajoute n'est vérifié par elle. Une
+seconde porte a dû être construite pour cela.
+\end{abstract}
+
+\tableofcontents
+
+\section{Le fork, et la seule chose qu'il ne fallait pas renommer}
+
+\subsection{La règle}
+
+\code{m4\_4\_rebond\_credit\_soc/m4\_4/} est une \textbf{copie} du paquet
+\code{m4\_3live\_v2\_credit\_soc/m4\_3live\_v2/}, jamais un import. C'est la
+troisième application d'une règle posée par la lignée : un moteur dont des
+résultats publiés dépendent est gelé, et son successeur le duplique. Le
+moteur v2 porte 153 runs enregistrés et deux rapports ; le modifier
+invaliderait rétroactivement des chiffres cités.
+
+Les renommages sont mécaniques et portent sur les identifiants : dossier,
+paquet, préfixe d'identifiant de run, routes de l'interface. Les références
+aux \emph{autres} lignées sont laissées intactes, et c'est voulu :
+\code{m4\_3live\_credit\_soc} (le moteur v1, lu en lecture seule par le test
+d'équivalence), \code{m4\_3\_credit\_soc} (l'identifiant de modèle que le
+routeur vérifie), et le run de référence \code{m4\_3\_\_d1\_\_baseline\_\_seed0}
+dont dépend toute la parité.
+
+\subsection{Un renommage qui aurait cassé la lignée précédente}
+
+La spécification demandait de renommer \code{simulation\_lab/live\_v2/} en
+\code{live\_v3/}. \fait{} Ce module n'appartient pas à M4.4 : c'est
+l'aiguillage HTTP que \code{simulation\_lab/web/app.py} importe pour servir
+l'interface de v2. Le renommer aurait débranché une interface gelée au lieu
+d'éviter une collision.
+
+Décision retenue : \code{live\_v3/} est \textbf{ajouté} à côté de
+\code{live\_v2/}, avec une troisième branche d'aiguillage. Les trois lignées
+coexistent maintenant sur le même serveur --- \code{/live} pour v1,
+\code{/live2} pour v2, \code{/live3} pour M4.4 --- et le test d'interface
+vérifie route par route que les deux premières servent toujours leurs propres
+fichiers. La consigne de renommage se lit donc comme « M4.4 prend un nom à
+elle », pas comme « v2 change de nom ».
+
+\section{L'instrumentation : cinq manques, et l'ordre dans lequel ils comptent}
+
+\subsection{Ce qui était mesuré et jamais écrit}
+
+\fait{} Le moteur v2 remplissait \code{deaths}, \code{avalanches},
+\code{avalanche\_members} et \code{loan\_events} en mémoire quand les
+drapeaux correspondants étaient armés, et sa fonction d'écriture ne les
+sortait jamais sur disque. Aucune campagne v2 n'armait d'ailleurs ces
+drapeaux. Le résultat est qu'\emph{aucune donnée d'avalanche, de décès ni de
+contrat n'existe dans les 153 runs de la lignée}, alors même que le moteur
+savait les produire.
+
+M4.4 écrit ces tables, et le test de persistance vérifie ligne à ligne que le
+nombre d'enregistrements sur disque vaut le nombre en mémoire.
+
+\subsection{L'arbre causal, qui n'existait nulle part}
+
+Le rapport de branchement de population, $b = 1 - \text{racines}/\text{morts}$,
+se lit sur les colonnes de série. Un \emph{second} estimateur --- la
+descendance moyenne par mort --- demande de savoir qui a tué qui, et cette
+information n'était persistée nulle part.
+
+\fait{} Le champ \code{avalanche\_members.generation} ne peut pas y suppléer :
+il vaut le numéro de \emph{passe} du point fixe de résolution des faillites.
+Toutes les entités devenues insolvables à la même passe portent la même
+« génération », indépendamment de qui a causé la perte de qui. Ce n'est pas
+un compte de descendance.
+
+\fait{} La structure causale réelle vit dans les arêtes de perte
+--- les triplets (source, victime, principal) --- que la construction des
+avalanches consomme pour son union-find puis \emph{jette}. M4.4 les persiste,
+avec la génération des deux extrémités, ce qui distingue une arête causale
+(la victime meurt à la génération suivante) d'une perte simplement encaissée
+par une survivante.
+
+\fait{} Cette distinction n'est pas un détail de forme : sur une cellule de
+campagne, les arêtes de perte sont au nombre de \LotAAretes{}, dont
+\LotAAretesMortelles{} seulement sont mortelles, soit \LotAPartMortelle~\%.
+\emph{L'arbre est dans un vingtième du fichier.}
+
+\subsection{Les panneaux par entité, et pourquoi ils sont dans le pas}
+
+La fonction qui photographie la population existait déjà, mais n'était
+appelée que par une boucle d'exécution que ni le pilote sans tête ni la
+campagne n'empruntent : les deux ont leur propre boucle.
+
+La spécification demandait de câbler l'échantillonnage « dans la boucle de
+campagne ». Il a été placé un cran plus bas, dans le pas de simulation
+lui-même. Deux raisons, dont la seconde est la vraie :
+
+\begin{enumerate}
+\item tout appelant en bénéficie, sans qu'il faille recâbler chaque boucle ;
+\item surtout, \textbf{l'instant de mesure devient le même pour tous}. Une
+      boucle qui prendrait son instantané avant d'écrire sa ligne de série ne
+      mesurerait pas la même chose que sa voisine, et rien dans les fichiers
+      produits ne le signalerait.
+\end{enumerate}
+
+\subsection{Une cinquième addition, qui n'était dans aucune liste}
+
+Le panneau est pris à la fin du pas, donc sur les survivantes. Or deux
+colonnes de la série sont des \emph{flux} cumulés \emph{avant} les faillites :
+la production totale et les intérêts versés contiennent la contribution des
+entités qui meurent au même pas.
+
+\fait{} À une trentaine de morts par pas, le panneau seul manque
+$\mathbf{7{,}60~\%}$ de la production totale. Le bilan de chaque morte
+enregistre donc maintenant aussi sa production et ses intérêts, et la
+fermeture devient exacte à $1{,}8\cdot10^{-14}$ près --- ce qui reste n'étant
+que l'ordre de sommation.
+
+\section{Ce que la parité garantit, et ce qu'elle ne peut pas garantir}
+
+\subsection{La première porte}
+
+\fait{} Après toutes les additions, le moteur reproduit la trajectoire de
+M4.3 dans le régime homogène sur \textbf{8000 pas et 26 colonnes, avec un
+écart maximal nul}, et le même nombre d'appels au noyau de principal,
+9\,369\,224, que la parité finale de v2. Le diff du fichier de modèle contre
+le moteur gelé, modulo renommages, ne contient \emph{aucune ligne supprimée
+ni modifiée} : uniquement des ajouts.
+
+\subsection{Pourquoi elle ne suffit pas}
+
+Cette garantie est exactement aussi large que son objet : elle dit que rien
+de ce qui entre dans un pas de simulation n'a bougé. Or \emph{rien de ce que
+M4.4 ajoute n'entre dans un pas}. Un panneau pris au mauvais instant, un
+arbre causal recopié avec les mauvaises générations, un bilan de morte
+incomplet --- aucun de ces défauts ne déplacerait la trajectoire d'un bit, et
+la parité les laisserait passer tous les trois.
+
+D'où une \textbf{seconde porte}, indépendante : les panneaux doivent se
+\emph{refermer} sur les agrégats. Sur les stocks --- effectif, capital total,
+valeur nette totale --- l'égalité est exigée bit à bit, parce que la série et
+le panneau lisent les mêmes entités dans le même ordre. Sur les flux, elle
+est exigée à l'ordre de sommation près, une fois les mortes du pas ajoutées.
+
+\section{Le checkpoint, et une promesse qu'il fallait corriger}
+
+La spécification demandait qu'un run repris depuis son checkpoint produise
+une trajectoire « bit-identique ». \fait{} Elle ne l'est pas, et elle ne peut
+pas l'être : deux colonnes de la série sont des sommes accumulées en
+parcourant un ensemble non ordonné du carnet de prêts, et l'ordre d'itération
+d'un tel ensemble change après un aller-retour de sérialisation. L'ordre
+d'addition change, donc les derniers bits changent.
+
+Ce qui est donc exigé, et vérifié, est plus précis et plus fort qu'une
+promesse invérifiable : sur 240 pas coupés en deux, \textbf{les quatorze
+colonnes de comptage sont identiques} --- aucun arrondi ne peut déplacer un
+entier --- et les deux colonnes flottantes concernées s'écartent de
+$7\cdot10^{-16}$ au plus, en relatif.
+
+Le checkpoint emporte aussi l'instrumentation lorsqu'on le lui demande. Le
+mode allégé, employé en fin de run, ne laisse tomber que les listes
+d'événements, dont l'histoire vient d'être écrite en CSV à côté : $11{,}6$
+mébioctets au lieu de 101 à 379 selon l'instrumentation.
+
+\section{Le prix de tout cela, mesuré avant d'être choisi}
+
+La spécification interdisait de fixer le pas d'échantillonnage des panneaux
+par goût. Un pilote a donc mesuré, dans le régime exact de la campagne :
+
+\begin{itemize}
+\item un panneau coûte \CoutPanneauSecondes~s et \CoutPanneauKio~Kio ;
+\item les tables d'événements coûtent \SurcoutEvenements~\% de temps ;
+\item la sonde de Gini du marché coûte \SurcoutGini~\% de temps.
+\end{itemize}
+
+\fait{} Le temps n'est donc pas la contrainte : même en photographiant à
+chaque pas, les panneaux ajoutent huit secondes à un run de deux cent vingt.
+Le disque l'est.
+
+\fait{} Et le terme dominant n'était pas celui qu'on attendait : à environ
+690 arêtes de perte par pas, une fenêtre de 2000 pas en produit 1,38 million,
+soit \textbf{53,9 mébioctets de texte par run} --- devant les panneaux
+eux-mêmes. Les mêmes colonnes en binaire compressé tiennent en 12,6
+mébioctets, un facteur 4,3. Le format a donc été changé pendant le lot
+d'instrumentation, et non plus tard : les deux lecteurs auraient sinon été
+touchés deux fois.
+
+\paragraph{Le critère qui fixe le pas.} Il est écrit ici parce qu'un lot
+ultérieur pourra revoir ce pas pour une raison entièrement différente, et
+que deux valeurs choisies par deux critères explicites sont acceptables là où
+deux valeurs sans critère ne le sont pas. Le pas doit rester petit devant le
+temps d'autocorrélation intégré de la production, mesuré à 52 pas par la
+lignée, pour que l'échantillonnage ne replie pas la dynamique ; et
+l'empreinte de la campagne doit rester de l'ordre du gibioctet.
+$k = \PasEchantillonnage$ est le plus grand pas rond satisfaisant
+$k \le \tau/5$, soit \EmpreinteCampagneGio~Gio pour la campagne.
+
+\section{Les deux estimateurs du rapport de branchement}
+
+\subsection{Ce qu'ils mesurent, et pourquoi ils diffèrent}
+
+Le premier estimateur est celui de la lignée M4B : $b_1 = 1 -
+\text{racines}/\text{morts}$. Le second compte les couples parent-enfant de
+l'arbre causal et les divise par le nombre de morts.
+
+Toute mort non racine a \emph{au moins} un parent : rien d'autre qu'une arête
+de perte ne peut faire passer une valeur nette sous zéro pendant une cascade.
+Donc le nombre de couples est au moins le nombre de morts non racines, et
+$b_2 \ge b_1$, avec égalité si et seulement si chaque mort non racine a
+exactement un parent. \textbf{L'écart mesure la sur-détermination} : la part
+de morts que plusieurs faillites amont avaient atteintes ensemble.
+
+\subsection{L'écart n'est pas nul}
+
+\fait{} Sur une cellule de campagne, $b_1 = \LotAUnB$ et $b_2 = \LotADeuxB$,
+soit un écart de \LotAEcartB. Le $b_1$ mesuré tombe sur celui que la lignée
+précédente rapportait pour le même bras, ce qui valide la reprise ; mais
+$b_1$ n'est pas la descendance moyenne, et les deux chiffres doivent voyager
+ensemble.
+
+\fait{} Un contrôle d'intégrité est intégré à la mesure : le nombre de
+victimes mortelles vues dans l'arbre doit valoir morts moins racines, lu sur
+la série. Il attrape l'erreur la plus facile à commettre --- compter les
+morts sur toute la trajectoire et les arêtes sur la seule fenêtre
+instrumentée --- qui rendrait un $b_2$ faux d'un facteur deux sans que rien
+ne le signale.
+
+\section{Le taux comme variable de partage}
+
+\subsection{Ce qui n'allait pas}
+
+Le taux d'un contrat valait la moyenne géométrique des rendements marginaux
+des deux parties. C'est une formule ; ce n'est pas un énoncé économique. Elle
+ne dit pas qui capte quoi, et elle ne se déplace pas.
+
+\subsection{Les deux bornes}
+
+Pour un contrat de principal $q$ où une entité cède à une autre, deux
+quantités par pas sont définies dans l'état du contrat :
+\[
+L = A_d\,K_d^{\gamma_d} - A_d\,(K_d - q)^{\gamma_d},
+\qquad
+\Delta = \text{surplus coopératif de la paire.}
+\]
+$L$ est la production par pas que la donneuse cesse de réaliser --- sa
+\emph{perte de puissance extractrice}. $\Delta$ est le gain joint de
+production que le transfert crée, déjà calculé par l'institution de principal
+puisque c'est lui qu'elle maximise. Le gain de la receveuse vaut $L + \Delta$.
+
+La règle nouvelle pose
+\[
+r \cdot q = L + p\,\Delta, \qquad p \in [0,1].
+\]
+
+À $p = 0$, \textbf{altruisme} : le service couvre exactement la perte de la
+donneuse, qui fait une \emph{opération blanche} --- sa production d'après
+contrat plus l'intérêt reçu valent exactement ce qu'elle produisait avant ---
+et la receveuse garde tout le surplus. À $p = 1$,
+\textbf{asservissement} : le service prend tout le gain de la receveuse, qui
+fait l'opération blanche à son tour.
+
+\paragraph{Les deux opérations blanches ne valent qu'au moment du contrat.}
+Le taux est gelé là, comme l'était déjà celui de la formule remplacée, alors
+que les capitaux des deux côtés continuent d'évoluer. « Opération blanche »
+ne veut donc pas dire « sans conséquence » : la donneuse a définitivement
+moins de capital, et sa trajectoire en est changée.
+
+\fait{} $L > 0$ dès que le transfert est non nul, puisque la production est
+strictement croissante en capital. Le taux est donc strictement positif sur
+tout l'intervalle, et cette règle --- contrairement à la règle de partage de
+surplus qui existait déjà --- ne peut jamais refuser une paire faute de taux.
+
+\subsection{Ce que le paramètre gouverne, et ce qu'il ne gouverne pas}
+
+Le paramètre détermine le taux des contrats \emph{conclus après}, et
+seulement ceux-là : les contrats déjà signés gardent le leur. Un cas gênant
+méritait vérification, parce que le carnet fusionne deux prêts d'une même
+paire et n'en conserve qu'un taux, la moyenne pondérée par les principaux.
+
+\fait{} L'ancien contrat n'est pas re-tarifé pour autant : la fusion conserve
+$q_1 r_1 + q_2 r_2$ au bit près, et le taux moyen n'est qu'une façon de
+ranger deux taux dans un nombre. La persistance demandée est donc exacte, et
+non approchée.
+
+\inference{} Il en découle que le paramètre ne se propage qu'au rythme du
+renouvellement du carnet. Une intervention en cours de trajectoire n'agit pas
+d'un coup : c'est ce qui rend l'expérience dynamique intéressante plutôt que
+triviale.
+
+\subsection{Où se situait la règle historique}
+
+Disposer de l'échelle permet une mesure qui n'était pas possible avant : le
+partage \emph{impliqué} par la règle qu'on remplace, $p = (r q - L)/\Delta$.
+
+\fait{} Sur 150 pas de moteur, il vaut en moyenne $0{,}5210$. \inference{} La
+moyenne géométrique des rendements marginaux réalisait donc, en moyenne, un
+partage presque exactement \emph{équitable} du surplus coopératif. Ce n'était
+ni voulu ni su. Toute la lignée se lit désormais comme le point
+$p \approx 0{,}52$ d'un continuum.
+
+\incertitude{} La dispersion paire à paire est large --- de $0{,}13$ à
+$0{,}71$ sur quatre paires isolées. La règle historique n'est donc pas un
+partage \emph{constant}, seulement un partage de moyenne proche de la moitié.
+
+\section{Les estimateurs de queue, et deux limites structurelles}
+
+\subsection{Ce que le module fournit}
+
+Les grandeurs de ce programme sont continues et n'ont pas de seuil naturel :
+le seuil est un paramètre estimé, et tout le reste en dépend. Le module
+fournit l'estimateur de Hill au-dessus d'un seuil choisi par minimisation de
+la distance de Kolmogorov--Smirnov, un bootstrap dont le seuil est
+\emph{re-balayé à chaque tirage}, les familles concurrentes ajustées au même
+seuil, et le composite « corps exponentiel, queue de Pareto ».
+
+\fait{} L'estimateur discret des tailles d'avalanches est réécrit plutôt
+qu'importé, la règle du fork valant aussi pour les bibliothèques d'analyse ;
+mais l'égalité numérique avec l'implémentation de M4B est vérifiée par un
+test qui l'importe, et vaut $0$ exactement. La comparaison inter-lignées
+porte donc sur la même quantité, ce qui n'aurait pas été démontrable
+autrement.
+
+\subsection{Première limite : la log-normale contient la loi de puissance}
+
+\fait{} Sur un échantillon tiré d'une Pareto \emph{exacte} d'exposant
+$2{,}5$, l'ajustement log-normal tronqué ne rate pas : il s'échappe vers
+$\mu = -932$ et $\sigma = 24{,}8$, et le test de Vuong rend $z = +0{,}21$.
+
+\inference{} Ce n'est pas un défaut d'optimisation. Quand $\mu \to -\infty$
+et $\sigma \to \infty$ à rapport convenable, la log-normale tronquée à gauche
+\emph{converge} vers une loi de puissance : les deux familles se recouvrent
+dans ce coin de l'espace des paramètres. Le test n'a donc structurellement
+pas de pouvoir sur ce couple, et cela n'a rien à voir avec le volume de
+données. Le couple loi de puissance contre exponentielle, lui, garde tout son
+pouvoir : $z = +6{,}6$ sur le même échantillon.
+
+\subsection{Seconde limite : le test est invariant par transformation puissance}
+
+\fait{} Une transformation $x \mapsto x^c$ envoie une log-normale sur une
+log-normale et une Pareto sur une Pareto ; le jacobien est le même pour les
+deux et disparaît du rapport de vraisemblance. La statistique de Vuong est
+donc invariante, ce qui se vérifie à $10^{-5}$ près.
+
+\inference{} Faire varier $\sigma$ ne rend pas le test plus puissant. Seul
+l'effectif compte --- ce qui renvoie, par un chemin entièrement différent, au
+constat de non-décidabilité que la lignée M4.2B avait établi sur la
+couverture.
+
+\section{Les décisions ouvertes, et comment elles ont été tranchées}
+
+\begin{longtable}{@{}p{0.28\textwidth}p{0.66\textwidth}@{}}
+\toprule
+\textbf{question} & \textbf{décision} \\
+\midrule
+\endhead
+nom du dossier et du paquet & retenu tel quel, avec la nuance additive du
+paragraphe~1.2 : c'est M4.4 qui prend un nom, v2 n'en change pas. \\
+\addlinespace
+pas d'échantillonnage des panneaux & \textbf{mesuré}, $k = \PasEchantillonnage$,
+par le critère du paragraphe~5. \\
+\addlinespace
+portée partielle & interdiction maintenue ; aucun lot n'en dépend. \\
+\addlinespace
+$\sigma$ comme axe balayé & non retenu dans les lots principaux ; abordé par
+ablation. \\
+\addlinespace
+horizon des runs de queue & tranché par le pilote de couverture, dont le
+résultat figure au rapport de résultats. \\
+\bottomrule
+\end{longtable}
+
+\section{Ce que ce moteur ne permet toujours pas}
+
+\incertitude{} Trois limites tiennent à la conception, et non au budget.
+
+\begin{enumerate}
+\item \textbf{Le canal de liquidité est muet.} Dans le régime de cette
+      lignée, aucune faillite ne part d'un défaut de paiement : la contagion
+      est purement de bilan. Tout raisonnement sur la liquidité y est hors
+      sujet, et l'instrumentation ajoutée n'y change rien.
+\item \textbf{Les deux opérations blanches sont instantanées.} Le taux est
+      gelé au contrat ; aucune renégociation n'existe. Un modèle où le
+      partage se réviserait au fil de l'évolution des capitaux serait un
+      autre modèle.
+\item \textbf{La reprise depuis checkpoint n'est pas bit-identique}, pour la
+      raison donnée au paragraphe~4. La rendre telle demanderait de remplacer
+      les ensembles non ordonnés du carnet, ce qui casserait la parité avec
+      M4.3 --- c'est-à-dire échangerait une garantie forte contre une
+      garantie faible.
+\end{enumerate}
+
+\end{document}

@@ -84,7 +84,30 @@ cd /home/anatole/jupyter
 | D | avalanches et branchement | à faire |
 | E | tentative de contrôle de α et de b | à faire |
 | F | pourquoi b dépasse la valeur σ = 0 de M4B | à faire |
+| **T** | **le taux comme variable de partage** (ajout du 24 août) | moteur fait, campagne en cours |
 | G | rapports, journal, traçabilité | à faire |
+
+### Lot T — le taux comme variable de partage
+
+Ajout demandé le 24 août 2026, rattaché à la caractérisation du rebond. Le
+taux cessait d'être une grandeur économique pour n'être qu'une formule (la
+moyenne géométrique des rendements marginaux). Il devient un paramètre
+`p ∈ [0, 1]` :
+
+```
+r · q = L + p · Δ        L = perte de puissance extractrice de la donneuse
+                         Δ = surplus coopératif de la paire
+```
+
+`p = 0` **altruisme** : la donneuse fait une opération blanche, la receveuse
+garde tout le surplus. `p = 1` **asservissement** : la receveuse fait
+l'opération blanche, la donneuse capte tout. Les deux égalités ne valent
+qu'au moment du contrat ; le taux est ensuite gelé, et le paramètre ne
+gouverne que les contrats **conclus après**.
+
+\fait{} La règle historique `marginal` se situe à **p ≈ 0,52** sur cette
+échelle : la lignée entière tournait, sans le savoir, à un partage presque
+exactement équitable.
 
 **Portes du lot A, mesurées** (détail et chiffres dans `JOURNAL.md`) :
 

@@ -325,7 +325,7 @@ ainsi que l'échec de `test_resume_divergence` du matin est passé pour un
 `rc=0`. `scripts/run_tests.py` garde le vrai code de sortie de chaque
 fichier et sort en erreur si un seul a échoué.
 
-### Ce que le lot A n'a PAS fait, volontairement
+### Ce que le lot A n'a PAS fait, volontairement (revu le 24 août)
 
 - `m4_4/tails.py` (estimateurs de queue, bootstrap) et son test sur
   échantillon synthétique de Pareto : ils appartiennent au lot C, qui les
@@ -340,3 +340,387 @@ fichier et sort en erreur si un seul a échoué.
 - Le bras `all_A150_K0comp` est DÉCLARÉ dans `scripts/campaign.py`
   (K0 = 25 · 1,5^(1/(1−γ)) = 56,25, par la formule et non par le nombre)
   mais n'est pas lancé : c'est le lot B qui l'exécutera.
+
+---
+
+## 24 août 2026 — Lot B lancé, et un chantier ajouté par l'utilisateur
+
+### La campagne
+
+12 amorçages en 411 s, puis 108 cellules (6 bras × règles de sens × 12
+graines), instrumentées : décès, avalanches, arbre causal, panneaux à k = 10,
+sonde de Gini. Le bras compensé `all_A150_K0comp` est vérifié avant
+lancement : A → 1,5 sur les 1176 vivantes ET K0 → 56,25, deux interventions
+au même pas, journalisées séparément.
+
+### LE TAUX COMME VARIABLE DE PARTAGE — chantier ajouté le 24 août
+
+Demande de l'utilisateur, explicitement rattachée à la caractérisation du
+rebond et non traitée comme un travail séparé. Le taux cessait d'être une
+grandeur économique pour n'être qu'une formule — la moyenne géométrique des
+rendements marginaux. Il devient un **paramètre de partage** entre les deux
+seules bornes que l'économie d'une paire admet.
+
+**La formulation retenue.** Pour un contrat de principal `q` où la donneuse
+`(A_d, γ_d, K_d)` cède à la receveuse `(A_r, γ_r, K_r)` :
+
+```
+L = A_d·K_d^γ_d − A_d·(K_d − q)^γ_d      perte de puissance extractrice
+Δ = surplus coopératif de la paire        (déjà calculé par le noyau)
+r · q = L + p · Δ,      p ∈ [0, 1]
+```
+
+- `p = 0`, **altruisme** : le service couvre exactement L. La donneuse fait
+  une OPÉRATION BLANCHE — production d'après contrat plus intérêt reçu égale
+  production d'avant — et la receveuse garde tout le surplus.
+- `p = 1`, **asservissement** : le service vaut L + Δ = G, tout le gain de la
+  receveuse. C'est elle qui fait l'opération blanche.
+
+\fait{} Les deux égalités sont vérifiées à 10⁻⁹ relatif sur quatre paires
+construites à la main (`tests/test_bargain_rate.py`), et la linéarité en p
+est exacte à 10⁻¹⁵.
+
+\fait{} **Les deux opérations blanches ne valent qu'AU MOMENT DU CONTRAT.**
+Le taux est gelé là, comme celui de `pair_rate`, alors que les capitaux des
+deux côtés continuent d'évoluer. « Opération blanche » ne veut pas dire
+« sans conséquence » : la donneuse a définitivement moins de capital, donc
+une trajectoire différente.
+
+**Précision de l'utilisateur, et ce qu'elle imposait de vérifier** : le
+paramètre gouverne les NOUVEAUX contrats et seulement eux ; les anciens
+gardent leur taux. \fait{} C'est bien le cas, y compris quand une paire
+re-traite : `LoanBook.add` fusionne les deux prêts et n'en garde qu'un taux,
+la moyenne pondérée — mais le montant dû devient exactement
+`q_ancien·r_ancien + q_nouveau·r_nouveau`. Le taux moyen n'est qu'une façon
+de ranger deux taux dans un nombre ; **l'intérêt de l'ancien contrat est
+préservé au joule près**. Vérifié explicitement, parce que c'est la condition
+de la persistance demandée.
+
+### Premier résultat : la lignée entière tournait à un partage équitable
+
+\fait{} La règle historique `marginal` n'avait jamais été présentée comme un
+partage. On peut désormais mesurer celui qu'elle opère :
+`p_impliqué = (r·q − L)/Δ`. Sur 150 pas de moteur, la moyenne vaut **0,5210**
+(`tests/test_bargain_rate.py`). Sur quatre paires isolées elle vaut +0,687,
++0,706, +0,126, +0,394 — donc dispersée, mais centrée près de la moitié.
+
+\inference{} La moyenne géométrique des rendements marginaux réalise donc,
+en moyenne, un partage presque exactement ÉQUITABLE du surplus coopératif.
+Ce n'était ni voulu ni su : c'est une propriété de la formule, mise au jour
+par le fait de disposer de l'échelle. Toute la lignée M4.3 → M4.4 se lit donc
+comme le point p ≈ 0,52 d'un continuum.
+
+\incertitude{} La dispersion paire à paire est large (0,13 à 0,71 sur quatre
+paires) : la règle `marginal` n'est PAS un partage constant, seulement un
+partage de moyenne proche de 0,5. La campagne dira ce qu'il en est sur des
+centaines de milliers de contrats.
+
+### Direction confirmée dès le moteur
+
+\fait{} 250 pas depuis zéro, même graine : population **1935** sous
+`p = 0` contre **1115** sous `p = 1`, intérêts versés 76 638 contre 33 595.
+La prédiction de l'utilisateur — population beaucoup plus grande dans le cas
+altruiste — est du bon signe dès le régime transitoire.
+
+\incertitude{} Ce n'est pas encore l'état stationnaire, et le sens de
+l'effet sur les intérêts VERSÉS est contre-intuitif (le cas altruiste en
+verse plus au total) : c'est un effet d'effectif, pas de taux. À trancher sur
+la campagne, en séparant taux moyen et masse de contrats.
+
+\fait{} Aucun refus de paire faute de taux sous `bargain` : L > 0 dès que le
+transfert l'est, contrairement à `surplus_share` qui pouvait rendre r ≤ 0.
+
+\fait{} `bargain_p` est intervenable en direct (portées `all`/`new`, alias) :
+le partage impliqué passe de 0,000 à 1,000 après une intervention à t = 101,
+et les contrats antérieurs gardent leur taux.
+
+\fait{} **La parité est conservée** après ces ajouts : 500 pas × 26 colonnes,
+écart maximal nul. La règle par défaut n'a pas bougé, et le drapeau de mesure
+`record_rate_split` ne change aucune colonne de trajectoire (vérifié sur
+6 colonnes et 150 pas).
+
+### Lot B — la porte, et une tension de la lignée qui se dénoue
+
+Campagne : 5 bras × 12 graines sous le sens libre, fenêtre résiduelle
+]3000, 4000]. Sorties : `results/analysis/lotB_{windows,paired,elasticities}.csv`
+et `lotB_gate.json`.
+
+**D'abord, la lignée est reproduite au chiffre près.** Le moteur est un fork,
+la campagne est neuve, les amorçages sont neufs :
+
+| élasticité | M4.4 (12 graines) | v2 (12 graines) |
+|---|---|---|
+| ε = dln(prod_tot)/dlnA | **+0,7473 ± 0,0106** | +0,7473 ± 0,0048 |
+| dln(pop)/dlnA | **−0,7043 ± 0,0091** | −0,7043 |
+| dln(n_prod)/dlnA | **−0,6834 ± 0,0091** | −0,6834 ± 0,0041 |
+| γ·dln(K_eq)/dlnA | **+0,4308** | +0,4308 ± 0,0022 |
+
+\fait{} L'identité du §3.1 se referme à **1,25·10⁻⁴**, mieux que les
+5,3·10⁻⁴ de v2. Elle reste une IDENTITÉ : elle ne confirme rien, elle sépare
+l'effectif de l'échelle.
+
+**LA PORTE.** `dln(Ḡ)/dlnA = +0,5263 ± 0,0069`, contre la bande prédite
+[0,5268 ; 0,5590] écrite avant mesure.
+
+\fait{} La valeur tombe à **0,06 demi-intervalle** de la borne `a = 1,337`
+et à **4,70 demi-intervalles** de la borne `a = 1,260`. Lire « hors de la
+bande » serait un artefact de binarisation : la mesure est
+indiscernable de la borne basse et exclut la borne haute.
+
+\incertitude{} **Mais cette lecture vaut moins qu'il n'y paraît, et il faut
+le dire.** La bande a été construite à partir du `dln(pop)/dlnA = −0,7043`
+de v2, et c'est exactement ce que ce bras mesure : la prédiction et la mesure
+partagent une entrée. Confronter l'une à l'autre teste donc surtout que le
+bras reproduit v2 — ce qu'il fait — et non que l'exposant vaille 1,337.
+
+**LE VRAI RÉSULTAT est ailleurs, et il dénoue la tension du §3.1.** Le plan
+notait que les deux intervalles sur `a` ne se recouvrent pas, sans pouvoir
+trancher. Mesuré ici bras par bras, en contraste apparié (jamais en
+régression groupée — piège §14.2), sans passer par aucune bande :
+
+| bras | a |
+|---|---|
+| `all_A150` | **1,334 ± 0,013** |
+| `new_A075` | 1,325 ± 0,019 |
+| `new_A150` | 1,310 ± 0,009 |
+| `new_g060` | **1,268 ± 0,005** |
+
+\fait{} `a` n'est PAS un exposant universel : il varie de 1,268 à 1,334
+selon le levier, soit 5 %, et les intervalles ne se recouvrent pas entre
+`all_A150` et `new_g060`.
+
+\fait{} Les deux valeurs publiées antérieurement tombent chacune sur un
+bras de cette campagne : **1,334 ± 0,013 sur `all_A150` contre les 1,337 de
+v1**, et **1,268 ± 0,005 sur `new_g060` contre les 1,260 ± 0,009 de v2 —
+intervalles qui se RECOUVRENT**. C'est la pièce la plus nette du dossier.
+
+\inference{} Les deux estimations antérieures étaient donc toutes deux
+justes, **chacune pour son corpus** : v1 mesurait un mélange dominé par le
+levier A à portée globale, v2 un mélange où les leviers γ pèsent davantage.
+Le désaccord n'était pas une erreur de mesure mais une différence de
+mélange — et il ne pouvait pas se voir tant que `a` était supposé universel.
+Aucune des deux lignées n'avait de quoi le découvrir : il fallait plusieurs
+leviers mesurés séparément sur le MÊME corpus.
+
+**Les deux autres maillons, et ce qu'ils valent.**
+
+\fait{} `rotation = ρ·Ḡ` : l'élasticité de la rotation vaut +0,5265 et celle
+de Ḡ +0,5263, soit un écart de 1,3·10⁻⁴. Les deux sont lues dans des
+FICHIERS DIFFÉRENTS — `series.csv` pour le volume et le capital,
+`market_stats.csv` pour le Gini du bassin — donc leur accord mesure quelque
+chose. C'est le seul maillon de la chaîne qui soit à la fois non trivial et
+vérifié.
+
+\fait{} La loi de Little, elle, est une IDENTITÉ à l'état stationnaire :
+naissances = morts = λ, donc mortalité = λ/pop et dln(mortalité) = −dln(pop)
+par construction. Mesuré : +0,7021 contre +0,7043, écart 2,2·10⁻³. Ce n'est
+pas une confirmation de la loi ; c'est un contrôle de stationnarité déguisé,
+et il passe.
+
+\fait{} Le contrôle de stationnarité du §6.2 passe sur les cinq bras :
+rapport du dernier au premier quart de la fenêtre, |t| ≤ 1,83 < 2,201.
+L'étendue par run va de 0,952 à 1,047 — c'est le plancher de bruit, et il
+explique pourquoi la bande fixe [0,99 ; 1,01] de v2 rejetait 11 graines
+sur 12.
+
+### Lot C0 — la couverture, et une surprise structurelle
+
+`scripts/laws.py --pilot`, sur `control/seed0`, 100 instantanés de la fenêtre
+résiduelle. Cible dérivée et non choisie : `n_tail ≥ 400`, pour une
+erreur-type de Hill ≤ 0,10 à α̂ ≈ 3.
+
+| grandeur | n_tail médian | α̂ médian | SE |
+|---|---|---|---|
+| revenu d'intérêt | **247** | 3,90 | 0,184 |
+| valeur nette | 282 | 2,76 | 0,105 |
+| capital | 429 | **27,0** | 1,25 |
+| production | 408 | **52,8** | 2,56 |
+
+\fait{} La couverture est **2,2 fois meilleure que celle qui a bloqué
+M4.2B** (n_tail médian 113). Le facteur manquant pour atteindre 400 est
+1,62, soit λ ≈ 49 — une campagne à λ = 50 est lancée.
+
+\fait{} **Le capital et la production n'ont pas de queue lourde.** Un α̂ de
+27 ou 53 n'est pas une loi de puissance : c'est une décroissance quasi
+bornée, et l'ajustement ne fait que suivre le bord de la distribution. Les
+queues lourdes de ce modèle vivent dans le **revenu d'intérêt** et la
+**valeur nette**, c'est-à-dire dans les BILANS. C'est exactement ce que M4B
+avait établi par les Gini (NW 0,44 contre K 0,07), retrouvé ici par un
+chemin entièrement différent.
+
+\inference{} Conséquence pour le lot C : ajuster des classes de lois sur le
+capital serait ajuster du bruit. Les familles candidates ne seront testées
+que sur le revenu d'intérêt et la valeur nette.
+
+### Lot T — les deux extrêmes, et une non-linéarité
+
+Pilote, graine 0, fenêtre résiduelle :
+
+| | population | capital | production | intérêts versés |
+|---|---|---|---|---|
+| `marginal` (avant t₀) | 1140 | 883 929 | 31 784 | 35 539 |
+| p = 1 (asservissement) | **1129** | 877 782 | 31 523 | 35 748 |
+| p = 0 (altruisme) | **1917** | 2 897 693 | 74 517 | 80 565 |
+
+\fait{} La prédiction de l'utilisateur est vérifiée, et largement :
+**+68 % de population** sous le partage altruiste.
+
+\fait{} Les morts par pas restent à 30,0 dans les deux cas, c'est-à-dire λ :
+à l'état stationnaire, naissances = morts. Ce que le partage déplace n'est
+donc pas le flux de morts mais la MORTALITÉ PAR ENTITÉ, 30/pop — et c'est
+elle qui fixe la population.
+
+\fait{} La transition est rapide : 1176 → 1897 en 200 pas, puis plateau. La
+fenêtre résiduelle est donc largement convergée, et le contrôle de
+stationnarité pourra le confirmer sur les 12 graines.
+
+\fait{} **Le cas asservi est indiscernable du régime historique** (1129
+contre 1140), alors que `marginal` se situe à p ≈ 0,52 sur l'échelle. La
+réponse au partage n'est donc pas monotone-linéaire : elle est presque plate
+au-dessus de p ≈ 0,5 et s'envole quand p → 0.
+
+\hyp{} Deux explications concurrentes, que le balayage complet doit
+départager : (i) la réponse est intrinsèquement convexe en p ; (ii) le
+partage impliqué par `marginal` est DISPERSÉ paire à paire (0,13 à 0,71 sur
+quatre paires isolées), et c'est la queue haute de cette dispersion qui
+gouverne, pas sa moyenne.
+
+\fait{} Coût mesuré : la cellule altruiste prend 569 s contre 262 s pour
+l'asservie — le prix d'une population 1,7 fois plus grande.
+
+### Contrôle de version de la campagne, avant de publier quoi que ce soit
+
+\fait{} Les 108 cellules ont été lancées à 00:17, et le moteur a été modifié
+entre 00:35 et 00:50 (règles de taux, colonnes `mkt_loss`/`mkt_rq`/
+`mkt_p_implied`). `mp.Pool` ayant forké ses ouvriers au lancement, ils ont
+tourné sur le code d'avant — mais cela ne se voit pas de l'extérieur, donc
+c'est vérifié : la cellule `control/seed0` REJOUÉE avec le code du jour rend
+**4000 lignes × 26 colonnes, 0 cellule différente, écart maximal nul**
+(`results/analysis/verify_code_version.log`). Les chiffres du lot B tiennent.
+
+### Lot B — LA question du mandat : où va le surcroît ?
+
+100 instantanés par run, 12 graines, bras `all_A150` contre `control`.
+Sorties : `lotB_distribution.csv`, `lotB_contrasts.csv`, `lotB_distribution.json`.
+
+**Les niveaux d'abord, parce qu'ils cadrent tout le reste** (bras `control`) :
+
+| grandeur | niveau |
+|---|---|
+| part du revenu venant de l'intérêt | **0,533** |
+| part des entités rentières (int_in > prod) | 0,450 |
+| Gini de la production | **0,052** |
+| Gini du capital | **0,057** |
+| Gini du revenu d'intérêt | **0,513** |
+| part des intérêts captée par le décile supérieur | 0,323 |
+| part créancière nette / débitrice nette | 0,297 / 0,698 |
+
+\fait{} **L'inégalité de ce modèle est presque entièrement dans le canal
+d'intérêt.** Gini 0,51 sur les intérêts reçus contre 0,05 sur la production
+et 0,06 sur le capital — un facteur dix. Et la moitié du revenu (53 %) passe
+par ce canal. C'est le résultat de M4B (Gini NW 0,44 contre Gini K 0,07)
+retrouvé sur une autre institution de principal, et cette fois avec le canal
+identifié.
+
+**Et maintenant, où va le ×1,80 ?** Rapport des quantiles traité/contrôle —
+1,80 partout signifierait un pur changement d'échelle :
+
+| grandeur | q10 | q50 | q90 | q99 | q99,9 |
+|---|---|---|---|---|---|
+| production | 1,748 | 1,806 | 1,823 | **1,831** | 1,816 |
+| revenu total | 1,755 | 1,776 | 1,798 | 1,738 | **1,472** |
+| valeur nette | 1,103 | 1,486 | 1,507 | 1,445 | **1,165** |
+| capital | 1,386 | 1,451 | 1,477 | 1,489 | 1,460 |
+| revenu d'intérêt | **0,105** | 1,743 | 1,793 | 1,722 | 1,444 |
+
+\fait{} **La production monte par pur changement d'échelle.** Le rapport va
+de 1,748 au premier décile à 1,831 au 99ᵉ centile : une inclinaison de 4,7 %
+d'un bout à l'autre de la distribution, sur un facteur 1,8. Le Gini de la
+production ne bouge que de 0,0518 à 0,0664.
+
+\fait{} **La queue extrême capte MOINS que le corps, pas plus.** Au 99,9ᵉ
+centile, le revenu total monte de ×1,47 et la valeur nette de ×1,17, contre
+×1,78 et ×1,49 dans le corps. Le sommet est comprimé par le rebond, il n'est
+pas amplifié. C'est l'inverse de ce qu'une intuition « les gros captent
+tout » aurait prédit, et c'est le résultat le plus net de ce lot.
+
+\fait{} **Le bas du canal d'intérêt s'effondre.** Le premier décile du revenu
+d'intérêt passe de 0,295 à 0,033 joule par pas, soit ×0,11, pendant que la
+médiane double (24,2 → 42,1). Les petits créanciers sont effacés ; les autres
+suivent l'échelle. Le Gini des intérêts n'en bouge presque pas (+0,005)
+précisément parce que ce bas de distribution ne pesait rien.
+
+\inference{} La signature distributionnelle du rebond est donc : une
+population plus petite (1132 → 852) et plus jeune (âge moyen 111 → 95 pas),
+dont chaque membre produit 1,8 fois plus sur un bilan 1,45 fois plus gros, et
+dans laquelle la petite rente a disparu. Le surcroît ne va ni à la queue ni
+aux rentiers : il va au CORPS, presque proportionnellement, et il détruit le
+bas du canal d'intérêt.
+
+\fait{} Producteurs contre rentiers, la question du mandat, tranchée : la
+part du revenu venant de l'intérêt passe de 0,5332 à 0,5265, soit
+−0,0067 ± 0,0007. Le déplacement est significatif mais minuscule — **aucun
+des deux canaux ne capte au détriment de l'autre**, les deux montent
+ensemble, avec un très léger avantage à la production.
+
+\fait{} Les autres bras confirment la lecture par leur contraste : à
+`new_A075` (levier vers le BAS), tous les signes s'inversent — Gini de
+production −0,0022, part rentière +0,0064, part créancière nette −0,0093. Le
+mécanisme est donc bien attaché au sens du levier, et non à l'agitation.
+
+### Lot D — avalanches et branchement, sur les 12 graines
+
+`scripts/avalanches.py`, fenêtre résiduelle, bras sous sens libre.
+Sorties : `lotD_avalanches.{csv,json}`.
+
+| bras | b₁ | b₂ | α des tailles |
+|---|---|---|---|
+| `new_A075` | 0,7962 ± 0,0019 | 0,8573 ± 0,0022 | 1,697 ± 0,005 |
+| `control` | **0,7863 ± 0,0013** | **0,8483 ± 0,0015** | 1,708 ± 0,006 |
+| `all_A150_K0comp` | **0,7842 ± 0,0025** | 0,8450 ± 0,0027 | 1,716 ± 0,011 |
+| `new_A150` | 0,7560 ± 0,0022 | 0,8171 ± 0,0023 | 1,751 ± 0,006 |
+| `all_A150` | **0,7541 ± 0,0024** | 0,8154 ± 0,0030 | 1,750 ± 0,007 |
+| `new_g060` | 0,7212 ± 0,0026 | 0,7876 ± 0,0023 | 1,779 ± 0,005 |
+
+\fait{} Les b₁ reproduisent au millième les valeurs que le plan §3.2 avait
+tirées de v2 : contrôle 0,7863 contre 0,7863 ± 0,0006 ; `all_A150` 0,7541
+contre 0,7541 ± 0,0011 ; `new_A150` 0,7560 contre 0,7560 ± 0,0010 ;
+`new_g060` 0,7212 contre 0,7212 ± 0,0012.
+
+\fait{} **L'écart b₂ − b₁ est remarquablement constant** : 0,0609 à 0,0663
+sur les six bras, alors que b₁ lui-même varie de 0,72 à 0,80. La
+sur-détermination est donc une propriété du mécanisme de cascade, pas du
+régime — 7,2 % à 8,5 % des morts non racines ont plusieurs parents, quel que
+soit le levier.
+
+\fait{} **LE RÉSULTAT DU LOT : la fragilité que le rebond fait apparaître
+est un effet d'échelle de K0, à 93 % près.** Monter A abaisse b₁ de
+−0,0322 ; compenser `K0 → K0·A^{1/(1−γ)}` en même temps ne laisse que
+**−0,0021 ± 0,0025**, c'est-à-dire rien de significatif. **93,4 % de l'effet
+est annulé.**
+
+\inference{} C'est le même verdict que v1 avait obtenu sur la CONTRACTION DE
+POPULATION (compenser K0 annule la contraction, pop ×1,005), obtenu ici sur
+une grandeur entièrement différente et par une chaîne de mesure entièrement
+différente. « Un marché plus productif est un marché plus fragile » est donc
+un énoncé sur K0, pas sur A : ce qui rend le système fragile n'est pas que la
+technologie s'améliore, c'est que la dotation de naissance reste une longueur
+FIXE pendant que l'échelle du reste change. Le bras compensé était là pour
+détecter exactement cela (plan §6) ; il l'a fait.
+
+\fait{} **L'exposant des tailles d'avalanches vaut 1,708 ± 0,006 au
+contrôle**, contre l'α∞ ≈ 2,31 de M4B. L'écart est massif et ne peut pas
+venir de l'estimateur : `tests/test_tails.py` vérifie que l'implémentation
+employée ici rend le même nombre que celle de M4B à 0,0·10⁰ près sur les
+mêmes tailles.
+
+\fait{} α < 2 signifie que la moyenne de la loi non tronquée diverge : dans
+ce régime, c'est la troncature de taille finie qui fixe la taille moyenne des
+avalanches. Consigne héritée respectée : aucune analyse de coupure n'est
+faite, seule la loi de puissance est ajustée.
+
+\fait{} Les avalanches maximales atteignent 108 à 160 entités selon le bras,
+soit 10 à 15 % de la population vivante, et la susceptibilité ⟨s²⟩/⟨s⟩ va de
+30 à 43. Le levier A la fait BAISSER (40,7 → 34,1), le levier γ aussi
+(30,1) : les deux réduisent la taille caractéristique des cascades en même
+temps qu'ils réduisent b.
