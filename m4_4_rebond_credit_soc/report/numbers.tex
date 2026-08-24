@@ -1,7 +1,16 @@
 % Engendré par scripts/make_numbers.py — NE PAS ÉDITER À LA MAIN.
 % Chaque macro vient d'un fichier de results/analysis/.
-% 183 macros.
+% 235 macros.
 
+\newcommand{\AblationDeltaCinqAlpha}{1,763}
+\newcommand{\AblationDeltaCinqBUn}{0,6765}
+\newcommand{\AblationDeltaCinqPart}{22,4}
+\newcommand{\AblationMquatreBAlpha}{2,153}
+\newcommand{\AblationMquatreBBUn}{0,3567}
+\newcommand{\AblationMquatreBPart}{87,8}
+\newcommand{\AblationSigmaVingtCinqAlpha}{2,154}
+\newcommand{\AblationSigmaVingtCinqBUn}{0,3809}
+\newcommand{\AblationSigmaVingtCinqPart}{82,9}
 \newcommand{\AjustementsInteret}{72}
 \newcommand{\AjustementsNW}{72}
 \newcommand{\AlphaInteret}{3,938}
@@ -29,15 +38,15 @@
 \newcommand{\AlphaNWSdInstantanes}{0,087}
 \newcommand{\AlphaNWSdIntra}{0,169}
 \newcommand{\AlphaTailleAllAcentcinquante}{1,75}
-\newcommand{\AlphaTailleCompense}{1,716}
+\newcommand{\AlphaTailleCompense}{1,711}
 \newcommand{\AlphaTailleControle}{1,708}
 \newcommand{\BDeuxAllAcentcinquante}{0,8154}
-\newcommand{\BDeuxCompense}{0,845}
+\newcommand{\BDeuxCompense}{0,8459}
 \newcommand{\BDeuxControle}{0,8483}
 \newcommand{\BUnAllAcentcinquante}{0,7541}
 \newcommand{\BUnAllAcentcinquanteIC}{0,0024}
-\newcommand{\BUnCompense}{0,7842}
-\newcommand{\BUnCompenseIC}{0,0025}
+\newcommand{\BUnCompense}{0,7856}
+\newcommand{\BUnCompenseIC}{0,002}
 \newcommand{\BUnControle}{0,7863}
 \newcommand{\BUnControleIC}{0,0013}
 \newcommand{\BandeBasse}{0,5268}
@@ -68,7 +77,7 @@
 \newcommand{\DistanceBorneVOne}{-0,06}
 \newcommand{\DistanceBorneVTwo}{-4,7}
 \newcommand{\EffetABranchement}{-0,0322}
-\newcommand{\EffetResiduelBranchement}{-0,0021}
+\newcommand{\EffetResiduelBranchement}{-0,0007}
 \newcommand{\ElasticiteGini}{0,5263}
 \newcommand{\ElasticiteGiniIC}{0,0069}
 \newcommand{\ElasticiteKeq}{0,8616}
@@ -90,6 +99,7 @@
 \newcommand{\EtendueNWMax}{2,799}
 \newcommand{\EtendueNWMin}{2,71}
 \newcommand{\EtendueNWPct}{3,3}
+\newcommand{\EtendueRho}{6}
 \newcommand{\ExposantAallAUnCinqZero}{1,334}
 \newcommand{\ExposantAallAUnCinqZeroIC}{0,013}
 \newcommand{\ExposantAnewAUnCinqZero}{1,31}
@@ -106,14 +116,56 @@
 \newcommand{\LotAPartMortelle}{4,9}
 \newcommand{\LotAUnB}{0,7861}
 \newcommand{\NInstantanes}{100}
-\newcommand{\PartAnnuleeKzero}{93,4}
+\newcommand{\PartAnnuleeKzero}{97,9}
 \newcommand{\PasEchantillonnage}{10}
+\newcommand{\RampeDemi}{1,0178}
+\newcommand{\RampeDemiIC}{0,0132}
+\newcommand{\RampeQuart}{1,017}
+\newcommand{\RampeQuartIC}{0,0094}
 \newcommand{\RapportPopDemi}{1,266}
 \newcommand{\ResiduIdentite}{0,000125}
+\newcommand{\RhoAlphaInteretBas}{3,8936}
+\newcommand{\RhoAlphaInteretControle}{oui}
+\newcommand{\RhoAlphaInteretExposant}{0,0465}
+\newcommand{\RhoAlphaInteretExposantIC}{0,0074}
+\newcommand{\RhoAlphaInteretHaut}{4,2286}
+\newcommand{\RhoAlphaNWBas}{2,7276}
+\newcommand{\RhoAlphaNWControle}{oui}
+\newcommand{\RhoAlphaNWExposant}{0,0272}
+\newcommand{\RhoAlphaNWExposantIC}{0,0074}
+\newcommand{\RhoAlphaNWHaut}{2,8621}
+\newcommand{\RhoBDeuxBas}{0,7248}
+\newcommand{\RhoBDeuxControle}{oui}
+\newcommand{\RhoBDeuxExposant}{0,2132}
+\newcommand{\RhoBDeuxExposantIC}{0,0036}
+\newcommand{\RhoBDeuxHaut}{1,0651}
+\newcommand{\RhoBUnBas}{0,6908}
+\newcommand{\RhoBUnControle}{oui}
+\newcommand{\RhoBUnExposant}{0,1345}
+\newcommand{\RhoBUnExposantIC}{0,002}
+\newcommand{\RhoBUnHaut}{0,8767}
+\newcommand{\RhoGiniBas}{0,1238}
+\newcommand{\RhoGiniControle}{oui}
+\newcommand{\RhoGiniExposant}{-0,4946}
+\newcommand{\RhoGiniExposantIC}{0,0016}
+\newcommand{\RhoGiniHaut}{0,0514}
+\newcommand{\RhoPopBas}{1 223,477}
+\newcommand{\RhoPopControle}{oui}
+\newcommand{\RhoPopExposant}{-0,085}
+\newcommand{\RhoPopExposantIC}{0,0026}
+\newcommand{\RhoPopHaut}{1 051,1224}
+\newcommand{\RhoRotationBas}{0,0568}
+\newcommand{\RhoRotationControle}{oui}
+\newcommand{\RhoRotationExposant}{0,3162}
+\newcommand{\RhoRotationExposantIC}{0,0014}
+\newcommand{\RhoRotationHaut}{0,0999}
+\newcommand{\RotationEcartSigma}{305}
+\newcommand{\RotationMesuree}{0,3162}
+\newcommand{\RotationPredite}{0,5054}
 \newcommand{\SurcoutEvenements}{3,7}
 \newcommand{\SurcoutGini}{1,8}
 \newcommand{\SusceptibiliteAllAcentcinquante}{34,1}
-\newcommand{\SusceptibiliteCompense}{39,9}
+\newcommand{\SusceptibiliteCompense}{40,1}
 \newcommand{\SusceptibiliteControle}{40,7}
 \newcommand{\TauxmarginalBDeux}{0,8483}
 \newcommand{\TauxmarginalBUn}{0,7863}

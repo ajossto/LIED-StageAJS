@@ -236,6 +236,62 @@ def main(argv: list[str]) -> int:
     else:
         missing.append("bargain_summary.json")
 
+    # -- lot E : contrôle par rho ---------------------------------------------
+    control_rho = load_json("lotE_rho_verdicts.json")
+    if control_rho:
+        put("EtendueRho", control_rho["span"], 0, "lotE")
+        for key, macro in (("alpha_int_in", "RhoAlphaInteret"), ("alpha_nw", "RhoAlphaNW"),
+                           ("b1", "RhoBUn"), ("b2", "RhoBDeux"),
+                           ("gini", "RhoGini"), ("rotation", "RhoRotation"),
+                           ("pop", "RhoPop")):
+            entry = control_rho["verdicts"].get(key)
+            if entry:
+                put(macro + "Exposant", entry["exponent"]["mean"], 4, "lotE")
+                put(macro + "ExposantIC", entry["exponent"]["ci95"], 4, "lotE")
+                macros[macro + "Controle"] = "oui" if entry["controlled"] else "non"
+                put(macro + "Bas", entry["means"][0], 4, "lotE")
+                put(macro + "Haut", entry["means"][-1], 4, "lotE")
+        # La relation héritée rotation = rho*G, et sa rupture.
+        gini = control_rho["verdicts"].get("gini")
+        rotation = control_rho["verdicts"].get("rotation")
+        if gini and rotation:
+            predicted = 1.0 + gini["exponent"]["mean"]
+            put("RotationPredite", predicted, 4, "lotE")
+            put("RotationMesuree", rotation["exponent"]["mean"], 4, "lotE")
+            put("RotationEcartSigma",
+                abs(predicted - rotation["exponent"]["mean"]) / rotation["exponent"]["ci95"]
+                * 2.201, 0, "lotE")
+    else:
+        missing.append("lotE_rho_verdicts.json")
+
+    # -- lot F : ablation vers M4B --------------------------------------------
+    ablation = load_json("lotD_avalanches.json")
+    if ablation and any(k.startswith("ablation/") for k in ablation["summary"]):
+        summary = ablation["summary"]
+        control_b = 0.7863  # bras de contrôle, mesuré au lot D
+        target_b = 0.297    # valeur publiée par M4B
+        for arm, macro in (("ablation/m4b_like", "MquatreB"),
+                           ("ablation/sigma025", "SigmaVingtCinq"),
+                           ("ablation/delta005", "DeltaCinq")):
+            if arm in summary:
+                put(f"Ablation{macro}BUn", summary[arm]["b1"]["mean"], 4, "lotF")
+                put(f"Ablation{macro}Alpha", summary[arm]["alpha_size"]["mean"], 3, "lotF")
+                put(f"Ablation{macro}Part",
+                    100 * (control_b - summary[arm]["b1"]["mean"]) / (control_b - target_b),
+                    1, "lotF")
+    else:
+        missing.append("ablation dans lotD_avalanches.json")
+
+    # -- lot T : rampes --------------------------------------------------------
+    ramp = load_json("lotT_ramp.json")
+    if ramp:
+        for level, macro in (("p=0.25", "RampeQuart"), ("p=0.5", "RampeDemi")):
+            if level in ramp:
+                put(macro, ramp[level]["ratio"]["mean"], 4, "lotT")
+                put(macro + "IC", ramp[level]["ratio"]["ci95"], 4, "lotT")
+    else:
+        missing.append("lotT_ramp.json")
+
     # -- distribution --------------------------------------------------------
     distribution = load_json("lotB_distribution.json")
     if distribution and "all_A150" in distribution["contrasts"]:

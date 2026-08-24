@@ -538,24 +538,222 @@ leviers entièrement différentes laissent la même chose intacte : \textbf{la
 forme de la distribution de valeur nette}. Ce modèle a une structure
 d'inégalité que ni la technologie ni le partage du surplus ne déplacent.
 
+\section{Ce qui contrôle les exposants, et ce qui ne les contrôle pas}
+
+\subsection{Le critère}
+
+Un levier \emph{contrôle} une grandeur si, et seulement si : la réponse
+appariée a un signe constant sur toutes les graines ; elle est monotone sur
+une étendue d'au moins un facteur trois ; et son exposant, ajusté
+\textbf{graine par graine} et jamais en régression groupée, est
+significativement non nul et de signe constant. Tout ce qui est plus faible
+est une corrélation, et doit être appelé ainsi.
+
+\subsection{L'intensité de marché contrôle tout ce que les autres leviers
+laissaient intact}
+
+Le levier balayé est l'intensité de la phase de marché, sur une étendue de
+$\EtendueRho$.
+
+\begin{longtable}{@{}lrrrl@{}}
+\toprule
+\textbf{grandeur} & \textbf{bas} & \textbf{haut} & \textbf{exposant} &
+\textbf{contrôlé} \\
+\midrule
+\endhead
+$\hat\alpha$ du revenu d'intérêt & $\RhoAlphaInteretBas$ &
+  $\RhoAlphaInteretHaut$ &
+  $\RhoAlphaInteretExposant \pm \RhoAlphaInteretExposantIC$ &
+  \RhoAlphaInteretControle \\
+$\hat\alpha$ de la valeur nette & $\RhoAlphaNWBas$ & $\RhoAlphaNWHaut$ &
+  $\RhoAlphaNWExposant \pm \RhoAlphaNWExposantIC$ & \RhoAlphaNWControle \\
+rapport de branchement $b_1$ & $\RhoBUnBas$ & $\RhoBUnHaut$ &
+  $\RhoBUnExposant \pm \RhoBUnExposantIC$ & \RhoBUnControle \\
+descendance moyenne $b_2$ & $\RhoBDeuxBas$ & $\RhoBDeuxHaut$ &
+  $\RhoBDeuxExposant \pm \RhoBDeuxExposantIC$ & \RhoBDeuxControle \\
+coefficient de Gini du bassin & $\RhoGiniBas$ & $\RhoGiniHaut$ &
+  $\RhoGiniExposant \pm \RhoGiniExposantIC$ & \RhoGiniControle \\
+\bottomrule
+\end{longtable}
+
+\fait{} L'intensité de marché \textbf{contrôle} les deux exposants de queue
+et les deux estimateurs de branchement, au sens strict ci-dessus.
+
+\inference{} Le contraste avec les leviers du rebond est net : ceux-ci
+laissaient les exposants à quatre pour-cent près, celui-ci les déplace de
+façon monotone et mesurable. La chaîne proposée par la spécification --- le
+levier de marché agit sur l'exposant de queue \emph{et} sur le branchement
+par le même canal --- est donc soutenue : les deux réponses sont présentes
+ensemble, du même signe, et aucune ne se produit sans l'autre.
+
+\subsection{Là où les deux estimateurs de branchement cessent de raconter la
+même histoire}
+
+\fait{} Au niveau le plus haut du levier, la descendance moyenne franchit
+l'unité --- $\RhoBDeuxHaut$ --- tandis que le rapport de branchement classique
+reste à $\RhoBUnHaut$.
+
+\inference{} Ce n'est pas une supercriticité. Le premier estimateur vaut
+$1 - \text{racines}/\text{morts}$ : il est borné par l'unité \emph{par
+construction} et ne peut pas la franchir. Le second compte les couples
+causals et le peut, dès que la sur-détermination est forte --- la part de
+morts à plusieurs parents passe ici de sept à plus de vingt pour-cent. Ce que
+le franchissement signale, c'est que \textbf{l'attribution à parent unique
+qui fonde le premier estimateur devient intenable dans ce régime}.
+
+C'est le seul endroit du programme où les deux estimateurs divergent
+qualitativement, et c'est précisément pour cela qu'il en fallait deux.
+
+\subsection{Une relation héritée qui ne survit pas au changement de levier}
+
+La lignée précédente avait établi que la rotation du crédit vaut l'intensité
+de marché multipliée par le coefficient de Gini du bassin. Cette relation est
+vérifiée ici quand le levier est la productivité --- les deux élasticités
+coïncident à $1{,}3\cdot10^{-4}$.
+
+\fait{} Elle ne survit pas quand le levier est l'intensité de marché
+elle-même. La relation prédit un exposant de $\RotationPredite$ ; le mesuré
+vaut $\RotationMesuree$, soit un écart de plus de cent erreurs-types.
+
+\fait{} Le mécanisme est lisible dans les données. Le coefficient de Gini
+mesuré \emph{après} la phase de marché tombe de $0{,}0986$ à $0{,}0168$ sur
+l'étendue du balayage, contre $0{,}1238 \to 0{,}0514$ pour celui d'avant : la
+part de dispersion consommée à l'intérieur d'un même pas passe de trente-quatre
+à soixante-sept pour-cent.
+
+\inference{} La relation n'est donc exacte que dans la limite où la phase de
+marché n'épuise pas la dispersion à l'intérieur du pas --- la limite où la
+lignée précédente travaillait. Quand on augmente l'intensité, les rondes
+tardives trouvent un bassin déjà égalisé par les premières, et le Gini mesuré
+en début de pas surestime ce qu'elles rencontrent.
+
+\section{L'écart de branchement avec la lignée M4B}
+
+La spécification demandait que l'écart entre le rapport de branchement de
+cette lignée, $\BUnControle$, et celui de la lignée M4B, $0{,}297$, soit
+« expliqué, ou déclaré ouvert avec ce qui a été essayé ». Elle énumérait
+quatre différences de régime.
+
+\paragraph{L'une des quatre est vide, et c'est démontrable.} Quand les deux
+entités d'une paire partagent la même technologie, l'optimum de production
+jointe vaut exactement la moitié de l'écart de capital, c'est-à-dire la règle
+arithmétique de M4B. C'est le mécanisme même de la parité bit à bit vérifiée
+au paragraphe~1. Les bras de cette ablation étant homogènes, l'institution de
+principal ne peut rien expliquer.
+
+\paragraph{Deux autres sont balayables, et suffisent presque.} L'ablation
+procède d'un facteur à la fois, sur une fenêtre doublée --- la volatilité
+n'est pas une perturbation, c'est un changement de régime.
+
+\begin{longtable}{@{}lrrr@{}}
+\toprule
+\textbf{bras} & \textbf{$b_1$} & \textbf{exposant des tailles} &
+\textbf{part de l'écart fermée} \\
+\midrule
+\endhead
+départ (cette lignée) & $\BUnControle$ & $\AlphaTailleControle$ & --- \\
+dépréciation de M4B & $\AblationDeltaCinqBUn$ & $\AblationDeltaCinqAlpha$ &
+  $\AblationDeltaCinqPart~\%$ \\
+volatilité de M4B & $\AblationSigmaVingtCinqBUn$ &
+  $\AblationSigmaVingtCinqAlpha$ & $\AblationSigmaVingtCinqPart~\%$ \\
+les deux ensemble & $\AblationMquatreBBUn$ & $\AblationMquatreBAlpha$ &
+  $\AblationMquatreBPart~\%$ \\
+\textit{M4B publié} & \textit{0,297} & \textit{$\approx$ 2,31} & --- \\
+\bottomrule
+\end{longtable}
+
+\fait{} La volatilité est le facteur dominant : à elle seule elle ferme
+$\AblationSigmaVingtCinqPart$ pour-cent de l'écart. Les deux ensemble en
+ferment $\AblationMquatreBPart$.
+
+\paragraph{La quatrième n'est pas testable sans changer le moteur.} La taille
+du bassin d'appariement est un choix constitutif de ce modèle, pas un
+paramètre ; la rendre variable serait une modification de comportement, hors
+de la discipline additive de ce programme. Elle est donc \emph{déclarée non
+tentée}, et le reliquat de douze pour-cent lui est attribué sans que cela
+soit vérifié.
+
+\section{Le partage qui évolue, et la mémoire du carnet}
+
+Deux rampes de cinq paliers parcourent la même échelle de partage, l'une en
+montant, l'autre en descendant. On ne lit que la seconde moitié de chaque
+palier, et l'on compare l'état aux mêmes valeurs du partage.
+
+\fait{} Le partage \emph{impliqué} vaut exactement la valeur commandée dans
+les deux sens : toute différence d'état est donc portée par le carnet hérité,
+et non par le taux courant.
+
+\fait{} Les écarts significatifs sont de un à deux pour-cent ---
+$\RampeQuart \pm \RampeQuartIC$ au quart et $\RampeDemi \pm \RampeDemiIC$ à
+la moitié --- et leur signe suit la direction d'approche. Aux deux derniers
+paliers, l'écart n'est plus significatif.
+
+\inference{} Ce que la rampe mesure est donc un \textbf{retard de
+relaxation}, et non une dépendance au chemin. Les deux branches convergent
+vers le même état ; elles diffèrent par la distance qu'il leur reste à
+parcourir.
+
+\inference{} Le mécanisme est chiffrable. Un contrat disparaît dès que l'une
+de ses deux extrémités meurt, soit environ quatre pour-cent par pas : une
+demi-vie de dix-sept pas. Après deux cents pas de palier, il ne reste rien du
+palier précédent. \textbf{La mémoire du carnet est réelle, mais elle s'efface
+bien avant que le palier ne finisse} ; ce qui relaxe lentement, c'est la
+population.
+
+\incertitude{} Une dépendance au chemin pourrait exister à des paliers plus
+courts que la demi-vie du carnet. Ce protocole ne peut pas le dire.
+
 \section{Ce que ce programme n'établit pas}
 
-\incertitude{} Trois choses, et il vaut mieux les écrire que les laisser
+\incertitude{} Six choses, et il vaut mieux les écrire que les laisser
 supposer.
 
 \begin{enumerate}
 \item \textbf{L'existence des queues de Pareto n'est pas prouvée}, et ne peut
-      pas l'être ici. Le rapport de conception donne la raison structurelle,
-      qui n'est pas un manque de données. Les exposants sont
+      pas l'être ici. La raison est structurelle et non un manque de données :
+      les deux familles candidates se recouvrent. Les exposants sont
       \emph{caractérisés} sous hypothèse.
+\item \textbf{Le mécanisme de l'effet de dispersion n'est pas établi.} Que la
+      dispersion du partage gouverne l'état plutôt que sa moyenne est mesuré ;
+      \emph{pourquoi} demanderait de montrer que la mortalité d'une débitrice
+      est convexe dans le service qu'elle porte. Les données existent, le
+      calcul reste à faire.
+\item \textbf{Un quart de l'écart avec la lignée M4B reste non attribué}, et
+      il est \emph{imputé} à la seule différence de régime qu'on ne pouvait
+      pas tester sans changer le moteur --- la taille du bassin
+      d'appariement. Cette imputation n'est pas vérifiée.
 \item \textbf{La sur-détermination des cascades n'est pas une suffisance.}
       Que plusieurs faillites amont aient atteint une même victime ne dit pas
       que chacune aurait suffi ; le vérifier demanderait de confronter chaque
       principal à la valeur nette d'avant cascade.
+\item \textbf{L'absence de dépendance au chemin n'est établie qu'à l'échelle
+      des paliers employés.} Une dépendance pourrait exister à des paliers
+      plus courts que la demi-vie du carnet ; ce protocole ne peut pas le
+      dire.
 \item \textbf{Le canal de liquidité est muet} dans ce régime : aucune
       faillite ne part d'un défaut de paiement, la contagion est purement de
       bilan. Tout raisonnement sur la liquidité y est hors sujet.
 \end{enumerate}
+
+\section{Ce qui reste stable quand tout bouge}
+
+Deux invariances ressortent, obtenues par des chemins entièrement différents.
+
+\fait{} Sous les leviers du rebond --- productivité, exposant de production,
+dotation de naissance --- les exposants de queue varient de quatre à cinq
+pour-cent pendant que la population varie de vingt-cinq et la production de
+quatre-vingts.
+
+\fait{} Sous l'institution de taux --- de l'altruisme à l'asservissement ---
+le coefficient de Gini de la valeur nette varie de six \emph{dixièmes} de
+pour-cent pendant que la population varie de soixante-huit et le capital d'un
+facteur trois.
+
+\inference{} Ce modèle a donc une structure d'inégalité que ni la technologie
+ni le partage du surplus ne déplacent. Un seul levier des trois testés la
+déplace : l'intensité de la phase de marché. Ce n'est ni ce qu'on produit ni
+comment on se partage le surplus qui fixe la forme de la distribution, c'est
+\emph{combien on échange}.
 
 \appendix
 

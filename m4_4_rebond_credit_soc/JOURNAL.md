@@ -900,3 +900,169 @@ de queue trouvée au lot C sous les leviers du rebond. Deux familles de
 leviers entièrement différentes laissent la même chose intacte : **la forme
 de la distribution de valeur nette**. Le modèle a une structure d'inégalité
 que ni la technologie ni l'institution de taux ne déplacent.
+
+### Lot E — ρ contrôle α ET b, sous les trois conditions strictes
+
+Balayage de ρ sur cinq niveaux, étendue ×6, 12 graines, contraste apparié.
+L'exposant est ajusté GRAINE PAR GRAINE sur les cinq niveaux de cette graine —
+jamais en régression groupée (piège §14.2). Sortie :
+`lotE_rho_{runs.csv,verdicts.json}`.
+
+| grandeur | ρ=0,5 | ρ=1 | ρ=1,5 | ρ=2 | ρ=3 | exposant | contrôlé ? |
+|---|---|---|---|---|---|---|---|
+| α du revenu d'intérêt | 3,894 | 3,938 | 4,035 | 4,108 | 4,229 | **+0,0465 ± 0,0074** | **oui** |
+| α de la valeur nette | 2,728 | 2,767 | 2,805 | 2,828 | 2,862 | **+0,0272 ± 0,0074** | **oui** |
+| b₁ | 0,6908 | 0,7863 | 0,8285 | 0,8526 | 0,8767 | **+0,1345 ± 0,0020** | **oui** |
+| b₂ | 0,7248 | 0,8483 | 0,9187 | 0,9748 | **1,065** | **+0,2132 ± 0,0036** | **oui** |
+| population | 1223 | 1133 | 1097 | 1076 | 1051 | −0,0850 ± 0,0026 | oui |
+| rotation | 0,0568 | 0,0721 | 0,0818 | 0,0891 | 0,0999 | +0,3162 ± 0,0014 | oui |
+| Ḡ | 0,1238 | 0,0853 | 0,0695 | 0,0607 | 0,0514 | −0,4946 ± 0,0016 | oui |
+| tension | 12,23 | 13,29 | 13,83 | 14,18 | 14,64 | +0,1008 ± 0,0016 | oui |
+
+\fait{} **ρ CONTRÔLE les deux exposants de queue et les deux estimateurs de
+branchement**, au sens strict du plan §3.3 : signe constant sur les douze
+graines, monotonie sur les cinq niveaux, exposant par graine significativement
+non nul et de signe constant, étendue ×6 ≥ ×3.
+
+\inference{} C'est le contraste exact avec le lot C : les leviers du rebond
+(A, γ, K0) laissent les exposants à 4 % près, ρ les déplace de façon
+mesurable et monotone. **La chaîne candidate du plan §3.3 — ρ agit sur α et
+sur b par le même canal — est donc soutenue** : les deux réponses sont
+présentes ensemble, du même signe, et aucune ne se produit sans l'autre.
+
+\fait{} **b₂ franchit 1 à ρ = 3** (1,065) tandis que b₁ reste à 0,8767.
+\inference{} Ce n'est PAS une supercriticité : b₁ = 1 − racines/morts est
+borné par 1 par construction, et b₂ = couples/morts peut le dépasser dès que
+la sur-détermination est forte — la part des morts à plusieurs parents passe
+ici de 7 % à plus de 20 %. Ce que le franchissement signale, c'est que
+**l'attribution à parent unique qui fonde b₁ devient intenable dans ce
+régime**. C'est précisément la raison pour laquelle le plan exigeait deux
+estimateurs, et c'est le seul endroit du programme où ils ne racontent pas la
+même histoire.
+
+### Lot E — et une relation héritée qui se brise
+
+\fait{} `rotation = ρ·Ḡ` prédit un exposant de rotation en ρ de
+1 + (−0,4946) = **+0,5055**. Le mesuré vaut **+0,3162 ± 0,0014**, soit
+135 erreurs-types plus bas. **La relation ne survit pas à un balayage de ρ.**
+
+\fait{} Le mécanisme est visible dans les données : le Gini d'APRÈS marché
+tombe de 0,0986 à 0,0168 quand ρ passe de 0,5 à 3, contre 0,1238 → 0,0514
+pour celui d'avant. La part de dispersion consommée dans le pas passe donc de
+34 % à 67 %.
+
+\inference{} `rotation = ρ·Ḡ` n'est exacte que dans la limite où la phase de
+marché n'épuise pas sensiblement la dispersion à l'intérieur d'un pas — la
+limite où v2 travaillait (ρ = 1). Quand ρ est le levier, les rondes tardives
+voient un pool déjà égalisé par les précédentes, et `gini_before`, mesuré une
+fois en début de pas, surestime ce qu'elles trouvent. Le lot B ne pouvait pas
+le voir : ρ y était fixe, et la relation y tient à 1,3·10⁻⁴ près.
+
+### Lot F — l'écart de branchement avec M4B est EXPLIQUÉ
+
+Ablation d'un facteur à la fois, en partant du régime de cette lignée et en
+marchant vers celui de M4B. Fenêtre DOUBLÉE (]5000, 6000]) parce que σ = 0,25
+est un changement de régime, pas une perturbation.
+
+| bras | σ | δ | b₁ | α des tailles |
+|---|---|---|---|---|
+| contrôle | 0,01 | 0,01 | **0,7863** | 1,708 |
+| δ = 0,05 | 0,01 | 0,05 | 0,6765 | 1,763 |
+| σ = 0,05 | 0,05 | 0,01 | 0,5722 | 2,008 |
+| σ = 0,10 | 0,10 | 0,01 | 0,4592 | 2,163 |
+| σ = 0,25 | 0,25 | 0,01 | 0,3809 | 2,154 |
+| **« M4B »** | 0,25 | 0,05 | **0,3567** | **2,153** |
+| *M4B publié* | 0,25 | 0,05 | *0,297* | *≈ 2,31* |
+
+\fait{} **σ est le facteur dominant** : à lui seul, il ferme **82,9 %** de
+l'écart de b₁ (0,7863 → 0,3809 contre une cible de 0,297). δ seul en ferme
+22,4 %. Les deux ensemble : **87,8 %**.
+
+\fait{} L'exposant des tailles d'avalanches suit le même chemin : 1,708 →
+2,153, soit **73,9 %** de l'écart aux ≈ 2,31 de M4B.
+
+\fait{} La quatrième différence énumérée par le plan — l'institution de
+principal, production jointe contre arithmétique — est **VIDE dans ce
+régime**, et c'est démontrable : quand les deux entités d'une paire partagent
+la même technologie, l'optimum de production jointe vaut exactement
+(K_b − K_a)/2, c'est-à-dire la règle arithmétique. C'est le mécanisme même de
+la parité bit à bit avec M4.3, vérifiée sur 8000 pas. Les bras de ce lot
+étant homogènes, l'institution ne peut rien expliquer.
+
+\incertitude{} Il reste 12,2 % de l'écart de b₁ et 26,1 % de celui de α. La
+seule différence non ablatée est la taille du bassin d'appariement — k ∈ [2 ;
+10] chez M4B contre k ≡ 2 ici. Elle n'est pas balayable : `POOL_SIZE` est un
+choix constitutif du moteur, pas un paramètre, et le rendre variable serait
+une modification de comportement, hors de la discipline additive du fork.
+**Elle est donc documentée comme non tentée, et non silencieusement omise.**
+
+\inference{} Le plan demandait « l'écart b ≈ 0,79 contre 0,30 expliqué, ou
+déclaré ouvert avec ce qui a été essayé ». Il est expliqué à 88 %, par la
+volatilité σ principalement, et le reliquat est attribué à la seule
+différence qu'on ne pouvait pas tester sans changer le moteur.
+
+### Lot T — les rampes : la mémoire du carnet s'efface avant d'agir
+
+Deux rampes de cinq paliers de 400 pas, montante et descendante, 12 graines.
+On ne lit que la seconde moitié de chaque palier. Sortie : `lotT_ramp.*`.
+
+| p | population en montant | en descendant | rapport |
+|---|---|---|---|
+| 0,00 | 1845,4 | 1886,8 | **0,9782 ± 0,0108** |
+| 0,25 | 1656,4 | 1628,9 | **1,0170 ± 0,0094** |
+| 0,50 | 1450,5 | 1425,5 | **1,0178 ± 0,0132** |
+| 0,75 | 1279,1 | 1277,4 | 1,0015 ± 0,0116 |
+| 1,00 | 1141,3 | 1143,0 | 0,9988 ± 0,0124 |
+
+\fait{} Le partage impliqué vaut exactement p dans les deux sens : le
+contrôle d'intégrité passe, donc toute différence d'état à p égal est portée
+par le carnet hérité et non par le taux courant.
+
+\fait{} Les écarts significatifs sont de **1,7 à 2,2 %**, et leur SIGNE suit
+la direction d'approche : à p = 0,25 et 0,5, la rampe montante arrive
+d'au-dessus et se trouve plus haut ; à p = 0, elle vient tout juste de partir
+du régime historique et n'a pas fini de monter. Aux deux derniers paliers,
+l'écart n'est plus significatif.
+
+\inference{} **Ce que la rampe mesure est un RETARD DE RELAXATION, pas une
+dépendance au chemin.** Les deux branches convergent vers le même état
+statique ; elles diffèrent par la distance qu'il leur reste à parcourir.
+
+\inference{} Le mécanisme est chiffrable : à une mortalité de 2 % par entité
+et par pas, un contrat disparaît dès que l'une de ses deux extrémités meurt,
+soit ≈ 4 % par pas — une demi-vie de dix-sept pas. Après deux cents pas de
+palier, il ne reste rien des contrats du palier précédent. **La mémoire du
+carnet est réelle mais s'efface bien avant que le palier ne finisse** ; ce qui
+relaxe lentement, c'est la POPULATION, pas le carnet.
+
+\incertitude{} Une hystérésis pourrait exister à des paliers plus courts que
+la demi-vie du carnet. Ce protocole ne peut pas le dire, et l'affirmer serait
+extrapoler.
+
+### Clôture — 24 août 2026
+
+\fait{} **Suite complète : 18/18 verts en 2194 s**, parité longue comprise
+(8000 pas × 26 colonnes, écart maximal nul, 761 s). Les six tests neufs de
+cette lignée — `bargain_rate`, `branching`, `checkpoint`, `panels`,
+`persistence`, `tails` — passent au même titre que les douze hérités.
+
+\fait{} **372 runs importés dans `simulation_lab`**, un par symlink et
+`run.json`, avec figure d'aperçu. Les trois IHM coexistent : `/live` (v1),
+`/live2` (v2), `/live3` (M4.4).
+
+\fait{} **29,9 heures de calcul cumulées**, six familles de runs, toutes avec
+un rôle déclaré — l'annexe de traçabilité refuserait de se produire sinon.
+
+**Deux défauts trouvés et corrigés pendant le lot G**, tous deux issus de la
+même cause : la nouvelle union de colonnes de `write_series`.
+
+\fait{} Le script d'import lisait toute cellule comme un flottant et échouait
+sur une cellule VIDE — laquelle est légitime, puisqu'un bras branché sur un
+amorçage hérite de lignes écrites par une version antérieure du moteur. Tout
+lecteur de `series.csv` doit désormais la tolérer, et c'est écrit là où ça se
+lit.
+
+\fait{} Le remplacement du bloc de configuration de ce même script avait
+emporté une constante voisine ; restaurée depuis la source v2. Rappel utile :
+un remplacement par bornes textuelles emporte ce qui est entre les bornes,
+et pas seulement ce qu'on visait.

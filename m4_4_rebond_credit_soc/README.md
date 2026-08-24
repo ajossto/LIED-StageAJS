@@ -46,7 +46,7 @@ m4_4_rebond_credit_soc/
 │   └── cascades.py      les DEUX estimateurs du rapport de branchement
 ├── driver/headless.py   pilote sans tête : burn / arm / replay / resume
 ├── web/                 IHM `/live3`, branchée dans simulation_lab (additive)
-├── tests/               16 fichiers d'assertions Python simples — pas de pytest
+├── tests/               18 fichiers d'assertions Python simples — pas de pytest
 ├── scripts/             run_tests.py (la suite entière, codes de sortie compris),
 │                        campaign.py, branching.py, cost_panels.py, cost_profile.py,
 │                        tension_figures.py, import_to_simulation_lab.py
@@ -78,14 +78,14 @@ cd /home/anatole/jupyter
 
 | lot | contenu | état |
 |---|---|---|
-| **A** | fork, persistance, panneaux, checkpoint, arbre causal, deux estimateurs de b | **terminé** — 16/16 tests verts, les deux portes franchies |
-| B | décomposition distributionnelle du rebond | à faire |
-| C0 / C | pilote de couverture, puis classes de lois | à faire |
-| D | avalanches et branchement | à faire |
-| E | tentative de contrôle de α et de b | à faire |
-| F | pourquoi b dépasse la valeur σ = 0 de M4B | à faire |
-| **T** | **le taux comme variable de partage** (ajout du 24 août) | moteur fait, campagne en cours |
-| G | rapports, journal, traçabilité | à faire |
+| **A** | fork, persistance, panneaux, checkpoint, arbre causal, deux estimateurs de b | **terminé** — les deux portes franchies |
+| **B** | décomposition distributionnelle du rebond | **terminé** — la tension v1/v2 sur l'exposant `a` dénouée |
+| **C0 / C** | couverture de queue, puis classes de lois | **terminé** — les exposants sont invariants sous les leviers du rebond |
+| **D** | avalanches et branchement | **terminé** — la fragilité du rebond est un effet d'échelle de K0 à 93 % |
+| **E** | tentative de contrôle de α et de b | **terminé** — ρ contrôle les deux, sous les trois conditions strictes |
+| **F** | pourquoi b dépasse la valeur σ = 0 de M4B | **terminé** — 88 % de l'écart expliqué par σ et δ |
+| **T** | **le taux comme variable de partage** (ajout du 24 août) | **terminé** — une institution équitable en moyenne agit comme un asservissement |
+| **G** | rapports, journal, traçabilité, import | **terminé** |
 
 ### Lot T — le taux comme variable de partage
 
@@ -105,9 +105,35 @@ l'opération blanche, la donneuse capte tout. Les deux égalités ne valent
 qu'au moment du contrat ; le taux est ensuite gelé, et le paramètre ne
 gouverne que les contrats **conclus après**.
 
-\fait{} La règle historique `marginal` se situe à **p ≈ 0,52** sur cette
-échelle : la lignée entière tournait, sans le savoir, à un partage presque
-exactement équitable.
+La règle historique `marginal` se situe à **p ≈ 0,53** sur cette échelle : la
+lignée entière tournait, sans le savoir, à un partage presque exactement
+équitable — mais elle produit l'état d'un partage p = 1, parce que c'est la
+**dispersion** contrat par contrat qui gouverne, pas la moyenne.
+
+### Les six résultats
+
+1. **Le surcroît de production va au corps, pas à la queue.** Les quantiles
+   montent tous d'un facteur ≈ 1,8 ; le 99,9ᵉ centile monte MOINS (×1,47 sur
+   le revenu). Le bas du canal d'intérêt s'effondre (×0,11).
+2. **L'exposant qui relie mortalité et rotation n'est pas universel** : 1,334
+   sous un levier, 1,268 sous un autre. Les valeurs publiées par v1 et v2
+   tombent chacune sur un bras — leur désaccord était une différence de
+   mélange de leviers.
+3. **La fragilité du rebond est un effet d'échelle de la dotation de
+   naissance**, à 93,4 % : compenser K0 annule l'effet de A sur le
+   branchement.
+4. **Les exposants de queue sont invariants** sous les leviers du rebond
+   (4 % d'étendue) mais **contrôlés par l'intensité de marché** ρ.
+5. **L'écart de branchement avec M4B est expliqué à 88 %** par la volatilité
+   σ (dominante) et la dépréciation δ ; l'institution de principal n'y est
+   pour rien, et c'est démontrable.
+6. **Une institution équitable en moyenne agit comme un asservissement.** La
+   règle historique partage à 0,53 mais produit l'état de p = 1 ; c'est la
+   dispersion contrat par contrat qui gouverne, pas la moyenne.
+
+**Vérifications** : suite **18/18 verte** en 2194 s, parité longue comprise ;
+372 runs importés dans `simulation_lab` ; 29,9 heures de calcul, six familles
+de runs toutes avec un rôle déclaré.
 
 **Portes du lot A, mesurées** (détail et chiffres dans `JOURNAL.md`) :
 

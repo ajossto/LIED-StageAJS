@@ -44,21 +44,33 @@ from simulation_lab.settings import RUNS_DIR, ensure_directories  # noqa: E402
 MODEL_ID = "m4_4_rebond_credit_soc"
 
 # (racine sous results/, gabarit d'identifiant, étiquette, rôle)
+#
+# Les familles sont celles de M4.4, et leur rôle est le même que dans
+# l'annexe de traçabilité — un seul endroit dit à quoi sert un run, et les
+# deux sorties doivent s'accorder.
 GROUPS = (
     ("campaign/burn", "m4_4__burn__{seed}", "amorçage/{seed}",
-     "amorçage partagé 0 → t₀ = 2000, source des snapshots des deux règles"),
-    ("campaign/phase", "m4_4__phase__{cell}__{seed}", "ordre des phases/{cell}/{seed}",
-     "lot E : dépréciation avant service des intérêts, apparié au contrôle"),
-    ("rotation_sweep", "m4_4__rotation__{cell}__{seed}", "rotation/{cell}/{seed}",
-     "lot F : balayage instrumenté (Gini du capital) pour fermer la rotation"),
+     "amorçage partagé 0 → t₀ = 2000 ; aucun bras n'existe sans lui"),
+    ("campaign/coverage", "m4_4__couverture__{cell}__{seed}",
+     "couverture/{cell}/{seed}",
+     "lot C : même protocole à λ = 50, pour mesurer si l'exposant de queue "
+     "dépend de l'effectif"),
+    ("campaign/bargain", "m4_4__taux__{cell}__{seed}", "taux/{cell}/{seed}",
+     "lot T : le taux comme partage, de l'altruisme à l'asservissement, "
+     "plus les deux rampes"),
+    ("campaign/control_rho", "m4_4__rho__{cell}__{seed}", "contrôle/{cell}/{seed}",
+     "lot E : balayage du levier de marché sur une étendue de ×6"),
+    ("campaign/ablation", "m4_4__ablation__{cell}__{seed}", "ablation/{cell}/{seed}",
+     "lot F : ablation vers le régime de la lignée M4B, un facteur à la fois"),
 )
-# Les bras du lot D sont rangés par RÈGLE DE SENS puis par bras : un niveau
+# Les bras du rebond sont rangés par RÈGLE DE SENS puis par bras : un niveau
 # d'arborescence de plus, traité à part.
 NESTED = (
-    ("campaign/arms", "m4_4__arm__{outer}__{cell}__{seed}",
-     "campagne/{outer}/{cell}/{seed}",
-     "lot D : campagne A/B appariée, sens du prêt libre contre règle v1"),
+    ("campaign/arms", "m4_4__bras__{outer}__{cell}__{seed}",
+     "rebond/{outer}/{cell}/{seed}",
+     "lots B, C et D : campagne du rebond, sens du prêt libre contre règle v1"),
 )
+
 
 PANELS = (
     ("prod_tot", None, "production agrégée prod_tot"),
@@ -83,7 +95,16 @@ def load_json(path: Path) -> dict:
 def read_series(path: Path) -> dict[str, np.ndarray]:
     with open(path, newline="", encoding="utf-8") as handle:
         rows = list(csv.DictReader(handle))
-    return {name: np.array([float(row[name]) for row in rows]) for name in rows[0]}
+    # \fait{} Une cellule VIDE existe légitimement : un bras branché sur un
+    # amorçage hérite de lignes de série écrites par une version antérieure du
+    # moteur, où les colonnes ajoutées depuis n'existaient pas
+    # (`m4_4/live.py`, union des clefs). La lire comme un flottant ferait
+    # échouer l'import sur la seule présence d'une colonne récente.
+    def column(name: str) -> np.ndarray:
+        return np.array([float(row[name]) if row[name] not in ("", None)
+                         else float("nan") for row in rows])
+
+    return {name: column(name) for name in rows[0]}
 
 
 def make_figure(run_dir: Path, label: str, interventions: list[dict], force: bool) -> bool:
