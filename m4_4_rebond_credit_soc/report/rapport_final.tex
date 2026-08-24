@@ -1,0 +1,451 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[french]{babel}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb}
+\usepackage[margin=2.35cm]{geometry}
+\usepackage{booktabs,longtable,tabularx}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{microtype}
+\usepackage{float}
+\usepackage{hyperref}
+\DeclareUnicodeCharacter{2264}{\ensuremath{\le}}
+\DeclareUnicodeCharacter{2265}{\ensuremath{\ge}}
+\DeclareUnicodeCharacter{03C3}{\ensuremath{\sigma}}
+\DeclareUnicodeCharacter{03B3}{\ensuremath{\gamma}}
+\DeclareUnicodeCharacter{03BB}{\ensuremath{\lambda}}
+\DeclareUnicodeCharacter{03C1}{\ensuremath{\rho}}
+\DeclareUnicodeCharacter{03B4}{\ensuremath{\delta}}
+\DeclareUnicodeCharacter{03B1}{\ensuremath{\alpha}}
+\DeclareUnicodeCharacter{0394}{\ensuremath{\Delta}}
+\DeclareUnicodeCharacter{03B5}{\ensuremath{\varepsilon}}
+\DeclareUnicodeCharacter{2080}{\ensuremath{_0}}
+
+\hypersetup{colorlinks=true,linkcolor=blue!45!black,urlcolor=blue!45!black}
+\setlist{nosep}
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\fait}{\textbf{[Fait observé]}}
+\newcommand{\inference}{\textbf{[Inférence]}}
+\newcommand{\hyp}{\textbf{[Hypothèse]}}
+\newcommand{\incertitude}{\textbf{[Incertitude]}}
+\input{numbers}
+
+\title{M4.4Rebond --- rapport de résultats\\
+\large Où vit l'effet rebond dans la distribution,\\
+et ce que gouverne le partage du surplus de coopération}
+\author{Programme M4.4Rebond --- dossier \code{m4\_4\_rebond\_credit\_soc}}
+\date{24 août 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Les lignées précédentes avaient établi que rendre la technologie plus
+productive n'augmente la production totale que de $\Epsilon$ pour-cent par
+pour-cent, parce que la population se contracte en même temps. C'était un
+énoncé sur des agrégats. Ce programme demande où ce surcroît se dépose.
+
+\textbf{Il se dépose dans le corps, presque proportionnellement, et pas dans
+la queue.} La production monte d'un facteur $1{,}75$ au premier décile et
+$1{,}83$ au 99\textsuperscript{e} centile : une inclinaison de moins de cinq
+pour-cent d'un bout à l'autre. Au 99,9\textsuperscript{e} centile, en
+revanche, le revenu ne monte que de $1{,}47$ et la valeur nette de $1{,}17$ :
+le sommet est \emph{comprimé}, pas amplifié.
+
+\textbf{Ce qui est détruit, c'est le bas du canal d'intérêt.} Le premier
+décile du revenu d'intérêt tombe d'un facteur dix pendant que sa médiane
+double. La petite rente disparaît.
+
+\textbf{Une tension de la lignée se dénoue.} L'exposant qui relie la
+mortalité à la rotation du crédit n'est pas universel : il vaut
+$\ExposantAallAUnCinqZero$ sous un levier et $\ExposantAnewgZeroSixZero$ sous
+un autre, et les deux valeurs publiées antérieurement tombent chacune sur un
+de ces bras.
+
+\textbf{La fragilité qu'on attribuait au rebond n'est pas la sienne.} Monter
+la productivité abaisse le rapport de branchement de
+$\EffetABranchement$ ; compenser simultanément l'échelle de dotation à la
+naissance ne laisse que $\EffetResiduelBranchement$, soit
+$\PartAnnuleeKzero$~\% de l'effet annulé.
+
+\textbf{Enfin, le taux d'intérêt cesse d'être une formule.} Il devient un
+partage entre deux bornes économiques, et l'on découvre que la règle
+employée par toute la lignée réalisait, sans que ce soit dit, un partage
+presque exactement équitable du surplus de coopération.
+\end{abstract}
+
+\tableofcontents
+
+\section{Ce qui est mesuré, et sur quoi}
+
+\subsection{Le protocole}
+
+Douze graines, un amorçage partagé par graine jusqu'au pas 2000, puis des
+bras branchés sur ce même état. Chaque comparaison est \emph{appariée} :
+graine par graine, le bras traité est confronté au contrôle qui partage son
+amorçage. Les moyennes de fenêtre sont prises sur les mille derniers pas, et
+les intervalles sont ceux d'un Student à onze degrés de liberté.
+
+\fait{} Le contrôle de stationnarité passe sur tous les bras : le rapport de
+la production du dernier quart de fenêtre au premier quart ne s'écarte pas
+significativement de un, avec $|t| \le 1{,}83$ contre un seuil de $2{,}201$.
+L'étendue par run, de $0{,}952$ à $1{,}047$, est le plancher de bruit --- ce
+qui explique qu'une bande fixe de plus ou moins un pour-cent, employée par la
+lignée précédente, rejetait onze graines sur douze d'un bras \emph{sans
+intervention}.
+
+\subsection{La lignée est reproduite avant d'être prolongée}
+
+Le moteur est un fork, les amorçages sont neufs, la campagne est neuve. Il
+fallait donc vérifier que les grandeurs déjà publiées se retrouvent.
+
+\begin{longtable}{@{}p{0.42\textwidth}p{0.24\textwidth}p{0.24\textwidth}@{}}
+\toprule
+\textbf{élasticité par rapport à la productivité} & \textbf{ce programme} &
+\textbf{lignée précédente} \\
+\midrule
+\endhead
+production totale ($\varepsilon$) & $\Epsilon \pm \EpsilonIC$ & $0{,}7473$ \\
+effectif de fin de pas & $\ElasticitePop \pm \ElasticitePopIC$ & $-0{,}7043$ \\
+effectif producteur & $\ElasticiteNProd \pm \ElasticiteNProdIC$ & $-0{,}6834$ \\
+\bottomrule
+\end{longtable}
+
+\fait{} L'identité qui relie ces trois grandeurs --- la définition même du
+capital équivalent --- se referme à $\ResiduIdentite$. Elle reste une
+\emph{identité} : elle ne confirme rien, elle sépare ce qui relève de
+l'effectif de ce qui relève de l'échelle par entité.
+
+\section{Où va le surcroît de production}
+
+\subsection{Dans le corps, presque proportionnellement}
+
+Le tableau ci-dessous donne, pour chaque niveau de quantile, le rapport entre
+le bras traité et son contrôle apparié. Un rapport uniforme signifierait que
+la distribution ne change que d'échelle.
+
+\begin{longtable}{@{}lrrrr@{}}
+\toprule
+\textbf{grandeur} & \textbf{q10} & \textbf{q50} & \textbf{q99} &
+\textbf{q99,9} \\
+\midrule
+\endhead
+production      & $1{,}748$ & $1{,}806$ & $1{,}831$ & $1{,}816$ \\
+revenu total    & $1{,}755$ & $1{,}776$ & $1{,}738$ & $\mathbf{1{,}472}$ \\
+valeur nette    & $1{,}103$ & $1{,}486$ & $1{,}445$ & $\mathbf{1{,}165}$ \\
+capital         & $1{,}386$ & $1{,}451$ & $1{,}489$ & $1{,}460$ \\
+revenu d'intérêt & $\mathbf{0{,}105}$ & $1{,}743$ & $1{,}722$ & $1{,}444$ \\
+\bottomrule
+\end{longtable}
+
+\fait{} La production monte de $1{,}748$ au premier décile à $1{,}831$ au
+99\textsuperscript{e} centile : moins de cinq pour-cent d'inclinaison sur un
+facteur $1{,}8$. Le coefficient de Gini de la production ne bouge que de
+$\DeltaGiniProd \pm \DeltaGiniProdIC$.
+
+\fait{} \textbf{La queue extrême capte moins que le corps.} Au
+99,9\textsuperscript{e} centile, le revenu total ne monte que de $1{,}47$ et
+la valeur nette de $1{,}17$, contre $1{,}78$ et $1{,}49$ dans le corps. C'est
+le contraire de ce qu'une intuition « les gros captent tout » aurait prédit,
+et c'est le résultat le plus net de ce lot.
+
+\fait{} \textbf{Le bas du canal d'intérêt s'effondre.} Le premier décile du
+revenu d'intérêt passe de $0{,}295$ à $0{,}033$ joule par pas --- un facteur
+dix vers le bas --- pendant que la médiane double, de $24{,}2$ à $42{,}1$.
+
+\subsection{Producteurs ou rentiers}
+
+Pour situer ces déplacements, il faut les niveaux. Dans le bras de contrôle,
+\textbf{la moitié du revenu passe par le canal d'intérêt} --- exactement
+$0{,}533$ --- et $45~\%$ des entités reçoivent plus d'intérêt qu'elles ne
+produisent.
+
+\fait{} \textbf{L'inégalité de ce modèle est presque entièrement dans le
+canal d'intérêt.} Le coefficient de Gini vaut $0{,}513$ sur les intérêts
+reçus, contre $0{,}052$ sur la production et $0{,}057$ sur le capital --- un
+facteur dix. Le décile supérieur de capital ne détient que $11{,}4~\%$ du
+capital, mais capte $18{,}5~\%$ des intérêts.
+
+\fait{} La part du revenu venant de l'intérêt se déplace de
+$\DeltaPartInteretRevenu \pm \DeltaPartInteretRevenuIC$ sous le levier de
+productivité. Le déplacement est significatif mais minuscule :
+\textbf{aucun des deux canaux ne capte au détriment de l'autre}, les deux
+montent ensemble, avec un très léger avantage à la production.
+
+\inference{} La signature distributionnelle du rebond est donc : une
+population plus petite et plus jeune --- l'âge moyen baisse de
+$\DeltaAgeMoyen$ pas --- dont chaque membre produit $1{,}8$ fois plus sur un
+bilan $1{,}45$ fois plus gros, et dans laquelle la petite rente a disparu. Le
+surcroît ne va ni à la queue ni aux rentiers : il va au corps.
+
+\section{Ce qui gouverne la contraction de population}
+
+\subsection{Une chaîne, et ce que chaque maillon vaut}
+
+La lignée avait proposé d'expliquer la contraction par une chaîne : le
+coefficient de Gini du bassin de marché gouverne la rotation du crédit, la
+rotation gouverne la mortalité, la mortalité gouverne l'effectif. Les trois
+maillons n'ont pas le même statut, et c'est le point qu'il faut établir avant
+tout chiffre.
+
+\paragraph{Le maillon de la rotation est vérifié.} L'élasticité de la
+rotation vaut $\ElasticiteRotation \pm \ElasticiteRotationIC$ et celle du
+coefficient de Gini $\ElasticiteGini \pm \ElasticiteGiniIC$. Les deux sont
+lues dans des \emph{fichiers différents} --- la série pour le volume et le
+capital, la sonde de marché pour le Gini --- donc leur accord mesure quelque
+chose.
+
+\paragraph{Le maillon de l'effectif est une identité.} À l'état stationnaire,
+les morts par pas valent le taux de naissance : la mortalité par entité vaut
+donc l'inverse de l'effectif, et son élasticité est l'opposée de celle de
+l'effectif \emph{par construction}. Mesuré : $\ElasticiteMortalite$ contre
+$-(\ElasticitePop)$. Ce n'est pas une confirmation de la loi ; c'est un
+contrôle de stationnarité déguisé, et il passe.
+
+\paragraph{Le maillon du milieu est le seul à contenir un exposant.} C'est
+lui que ce programme mesure.
+
+\subsection{L'exposant n'est pas universel, et c'est la réponse}
+
+Les deux lignées précédentes avaient publié pour cet exposant des valeurs
+dont les intervalles ne se recouvrent pas : $1{,}337$ pour l'une,
+$1{,}260 \pm 0{,}009$ pour l'autre. La spécification de ce programme notait
+la contradiction sans pouvoir la trancher.
+
+\fait{} Mesuré ici bras par bras, en contraste apparié --- jamais en
+régression groupée, dont la lignée a documenté le piège --- l'exposant vaut :
+
+\begin{longtable}{@{}lr@{}}
+\toprule
+\textbf{bras} & \textbf{exposant} \\
+\midrule
+\endhead
+levier de productivité, portée globale &
+  $\ExposantAallAUnCinqZero \pm \ExposantAallAUnCinqZeroIC$ \\
+levier de productivité vers le bas, nouvelles &
+  $\ExposantAnewAZeroSeptCinq \pm \ExposantAnewAZeroSeptCinqIC$ \\
+levier de productivité, nouvelles &
+  $\ExposantAnewAUnCinqZero \pm \ExposantAnewAUnCinqZeroIC$ \\
+levier d'exposant de production, nouvelles &
+  $\ExposantAnewgZeroSixZero \pm \ExposantAnewgZeroSixZeroIC$ \\
+\bottomrule
+\end{longtable}
+
+\fait{} Les intervalles du premier et du dernier bras ne se recouvrent pas.
+\textbf{L'exposant dépend du levier}, de cinq pour-cent environ.
+
+\fait{} Et les deux valeurs publiées antérieurement tombent chacune sur un
+bras différent de cette même campagne : $1{,}337$ contre les
+$\ExposantAallAUnCinqZero$ du levier de productivité, et
+$1{,}260 \pm 0{,}009$ contre les
+$\ExposantAnewgZeroSixZero \pm \ExposantAnewgZeroSixZeroIC$ du levier
+d'exposant --- \emph{intervalles qui se recouvrent}.
+
+\inference{} Les deux estimations étaient donc justes, chacune pour son
+corpus. Le désaccord n'était pas une erreur de mesure mais une différence de
+mélange de leviers, et il ne pouvait pas se voir tant que l'exposant était
+supposé unique. Aucune des deux lignées n'avait de quoi le découvrir : il
+fallait plusieurs leviers mesurés séparément sur le même corpus.
+
+\subsection{Une réserve sur la façon dont la question était posée}
+
+\incertitude{} La spécification prévoyait de confronter l'élasticité du Gini
+à une bande $[\BandeBasse\,;\,\BandeHaute]$ construite à partir de
+l'élasticité de population publiée par la lignée précédente. La mesure vaut
+$\ElasticiteGini \pm \ElasticiteGiniIC$, soit
+$\DistanceBorneVOne$ demi-intervalle de la borne basse et
+$\DistanceBorneVTwo$ de la borne haute.
+
+Mais la bande et la mesure partagent une entrée : c'est la même élasticité de
+population qui construit l'une et que ce bras mesure. Confronter l'une à
+l'autre teste donc surtout que le bras reproduit la lignée --- ce qu'il fait.
+Le contenu propre est le tableau du paragraphe précédent, qui ne passe par
+aucune bande.
+
+\section{Avalanches, branchement, et une fragilité mal attribuée}
+
+\subsection{Deux estimateurs, et pourquoi il en faut deux}
+
+Le rapport de branchement se mesurait jusqu'ici par la part des faillites qui
+ne sont pas des racines. Cette lignée en ajoute un second, lu sur l'arbre
+causal des cascades : la descendance moyenne par mort. Les deux coïncident si
+et seulement si chaque mort non racine a exactement un parent.
+
+\fait{} Ils ne coïncident pas. Sur le bras de contrôle,
+$b_1 = \BUnControle \pm \BUnControleIC$ et $b_2 = \BDeuxControle$. L'écart
+mesure la \emph{sur-détermination} : la part de morts que plusieurs
+faillites amont avaient atteintes ensemble.
+
+\fait{} \textbf{Cet écart est remarquablement constant} --- de $0{,}0609$ à
+$0{,}0663$ sur les six bras --- alors que $b_1$ lui-même varie de $0{,}72$ à
+$0{,}80$. La sur-détermination est donc une propriété du mécanisme de
+cascade, et non du régime.
+
+\fait{} Les valeurs de $b_1$ reproduisent au millième celles de la lignée
+précédente pour les mêmes bras.
+
+\subsection{La fragilité du rebond est un effet d'échelle}
+
+\fait{} Monter la productivité abaisse le rapport de branchement de
+$\EffetABranchement$. Compenser \emph{en même temps} l'échelle de dotation à
+la naissance --- de sorte que la longueur caractéristique de naissance suive
+le changement d'échelle de la technologie --- ne laisse que
+$\EffetResiduelBranchement$, ce qui n'est pas significatif :
+\textbf{$\PartAnnuleeKzero$~\% de l'effet est annulé}.
+
+\inference{} C'est le même verdict que la lignée avait obtenu sur la
+\emph{contraction de population}, obtenu ici sur une grandeur entièrement
+différente et par une chaîne de mesure entièrement différente. « Un marché
+plus productif est un marché plus fragile » est donc un énoncé sur la
+dotation de naissance, pas sur la technologie : ce qui rend le système
+fragile n'est pas que la technologie s'améliore, c'est que la dotation reste
+une longueur fixe pendant que l'échelle du reste change.
+
+\subsection{Un écart inter-lignées qui reste entier}
+
+\fait{} L'exposant de la distribution des tailles d'avalanches vaut
+$\AlphaTailleControle$ au contrôle, contre environ $2{,}31$ pour la lignée
+M4B. L'écart est massif et ne peut pas venir de l'estimateur : celui employé
+ici rend le même nombre que celui de M4B, à zéro près, sur les mêmes tailles.
+
+\fait{} Un exposant inférieur à deux signifie que la moyenne de la loi non
+tronquée diverge : dans ce régime, c'est la troncature de taille finie qui
+fixe la taille moyenne des avalanches. Conformément à la consigne héritée,
+aucune analyse de coupure n'est faite ; seule la loi de puissance est
+ajustée.
+
+\section{La couverture de queue, et où vivent les queues lourdes}
+
+\subsection{Une surprise structurelle}
+
+\fait{} Le capital et la production \textbf{n'ont pas de queue lourde}. Les
+exposants ajustés valent $\CouvertureKAlpha$ et $\CouvertureProdAlpha$ : ce
+ne sont pas des lois de puissance, c'est une décroissance quasi bornée dont
+l'ajustement ne fait que suivre le bord de la distribution.
+
+\fait{} Les queues lourdes vivent dans le \textbf{revenu d'intérêt}
+($\CouvertureInteretAlpha$) et dans la \textbf{valeur nette}
+($\CouvertureNWAlpha$), c'est-à-dire dans les bilans. C'est le résultat que
+la lignée M4B avait établi par les coefficients de Gini, retrouvé ici par un
+chemin entièrement différent, et cette fois avec le canal identifié.
+
+\inference{} Ajuster des classes de lois sur le capital reviendrait donc à
+ajuster du bruit. Les familles candidates ne sont testées que sur le revenu
+d'intérêt et la valeur nette.
+
+\subsection{La couverture n'est plus l'obstacle}
+
+Le programme M4.2B avait conclu que l'existence de la queue de Pareto n'est
+pas décidable, et le blocage était la \emph{couverture} : le nombre de points
+au-delà du seuil, de médiane $113$.
+
+\fait{} Ici, la couverture vaut $\CouvertureInteretNTail$ points par
+instantané sur le revenu d'intérêt, soit plus du double. Une campagne
+dédiée, où le taux de naissance est porté de $30$ à $50$, la porte à $365$
+sur le revenu d'intérêt et $458$ sur la valeur nette --- la cible dérivée de
+$\CibleNTail$ y est atteinte.
+
+\fait{} \textbf{Et l'exposant ne bouge pas} quand le taux de naissance
+change : $3{,}898 \to 3{,}918$ sur le revenu d'intérêt,
+$2{,}761 \to 2{,}744$ sur la valeur nette. L'énoncé « ce paramètre n'est que
+de la taille finie », que la spécification empruntait à une autre lignée, est
+donc vérifié \emph{dans celle-ci}.
+
+\fait{} La couverture ne croît pas proportionnellement au taux de naissance :
+un facteur $1{,}67$ sur celui-ci ne donne qu'un facteur $1{,}48$ sur celle-là,
+soit un exposant de $0{,}76$. Le seuil optimal remonte quand l'échantillon
+grandit.
+
+\inference{} L'obstacle qui reste n'est donc plus le volume de données : il
+est que les familles candidates se recouvrent. Le rapport de conception le
+détaille --- une log-normale tronquée à gauche \emph{contient} la loi de
+puissance à la limite, et le test de vraisemblance qui les compare n'a
+structurellement pas de pouvoir sur ce couple.
+
+\section{Le taux comme variable de partage}
+
+\subsection{Ce que le paramètre veut dire}
+
+Pour un contrat de principal $q$, deux quantités par pas sont définies dans
+l'état du contrat : la perte de puissance extractrice de la donneuse, $L$, et
+le surplus coopératif de la paire, $\Delta$. Le service vaut
+\[
+r\,q = L + p\,\Delta, \qquad p \in [0,1].
+\]
+À $p = 0$ la donneuse fait une opération blanche et la receveuse garde tout
+le surplus ; à $p = 1$ c'est l'inverse. Le paramètre gouverne les contrats
+conclus \emph{après}, les anciens gardant le leur.
+
+\subsection{La lignée entière tournait à un partage équitable}
+
+\fait{} La règle employée jusqu'ici --- la moyenne géométrique des rendements
+marginaux --- n'avait jamais été présentée comme un partage. Elle en réalise
+pourtant un, et on peut le mesurer : $p = (r q - L)/\Delta$ vaut en moyenne
+$0{,}5210$.
+
+\inference{} Toute la lignée se lit donc comme le point $p \approx 0{,}52$
+d'un continuum, et ce partage est presque exactement équitable. Ce n'était ni
+voulu ni su.
+
+\incertitude{} La dispersion d'un contrat à l'autre est large --- de $0{,}13$
+à $0{,}71$ sur quatre paires isolées. La règle n'est donc pas un partage
+\emph{constant}, seulement un partage de moyenne proche de la moitié.
+
+\subsection{L'effet sur la population, et une non-linéarité}
+
+\fait{} Sur une graine pilote, le partage altruiste porte la population de
+$1140$ à $1917$, soit \textbf{$+68~\%$}, avec un capital total multiplié par
+$3{,}3$ et une production par $2{,}3$. Les morts par pas restent à $30$ dans
+les deux cas --- c'est le taux de naissance --- : ce que le partage déplace
+n'est pas le flux de morts mais la mortalité \emph{par entité}, et c'est elle
+qui fixe l'effectif.
+
+\fait{} \textbf{Le partage asservi, lui, est indiscernable du régime
+historique} : $1129$ contre $1140$. Or la règle historique partage à
+$p \approx 0{,}52$, au milieu de l'échelle.
+
+\inference{} La réponse au partage n'est donc pas monotone-linéaire : elle
+est presque plate au-dessus de la moitié et s'envole quand le partage devient
+altruiste.
+
+\section{Ce que ce programme n'établit pas}
+
+\incertitude{} Trois choses, et il vaut mieux les écrire que les laisser
+supposer.
+
+\begin{enumerate}
+\item \textbf{L'existence des queues de Pareto n'est pas prouvée}, et ne peut
+      pas l'être ici. Le rapport de conception donne la raison structurelle,
+      qui n'est pas un manque de données. Les exposants sont
+      \emph{caractérisés} sous hypothèse.
+\item \textbf{La sur-détermination des cascades n'est pas une suffisance.}
+      Que plusieurs faillites amont aient atteint une même victime ne dit pas
+      que chacune aurait suffi ; le vérifier demanderait de confronter chaque
+      principal à la valeur nette d'avant cascade.
+\item \textbf{Le canal de liquidité est muet} dans ce régime : aucune
+      faillite ne part d'un défaut de paiement, la contagion est purement de
+      bilan. Tout raisonnement sur la liquidité y est hors sujet.
+\end{enumerate}
+
+\appendix
+
+\section{Traçabilité des calculs}
+
+Le tableau ci-dessous est engendré par script depuis les répertoires de runs
+eux-mêmes, et non recopié. Le script \emph{refuse} de produire une annexe
+dont une famille de runs serait sans rôle déclaré : un run qui a tourné, qui
+occupe du disque, et dont personne ne sait à quelle question il répond, est un
+run qui n'aurait pas dû tourner.
+
+\input{traceability}
+
+Chaque run porte sur disque sa série complète, ses tables d'événements, son
+arbre causal de cascades, ses panneaux par entité et son checkpoint de fin.
+Le détail run par run --- graine, paramètres, statut, durée, présence de
+chaque table --- est dans \code{results/analysis/traceability.csv}.
+
+\end{document}

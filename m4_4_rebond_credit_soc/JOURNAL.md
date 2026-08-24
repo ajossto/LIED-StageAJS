@@ -724,3 +724,37 @@ soit 10 à 15 % de la population vivante, et la susceptibilité ⟨s²⟩/⟨s�
 30 à 43. Le levier A la fait BAISSER (40,7 → 34,1), le levier γ aussi
 (30,1) : les deux réduisent la taille caractéristique des cascades en même
 temps qu'ils réduisent b.
+
+### Lot C — la couverture portée à λ = 50, et la neutralité de λ MESURÉE
+
+Campagne dédiée : 12 amorçages à λ = 50 puis 24 bras (`control`, `all_A150`),
+24 runs en 1556 s. Sortie du pilote : `results/analysis_lam50/lotC0_*`.
+
+| grandeur | n_tail à λ=30 | n_tail à λ=50 | α̂ à λ=30 | α̂ à λ=50 |
+|---|---|---|---|---|
+| revenu d'intérêt | 247 | **365** | 3,898 | **3,918** |
+| valeur nette | 282 | **458** (cible atteinte) | 2,761 | **2,744** |
+| capital | 429 | 714 | 27,0 | 27,3 |
+| production | 408 | 659 | 52,8 | 52,5 |
+
+\fait{} **α̂ ne bouge pas quand λ passe de 30 à 50** : 3,898 → 3,918 sur le
+revenu d'intérêt, 2,761 → 2,744 sur la valeur nette. C'est la vérification
+directe, dans CETTE lignée, de l'énoncé que le plan §5 empruntait à M4B —
+« λ est de la pure taille finie, la physique ne change pas, seule la
+statistique s'améliore ». Il n'est plus hérité, il est mesuré.
+
+\fait{} **La cible `n_tail ≥ 400` est atteinte sur la valeur nette** (458) et
+manquée de peu sur le revenu d'intérêt (365).
+
+\fait{} **n_tail ne croît PAS proportionnellement à λ** : ×1,67 sur λ ne
+donne que ×1,48 sur n_tail, soit un exposant de 0,76. Le seuil optimal
+remonte quand l'échantillon grandit, et la queue retenue en absorbe une
+partie. Atteindre 400 sur le revenu d'intérêt demanderait donc λ ≈ 56, et non
+55 comme une extrapolation linéaire l'aurait dit. Le script porte cette
+correction, et le facteur 0,76 est écrit là où il sert.
+
+\inference{} Le lot C n'est donc pas bloqué par la couverture, contrairement
+à M4.2B : à λ = 50, l'erreur-type de Hill sur la valeur nette tombe à 0,082,
+et à 0,153 sur le revenu d'intérêt. L'obstacle qui reste est celui du §
+« deux limites structurelles » — les familles se recouvrent —, pas celui du
+volume de données.

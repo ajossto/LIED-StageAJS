@@ -132,7 +132,8 @@ def load_snapshots(path: Path, t_min: float, t_max: float):
                        if name != "t"}
 
 
-def pilot(path: Path, t_min: float, t_max: float, out: Path) -> int:
+def pilot(path: Path, t_min: float, t_max: float, out: Path,
+          lam: float = 30.0) -> int:
     """C0 — la couverture, mesurée sur une cellule."""
     rows = []
     for t, panel in load_snapshots(path, t_min, t_max):
@@ -187,11 +188,19 @@ def pilot(path: Path, t_min: float, t_max: float, out: Path) -> int:
     if key in payload["groups"]:
         current = payload["groups"][key]["n_tail_median"]
         factor = TARGET_N_TAIL / current if current > 0 else float("inf")
+        payload["lam"] = lam
+        payload["factor_to_target"] = factor
         print()
-        print(f"  revenu d'intérêt, tous : n_tail médian {current:.0f} → "
-              f"facteur {factor:.2f} sur l'effectif pour atteindre {TARGET_N_TAIL}")
-        print(f"  soit λ ≈ {30 * factor:.0f} au lieu de 30, "
-              f"pour un coût par run d'environ ×{factor:.1f}")
+        print(f"  revenu d'intérêt, tous : n_tail médian {current:.0f} à λ = {lam:g} → "
+              f"facteur {factor:.2f} sur n_tail pour atteindre {TARGET_N_TAIL}")
+        # \fait{} n_tail ne croît PAS proportionnellement à λ : de λ = 30 à
+        # λ = 50 (×1,67), il passe de 247 à 365 (×1,48), soit un exposant
+        # 0,76. Le seuil optimal remonte quand l'échantillon grandit, et la
+        # queue retenue en absorbe une partie. Extrapoler linéairement
+        # sous-estimerait donc le λ nécessaire.
+        exponent = 0.76
+        print(f"  soit λ ≈ {lam * factor ** (1 / exponent):.0f} au lieu de {lam:g}, "
+              f"en tenant compte de l'exposant 0,76 mesuré entre λ = 30 et λ = 50")
     return 0
 
 
@@ -327,13 +336,15 @@ def main(argv: list[str]) -> int:
     parser.add_argument("--t-min", type=float, default=3000)
     parser.add_argument("--t-max", type=float, default=4000)
     parser.add_argument("--draws", type=int, default=200)
+    parser.add_argument("--lam", type=float, default=30.0,
+                        help="λ du run piloté, pour extrapoler la couverture")
     parser.add_argument("--out", type=Path, default=ROOT / "results" / "analysis")
     args = parser.parse_args(argv[1:])
 
     if args.pilot:
         path = args.run or (ROOT / "results" / "campaign" / "arms" / "free"
                             / "control" / "seed0" / "panels.npz")
-        return pilot(path, args.t_min, args.t_max, args.out)
+        return pilot(path, args.t_min, args.t_max, args.out, args.lam)
     return full(args.dirs, args.t_min, args.t_max, args.out, args.draws)
 
 
