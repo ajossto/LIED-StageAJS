@@ -307,6 +307,69 @@ def main(argv: list[str]) -> int:
     else:
         missing.append("lotB_distribution.json")
 
+    # -- lot I : le mécanisme de l'effet de partage --------------------------
+    convexity = load_json("lotI_convexity.json")
+    if convexity:
+        weighting = convexity.get("ponderation", {}).get("marginal")
+        if weighting:
+            put("PartageParContrat", weighting["p_moyen"]["mean"], 4, "lotI")
+            put("PartagePondere", weighting["p_pondere"]["mean"], 4, "lotI")
+            put("PartagePondereIC", weighting["p_pondere"]["ci95"], 4, "lotI")
+            put("CovariancePartage", weighting["covariance_normalisee"]["mean"], 4, "lotI")
+        # Le témoin : chez les bras à partage fixe, les deux lectures doivent
+        # coïncider. On publie le PIRE écart, pas le meilleur.
+        fixed = [entry["covariance_normalisee"]["mean"]
+                 for arm, entry in convexity.get("ponderation", {}).items()
+                 if arm != "marginal" and entry]
+        if fixed:
+            put("TemoinPartageFixe", max(abs(value) for value in fixed), 6, "lotI")
+        verdict = convexity.get("verdict", {})
+        if verdict:
+            put("ClassesCapitalConvexes", verdict.get("n_classes_convexes"), 0, "lotI")
+            put("ClassesCapitalTotal", verdict.get("n_classes_capital"), 0, "lotI")
+        marginal = convexity.get("resume", {}).get("marginal")
+        if marginal:
+            put("EcartJensen", marginal["ecart_jensen"]["mean"], 4, "lotI")
+            put("EcartJensenIC", marginal["ecart_jensen"]["ci95"], 4, "lotI")
+            put("MortaliteObservee", marginal["mortalite_observee"]["mean"], 4, "lotI")
+            put("MortaliteAuFardeauMoyen",
+                marginal["mortalite_au_service_moyen"]["mean"], 4, "lotI")
+            ratio = (marginal["mortalite_observee"]["mean"]
+                     / marginal["mortalite_au_service_moyen"]["mean"])
+            put("RapportJensen", ratio, 2, "lotI")
+        for arm, macro in (("p=0", "PZero"), ("p=0.5", "PDemi"), ("p=1", "PUn")):
+            entry = convexity.get("resume", {}).get(arm)
+            if entry:
+                put(f"EcartJensen{macro}", entry["ecart_jensen"]["mean"], 4, "lotI")
+        closest = convexity.get("voisinage", {}).get("plus_proche")
+        if closest:
+            put("BrasLePlusProche", closest.replace("=", " = ").replace(".", ","), 0, "lotI")
+            near = convexity["voisinage"][closest]["distance_relative_moyenne"]
+            put("DistanceAuPlusProche", 100 * near, 1, "lotI")
+            half = convexity["voisinage"].get("p=0.5")
+            if half:
+                put("DistanceAuPartageEquitable",
+                    100 * half["distance_relative_moyenne"], 1, "lotI")
+    else:
+        missing.append("lotI_convexity.json")
+
+    # -- lot J : sur-détermination et suffisance ------------------------------
+    sufficiency = load_json("lotJ_sufficiency.json")
+    if sufficiency:
+        verdict = sufficiency["verdict"]
+        reference = sufficiency["resume"][verdict["bras_reference"]]
+        put("PlancherSuffisance", 100 * verdict["plancher"], 1, "lotJ")
+        put("PlancherSuffisanceIC", 100 * verdict["plancher_ic"], 1, "lotJ")
+        put("ToutesCausesSuffisantes", 100 * verdict["toutes_suffisantes"], 1, "lotJ")
+        put("IncidenceEffacement", 100 * verdict["incidence_effacement"], 2, "lotJ")
+        put("PartSurDeterminees", 100 * reference["part_sur_determinees"]["mean"], 1, "lotJ")
+        put("DegreMoyenCascade", reference["degre_moyen"]["mean"], 2, "lotJ")
+        put("ConcentrationChoc", reference["concentration_moyenne"]["mean"], 3, "lotJ")
+        put("CausesSuffisantesMoyen",
+            reference["nb_causes_suffisantes_moyen"]["mean"], 3, "lotJ")
+    else:
+        missing.append("lotJ_sufficiency.json")
+
     args.out.parent.mkdir(parents=True, exist_ok=True)
     lines = [
         "% Engendré par scripts/make_numbers.py — NE PAS ÉDITER À LA MAIN.",

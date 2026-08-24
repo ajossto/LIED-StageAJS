@@ -1,0 +1,215 @@
+[
+  {
+    "nom": "f01_ancrages",
+    "legende": "Reproduction de la lignée avant prolongement.",
+    "valeurs": {
+      "epsilon_prod_tot": 0.7472600944149558,
+      "dln_pop_dlnA": -0.704277508926003,
+      "dln_n_prod_dlnA": -0.6834203311611478
+    }
+  },
+  {
+    "nom": "f02_identite",
+    "legende": "L'identité de décomposition se referme.",
+    "valeurs": {
+      "residu": 0.0005268721666799037
+    }
+  },
+  {
+    "nom": "f03_quantiles",
+    "legende": "Rapport par quantile entre le bras de rebond et son contrôle.",
+    "valeurs": {
+      "prod_q0.1": 1.7478570893619174,
+      "prod_q0.99": 1.830700119281528,
+      "income_q0.999": 1.4744576854058697,
+      "nw_q0.999": 1.1693409042861758,
+      "int_in_q0.1": 0.11121461214703894
+    }
+  },
+  {
+    "nom": "f04_deciles",
+    "legende": "Concentration par décile de capital, contrôle contre bras de rebond.",
+    "valeurs": {}
+  },
+  {
+    "nom": "f05_position_nette",
+    "legende": "Répartition par position nette, contrôle contre bras de rebond.",
+    "valeurs": {}
+  },
+  {
+    "nom": "f06_mortalite_rotation",
+    "legende": "L'exposant liant mortalité et rotation dépend du levier employé.",
+    "valeurs": {
+      "a_all_A150": 1.333793716685041,
+      "a_new_A150": 1.3098035994802806,
+      "a_new_A075": 1.3249259754989537,
+      "a_new_g060": 1.2683914838055896
+    }
+  },
+  {
+    "nom": "f07_chaine",
+    "legende": "Chaîne causale du rebond, élasticité par maillon.",
+    "valeurs": {
+      "dln_rotation_dlnA": 0.5264596220396391,
+      "dln_mortality_dlnA": 0.7020719963394623,
+      "dln_pop_dlnA": -0.704277508926003,
+      "dln_K_eq_dlnA": 0.8616114531590809,
+      "epsilon_prod_tot": 0.7472600944149558
+    }
+  },
+  {
+    "nom": "f08_avalanches_ccdf",
+    "legende": "Survie des tailles d'avalanche par bras (source : avalanches.csv, non versionné).",
+    "valeurs": {
+      "pente_control": -1.8441137470354427,
+      "pente_all_A150": -1.9446779910025496,
+      "pente_new_g060": -1.9756637946550721
+    }
+  },
+  {
+    "nom": "f09_b1_b2",
+    "legende": "Les deux estimateurs du rapport de branchement.",
+    "valeurs": {}
+  },
+  {
+    "nom": "f10_k0",
+    "legende": "Compenser l'échelle de dotation annule l'effet de la productivité sur le branchement.",
+    "valeurs": {
+      "effet": -0.032173182235016196,
+      "residuel": -0.0006772065384588188,
+      "part_annulee": 97.89512105606461
+    }
+  },
+  {
+    "nom": "f11_couverture",
+    "legende": "Couverture de queue et exposant, sous deux taux de naissance.",
+    "valeurs": {
+      "n_tail_int_in": 247.0,
+      "alpha_int_in": 3.8983622495409804,
+      "alpha_nw": 2.7608714254787423,
+      "alpha_K": 26.990254400130915,
+      "alpha_prod": 52.82248692344199
+    }
+  },
+  {
+    "nom": "f12_alpha_bras",
+    "legende": "Les exposants de queue sous les leviers du rebond.",
+    "valeurs": {
+      "etendue_int_in": 4.844000110206606,
+      "etendue_nw": 3.222842343665016
+    }
+  },
+  {
+    "nom": "f13_vuong",
+    "legende": "Dégénérescence de la log-normale et absence de pouvoir du test de Vuong.",
+    "valeurs": {
+      "degenerees_int_in": 50,
+      "ajustements_int_in": 72,
+      "degenerees_nw": 46,
+      "ajustements_nw": 72
+    }
+  },
+  {
+    "nom": "f14_bargain_population",
+    "legende": "Effectif contre partage, et la position de la règle historique.",
+    "valeurs": {
+      "p_moyen": 0.5302868394673487,
+      "pop_historique": 1132.5111666666667,
+      "pop_attendue": 1414.1433375415554,
+      "rapport": 0.8008460928971334,
+      "rapport_p1": 0.994992506147624
+    }
+  },
+  {
+    "nom": "f15_bargain_gini",
+    "legende": "Invariance du Gini de la valeur nette sur toute l'échelle du partage.",
+    "valeurs": {
+      "etendue_gini_nw_signed": 0.2971174146129208,
+      "etendue_gini_K": 33.46432747807309,
+      "etendue_gini_int_in": 5.206603171480196
+    }
+  },
+  {
+    "nom": "f16_bargain_systeme",
+    "legende": "Effet du partage sur les grandeurs systémiques ; le losange est la règle historique.",
+    "valeurs": {
+      "historique_b1": 0.7862945033231828,
+      "historique_tension": 13.292184106983067,
+      "historique_rotation": 0.07208198790413874,
+      "historique_book_rate": 0.01973148354858357
+    }
+  },
+  {
+    "nom": "f17_rho_controle",
+    "legende": "L'intensité de marché déplace les exposants de queue et le branchement.",
+    "valeurs": {
+      "pente_alpha_int_in": 0.046411009269267875,
+      "pente_alpha_nw": 0.027203518610043394,
+      "pente_b1": 0.13446772743608404,
+      "pente_gini": -0.4945491416700403
+    }
+  },
+  {
+    "nom": "f18_rotation_rho",
+    "legende": "Rotation mesurée contre la relation héritée, sous un balayage de l'intensité.",
+    "valeurs": {
+      "mesure_rho3": 0.09993684549678178,
+      "predit_rho3": 0.15414188753581468
+    }
+  },
+  {
+    "nom": "f19_ablation",
+    "legende": "Ablation vers le régime M4B : ce qui explique l'écart de branchement.",
+    "valeurs": {
+      "part_expliquee": 87.79497280639985,
+      "b1_m4b_like": 0.3567185271873852,
+      "b1_controle": 0.7862945033231828
+    }
+  },
+  {
+    "nom": "f20_rampes",
+    "legende": "Montée et descente du partage : pas de dépendance au chemin à cette échelle.",
+    "valeurs": {}
+  },
+  {
+    "nom": "f21_hasard",
+    "legende": "Risque d'insolvabilité contre fardeau (source : panels.npz, non versionné).",
+    "valeurs": {
+      "rapport_jensen": 5.961643214569435,
+      "n_classes_convexes": 1
+    }
+  },
+  {
+    "nom": "f22_ponderation",
+    "legende": "Le partage lu par contrat et pondéré par la valeur : l'écart est une covariance.",
+    "valeurs": {
+      "p_moyen": 0.5302868394673488,
+      "p_pondere": 0.941243459416499,
+      "covariance": 0.41095661994915017
+    }
+  },
+  {
+    "nom": "f23_suffisance",
+    "legende": "Sur-détermination et suffisance des chocs de cascade (plancher).",
+    "valeurs": {
+      "plancher": 0.21877878244460602,
+      "toutes_suffisantes": 0.00507861140863787,
+      "incidence_effacement": 0.016866214234595066
+    }
+  },
+  {
+    "nom": "g01_cout",
+    "legende": "Coût mesuré de l'instrumentation ajoutée par M4.4.",
+    "valeurs": {
+      "gio_k10": 3.3534265570342536
+    }
+  },
+  {
+    "nom": "g02_parite",
+    "legende": "Parité bit à bit contre le moteur gelé.",
+    "valeurs": {
+      "ecart_max": 0.0,
+      "n_pas": 8000
+    }
+  }
+]
