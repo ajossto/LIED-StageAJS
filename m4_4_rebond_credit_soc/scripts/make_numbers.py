@@ -226,6 +226,7 @@ def main(argv: list[str]) -> int:
             for key, macro in (("pop", "Pop"), ("prod_tot", "Prod"), ("K_tot", "K"),
                                ("b1", "BUn"), ("b2", "BDeux"), ("gini_K", "GiniK"),
                                ("gini_int_in", "GiniInteret"), ("tension", "Tension"),
+                               ("gini_nw_signed", "GiniNW"),
                                ("book_rate", "TauxCarnet"),
                                ("mkt_p_implied", "PartageImplique")):
                 if key in summary[arm]:

@@ -825,3 +825,78 @@ queue.** Ils déplacent massivement les niveaux, les effectifs et les
 échelles ; ils laissent la FORME de la queue là où elle est. C'est une
 réponse directe, et négative, à la troisième question du mandat pour ces
 leviers-là — le lot E dira ce qu'il en est de ρ.
+
+### Lot T — le balayage complet, et une institution « équitable en moyenne » qui se comporte en institution d'asservissement
+
+72 cellules (référence `marginal` + cinq valeurs de p) × 12 graines, fenêtre
+résiduelle. Sorties : `bargain_runs.csv`, `bargain_summary.json`.
+
+| grandeur | `marginal` | p = 0 | p = 0,25 | p = 0,5 | p = 0,75 | p = 1 |
+|---|---|---|---|---|---|---|
+| population | 1132,5 | **1903,7** | 1642 | 1433,6 | 1273 | **1138,2** |
+| production | 31 570 | 73 970 | 58 310 | 46 730 | 38 360 | 31 870 |
+| capital | 877 k | 2 874 k | 2 070 k | 1 521 k | 1 154 k | 890 k |
+| mortalité par entité | 0,02647 | 0,01578 | 0,01828 | 0,02090 | 0,02356 | 0,02627 |
+| b₁ | 0,7863 | **0,8313** | 0,8296 | 0,8238 | 0,8110 | 0,7945 |
+| b₂ | 0,8483 | 0,8939 | 0,8911 | 0,8856 | 0,8724 | 0,8559 |
+| tension | 13,29 | **6,70** | 8,06 | 9,62 | 11,31 | 13,17 |
+| Gini du capital | 0,0568 | 0,0403 | 0,0444 | 0,0487 | 0,0528 | 0,0566 |
+| **Gini de la valeur nette** | **0,6118** | **0,6155** | **0,6149** | **0,6155** | **0,6154** | **0,6137** |
+| Gini du revenu d'intérêt | 0,5131 | 0,4880 | 0,4957 | 0,5034 | 0,5089 | 0,5141 |
+| taux effectif du carnet | 0,01973 | 0,01266 | 0,01436 | 0,01618 | 0,01807 | 0,02003 |
+| part du revenu venant de l'intérêt | 0,5332 | 0,5201 | 0,5251 | 0,5282 | 0,5319 | 0,5351 |
+| partage impliqué | **0,5303** | 0 | 0,25 | 0,50 | 0,75 | 1,00 |
+
+\fait{} **La réponse est monotone en p** sur toutes les grandeurs : la
+population décroît régulièrement de 1904 à 1138 quand le partage passe de
+l'altruisme à l'asservissement. Le contraste apparié donne
+**pop(p=0)/pop(`marginal`) = 1,6810 ± 0,0103**.
+
+\fait{} Le contrôle d'intégrité passe exactement : le partage impliqué mesuré
+vaut 0, 0,25, 0,50, 0,75 et 1,00 sur les cinq bras `bargain`.
+
+**LE RÉSULTAT DU LOT, et il n'était pas prévu.**
+
+\fait{} La règle historique `marginal` partage à **0,5303** en moyenne. Or sa
+population, 1132,5, est indiscernable de celle du bras d'ASSERVISSEMENT
+TOTAL : pop(p=1)/pop(`marginal`) = **1,0051 ± 0,0067**. À l'inverse, le bras
+qui partage effectivement à 0,5 donne 27 % de population en plus :
+pop(p=0,5)/pop(`marginal`) = **1,2659 ± 0,0065**.
+
+\inference{} L'hypothèse (i) du pilote — une réponse intrinsèquement convexe
+en p — est donc ÉCARTÉE : la réponse est monotone et régulière, et p = 0,5
+donne bien un état intermédiaire. C'est l'hypothèse (ii) qui tient : **c'est
+la DISPERSION du partage impliqué par `marginal`, contrat par contrat, qui
+gouverne**, et non sa moyenne.
+
+\inference{} Autrement dit : **une institution équitable en moyenne se
+comporte, à l'échelle du système, comme une institution d'asservissement
+quasi total.** Le dommage n'est pas linéaire dans le partage — les contrats
+à p élevé tuent plus vite que les contrats à p faible ne sauvent —, si bien
+que la moyenne du partage ne prédit pas le résultat. C'est la conséquence la
+plus économique de ce lot.
+
+\hyp{} Le mécanisme précis reste à établir : il faudrait montrer que la
+mortalité d'une débitrice est convexe dans le service qu'elle porte, et que
+la dispersion des p implique une masse suffisante de contrats à p proche
+de 1. Les données pour le faire existent (`record_rate_split` sur le bras
+`marginal`), c'est un calcul de plus, pas une campagne.
+
+**Deux autres résultats.**
+
+\fait{} **Le partage altruiste rend le système PLUS contagieux, pas moins** :
+b₁ passe de 0,7863 à 0,8313, soit +5,73 % ± 0,20 %. Le carnet y est bien plus
+grand — 1904 entités contre 1133 —, donc les chemins de cascade sont plus
+nombreux. Un service plus léger n'achète pas la stabilité : il achète de la
+population, et la population achète de la contagion.
+
+\fait{} **Le coefficient de Gini de la valeur nette est INVARIANT** sur tout
+le balayage : 0,6118 à 0,6155, soit 0,6 % d'étendue, pendant que la
+population varie de 68 % et le capital d'un facteur 3,3. Le Gini du capital,
+lui, bouge de 40 % (0,0403 à 0,0568), et celui du revenu d'intérêt de 5 %.
+
+\inference{} C'est le pendant, pour le partage, de l'invariance des exposants
+de queue trouvée au lot C sous les leviers du rebond. Deux familles de
+leviers entièrement différentes laissent la même chose intacte : **la forme
+de la distribution de valeur nette**. Le modèle a une structure d'inégalité
+que ni la technologie ni l'institution de taux ne déplacent.
