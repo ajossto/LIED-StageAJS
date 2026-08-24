@@ -72,6 +72,9 @@ COHERENCE = {
     ("f23_suffisance", "toutes_suffisantes"): ("ToutesCausesSuffisantes", 1, 100),
     ("f23_suffisance", "incidence_effacement"): ("IncidenceEffacement", 2, 100),
     ("f11_couverture", "n_tail_int_in"): ("CouvertureInteretNTail", 0),
+    ("f21_hasard", "rapport_jensen"): ("RapportJensen", 2),
+    ("f21_hasard", "n_classes_convexes"): ("ClassesCapitalConvexes", 0),
+    ("f14_bargain_population", "rapport_p1"): ("RapportPopMarginalPUn", 4),
 }
 
 

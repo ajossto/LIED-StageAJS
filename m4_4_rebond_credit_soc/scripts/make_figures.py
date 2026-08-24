@@ -701,7 +701,17 @@ def f14() -> None:
                   ha="right", fontsize=8, color="#444444")
     axes.axhline(means[-1], color=colour("p=1"), linestyle=":", linewidth=1.1,
                  label="niveau de $p = 1$")
-    axes.annotate(f"rapport à $p = 1$ : {h_mean / means[-1]:.4f}".replace(".", ","),
+    # Orientation IDENTIQUE à celle du corps du rapport (`p = 1` rapporté à
+    # la règle historique) : afficher l'inverse serait vrai et illisible.
+    #
+    # Et la valeur vient du contraste APPARIÉ par graine, pas du rapport des
+    # deux moyennes de bras. Les deux diffèrent au cinquième chiffre, ce qui
+    # suffirait à faire dire deux choses à une même grandeur — c'est le test
+    # de cohérence qui l'a relevé.
+    contrasts = (read_json("bargain_summary.json") or {}).get("contrasts_vs_marginal", {})
+    paired = contrasts.get("p=1", {}).get("pop")
+    ratio_p1 = paired["mean"] if paired else means[-1] / h_mean
+    axes.annotate(f"$p = 1$ rapporté à la règle : {fr(ratio_p1, 4)}",
                   (1.0, means[-1]), textcoords="offset points", xytext=(-6, 10),
                   ha="right", fontsize=8, color=colour("p=1"))
     axes.set_xlabel("partage $p$ — 0 : altruisme, 1 : asservissement")
@@ -712,7 +722,7 @@ def f14() -> None:
     save(figure_, "f14_bargain_population",
          "Effectif contre partage, et la position de la règle historique.",
          {"p_moyen": h_p, "pop_historique": h_mean, "pop_attendue": expected,
-          "rapport": h_mean / expected, "rapport_p1": h_mean / means[-1]})
+          "rapport": h_mean / expected, "rapport_p1": ratio_p1})
 
 
 @figure("f15_bargain_gini")
@@ -988,7 +998,13 @@ def f21() -> None:
     error = np.array(curve["se"])
     left.errorbar(centre, rate, yerr=error, marker="o", markersize=3.5, capsize=2,
                   linewidth=1.2, color=colour("marginal"))
-    jensen = curve["jensen"]
+    # Les traits et le rapport annoté viennent du RÉSUMÉ par run — la
+    # convention appariée de la lignée, et la source de `\RapportJensen` —
+    # et non de la courbe mise en commun, qui ne sert qu'à donner la forme.
+    summary = data.get("resume", {}).get("marginal", {})
+    jensen = {key: summary[key]["mean"] for key in
+              ("mortalite_observee", "mortalite_au_service_moyen", "service_moyen")
+              } if summary else curve["jensen"]
     left.axvline(jensen["service_moyen"], color="#666666", linestyle="--", linewidth=0.8)
     left.axhline(jensen["mortalite_observee"], color=colour("control"),
                  linestyle=":", linewidth=1.0, label="mortalité observée $E[h(s)]$")

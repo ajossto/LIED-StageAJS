@@ -233,6 +233,15 @@ def main(argv: list[str]) -> int:
                     put(f"Taux{safe}{macro}", summary[arm][key]["mean"], 4, "bargain")
         if "convexity_test" in bargain:
             put("RapportPopDemi", bargain["convexity_test"]["ratio"], 3, "bargain")
+        # Les rapports appariés contre la règle historique. Le rapport à
+        # `p = 1` était écrit à la main dans le corps du rapport ; il ne l'est
+        # plus, et `tests/test_figures.py` le confronte à la figure.
+        contrasts = bargain.get("contrasts_vs_marginal", {})
+        for arm, macro in (("p=1", "PUn"), ("p=0", "PZero"), ("p=0.5", "PDemi")):
+            entry = contrasts.get(arm, {}).get("pop")
+            if entry:
+                put(f"RapportPopMarginal{macro}", entry["mean"], 4, "bargain")
+                put(f"RapportPopMarginal{macro}IC", entry["ci95"], 4, "bargain")
     else:
         missing.append("bargain_summary.json")
 

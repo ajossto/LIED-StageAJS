@@ -117,7 +117,7 @@
       "pop_historique": 1132.5111666666667,
       "pop_attendue": 1414.1433375415554,
       "rapport": 0.8008460928971334,
-      "rapport_p1": 0.994992506147624
+      "rapport_p1": 1.0050881908545015
     }
   },
   {
@@ -175,7 +175,7 @@
     "nom": "f21_hasard",
     "legende": "Risque d'insolvabilité contre fardeau (source : panels.npz, non versionné).",
     "valeurs": {
-      "rapport_jensen": 5.961643214569435,
+      "rapport_jensen": 5.953764464502434,
       "n_classes_convexes": 1
     }
   },
