@@ -173,6 +173,50 @@ def main(argv: list[str]) -> int:
     else:
         missing.append("lotD_avalanches.json")
 
+    # -- lot C : classes de lois, trois échelles ------------------------------
+    laws = load_json("lotC_summary.json")
+    if laws:
+        summary = laws["summary"]
+        for key, macro in (("free/control|tous|int_in", "AlphaInteret"),
+                           ("free/control|tous|nw", "AlphaNW"),
+                           ("free/control|net:crediteur|nw", "AlphaNWCreditrices"),
+                           ("free/control|net:debiteur|nw", "AlphaNWDebitrices"),
+                           ("free/control|net:crediteur|int_in", "AlphaInteretCreditrices"),
+                           ("free/control|net:debiteur|int_in", "AlphaInteretDebitrices")):
+            if key in summary:
+                entry = summary[key]
+                put(macro, entry["alpha_mean"], 3, "lotC")
+                put(macro + "SdGraines", entry["alpha_sd_inter_seed"], 3, "lotC")
+                put(macro + "SdInstantanes", entry["alpha_sd_inter_snapshot_median"], 3, "lotC")
+                put(macro + "SdIntra", entry["alpha_sd_intra_snapshot_median"], 3, "lotC")
+        # Étendue des exposants sur tous les bras : le résultat d'invariance.
+        for quantity, macro in (("int_in", "Interet"), ("nw", "NW")):
+            values = [entry["alpha_mean"] for key, entry in summary.items()
+                      if key.endswith(f"|tous|{quantity}") and entry["n_seeds"] >= 2]
+            if values:
+                put(f"Etendue{macro}Min", min(values), 3, "lotC")
+                put(f"Etendue{macro}Max", max(values), 3, "lotC")
+                put(f"Etendue{macro}Pct",
+                    100 * (max(values) - min(values)) / min(values), 1, "lotC")
+    else:
+        missing.append("lotC_summary.json")
+
+    families = load_csv("lotC_families.csv")
+    if families:
+        for quantity, macro in (("int_in", "Interet"), ("nw", "NW")):
+            selected = [r for r in families if r["quantity"] == quantity]
+            if not selected:
+                continue
+            put(f"Vuong{macro}LN",
+                sum(float(r["vuong_pl_vs_ln"]) for r in selected) / len(selected), 2, "lotC")
+            put(f"Vuong{macro}Exp",
+                sum(float(r["vuong_pl_vs_exp"]) for r in selected) / len(selected), 2, "lotC")
+            put(f"Degenerees{macro}",
+                sum(r["lognormal_degenerate"] == "True" for r in selected), 0, "lotC")
+            put(f"Ajustements{macro}", len(selected), 0, "lotC")
+    else:
+        missing.append("lotC_families.csv")
+
     # -- lot T : le taux comme partage ---------------------------------------
     bargain = load_json("bargain_summary.json")
     if bargain:

@@ -758,3 +758,70 @@ correction, et le facteur 0,76 est écrit là où il sert.
 et à 0,153 sur le revenu d'intérêt. L'obstacle qui reste est celui du §
 « deux limites structurelles » — les familles se recouvrent —, pas celui du
 volume de données.
+
+### Lot C — les classes de lois, et l'invariance des exposants
+
+`scripts/laws.py` sur les six bras × 12 graines × 100 instantanés, quatre
+grandeurs, douze groupes. Sorties : `lotC_alpha.csv`, `lotC_families.csv`,
+`lotC_summary.json`.
+
+**Les trois échelles d'incertitude, jamais fusionnées** (bras de contrôle,
+toutes entités) :
+
+| grandeur | α̂ | σ inter-graines | σ inter-instantanés | σ intra-instantané | n_tail |
+|---|---|---|---|---|---|
+| revenu d'intérêt | **3,938** | 0,066 | 0,172 | **0,349** | 229 |
+| valeur nette | **2,767** | 0,031 | 0,087 | **0,169** | 282 |
+
+\fait{} L'écart-type INTRA-instantané vaut **5,3 fois** l'écart-type
+inter-graines sur le revenu d'intérêt et **5,5 fois** sur la valeur nette.
+M4.2B mesurait 3,7 ; l'ordre de grandeur est confirmé par une lignée et un
+moteur différents. Lire un α̂ d'instantané avec l'incertitude d'une moyenne de
+cellule le ferait paraître cinq fois plus précis qu'il n'est.
+
+**La dégénérescence de la log-normale, prédite sur données synthétiques, se
+produit sur les données réelles.**
+
+\fait{} Sur le revenu d'intérêt, **50 ajustements log-normaux sur 72
+dégénèrent** (σ ajusté > 10, moyenne 9,3) ; sur la valeur nette, 46 sur 72
+(moyenne 14,5). Le test de Vuong loi de puissance contre log-normale rend
+alors z = +0,59 et +0,42 — **sans pouvoir**, exactement comme le test
+synthétique l'annonçait.
+
+\fait{} Le couple loi de puissance contre exponentielle, lui, tranche :
+z = **+2,30** sur le revenu d'intérêt et **+3,47** sur la valeur nette, mais
+seulement +1,27 et +1,24 sur le capital et la production. La queue lourde est
+donc établie là où C0 la plaçait, et nulle part ailleurs.
+
+\inference{} La non-décidabilité de M4.2B est donc CONFIRMÉE et EXPLIQUÉE :
+elle ne tient pas au volume de données — la couverture est ici deux fois
+meilleure — mais au fait que la log-normale tronquée contient la loi de
+puissance à la limite. Aucune quantité de données ne séparera ces deux
+familles sur ce couple.
+
+**Où vit la queue lourde, groupe par groupe** (bras de contrôle) :
+
+| groupe | α̂ du revenu d'intérêt | α̂ de la valeur nette |
+|---|---|---|
+| créancières nettes | **3,685** | **2,779** |
+| débitrices nettes | 6,436 | **14,816** |
+| toutes | 3,938 | 2,767 |
+
+\fait{} **La queue lourde de la valeur nette vit ENTIÈREMENT chez les
+créancières nettes.** Chez les débitrices, α̂ = 14,8 : il n'y a pas de queue.
+C'est la lecture la plus fine que ce programme donne du résultat de M4B
+« l'inégalité est dans les bilans » — elle est dans un seul côté du bilan.
+
+**ET LE RÉSULTAT LE PLUS FORT DU LOT : les exposants ne bougent pas.**
+
+\fait{} Sur les six bras — contrôle, A×1,5 global, A×1,5 compensé en K0,
+A×1,5 sur les nouvelles, A×0,75 sur les nouvelles, γ 0,5→0,6 — l'exposant de
+la valeur nette va de **2,710 à 2,814** et celui du revenu d'intérêt de
+**3,907 à 4,100**. Soit 4 % et 5 % d'étendue, pendant que la population varie
+de 25 % et la production de 80 %.
+
+\inference{} **Les leviers du rebond ne contrôlent pas les exposants de
+queue.** Ils déplacent massivement les niveaux, les effectifs et les
+échelles ; ils laissent la FORME de la queue là où elle est. C'est une
+réponse directe, et négative, à la troisième question du mandat pour ces
+leviers-là — le lot E dira ce qu'il en est de ρ.

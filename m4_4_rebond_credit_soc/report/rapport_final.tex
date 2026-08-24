@@ -366,6 +366,74 @@ détaille --- une log-normale tronquée à gauche \emph{contient} la loi de
 puissance à la limite, et le test de vraisemblance qui les compare n'a
 structurellement pas de pouvoir sur ce couple.
 
+\subsection{La dégénérescence prédite se produit sur les données réelles}
+
+\fait{} Sur le revenu d'intérêt, \DegenereesInteret{} ajustements
+log-normaux sur \AjustementsInteret{} dégénèrent --- le paramètre de forme
+ajusté dépasse dix --- et le test de vraisemblance rend
+$z = \VuongInteretLN$. Sur la valeur nette, \DegenereesNW{} sur
+\AjustementsNW{}, et $z = \VuongNWLN$. Aucun des deux n'est concluant, et
+c'est exactement ce que le test sur données synthétiques annonçait.
+
+\fait{} Le couple loi de puissance contre exponentielle, lui, tranche :
+$z = \VuongInteretExp$ sur le revenu d'intérêt et $z = \VuongNWExp$ sur la
+valeur nette, contre des valeurs non significatives sur le capital et la
+production.
+
+\inference{} La non-décidabilité établie par la lignée M4.2B est donc
+confirmée \emph{et expliquée}. Elle ne tient pas au volume de données --- la
+couverture est ici deux fois meilleure --- mais à une propriété des familles
+elles-mêmes. Aucune quantité de données ne les séparera.
+
+\subsection{Les trois échelles d'incertitude, et pourquoi il ne faut pas les
+confondre}
+
+\begin{longtable}{@{}lrrrr@{}}
+\toprule
+\textbf{grandeur} & \textbf{$\hat\alpha$} & \textbf{inter-graines} &
+\textbf{inter-instantanés} & \textbf{intra-instantané} \\
+\midrule
+\endhead
+revenu d'intérêt & $\AlphaInteret$ & $\AlphaInteretSdGraines$ &
+  $\AlphaInteretSdInstantanes$ & $\AlphaInteretSdIntra$ \\
+valeur nette & $\AlphaNW$ & $\AlphaNWSdGraines$ & $\AlphaNWSdInstantanes$ &
+  $\AlphaNWSdIntra$ \\
+\bottomrule
+\end{longtable}
+
+\fait{} L'incertitude d'un instantané vaut plus de cinq fois celle de la
+moyenne de cellule. Confondre les deux ferait paraître un exposant cinq fois
+plus précis qu'il n'est --- c'est la mise en garde de M4.2B, retrouvée sur un
+autre moteur et une autre lignée.
+
+\subsection{La queue lourde ne vit que d'un côté du bilan}
+
+\fait{} Chez les entités \emph{créancières nettes}, l'exposant de la valeur
+nette vaut $\AlphaNWCreditrices$. Chez les \emph{débitrices nettes}, il vaut
+$\AlphaNWDebitrices$ : il n'y a pas de queue.
+
+\inference{} C'est la lecture la plus fine que ce programme donne du
+résultat « l'inégalité est dans les bilans » : elle est dans un seul côté du
+bilan.
+
+\subsection{Et les exposants ne bougent pas}
+
+\fait{} Sur les six bras --- contrôle, productivité globale, productivité
+compensée en dotation de naissance, deux leviers sur les nouvelles entités,
+et un levier d'exposant de production --- l'exposant de la valeur nette va de
+$\EtendueNWMin$ à $\EtendueNWMax$, soit $\EtendueNWPct~\%$ d'étendue, et
+celui du revenu d'intérêt de $\EtendueInteretMin$ à $\EtendueInteretMax$,
+soit $\EtendueInteretPct~\%$.
+
+Pendant ce temps, la population varie de vingt-cinq pour-cent et la
+production de quatre-vingts.
+
+\inference{} \textbf{Les leviers du rebond ne contrôlent pas les exposants
+de queue.} Ils déplacent massivement les niveaux, les effectifs et les
+échelles ; ils laissent la \emph{forme} de la queue là où elle est. C'est
+une réponse directe, et négative, à la troisième question du mandat pour ces
+leviers-là.
+
 \section{Le taux comme variable de partage}
 
 \subsection{Ce que le paramètre veut dire}
