@@ -1222,6 +1222,73 @@ def g02() -> None:
          {"ecart_max": peak, "n_pas": len(rows)})
 
 
+@figure("g03_partage_analytique")
+def g03() -> None:
+    """Le partage implicite de la règle historique, tiré des FONCTIONS du moteur.
+
+    Cette figure ne lit aucun run. Elle évalue directement `pair_rate`,
+    `extraction_loss` et `joint_production_gain` sur une grille de paires, en
+    régime homogène où la règle de principal coïncide avec l'arithmétique,
+    et calcule `p = (r q - L)/Δ` comme le moteur le fait.
+
+    Elle montre que la covariance entre la part prise et le surplus en jeu,
+    mesurée sur la campagne au lot I, n'est pas un accident de cette
+    campagne-là : c'est une propriété de la règle de taux elle-même. Sur les
+    petites paires elle partage à la moitié ; sur les grandes elle dépasse
+    l'asservissement total.
+    """
+    from m4_4.model import (  # noqa: PLC0415 — dépendance de cette seule figure
+        extraction_loss, joint_production_gain, pair_rate)
+
+    coefficient, exponent = 1.0, 0.5
+    receivers = [50.0, 200.0, 400.0, 700.0]
+    figure_, (left, right) = plt.subplots(1, 2, figsize=(6.9, 3.0))
+    figure_.subplots_adjust(wspace=0.30)
+    exported: list[list] = []
+    for index, receiver in enumerate(receivers):
+        donors = np.linspace(receiver * 1.02, 2400.0, 160)
+        shares, surpluses, principals = [], [], []
+        for donor in donors:
+            principal = (donor - receiver) / 2.0
+            surplus = joint_production_gain(coefficient, exponent, coefficient,
+                                            exponent, receiver, donor, principal)
+            if surplus <= 0:
+                continue
+            loss = extraction_loss(coefficient, exponent, donor, principal)
+            rate = pair_rate(donor, receiver, exponent, coefficient,
+                             exponent, coefficient)
+            shares.append((rate * principal - loss) / surplus)
+            surpluses.append(surplus)
+            principals.append(principal)
+            exported.append([receiver, float(donor), float(principal),
+                             float(surplus), shares[-1]])
+        shade = colour("", index)
+        left.plot(principals, shares, linewidth=1.4, color=shade,
+                  label=f"receveuse à $K$ = {receiver:.0f}")
+        right.plot(surpluses, shares, linewidth=1.4, color=shade)
+    for axes, name in ((left, "principal du contrat $q$"),
+                       (right, "surplus coopératif $\\Delta$")):
+        axes.axhline(1.0, color=colour("p=1"), linestyle=":", linewidth=1.1)
+        axes.axhline(0.5, color="#888888", linestyle="--", linewidth=0.9)
+        axes.set_xlabel(name)
+        french_axis(axes.yaxis, 2)
+    left.set_ylabel("partage implicite $p = (rq - L)/\\Delta$")
+    left.set_title("la règle partage d'autant plus\nque le contrat est gros", fontsize=9)
+    left.legend(fontsize=7)
+    right.set_xscale("log")
+    right.set_title("et le surplus croît avec le contrat :\nd'où la covariance", fontsize=9)
+    right.annotate("asservissement total", (0.03, 0.90), xycoords="axes fraction",
+                   fontsize=7.5, color=colour("p=1"))
+    right.annotate("partage équitable", (0.03, 0.06), xycoords="axes fraction",
+                   fontsize=7.5, color="#666666")
+    dump("g03_partage_analytique",
+         ["K_receveuse", "K_donneuse", "principal", "surplus", "partage"], exported)
+    save(figure_, "g03_partage_analytique",
+         "Le partage implicite de la règle historique, évalué sur les fonctions du moteur.",
+         {"p_min": min(row[4] for row in exported),
+          "p_max": max(row[4] for row in exported)})
+
+
 def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--only", type=str, default="")

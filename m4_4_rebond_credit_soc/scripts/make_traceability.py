@@ -30,7 +30,7 @@ CAMPAIGN = ROOT / "results" / "campaign"
 #: famille de campagne -> (lot, rôle scientifique). Toute famille présente sur
 #: le disque doit figurer ici, sans quoi le script échoue.
 ROLES = {
-    "burn": ("A/B", "amorçage partagé à t_0 = 2000, une trajectoire par graine ; "
+    "burn": ("A/B", "amorçage partagé à $t_0 = 2000$, une trajectoire par graine ; "
                     "aucun bras n'existe sans lui"),
     "arms": ("B, C, D", "bras du rebond : contrôle, leviers de productivité et "
                         "d'exposant, bras compensé en dotation de naissance"),

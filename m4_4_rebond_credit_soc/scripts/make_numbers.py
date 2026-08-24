@@ -363,6 +363,15 @@ def main(argv: list[str]) -> int:
         put("ToutesCausesSuffisantes", 100 * verdict["toutes_suffisantes"], 1, "lotJ")
         put("IncidenceEffacement", 100 * verdict["incidence_effacement"], 2, "lotJ")
         put("PartSurDeterminees", 100 * reference["part_sur_determinees"]["mean"], 1, "lotJ")
+        # La MÊME question sous l'autre convention d'attribution, pour que le
+        # rapport puisse mettre les deux comptes côte à côte au lieu de laisser
+        # croire à une contradiction (voir lot D).
+        avalanches = load_csv("lotD_avalanches.csv")
+        if avalanches:
+            strict = [float(r["multi_parent_share"]) for r in avalanches
+                      if r["arm"] == "free/control"]
+            if strict:
+                put("PartMultiParentStricte", 100 * sum(strict) / len(strict), 1, "lotD")
         put("DegreMoyenCascade", reference["degre_moyen"]["mean"], 2, "lotJ")
         put("ConcentrationChoc", reference["concentration_moyenne"]["mean"], 3, "lotJ")
         put("CausesSuffisantesMoyen",

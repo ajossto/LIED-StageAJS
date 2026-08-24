@@ -192,8 +192,8 @@
     "nom": "f23_suffisance",
     "legende": "Sur-détermination et suffisance des chocs de cascade (plancher).",
     "valeurs": {
-      "plancher": 0.21877878244460602,
-      "toutes_suffisantes": 0.00507861140863787,
+      "plancher": 0.5104814935804205,
+      "toutes_suffisantes": 0.03788531646149545,
       "incidence_effacement": 0.016866214234595066
     }
   },
@@ -210,6 +210,14 @@
     "valeurs": {
       "ecart_max": 0.0,
       "n_pas": 8000
+    }
+  },
+  {
+    "nom": "g03_partage_analytique",
+    "legende": "Le partage implicite de la règle historique, évalué sur les fonctions du moteur.",
+    "valeurs": {
+      "p_min": 0.5024753688564668,
+      "p_max": 1.260888423181736
     }
   }
 ]

@@ -30,6 +30,13 @@
 \newcommand{\inference}{\textbf{[Inférence]}}
 \newcommand{\hyp}{\textbf{[Hypothèse]}}
 \newcommand{\incertitude}{\textbf{[Incertitude]}}
+\graphicspath{{figures/}}
+%% Figures engendrées par scripts/make_figures.py (préfixe g).
+\newcommand{\figurine}[3]{%
+  \begin{figure}[H]\centering
+  \includegraphics[width=#2\linewidth]{#1}
+  \caption{#3}\label{fig:#1}
+  \end{figure}}
 \input{numbers}
 
 \title{M4.4Rebond --- rapport de conception\\
@@ -191,6 +198,8 @@ valeur nette totale --- l'égalité est exigée bit à bit, parce que la série 
 le panneau lisent les mêmes entités dans le même ordre. Sur les flux, elle
 est exigée à l'ordre de sommation près, une fois les mortes du pas ajoutées.
 
+\figurine{g02_parite}{1.0}{\textbf{La première porte.} À droite, l'écart maximal entre les vingt-six colonnes du moteur de M4.4 et celles du moteur gelé, à chaque pas : il est identiquement nul. À gauche, la trajectoire sur laquelle il l'est --- sans ce panneau, « écart nul » décrirait aussi bien un run qui ne fait rien.}
+
 \section{Le checkpoint, et une promesse qu'il fallait corriger}
 
 La spécification demandait qu'un run repris depuis son checkpoint produise
@@ -243,6 +252,8 @@ lignée, pour que l'échantillonnage ne replie pas la dynamique ; et
 l'empreinte de la campagne doit rester de l'ordre du gibioctet.
 $k = \PasEchantillonnage$ est le plus grand pas rond satisfaisant
 $k \le \tau/5$, soit \EmpreinteCampagneGio~Gio pour la campagne.
+
+\figurine{g01_cout}{1.0}{\textbf{Le prix de l'instrumentation, mesuré avant d'être choisi.} À gauche, l'empreinte de la campagne selon le pas d'échantillonnage, avec la valeur retenue entourée. À droite, le surcoût en temps des deux enregistrements : le temps n'est pas la contrainte, le disque l'est.}
 
 \section{Les deux estimateurs du rapport de branchement}
 
@@ -341,7 +352,8 @@ triviale.
 Disposer de l'échelle permet une mesure qui n'était pas possible avant : le
 partage \emph{impliqué} par la règle qu'on remplace, $p = (r q - L)/\Delta$.
 
-\fait{} Sur 150 pas de moteur, il vaut en moyenne $0{,}5210$. \inference{} La
+\fait{} Sur 150 pas de moteur, il vaut en moyenne $0{,}5210$ par contrat.
+\inference{} La
 moyenne géométrique des rendements marginaux réalisait donc, en moyenne, un
 partage presque exactement \emph{équitable} du surplus coopératif. Ce n'était
 ni voulu ni su. Toute la lignée se lit désormais comme le point
@@ -350,6 +362,32 @@ $p \approx 0{,}52$ d'un continuum.
 \incertitude{} La dispersion paire à paire est large --- de $0{,}13$ à
 $0{,}71$ sur quatre paires isolées. La règle historique n'est donc pas un
 partage \emph{constant}, seulement un partage de moyenne proche de la moitié.
+
+\paragraph{Et cette dispersion n'est pas neutre.} Les trois fonctions du
+moteur suffisent à le montrer sans lancer un seul run : on évalue
+\code{pair\_rate}, \code{extraction\_loss} et \code{joint\_production\_gain}
+sur une grille de paires, en régime homogène, et l'on calcule $p$ exactement
+comme le moteur le fait.
+
+\fait{} Le partage impliqué vaut exactement un demi à la limite des contrats
+infinitésimaux, et croît \emph{monotonement} avec le principal. Pour les
+paires les plus inégales il dépasse l'unité : la règle historique y prend
+\emph{plus} que la totalité du surplus coopératif, c'est-à-dire davantage
+qu'un asservissement complet.
+
+\inference{} La corrélation entre la part prise et la taille de ce sur quoi
+elle est prise est donc une \textbf{propriété de la règle}, et non un
+accident de telle ou telle campagne. C'est elle que le rapport de résultats
+mesure sur douze graines, et c'est elle qui explique qu'une règle de moyenne
+$0{,}53$ par contrat se comporte comme un partage de $0{,}94$ par joule.
+
+\figurine{g03_partage_analytique}{1.0}{\textbf{Le partage implicite de la
+règle historique, tiré des fonctions du moteur.} Aucun run n'est lu : les
+courbes sont l'évaluation directe de $p = (rq - L)/\Delta$ sur une grille de
+paires. À gauche, contre le principal du contrat ; à droite, contre le
+surplus coopératif. La règle part du partage équitable et va au-delà de
+l'asservissement total, et elle le fait \emph{en fonction de la taille du
+contrat} --- d'où la covariance mesurée sur la campagne.}
 
 \section{Les estimateurs de queue, et deux limites structurelles}
 

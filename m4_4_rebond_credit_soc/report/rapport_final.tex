@@ -24,6 +24,9 @@
 \DeclareUnicodeCharacter{0394}{\ensuremath{\Delta}}
 \DeclareUnicodeCharacter{03B5}{\ensuremath{\varepsilon}}
 \DeclareUnicodeCharacter{2080}{\ensuremath{_0}}
+%% Espace fine insécable : séparateur de milliers produit par
+%% scripts/make_numbers.py (fonction `french`).
+\DeclareUnicodeCharacter{202F}{\,}
 
 \hypersetup{colorlinks=true,linkcolor=blue!45!black,urlcolor=blue!45!black}
 \setlist{nosep}
@@ -32,6 +35,15 @@
 \newcommand{\inference}{\textbf{[Inférence]}}
 \newcommand{\hyp}{\textbf{[Hypothèse]}}
 \newcommand{\incertitude}{\textbf{[Incertitude]}}
+\graphicspath{{figures/}}
+%% Toutes les figures sont ENGENDRÉES par scripts/make_figures.py depuis
+%% results/analysis/. Aucune n'est dessinée à la main, et les valeurs
+%% qu'elles annotent sont confrontées à numbers.tex par tests/test_figures.py.
+\newcommand{\figurine}[3]{%
+  \begin{figure}[H]\centering
+  \includegraphics[width=#2\linewidth]{#1}
+  \caption{#3}\label{fig:#1}
+  \end{figure}}
 \input{numbers}
 
 \title{M4.4Rebond --- rapport de résultats\\
@@ -72,10 +84,18 @@ $\EffetABranchement$ ; compenser simultanément l'échelle de dotation à la
 naissance ne laisse que $\EffetResiduelBranchement$, soit
 $\PartAnnuleeKzero$~\% de l'effet annulé.
 
-\textbf{Enfin, le taux d'intérêt cesse d'être une formule.} Il devient un
-partage entre deux bornes économiques, et l'on découvre que la règle
-employée par toute la lignée réalisait, sans que ce soit dit, un partage
-presque exactement équitable du surplus de coopération.
+\textbf{Le taux d'intérêt cesse d'être une formule.} Il devient un partage
+entre deux bornes économiques, et l'on découvre que la règle employée par
+toute la lignée réalisait, sans que ce soit dit, un partage presque
+exactement équitable du surplus --- \emph{par contrat}.
+
+\textbf{Mais elle ne l'est pas par joule, et c'est le mot de la fin.} Pondéré
+par le surplus en jeu, ce même partage vaut $\PartagePondere$ et non
+$\PartageParContrat$ : l'écart est exactement
+$\operatorname{Cov}(p,\Delta)/\mathbb{E}[\Delta]$. La règle asservit sur les
+gros contrats et se montre altruiste sur les petits. Une institution peut
+donc être équitable en moyenne sur les contrats et asservissante sur la
+valeur, et c'est la seconde lecture que le système subit.
 \end{abstract}
 
 \tableofcontents
@@ -120,6 +140,10 @@ capital équivalent --- se referme à $\ResiduIdentite$. Elle reste une
 \emph{identité} : elle ne confirme rien, elle sépare ce qui relève de
 l'effectif de ce qui relève de l'échelle par entité.
 
+\figurine{f01_ancrages}{0.86}{\textbf{La lignée est reproduite avant d'être prolongée.} Les trois élasticités mesurées ici sur douze graines appariées, avec leur intervalle de Student, et les valeurs publiées par la lignée précédente (traits verticaux). Aucune n'en est distinguable.}
+
+\figurine{f02_identite}{0.86}{\textbf{La décomposition est une identité, graine par graine.} À gauche de chaque paire, les deux termes empilés --- effectif producteur, négatif, et échelle par entité, positive ; à droite, l'élasticité mesurée. La somme des termes reproduit $\varepsilon$ à $\ResiduIdentite$ près. Une identité ne confirme rien : elle sépare.}
+
 \section{Où va le surcroît de production}
 
 \subsection{Dans le corps, presque proportionnellement}
@@ -141,6 +165,8 @@ capital         & $1{,}386$ & $1{,}451$ & $1{,}489$ & $1{,}460$ \\
 revenu d'intérêt & $\mathbf{0{,}105}$ & $1{,}743$ & $1{,}722$ & $1{,}444$ \\
 \bottomrule
 \end{longtable}
+
+\figurine{f03_quantiles}{1.0}{\textbf{Où va le surcroît de production.} Rapport entre le bras de rebond et son contrôle apparié, quantile par quantile. À gauche : la production monte d'un bloc --- moins de cinq pour-cent d'inclinaison du premier décile au 99\textsuperscript{e} centile --- mais le 99,9\textsuperscript{e} centile du revenu et de la valeur nette monte \emph{moins}. Le sommet est comprimé, pas amplifié. À droite, en échelle logarithmique : le premier décile du revenu d'intérêt tombe d'un facteur dix pendant que sa médiane double.}
 
 \fait{} La production monte de $1{,}748$ au premier décile à $1{,}831$ au
 99\textsuperscript{e} centile : moins de cinq pour-cent d'inclinaison sur un
@@ -170,6 +196,8 @@ reçus, contre $0{,}052$ sur la production et $0{,}057$ sur le capital --- un
 facteur dix. Le décile supérieur de capital ne détient que $11{,}4~\%$ du
 capital, mais capte $18{,}5~\%$ des intérêts.
 
+\figurine{f04_deciles}{1.0}{\textbf{La concentration par décile de capital ne bouge presque pas.} Parts de la production et du revenu d'intérêt détenues par chaque décile, contrôle et bras de rebond superposés. Les deux courbes se suivent : le rebond ne redistribue pas entre déciles, il déplace le niveau. Noter l'asymétrie entre les deux panneaux --- la production est presque uniforme, l'intérêt ne l'est pas.}
+
 \fait{} La part du revenu venant de l'intérêt se déplace de
 $\DeltaPartInteretRevenu \pm \DeltaPartInteretRevenuIC$ sous le levier de
 productivité. Le déplacement est significatif mais minuscule :
@@ -181,6 +209,8 @@ population plus petite et plus jeune --- l'âge moyen baisse de
 $\DeltaAgeMoyen$ pas --- dont chaque membre produit $1{,}8$ fois plus sur un
 bilan $1{,}45$ fois plus gros, et dans laquelle la petite rente a disparu. Le
 surcroît ne va ni à la queue ni aux rentiers : il va au corps.
+
+\figurine{f05_position_nette}{0.95}{\textbf{Producteurs ou rentiers.} Répartition de l'effectif, de la production et du revenu net selon la position nette, contrôle en teinte pleine et bras de rebond en teinte claire. Aucun des deux canaux ne capte au détriment de l'autre.}
 
 \section{Ce qui gouverne la contraction de population}
 
@@ -208,6 +238,8 @@ contrôle de stationnarité déguisé, et il passe.
 
 \paragraph{Le maillon du milieu est le seul à contenir un exposant.} C'est
 lui que ce programme mesure.
+
+\figurine{f07_chaine}{0.86}{\textbf{La chaîne du rebond, maillon par maillon.} Élasticité de chaque grandeur par rapport à la productivité, avec son intervalle apparié. Le maillon de l'effectif est une identité de stationnarité ; celui de la rotation est vérifié sur deux fichiers indépendants ; seul celui du milieu contient un exposant à mesurer.}
 
 \subsection{L'exposant n'est pas universel, et c'est la réponse}
 
@@ -251,6 +283,8 @@ mélange de leviers, et il ne pouvait pas se voir tant que l'exposant était
 supposé unique. Aucune des deux lignées n'avait de quoi le découvrir : il
 fallait plusieurs leviers mesurés séparément sur le même corpus.
 
+\figurine{f06_mortalite_rotation}{1.0}{\textbf{L'exposant n'est pas universel.} À gauche, chaque point est une graine ; les droites en tirets sont la loi $\text{mortalité} \propto \text{rotation}^{a}$ passant par le contrôle, avec l'exposant du bras. À droite, les quatre exposants et leurs intervalles de Student : ceux du levier de productivité et du levier d'exposant \emph{ne se recouvrent pas}, et chacune des deux valeurs publiées antérieurement tombe sur un bras différent. Le désaccord entre les deux lignées était une différence de mélange de leviers.}
+
 \subsection{Une réserve sur la façon dont la question était posée}
 
 \incertitude{} La spécification prévoyait de confronter l'élasticité du Gini
@@ -288,6 +322,10 @@ cascade, et non du régime.
 \fait{} Les valeurs de $b_1$ reproduisent au millième celles de la lignée
 précédente pour les mêmes bras.
 
+\figurine{f09_b1_b2}{0.68}{\textbf{Les deux estimateurs du rapport de branchement.} Chaque point est une cellule de campagne. L'écart au-dessus de la diagonale est la sur-détermination : il est présent partout, et presque constant, alors que $b_1$ varie d'un tiers d'une famille de bras à l'autre.}
+
+\figurine{f08_avalanches_ccdf}{0.78}{\textbf{Distribution des tailles d'avalanche.} Fonction de survie empirique en échelle logarithmique, quatre graines par bras. La coupure de taille finie est visible au-delà de la centaine de faillites ; conformément à la consigne héritée, aucune analyse de coupure n'est faite.}
+
 \subsection{La fragilité du rebond est un effet d'échelle}
 
 \fait{} Monter la productivité abaisse le rapport de branchement de
@@ -304,6 +342,8 @@ plus productif est un marché plus fragile » est donc un énoncé sur la
 dotation de naissance, pas sur la technologie : ce qui rend le système
 fragile n'est pas que la technologie s'améliore, c'est que la dotation reste
 une longueur fixe pendant que l'échelle du reste change.
+
+\figurine{f10_k0}{0.68}{\textbf{La fragilité du rebond est un effet d'échelle.} Rapport de branchement sous les trois bras. Monter la productivité l'abaisse de $\EffetABranchement$ ; compenser simultanément l'échelle de dotation à la naissance ramène presque exactement au contrôle. Les barres d'erreur sont les intervalles appariés à onze degrés de liberté.}
 
 \subsection{Un écart inter-lignées qui reste entier}
 
@@ -366,7 +406,11 @@ détaille --- une log-normale tronquée à gauche \emph{contient} la loi de
 puissance à la limite, et le test de vraisemblance qui les compare n'a
 structurellement pas de pouvoir sur ce couple.
 
+\figurine{f11_couverture}{1.0}{\textbf{La couverture n'est plus l'obstacle.} À gauche, le nombre de points au-delà du seuil optimal, sous les deux taux de naissance, avec la cible dérivée de l'erreur visée et la valeur qui bloquait M4.2B. À droite, les exposants correspondants : ils ne bougent pas quand l'échantillon grandit de moitié. La bande claire marque le domaine des queues lourdes --- seuls le revenu d'intérêt et la valeur nette y sont.}
+
 \subsection{La dégénérescence prédite se produit sur les données réelles}
+
+\figurine{f13_vuong}{1.0}{\textbf{Pourquoi le test ne peut pas trancher.} Statistique de Vuong opposant la loi de puissance à la log-normale, contre le paramètre de forme de la log-normale ajustée, pour les deux grandeurs à queue lourde. Les croix sont les ajustements \emph{dégénérés} --- ceux où $\sigma$ part au-delà du seuil, c'est-à-dire où la log-normale se confond avec une loi de puissance. Ils sont la majorité, et c'est là que la statistique devient positive : le test ne discrimine pas, il constate la dégénérescence.}
 
 \fait{} Sur le revenu d'intérêt, \DegenereesInteret{} ajustements
 log-normaux sur \AjustementsInteret{} dégénèrent --- le paramètre de forme
@@ -418,6 +462,8 @@ bilan.
 
 \subsection{Et les exposants ne bougent pas}
 
+\figurine{f12_alpha_bras}{0.95}{\textbf{Les exposants de queue sont invariants sous les leviers du rebond.} Exposant du revenu d'intérêt et de la valeur nette pour les six bras, avec l'intervalle inter-graines. L'étendue est de quelques pour-cent pendant que la population varie de vingt-cinq et la production de quatre-vingts.}
+
 \fait{} Sur les six bras --- contrôle, productivité globale, productivité
 compensée en dotation de naissance, deux leviers sur les nouvelles entités,
 et un levier d'exposant de production --- l'exposant de la valeur nette va de
@@ -453,11 +499,12 @@ conclus \emph{après}, les anciens gardant le leur.
 \fait{} La règle employée jusqu'ici --- la moyenne géométrique des rendements
 marginaux --- n'avait jamais été présentée comme un partage. Elle en réalise
 pourtant un, et on peut le mesurer : $p = (r q - L)/\Delta$ vaut en moyenne
-$0{,}5210$.
+$\TauxmarginalPartageImplique$ par contrat.
 
-\inference{} Toute la lignée se lit donc comme le point $p \approx 0{,}52$
-d'un continuum, et ce partage est presque exactement équitable. Ce n'était ni
-voulu ni su.
+\inference{} Toute la lignée se lit donc comme un point d'un continuum, et
+ce partage est, \emph{par contrat}, presque exactement équitable. Ce n'était
+ni voulu ni su --- et la section~\ref{sec:lotI} montre que cette lecture par
+contrat est trompeuse.
 
 \incertitude{} La dispersion d'un contrat à l'autre est large --- de $0{,}13$
 à $0{,}71$ sur quatre paires isolées. La règle n'est donc pas un partage
@@ -474,7 +521,7 @@ qui fixe l'effectif.
 
 \fait{} \textbf{Le partage asservi, lui, est indiscernable du régime
 historique} : $1129$ contre $1140$. Or la règle historique partage à
-$p \approx 0{,}52$, au milieu de l'échelle.
+$\TauxmarginalPartageImplique$ par contrat, au milieu de l'échelle.
 
 \subsection{Le balayage complet, et ce qu'il corrige du pilote}
 
@@ -487,6 +534,8 @@ règle historique.
 
 L'hypothèse d'une réponse intrinsèquement convexe, que le pilote laissait
 ouverte, est donc écartée.
+
+\figurine{f14_bargain_population}{0.80}{\textbf{Une institution équitable en moyenne produit l'état d'un asservissement.} Effectif stationnaire contre partage, douze graines par point. Le losange est la règle historique, placée à l'abscisse de son partage moyen mesuré, $\TauxmarginalPartageImplique$. Elle devrait se lire sur la courbe ; elle se lit vingt pour-cent plus bas, sur la ligne pointillée du partage total. \emph{Cet écart vertical est le résultat}, et la section~\ref{sec:lotI} l'explique.}
 
 \subsection{Une institution équitable en moyenne se comporte comme une
 institution d'asservissement}
@@ -505,11 +554,12 @@ dans le partage : les contrats à part élevée tuent plus vite que les contrats
 moyenne} produit, à l'échelle du système, l'état d'une institution
 d'asservissement quasi total.
 
-\hyp{} Le mécanisme exact reste à établir. Il faudrait montrer que la
-mortalité d'une débitrice est convexe dans le service qu'elle porte, et que
-la dispersion des parts implique une masse suffisante de contrats proches de
-l'asservissement. Les données existent ; c'est un calcul de plus, pas une
-campagne.
+\inference{} Le mécanisme est établi à la section~\ref{sec:lotI}, et il
+n'est pas celui qu'on attendait ici. Ce n'est pas la dispersion des parts qui
+gouverne, c'est leur \textbf{corrélation avec la taille du contrat} : la
+règle historique asservit sur les gros contrats et se montre altruiste sur
+les petits, si bien que sa moyenne \emph{par contrat} ne dit rien de ce que
+le système subit \emph{par joule}.
 
 \subsection{Un service plus léger n'achète pas la stabilité}
 
@@ -521,6 +571,8 @@ $\TauxpZeroBDeux$.
 \inference{} Un service plus léger n'achète pas la stabilité : il achète de
 la population --- soixante-huit pour-cent de plus --- et cette population
 achète de la contagion, parce qu'elle multiplie les chemins de cascade.
+
+\figurine{f16_bargain_systeme}{1.0}{\textbf{Ce que le partage déplace dans le système.} Branchement, tension, rotation du crédit et taux moyen du carnet contre le partage. Le losange est la règle historique, à l'abscisse de son partage moyen : sur les quatre grandeurs, elle se situe du côté de l'asservissement et non au milieu.}
 
 \subsection{Et une seconde invariance}
 
@@ -537,6 +589,8 @@ des exposants de queue trouvée sous les leviers du rebond. Deux familles de
 leviers entièrement différentes laissent la même chose intacte : \textbf{la
 forme de la distribution de valeur nette}. Ce modèle a une structure
 d'inégalité que ni la technologie ni le partage du surplus ne déplacent.
+
+\figurine{f15_bargain_gini}{1.0}{\textbf{La seconde invariance.} À gauche, les trois coefficients de Gini rapportés à leur valeur en $p = 0$ : celui de la valeur nette est une droite horizontale sur toute l'échelle du partage. À droite, sur les mêmes abscisses, ce que le partage déplace pendant ce temps --- effectif, capital, production. La forme de la distribution de valeur nette résiste à ce qui divise la population par deux.}
 
 \section{Ce qui contrôle les exposants, et ce qui ne les contrôle pas}
 
@@ -586,6 +640,8 @@ levier de marché agit sur l'exposant de queue \emph{et} sur le branchement
 par le même canal --- est donc soutenue : les deux réponses sont présentes
 ensemble, du même signe, et aucune ne se produit sans l'autre.
 
+\figurine{f17_rho_controle}{1.0}{\textbf{L'intensité de marché contrôle ce qu'aucun autre levier ne déplace.} Les deux exposants de queue, le rapport de branchement et le coefficient de Gini du bassin contre l'intensité, en échelle logarithmique, avec la pente ajustée. Les quatre réponses sont monotones, de signe constant, et l'exposant survit à la restriction à la moitié haute du balayage.}
+
 \subsection{Là où les deux estimateurs de branchement cessent de raconter la
 même histoire}
 
@@ -626,6 +682,8 @@ marché n'épuise pas la dispersion à l'intérieur du pas --- la limite où la
 lignée précédente travaillait. Quand on augmente l'intensité, les rondes
 tardives trouvent un bassin déjà égalisé par les premières, et le Gini mesuré
 en début de pas surestime ce qu'elles rencontrent.
+
+\figurine{f18_rotation_rho}{0.72}{\textbf{Une relation héritée qui ne survit pas au changement de levier.} La rotation mesurée contre la prédiction $\rho \times \bar{G}$. Les deux coïncident au bas du balayage --- la limite où la lignée précédente travaillait --- et divergent franchement au-delà, parce que les rondes tardives trouvent un bassin déjà égalisé par les premières.}
 
 \section{L'écart de branchement avec la lignée M4B}
 
@@ -673,6 +731,8 @@ de la discipline additive de ce programme. Elle est donc \emph{déclarée non
 tentée}, et le reliquat de douze pour-cent lui est attribué sans que cela
 soit vérifié.
 
+\figurine{f19_ablation}{1.0}{\textbf{Ce qui explique l'écart avec la lignée M4B.} À gauche, chaque barre est une ablation d'un facteur à la fois par rapport au contrôle --- ce ne sont pas les étapes d'une séquence --- avec la part de l'écart qu'elle ferme. À droite, le balayage de la volatilité seule : c'est le facteur dominant, et sa réponse est monotone.}
+
 \section{Le partage qui évolue, et la mémoire du carnet}
 
 Deux rampes de cinq paliers parcourent la même échelle de partage, l'une en
@@ -703,6 +763,206 @@ population.
 \incertitude{} Une dépendance au chemin pourrait exister à des paliers plus
 courts que la demi-vie du carnet. Ce protocole ne peut pas le dire.
 
+\figurine{f20_rampes}{1.0}{\textbf{Montée et descente se superposent.} Effectif et nombre de contrats vivants à chaque palier, selon que le partage monte ou descend l'échelle. Les deux trajectoires coïncident à l'intervalle près : à cette échelle de palier, l'état ne garde pas mémoire du chemin par lequel il y est arrivé.}
+
+\section{Pourquoi une institution équitable en moyenne agit en asservissement}
+\label{sec:lotI}
+
+La section précédente laisse une dette : elle mesure que la règle historique
+partage à $\TauxmarginalPartageImplique$ et produit pourtant l'état d'un
+partage total, et elle en propose une explication --- la dispersion --- sans
+la vérifier. Le mécanisme se calcule sur les données déjà écrites. Le
+résultat est que \textbf{l'explication proposée était fausse}, et que la
+bonne est exacte.
+
+\subsection{La convexité, telle qu'elle était posée, ne tient pas}
+
+L'argument à vérifier était : si le risque de mourir est \emph{convexe} dans
+le fardeau porté, une même moyenne de fardeau tue davantage lorsqu'elle est
+plus dispersée. La mesure est directe --- les panneaux donnent le fardeau
+$s$ de chaque entité à chaque instantané, la table des décès dit qui meurt
+dans les dix pas suivants.
+
+\fait{} Le risque n'est pas convexe dans le fardeau : il est \textbf{non
+monotone}. Il croît d'abord fortement, culmine à un fardeau modeste, puis
+\emph{décroît} sur tout le reste de l'échelle. Une entité très endettée
+relativement à sa production est, à ce stade, une entité qui a pu emprunter
+--- donc une entité solide.
+
+\fait{} Et la courbure ajustée sur le corps ne survit pas au conditionnement
+par le capital : sur \ClassesCapitalTotal{} classes de capital,
+\ClassesCapitalConvexes{} seule reste convexe au seuil de deux erreurs-types.
+Le facteur dominant est le capital, pas le fardeau.
+
+\inference{} L'hypothèse posée par la section précédente est donc
+\textbf{réfutée}. Il fallait le conditionnement pour le voir : sans lui, la
+convexité apparente n'aurait dit que « les petites meurent ».
+
+\figurine{f21_hasard}{1.0}{\textbf{La convexité posée en hypothèse, et ce que
+la mesure en dit.} À gauche, le risque d'insolvabilité à dix pas contre le
+fardeau, par classes de quantile, avec l'erreur binomiale. La courbe n'est
+pas convexe, elle est non monotone. Les deux traits horizontaux sont la
+mortalité observée et celle qu'on lirait au fardeau moyen : l'écart entre
+elles est le facteur $\RapportJensen$. À droite, la courbure ajustée dans
+chaque classe de capital --- elle disparaît dès que le capital est tenu fixe.}
+
+\subsection{Ce qui survit de la forme de l'argument}
+
+\fait{} L'écart de Jensen, lui, est massif et se comporte comme l'argument le
+voulait. La mortalité par insolvabilité vaut $\MortaliteObservee$ ; évaluée
+au fardeau \emph{moyen}, la même courbe donne $\MortaliteAuFardeauMoyen$, un
+facteur $\RapportJensen$. Et cet écart croît de façon monotone avec le
+partage, de $\EcartJensenPZero$ sous l'altruisme à $\EcartJensenPUn$ sous
+l'asservissement.
+
+\incertitude{} La lecture contrefactuelle --- « si toutes portaient le
+fardeau moyen, la mortalité serait cinq fois moindre » --- n'est pas
+légitime : déplacer toutes les entités au fardeau moyen changerait le système
+entier, donc la courbe elle-même. L'énoncé qui tient est un énoncé sur la
+\emph{fonction mesurée}, pas sur une intervention.
+
+\subsection{Le mécanisme, et c'est une identité}
+
+Le partage implicite se lit de deux façons, et elles ne coïncident pas.
+
+\fait{} \textbf{Par contrat}, la règle historique partage à
+$\PartageParContrat$. \textbf{Pondérée par le surplus en jeu}, elle partage à
+$\PartagePondere \pm \PartagePondereIC$. L'écart entre les deux n'est pas une
+estimation, c'est une identité :
+\[
+p_{\text{pondéré}} - p_{\text{par contrat}}
+  = \frac{\operatorname{Cov}(p, \Delta)}{\mathbb{E}[\Delta]}
+  = \CovariancePartage.
+\]
+
+\fait{} Le témoin valide l'estimateur avant qu'on le lise. Sur les cinq bras
+à partage fixe, où les deux lectures doivent coïncider par construction,
+l'écart mesuré vaut $\TemoinPartageFixe$.
+
+\inference{} \textbf{La règle historique n'applique pas le même partage aux
+gros et aux petits contrats.} Elle asservit là où il y a beaucoup à prendre
+et se montre altruiste là où il y a peu. Le $\PartageParContrat$ n'était pas
+faux : il comptait des \emph{contrats} là où le système compte des
+\emph{joules}.
+
+\fait{} La conséquence se lit sans passer par aucun modèle de risque. Le
+profil complet des taux effectivement portés par les entités place la règle
+historique à $\DistanceAuPlusProche~\%$ du bras $\BrasLePlusProche$ et à
+$\DistanceAuPartageEquitable~\%$ du bras qui partage effectivement à un demi.
+Elle n'est pas au milieu de l'échelle : elle est à son extrémité.
+
+\figurine{f22_ponderation}{1.0}{\textbf{Compter des contrats ou compter des
+joules.} À gauche, le partage pondéré par le surplus en jeu contre le partage
+moyen par contrat. Les bras à partage fixe tombent sur la diagonale --- c'est
+le témoin, et il est nul au dix-millième. La règle historique en est à
+quarante et un points, et cet écart \emph{est} la covariance entre la part
+prise et la taille de ce sur quoi elle est prise. À droite, l'écart de Jensen
+par bras : il croît avec le partage, et celui de la règle historique dépasse
+celui de l'asservissement total.}
+
+\inference{} C'est la réponse à la question de la section précédente, et elle
+est plus forte que l'hypothèse qu'elle remplace : il n'y a pas besoin d'une
+non-linéarité du dommage. Une institution peut être \emph{équitable en
+moyenne sur les contrats} et \emph{asservissante sur la valeur}, et c'est la
+seconde lecture que le système subit.
+
+\subsection{Et la covariance n'est pas un accident de campagne}
+
+\fait{} Les trois fonctions du moteur suffisent à la produire, sans lire un
+seul run. Évaluées sur une grille de paires en régime homogène, elles donnent
+un partage impliqué qui vaut exactement un demi à la limite des contrats
+infinitésimaux et croît \emph{monotonement} avec le principal --- jusqu'à
+dépasser l'unité sur les paires les plus inégales, c'est-à-dire à prendre
+plus que la totalité du surplus.
+
+\inference{} La covariance mesurée est donc une \textbf{propriété de la règle
+de taux}, pas une particularité de cette campagne. La moyenne géométrique des
+rendements marginaux est équitable là où il n'y a rien à partager et
+asservissante là où il y a beaucoup : c'est exactement la forme qui rend la
+moyenne par contrat non informative.
+
+\figurine{g03_partage_analytique}{1.0}{\textbf{La covariance, dérivée des
+fonctions du moteur.} Aucun run n'est lu : les courbes sont l'évaluation
+directe de $p = (rq - L)/\Delta$ sur une grille de paires, en régime
+homogène. À gauche contre le principal, à droite contre le surplus
+coopératif. La règle part du partage équitable et franchit l'asservissement
+total, en fonction de la taille du contrat.}
+
+\section{La sur-détermination des cascades n'est pas une suffisance}
+\label{sec:lotJ}
+
+La section~4 mesurait que plusieurs faillites amont atteignent souvent une
+même victime, et notait qu'on ne pouvait pas en conclure que chacune aurait
+suffi. La confrontation demandée se fait sur les arêtes déjà écrites.
+
+\subsection{L'encadrement, et pourquoi il est exact}
+
+Le prédicat de faillite est une valeur nette négative. Pour une victime de
+cascade, deux bornes se déduisent du moteur sans rien supposer :
+
+\begin{itemize}
+\item la valeur nette \emph{d'avant cascade} est positive, sinon la victime
+      aurait été mise dans la file initiale et serait une racine ;
+\item elle vaut la valeur nette de mort, plus les créances perdues au cours
+      de la cascade, moins les dettes effacées --- car la mort d'une
+      créancière retire aussi les prêts qu'elle avait consentis, ce qui
+      \emph{allège} ses débitrices.
+\end{itemize}
+
+Le second terme n'est pas tracé. Mais il est positif, donc la valeur nette
+d'avant est \emph{au plus} la somme des deux premiers, et l'on peut
+certifier qu'une arête aurait suffi dès que son principal dépasse ce
+majorant. Le compte obtenu est un \textbf{plancher}, jamais un plafond : un
+effacement ne peut que rendre la victime plus fragile.
+
+\fait{} Le témoin de ce raisonnement s'est retourné en mesure. Sur les
+victimes à \emph{une seule} arête, le plancher devrait valoir un exactement ;
+il vaut $0{,}981$. L'écart n'est pas un défaut du calcul, c'est l'effacement
+de dette pris sur le fait : $\IncidenceEffacement~\%$ des victimes meurent
+avec une valeur nette positive, parce qu'une de leurs créancières est morte
+dans le même pas, après que la file eut été constituée.
+
+\subsection{Le compte, et ce qu'il faut compter}
+
+\fait{} Deux conventions d'attribution donnent deux réponses, et il faut les
+distinguer. En attribution stricte génération à génération --- celle du
+second estimateur de branchement --- $\PartMultiParentStricte~\%$ des morts
+non racines ont plusieurs parents. En comptant toutes les créances perdues
+\emph{au pas de la mort}, quelle que soit la génération de leur source,
+$\PartSurDeterminees~\%$ des victimes en ont plusieurs. C'est le second
+compte qui vaut ici : une créance perdue ampute la victime, que sa source
+soit ou non de la génération précédente.
+
+\fait{} Sur ces victimes sur-déterminées, le plancher de suffisance vaut
+$\PlancherSuffisance \pm \PlancherSuffisanceIC~\%$ : \textbf{la majorité
+avait bien une cause qui, seule, aurait suffi}. Le choc est très concentré
+--- le plus gros créancier en porte $\ConcentrationChoc$ en moyenne.
+
+\fait{} Mais la forme forte est rare : $\ToutesCausesSuffisantes~\%$
+seulement des victimes sur-déterminées avaient \emph{toutes} leurs causes
+individuellement suffisantes, et le nombre moyen de causes suffisantes est de
+$\CausesSuffisantesMoyen$ par victime.
+
+\inference{} La réserve de la section~4 est donc levée dans les deux sens.
+\textbf{Sur-détermination et suffisance ne se confondent pas} : compter les
+parents surestime largement le nombre de causes qui auraient suffi. Mais
+l'attribution à parent unique n'est pas non plus arbitraire --- dans la
+majorité des cas il existe bien un créancier dominant dont la chute seule
+emportait la victime. Ce qui est faux, c'est de croire que \emph{chaque}
+parent était une cause suffisante.
+
+\incertitude{} Le plancher reste un plancher. Ce qui l'en sépare est
+l'effacement de dette, dont l'incidence mesurée est de
+$\IncidenceEffacement~\%$ : la vraie valeur est donc au-dessus de
+$\PlancherSuffisance~\%$, mais de peu.
+
+\figurine{f23_suffisance}{1.0}{\textbf{Plusieurs causes, rarement chacune
+suffisante.} À gauche, la répartition de la part du choc portée par le plus
+gros créancier, sur les victimes sur-déterminées : elle est très concentrée.
+À droite, par bras, la part des victimes recevant plusieurs chocs et, parmi
+elles, la part dont au moins une cause était certainement suffisante. La
+seconde barre est un plancher.}
+
 \section{Ce que ce programme n'établit pas}
 
 \incertitude{} Six choses, et il vaut mieux les écrire que les laisser
@@ -713,19 +973,22 @@ supposer.
       pas l'être ici. La raison est structurelle et non un manque de données :
       les deux familles candidates se recouvrent. Les exposants sont
       \emph{caractérisés} sous hypothèse.
-\item \textbf{Le mécanisme de l'effet de dispersion n'est pas établi.} Que la
-      dispersion du partage gouverne l'état plutôt que sa moyenne est mesuré ;
-      \emph{pourquoi} demanderait de montrer que la mortalité d'une débitrice
-      est convexe dans le service qu'elle porte. Les données existent, le
-      calcul reste à faire.
-\item \textbf{Un quart de l'écart avec la lignée M4B reste non attribué}, et
+\item \textbf{Le mécanisme de l'effet de partage est établi ; sa forme
+      close ne l'est pas.} La section~\ref{sec:lotI} montre d'où vient
+      l'effet, et l'évalue sur les fonctions du moteur en dehors de toute
+      campagne. Ce qui manque est une \emph{démonstration} que le partage
+      impliqué croît avec le principal pour toute paire admissible : ce qui
+      est établi ici est une évaluation sur une grille, pas une preuve.
+\item \textbf{Un huitième de l'écart avec la lignée M4B reste non attribué}, et
       il est \emph{imputé} à la seule différence de régime qu'on ne pouvait
       pas tester sans changer le moteur --- la taille du bassin
       d'appariement. Cette imputation n'est pas vérifiée.
-\item \textbf{La sur-détermination des cascades n'est pas une suffisance.}
-      Que plusieurs faillites amont aient atteint une même victime ne dit pas
-      que chacune aurait suffi ; le vérifier demanderait de confronter chaque
-      principal à la valeur nette d'avant cascade.
+\item \textbf{Le taux de suffisance n'est connu que par un plancher.} La
+      section~\ref{sec:lotJ} le confronte, mais ce que le majorant laisse
+      ouvert --- l'effacement de dette intra-cascade --- n'est pas tracé par
+      l'instrumentation. Son incidence est mesurée à
+      $\IncidenceEffacement~\%$, donc le plancher est serré ; il n'est pas
+      exact pour autant.
 \item \textbf{L'absence de dépendance au chemin n'est établie qu'à l'échelle
       des paliers employés.} Une dépendance pourrait exister à des paliers
       plus courts que la demi-vie du carnet ; ce protocole ne peut pas le

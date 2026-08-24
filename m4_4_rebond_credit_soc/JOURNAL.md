@@ -696,8 +696,10 @@ soit le levier.
 \fait{} **LE RÉSULTAT DU LOT : la fragilité que le rebond fait apparaître
 est un effet d'échelle de K0, à 93 % près.** Monter A abaisse b₁ de
 −0,0322 ; compenser `K0 → K0·A^{1/(1−γ)}` en même temps ne laisse que
-**−0,0021 ± 0,0025**, c'est-à-dire rien de significatif. **93,4 % de l'effet
-est annulé.**
+**−0,0007 ± 0,0029**, c'est-à-dire rien de significatif. **97,9 % de l'effet
+est annulé.** [Corrigé le 24 août : cette entrée portait −0,0021 ± 0,0025 et
+93,4 %, valeurs d'un état antérieur de l'analyse. Voir la reprise en fin de
+journal.]
 
 \inference{} C'est le même verdict que v1 avait obtenu sur la CONTRACTION DE
 POPULATION (compenser K0 annule la contraction, pop ×1,005), obtenu ici sur
@@ -1066,3 +1068,175 @@ lit.
 emporté une constante voisine ; restaurée depuis la source v2. Rappel utile :
 un remplacement par bornes textuelles emporte ce qui est entre les bornes,
 et pas seulement ce qu'on visait.
+
+---
+
+## Reprise du 24 août 2026 — deux hypothèses calculées, et les figures
+
+Demande : « il y a des hypothèses calculables sans nouvelle campagne, tu dois
+les effectuer » et, plus important, « il n'y a pas du tout assez de figures
+dans les rapports ». Les deux ont été faites. Aucun run nouveau : les 372 de
+la campagne suffisaient.
+
+### Une correction, d'abord
+
+\fait{} Le JOURNAL et le README portaient **93,4 %** pour la part d'effet
+annulée par la compensation de dotation, alors que la macro engendrée —
+donc le rapport — porte **97,9 %**. Vérification faite, l'appariement par
+graine et la différence de moyennes donnent la **même** valeur : effet
+$-0{,}0322 \pm 0{,}0028$, résiduel $-0{,}0007 \pm 0{,}0029$, soit 97,9 %. Le
+93,4 % venait d'un état antérieur de l'analyse et n'avait jamais été repris.
+Le code fait foi : les deux textes sont corrigés.
+
+\inference{} C'est précisément le défaut que `tests/test_figures.py`
+interdit désormais : toute valeur annotée sur une figure est confrontée à sa
+macro, et l'écart aurait été signalé au premier passage.
+
+### Lot I — le mécanisme de l'effet de partage
+
+Le rapport déclarait « à faire » : *montrer que la mortalité d'une débitrice
+est convexe dans le service qu'elle porte*. Fait, et **l'hypothèse est
+réfutée**.
+
+\fait{} Première difficulté, de mesure : `int_out` est ce qui est
+effectivement **versé**, et `_service_interest` fait payer au prorata quand
+le capital ne suffit pas. Sur le bras historique, 2,67 % des endettées
+versent exactement zéro à un pas donné. Prendre `int_out` pour fardeau met
+donc les plus étranglées dans la classe des fardeaux *légers* et retourne la
+question — la courbe obtenue ainsi a une bosse à fardeau nul qui n'a aucun
+sens économique. Le fardeau retenu est `debts/prod`, insensible à la capacité
+de payer.
+
+\fait{} Seconde décision : séparer les canaux de mort. Le mécanisme en cause
+est celui de la débitrice qui succombe à son propre fardeau, c'est-à-dire le
+canal `insolvency` ; être fauchée par la faillite d'une consœur est un autre
+canal. `deaths.csv` porte déjà la cause.
+
+\fait{} **Le risque n'est pas convexe dans le fardeau : il est non
+monotone.** Il croît, culmine à un fardeau modeste, puis décroît sur tout le
+reste. Une entité très endettée relativement à sa production est une entité
+qui a *pu* emprunter.
+
+\fait{} **Et la courbure ne survit pas au conditionnement par le capital** :
+1 classe de capital sur 5 reste convexe à deux erreurs-types. C'était le test
+qui décidait, et il tranche contre. Sans lui, la convexité apparente n'aurait
+dit que « les petites meurent ».
+
+\fait{} Ce qui survit : l'**écart de Jensen** est massif — mortalité
+observée 0,0381 contre 0,0064 lue au fardeau moyen, facteur 5,95 — et il
+croît monotonement avec le partage, de 0,0129 ($p = 0$) à 0,0302 ($p = 1$).
+
+\fait{} **LE RÉSULTAT, et c'est une identité.** `record_rate_split` écrit par
+pas $\Sigma L$, $\Sigma rq$ et $\Sigma \Delta$. Le partage se lit donc de
+deux façons : moyenne **par contrat** (`mkt_p_implied`) et moyenne
+**pondérée par la valeur** $(\Sigma rq - \Sigma L)/\Sigma \Delta$. Leur écart
+vaut exactement $\mathrm{Cov}(p, \Delta)/E[\Delta]$.
+
+    règle historique :  par contrat 0,5303   pondérée 0,9412   →  +0,4110
+    p = 0 / 0,25 / 0,5 / 0,75 / 1 :  écart nul au dix-millième (témoin)
+
+\inference{} **La règle historique n'applique pas le même partage aux gros et
+aux petits contrats.** Elle asservit là où il y a beaucoup à prendre. Le
+0,53 n'était pas faux : il comptait des *contrats* là où le système compte
+des *joules*. Les bras à partage fixe valident l'estimateur avant qu'on le
+lise sur le bras historique.
+
+\fait{} Confirmation indépendante, sans modèle de risque : le profil des taux
+effectivement portés place la règle historique à **1,4 %** du bras $p = 1$ et
+à **25,5 %** du bras qui partage effectivement à un demi.
+
+\fait{} **Et la covariance n'est pas un accident de campagne.** Évaluées
+directement — sans lire un seul run — sur une grille de paires en régime
+homogène, `pair_rate`, `extraction_loss` et `joint_production_gain` donnent
+un partage impliqué qui vaut exactement un demi à la limite des contrats
+infinitésimaux et croît monotonement avec le principal, **jusqu'à dépasser
+l'unité** sur les paires les plus inégales : la règle y prend plus que la
+totalité du surplus coopératif. C'est une propriété de la règle de taux.
+
+\incertitude{} Ce qui reste ouvert n'est plus le mécanisme mais sa forme
+close : une évaluation sur grille n'est pas une démonstration que le partage
+croît avec le principal pour *toute* paire admissible.
+
+### Lot J — la sur-détermination n'est pas une suffisance
+
+\fait{} L'encadrement se déduit du moteur, sans instrumentation nouvelle. Une
+victime de cascade avait une valeur nette positive avant la cascade (sinon
+elle serait racine), et sa valeur nette de mort vaut cette valeur moins les
+créances perdues plus les dettes effacées. Le dernier terme n'est pas tracé
+mais il est positif, donc `nw_avant ≤ nw_mort + Σ créances perdues` : une
+arête dont le principal dépasse ce majorant est **certainement** suffisante.
+Le compte est un plancher, jamais un plafond.
+
+\fait{} **Une erreur trouvée par le témoin, et corrigée.** Le premier calcul
+sommait les arêtes sur toute la fenêtre de mille pas au lieu du seul pas où
+la victime meurt : il attribuait à chaque victime des chocs vieux de
+centaines de pas, absorbés depuis. Le degré moyen sortait à 25 au lieu de
+1,43, et la part sur-déterminée à 72 % au lieu de 28 %. C'est la comparaison
+avec le `multi_parent_share` du lot D qui a mis la puce à l'oreille.
+
+\fait{} **Le témoin de degré un s'est retourné en mesure.** À une seule
+arête, le plancher devrait valoir 1 exactement ; il vaut 0,981. L'écart n'est
+pas un défaut du calcul : dans `_solve_cascade` la file est constituée
+d'abord, puis les entités abattues une à une, si bien que la mort d'une
+créancière peut faire remonter au-dessus de zéro la valeur nette d'une entité
+déjà condamnée. **1,69 % des victimes meurent avec une valeur nette
+positive** — c'est l'effacement de dette pris sur le fait, et c'est
+exactement ce qui sépare le plancher de la vraie valeur.
+
+\fait{} Résultats sur le bras de contrôle : **28,2 %** des victimes de
+cascade reçoivent plusieurs chocs au pas de leur mort ; parmi elles,
+**51,0 ± 0,6 %** avaient au moins une cause certainement suffisante à elle
+seule, mais **3,8 %** seulement les avaient *toutes* suffisantes. Le choc est
+très concentré : le plus gros créancier en porte 0,737 en moyenne.
+
+\fait{} **Deux conventions d'attribution, deux comptes.** En attribution
+stricte génération à génération — celle du second estimateur de branchement —
+7,3 % des morts non racines ont plusieurs parents ; en comptant toutes les
+créances perdues au pas de la mort, 28,2 %. Les deux sont justes ; il fallait
+le dire, sinon la lecture croit à une contradiction.
+
+\inference{} La réserve est levée dans les deux sens. Sur-détermination et
+suffisance ne se confondent pas — compter les parents surestime largement le
+nombre de causes qui auraient suffi —, mais l'attribution à parent unique
+n'est pas arbitraire non plus : dans la majorité des cas il existe un
+créancier dominant dont la chute seule emportait la victime.
+
+### Les figures
+
+\fait{} **26 figures**, engendrées par `scripts/make_figures.py` sur le socle
+`scripts/figures_base.py`, à partir de `results/analysis/` uniquement.
+Aucune n'est dessinée à la main, aucun nombre n'y est recopié.
+
+\fait{} Elles vont dans `report/figures/`, **versionné**, et non dans
+`results/` qui est ignoré par git : une figure incluse depuis `results/`
+ferait échouer la compilation sur un clone propre, ce qui contredit la règle
+d'autonomie du document. Les deux figures qui lisent une source non versionnée
+(`panels.npz`, `avalanches.csv`) déposent la série tracée dans
+`report/figures/data/`.
+
+\fait{} `tests/test_figures.py` tient trois garde-fous : aucune inclusion sans
+PDF, aucune figure orpheline, et **26 valeurs annotées confrontées aux macros
+de `numbers.tex`**. C'est le pendant, pour les figures, de la règle « aucun
+nombre recopié à la main ».
+
+**Défauts de rendu trouvés et corrigés** — tous du même genre, et utiles à
+retenir. `\%` échappé à la LaTeX est rendu **littéralement** par matplotlib
+hors `usetex`. Un `~` n'est pas une espace hors mathtext. Et dans une
+expression mathtext, la virgule décimale reçoit l'espace de **ponctuation** :
+`$0,411$` s'affiche « 0, 411 », même groupée en `{,}` — le nombre doit sortir
+du mode mathématique. D'où `fr()` dans le socle.
+
+\fait{} Une figure a dû être refaite pour une raison de fond et non de
+rendu : l'ablation vers M4B était tracée en **ligne brisée**, ce qui suggère
+une séquence alors que chaque bras est une ablation d'un facteur à la fois
+par rapport au contrôle. Des barres.
+
+\fait{} Deux entrées de `\DeclareUnicodeCharacter` manquaient (U+202F, espace
+fine des milliers) et un `t_0` hors mode mathématique traînait dans la table
+de traçabilité engendrée : corrigés à la source, pas dans le `.tex`.
+
+### État
+
+Rapport de résultats : **28 pages**, 24 figures. Rapport de conception :
+**9 pages**, 3 figures. Les deux compilent sans erreur et sans référence
+indéfinie. 262 macros engendrées.

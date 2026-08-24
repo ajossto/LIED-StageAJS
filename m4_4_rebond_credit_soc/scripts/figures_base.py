@@ -246,8 +246,25 @@ def save(figure, name: str, caption: str = "", values: dict | None = None) -> Pa
 
 
 def write_manifest() -> Path:
+    """Écrit le manifeste en FUSIONNANT avec l'existant.
+
+    Un `--only` ne produit qu'une figure ; écraser le manifeste avec cette
+    seule entrée le rendrait partiel, et `tests/test_figures.py` — qui s'en
+    sert pour confronter les figures aux macros — signalerait absentes des
+    figures parfaitement présentes. Les entrées régénérées remplacent les
+    anciennes, les autres sont conservées.
+    """
     path = FIGURES / "manifest.json"
-    path.write_text(json.dumps(_MANIFEST, indent=2, ensure_ascii=False), encoding="utf-8")
+    merged: dict[str, dict] = {}
+    if path.exists():
+        for entry in json.loads(path.read_text(encoding="utf-8")):
+            merged[entry["nom"]] = entry
+    for entry in _MANIFEST:
+        merged[entry["nom"]] = entry
+    # Les figures dont le PDF a disparu n'ont plus à figurer au manifeste.
+    ordered = [merged[name] for name in sorted(merged)
+               if (FIGURES / f"{name}.pdf").exists()]
+    path.write_text(json.dumps(ordered, indent=2, ensure_ascii=False), encoding="utf-8")
     return path
 
 

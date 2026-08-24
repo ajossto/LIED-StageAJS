@@ -76,6 +76,7 @@ def load_victims(run: Path, t_min: float, t_max: float) -> dict:
     """Pour chaque victime de cascade : ses chocs entrants et sa valeur nette
     de mort. Les racines sont exclues — elles ne sont victimes de personne."""
     deaths_nw: dict[int, float] = {}
+    deaths_t: dict[int, int] = {}
     cascade: set[int] = set()
     with open(run / "deaths.csv", newline="", encoding="utf-8") as handle:
         for row in csv.DictReader(handle):
@@ -84,6 +85,7 @@ def load_victims(run: Path, t_min: float, t_max: float) -> dict:
                 continue
             entity = int(row["id"])
             deaths_nw[entity] = float(row["nw"])
+            deaths_t[entity] = int(row["t"])
             if row["cause"] == "cascade":
                 cascade.add(entity)
 
@@ -91,6 +93,19 @@ def load_victims(run: Path, t_min: float, t_max: float) -> dict:
     window = (edges["t"] > t_min) & (edges["t"] <= t_max)
     victim = edges["victim"][window]
     principal = edges["principal"][window]
+    when = edges["t"][window]
+
+    # SEULES comptent les arêtes du pas où la victime meurt.
+    #
+    # Une entité perd des créances tout au long de sa vie sans en mourir : sur
+    # une fenêtre de mille pas, sommer toutes ses pertes reviendrait à lui
+    # attribuer des chocs vieux de plusieurs centaines de pas, absorbés depuis.
+    # La cascade est un point fixe DANS UN PAS ; la confrontation doit se faire
+    # à l'intérieur de ce pas et nulle part ailleurs.
+    death_time = np.array([deaths_t.get(int(entity), -1) for entity in victim],
+                          dtype=np.int64)
+    lethal = when == death_time
+    victim, principal = victim[lethal], principal[lethal]
 
     # Regroupement par victime sans dictionnaire Python : à ~1,4 million
     # d'arêtes par run, un `defaultdict(list)` coûterait plusieurs centaines

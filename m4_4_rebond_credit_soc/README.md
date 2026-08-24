@@ -46,12 +46,16 @@ m4_4_rebond_credit_soc/
 │   └── cascades.py      les DEUX estimateurs du rapport de branchement
 ├── driver/headless.py   pilote sans tête : burn / arm / replay / resume
 ├── web/                 IHM `/live3`, branchée dans simulation_lab (additive)
-├── tests/               18 fichiers d'assertions Python simples — pas de pytest
+├── tests/               19 fichiers d'assertions Python simples — pas de pytest
 ├── scripts/             run_tests.py (la suite entière, codes de sortie compris),
 │                        campaign.py, branching.py, cost_panels.py, cost_profile.py,
-│                        tension_figures.py, import_to_simulation_lab.py
+│                        tension_figures.py, import_to_simulation_lab.py,
+│                        convexity.py (lot I), sufficiency.py (lot J),
+│                        figures_base.py + make_figures.py (les 26 figures)
 ├── results/             non versionné (voir .gitignore)
 └── report/              rapports LaTeX (lot G)
+    ├── figures/         les 26 figures, VERSIONNÉES (results/ ne l'est pas)
+    └── figures/data/    séries tracées des figures à source non versionnée
 ```
 
 ## Utilisation
@@ -72,7 +76,20 @@ cd /home/anatole/jupyter
 
 # Mesurer le prix de l'instrumentation avant de fixer k (porte du lot A)
 /home/anatole/jupyter/.venv/bin/python3 m4_4_rebond_credit_soc/scripts/cost_panels.py
+
+# Refaire les nombres et les figures des rapports, puis compiler
+cd m4_4_rebond_credit_soc
+/home/anatole/jupyter/.venv/bin/python3 scripts/make_numbers.py
+/home/anatole/jupyter/.venv/bin/python3 scripts/make_figures.py
+cd report && pdflatex rapport_final.tex && pdflatex rapport_final.tex
 ```
+
+**Aucun nombre et aucune figure n'entrent à la main dans les rapports.** Les
+nombres sont des macros engendrées par `make_numbers.py`, les figures sont
+produites par `make_figures.py` depuis `results/analysis/`, et
+`tests/test_figures.py` confronte les valeurs annotées sur les figures aux
+macros correspondantes — c'est ce test qui a révélé qu'un chiffre de ce
+README était resté à une valeur périmée.
 
 ## Statut
 
@@ -86,6 +103,9 @@ cd /home/anatole/jupyter
 | **F** | pourquoi b dépasse la valeur σ = 0 de M4B | **terminé** — 88 % de l'écart expliqué par σ et δ |
 | **T** | **le taux comme variable de partage** (ajout du 24 août) | **terminé** — une institution équitable en moyenne agit comme un asservissement |
 | **G** | rapports, journal, traçabilité, import | **terminé** |
+| **I** | le mécanisme de l'effet de partage | **terminé** — la convexité posée est réfutée, remplacée par une identité de covariance |
+| **J** | sur-détermination contre suffisance des cascades | **terminé** — un plancher serré, et l'effacement de dette pris sur le fait |
+| **figures** | 26 figures engendrées, dans les deux rapports | **terminé** — cohérence figure/macro tenue par un test |
 
 ### Lot T — le taux comme variable de partage
 
@@ -120,7 +140,7 @@ lignée entière tournait, sans le savoir, à un partage presque exactement
    tombent chacune sur un bras — leur désaccord était une différence de
    mélange de leviers.
 3. **La fragilité du rebond est un effet d'échelle de la dotation de
-   naissance**, à 93,4 % : compenser K0 annule l'effet de A sur le
+   naissance**, à 97,9 % : compenser K0 annule l'effet de A sur le
    branchement.
 4. **Les exposants de queue sont invariants** sous les leviers du rebond
    (4 % d'étendue) mais **contrôlés par l'intensité de marché** ρ.
@@ -128,8 +148,31 @@ lignée entière tournait, sans le savoir, à un partage presque exactement
    σ (dominante) et la dépréciation δ ; l'institution de principal n'y est
    pour rien, et c'est démontrable.
 6. **Une institution équitable en moyenne agit comme un asservissement.** La
-   règle historique partage à 0,53 mais produit l'état de p = 1 ; c'est la
-   dispersion contrat par contrat qui gouverne, pas la moyenne.
+   règle historique partage à 0,53 **par contrat** mais produit l'état de
+   p = 1. Le lot I dit pourquoi, et ce n'est pas la dispersion : pondéré par
+   le surplus en jeu, ce même partage vaut **0,94**. L'écart entre les deux
+   lectures est exactement `Cov(p, Δ)/E[Δ] = +0,411`. La règle asservit sur
+   les gros contrats et se montre altruiste sur les petits.
+
+### Les deux hypothèses calculées après coup (24 août)
+
+Les deux points que le rapport déclarait « à faire » ont été calculés **sans
+nouvelle campagne**, sur les 372 runs existants.
+
+7. **La convexité de la mortalité dans le fardeau est RÉFUTÉE.** Le risque
+   d'insolvabilité n'est pas convexe, il est non monotone, et la courbure ne
+   survit pas au conditionnement par le capital (1 classe sur 5). Ce qui
+   survit est l'écart de Jensen — mortalité observée 0,0381 contre 0,0064 au
+   fardeau moyen — et il croît avec le partage. Et la covariance qui explique
+   tout se dérive des seules fonctions du moteur, sans lire un run : le
+   partage impliqué vaut un demi à la limite des contrats infinitésimaux et
+   **dépasse l'unité** sur les paires les plus inégales.
+8. **La sur-détermination n'est pas une suffisance.** 28,2 % des victimes de
+   cascade reçoivent plusieurs chocs au pas de leur mort ; **51,0 ± 0,6 %**
+   d'entre elles avaient au moins une cause certainement suffisante, mais
+   **3,8 %** seulement les avaient toutes. Le plancher est serré :
+   l'effacement de dette, seule chose qui l'en sépare, n'apparaît que dans
+   1,69 % des cas — et c'est le témoin de degré un qui l'a révélé.
 
 **Vérifications** : suite **18/18 verte** en 2194 s, parité longue comprise ;
 372 runs importés dans `simulation_lab` ; 29,9 heures de calcul, six familles
