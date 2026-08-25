@@ -1237,6 +1237,22 @@ de traçabilité engendrée : corrigés à la source, pas dans le `.tex`.
 
 ### État
 
-Rapport de résultats : **28 pages**, 24 figures. Rapport de conception :
-**9 pages**, 3 figures. Les deux compilent sans erreur et sans référence
-indéfinie. 262 macros engendrées.
+Rapport de résultats : **28 pages**, 24 inclusions de figure. Rapport de
+conception : **9 pages**, 3 inclusions. **26 figures distinctes** — celle de
+la dérivation analytique du partage sert dans les deux. Les deux rapports
+compilent sans erreur et sans référence indéfinie. 268 macros engendrées.
+
+\fait{} Trois dernières dérives, toutes trouvées par le test de cohérence et
+non à l'œil. `f21` annotait le rapport de Jensen depuis la courbe MISE EN
+COMMUN quand la macro le tire de la moyenne PAR RUN — deux estimateurs pour
+une grandeur, qui ne coïncidaient que par chance d'arrondi. `f14` affichait
+le rapport à `p = 1` dans l'orientation inverse du corps du rapport, et le
+calculait comme un rapport de moyennes de bras là où le texte cite le
+contraste apparié. Et trois nombres étaient encore écrits à la main dans le
+corps (1,005, 1,681, le rapport à un demi) : ils sont devenus des macros.
+**29 valeurs annotées sont désormais confrontées aux macros.**
+
+\fait{} **Suite complète : 19/19 verts en 2204 s**, parité longue comprise
+(8000 pas × 26 colonnes, écart maximal nul, 763 s). Le dix-neuvième est
+`test_figures.py`, et il est bien dans la porte : `scripts/run_tests.py`
+balaie `tests/test_*.py`, il n'y a pas de liste à tenir à jour.

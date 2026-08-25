@@ -105,7 +105,7 @@ README était resté à une valeur périmée.
 | **G** | rapports, journal, traçabilité, import | **terminé** |
 | **I** | le mécanisme de l'effet de partage | **terminé** — la convexité posée est réfutée, remplacée par une identité de covariance |
 | **J** | sur-détermination contre suffisance des cascades | **terminé** — un plancher serré, et l'effacement de dette pris sur le fait |
-| **figures** | 26 figures engendrées, dans les deux rapports | **terminé** — cohérence figure/macro tenue par un test |
+| **figures** | 26 figures engendrées (24 inclusions dans le rapport de résultats, 3 dans celui de conception) | **terminé** — 29 valeurs annotées confrontées aux macros par `tests/test_figures.py` |
 
 ### Lot T — le taux comme variable de partage
 

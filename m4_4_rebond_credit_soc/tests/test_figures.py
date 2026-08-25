@@ -102,9 +102,14 @@ def included() -> dict[str, list[str]]:
 
 
 def test_aucune_figure_manquante() -> None:
-    missing = [name for name in included() if not (FIGURES / f"{name}.pdf").exists()]
+    where = included()
+    missing = [name for name in where if not (FIGURES / f"{name}.pdf").exists()]
     assert not missing, f"figures incluses mais absentes de report/figures/ : {missing}"
-    print(f"  {len(included())} inclusions, toutes résolues")
+    # Une figure peut servir dans les DEUX rapports : le nombre d'inclusions
+    # dépasse alors le nombre de figures, et confondre les deux ferait dire
+    # au test un compte faux.
+    inclusions = sum(len(reports) for reports in where.values())
+    print(f"  {len(where)} figures distinctes, {inclusions} inclusions, toutes résolues")
 
 
 def test_aucune_figure_orpheline() -> None:
