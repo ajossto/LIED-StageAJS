@@ -1,0 +1,28 @@
+\begin{figure}[htbp]\centering
+\begin{tikzpicture}[>=Stealth,font=\small,
+ dead/.style={draw=red!65!black,fill=red!6,rounded corners,align=center,minimum width=23mm,minimum height=10mm},
+ safe/.style={draw=green!45!black,fill=green!5,rounded corners,align=center,minimum width=26mm}]
+\node[dead] (a) at (0,0) {$e_1$: root\\$NW=-1$};
+\node[dead] (b) at (4,1) {$e_2$\\$2\to-2$};
+\node[dead] (c) at (4,-1) {$e_3$\\$1\to-2$};
+\node[dead] (d) at (8,1) {$e_4$\\$1\to-2$};
+\node[safe] (e) at (8,-1.2) {$e_5$: survives\\$16\to10$};
+\draw[->,thick] (a)--node[above,sloped] {loss $4$} (b);
+\draw[->,thick] (a)--node[below,sloped] {loss $3$} (c);
+\draw[->,thick] (b)--node[above] {loss $3$} (d);
+\draw[->,dashed] (c)--node[below,sloped] {loss $3$} (e);
+\draw[->,dashed] (d)--node[right,font=\scriptsize] {loss $3$} (e);
+\end{tikzpicture}
+\caption{\textbf{A directed propagation tree, not the direction of the loan.}
+Example that is accounting-feasible with five entities. Before resolution,
+their stocks are worth $(6,1,1,1,10)$; the loans are
+$e_2\to e_1:4$, $e_3\to e_1:3$, $e_4\to e_2:3$,
+$e_5\to e_3:3$ and $e_5\to e_4:3$.
+The arrows in the diagram go, conversely, from the defaulting borrower to
+the affected creditor. The component of the four deaths has one root and
+two generations of propagation: $S=4$, $b_1=b_2=3/4$.
+The losses suffered by $e_5$, a survivor, do not make it part of
+the avalanche of deaths. The general model allows several parents,
+unlike this tree-shaped example.}
+\label{fig:cascade}
+\end{figure}

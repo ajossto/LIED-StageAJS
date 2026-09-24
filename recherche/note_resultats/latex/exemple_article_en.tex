@@ -1,0 +1,57 @@
+\subsection{Building intuition with four entities}
+Imagine four entities able to extract a resource from their
+environment. Each has a mobilizable stock $K_i$: the larger it is,
+the more it extracts, but each additional unit of stock yields less
+than the previous one. The function $f_i(K)=A_iK^{\gamma_i}$
+describes this \emph{extraction technology}. The input joins the
+stock, a fraction of which decays at each step. New entities appear
+with the same endowment $K^\circ$ and, in the reference regime,
+the same production exponent $\gamma^\circ=1/2$.
+
+A well-endowed entity can lend stock to another, where that stock
+produces more at the margin. This real transfer simultaneously
+creates a claim for the lender and a debt for the borrower. The
+\emph{principal} $q$ is the nominal amount recorded; the \emph{interest
+service} $rq$ is the payment due at each step. Interest moves the
+resource between entities, without creating any. The principal is not
+progressively repaid in this model: this is a strong institutional
+assumption.
+
+\begin{figure}[htbp]\centering
+\begin{tikzpicture}[>=Stealth,font=\small,
+ ent/.style={circle,draw=blue!60!black,fill=blue!7,minimum size=15mm,align=center},
+ lab/.style={font=\scriptsize,fill=white,inner sep=2pt}]
+\draw[rounded corners,fill=gray!3,draw=gray!50] (-1.5,-1.7) rectangle (9.5,2.3);
+\node[ent] (a) at (0,0.7) {$e_1$\\$K_1=16$};
+\node[ent] (b) at (4,0.7) {$e_2$\\$K_2=4$};
+\node[ent] (c) at (7.5,1.2) {$e_3$\\$K_3=9$};
+\node[ent] (d) at (7.5,-0.8) {$e_4$\\$K_4=1$};
+\draw[->,very thick,blue!70!black] (a) to[bend left=18]
+ node[lab,above] {initial loan $q=6$} (b);
+\draw[->,dashed,thick,orange!80!black] (b) to[bend left=22]
+ node[lab,below] {interest $rq$, at each step} (a);
+\draw[->,green!45!black,thick] (-.9,2.8)--(a);
+\node[lab] at (2.4,2.8) {input extracted from the environment: $f_i(K_i)$};
+\draw[->,green!45!black,thick] (7.5,2.8)--(c);
+\draw[->,red!70!black] (d)--(9.8,-1.4) node[right,font=\scriptsize] {erosion};
+\node[align=center,font=\scriptsize] at (2.7,-1.25)
+ {After the loan: $K_1=K_2=10$; $C_1=6$, $D_2=6$.\\
+ The net worths remain $NW_1=16$ and $NW_2=4$.};
+\end{tikzpicture}
+\caption{\textbf{Real stock and accounting commitment are not the same thing.}
+Fictitious example, inspired by the pedagogical diagram of the internship
+presentation. The initial values are chosen to explain the mechanism, not
+extracted from a simulation. Entities 3 and 4 show that not all entities
+have to take part in the same exchange. Inputs and erosion are drawn on
+only a few entities to lighten the diagram; the rules apply to all.
+The external reservoir is not simulated.}
+\label{fig:exemple}
+\end{figure}
+
+The loan thus preserves the instantaneous net worth of each partner,
+but changes its productive capacity and its future commitments. An
+entity may later be unable to honor its service, or owe more than it
+holds. Its disappearance wipes out the claims held on it: its lenders
+can in turn become insolvent. The coupling between real stocks,
+persistent commitments and propagated losses is the mechanism studied
+here.

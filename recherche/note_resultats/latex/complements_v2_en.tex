@@ -1,0 +1,66 @@
+\subsection{Engine compatibility and rule changes}
+\label{sec:compatibilite}
+Three levels of control must be distinguished: preserving the
+functionalities of the simulation lab, reproducing a trajectory
+in a reference regime, and comparing two models whose rules
+differ. Only the second bears directly on dynamic parity.
+
+The M4.2 report, section "M4B Parity", documents tests at
+$A=1$, $\gamma=1/2$ and $k=2$: identity of discrete variables
+and comparison of floats at relative tolerance $10^{-9}$.
+The reported 1000-step probe shows no discrete divergence,
+with a maximum relative deviation of the series of $3.1\,10^{-12}$.
+This finding is not a bit-for-bit identity nor a guarantee at every horizon.
+
+For M4.4, in the campaign folder
+\chemin{m4_4_rebond_credit_soc/}, the file
+\chemin{results/analysis/parity_deviations_8000.csv}
+holds 8000 maximum deviations, all zero, over the 26 columns compared to
+the reference M4.3 run, in the homogeneous regime with arithmetic
+target. The test \chemin{tests/test_parity_m4_3.py} defines this
+scope. The test \chemin{tests/test_v1_equivalence.py} separately compares
+Live-v1 to the compatibility mode
+\texttt{richest\_lends}, with a heterogeneous intervention; a negative
+control checks that freeing the loan direction can change the trajectory.
+The presence of this test defines a verifiable requirement; it does not by
+itself replace an execution report for every version.
+
+The M4.4 campaign paths are kept as provenance identifiers. Switching
+to a different market rule must be distinguished from an instrumentation
+extension, without renaming the archives the data come from. Non-regression
+therefore does not allow merging the M4B, Live and M4.4 samples.
+
+\subsection{Why temporal aggregation is not a symmetry}
+\label{sec:composition_temps}
+A counterexample appears even before introducing the market. With no noise,
+credit or births, let $F(K)=(1-\delta)(K+AK^\gamma)$.
+Two successive steps give
+\[
+F(F(K))=(1-\delta)^2(K+AK^\gamma)
+ +(1-\delta)A\big[(1-\delta)(K+AK^\gamma)\big]^\gamma.
+\]
+An aggregated step, with $A'=2A$ and
+$1-\delta'=(1-\delta)^2$, would instead give
+\[
+G(K)=(1-\delta)^2(K+2AK^\gamma).
+\]
+In general $F\circ F\ne G$: the second production is computed on
+an already modified stock. For example, at $K=100$, $A=1$,
+$\gamma=1/2$ and $\delta=0.01$, the values are approximately
+$118.142$ and $117.612$. The market adds an alternation of
+encounters, contracts, interest and bankruptcies; composing the Poisson
+laws or the shocks alone does not compose these coupled operations.
+
+The Live-v1 trials of figure~\ref{fig:art_temps} measure the collective
+reach of this difference. After full conversion of the parameters,
+aggregating two steps gives, relative to its reference,
+$N:1.067\pm0.018$, $K_{\rm tot}:1.158\pm0.030$ and
+$Y:1.118\pm0.024$. Aggregating four steps, the production ratio
+is $1.346\pm0.026$. The protocol starts from an empty state,
+uses three seeds and compares $1200<t_{\rm old}\le2000$;
+flows are divided by the aggregation factor, not the stocks.
+The per-seed values and other variants are in
+\chemin{data_article/temps_graines.csv} and
+\chemin{data_article/temps_points.csv}. These trials and the counterexample
+establish the absence of an exact symmetry; they do not constitute
+a study of convergence toward a continuous limit.

@@ -1,0 +1,182 @@
+\section{A minimal physical and accounting model}\label{sec:modele}
+\input{exemple_article_en}
+
+\subsection{State, accounting, invariants}
+
+The population is open and comprises a single type of agent, called an
+\emph{entity}. No role -- lender, borrower, bank -- is declared;
+all entities follow the same rules, and any observed differentiation
+is emergent.
+
+The variables $K_i,C_i,D_i,NW_i$, age and flows received or paid are
+specific to entity $i$. The parameters $\lambda,\delta,\sigma,\rho$ and
+the credit institution are common to the whole population.\footnote{The
+parameters $\lambda$, $\delta$ and $\sigma$ are made explicit in
+\S\ref{sec:pas}; $\rho$ and the credit institution in \S\ref{sec:credit}.
+The glossary in appendix~\ref{sec:glossaire} gathers the notations.} The technology
+$(A_i,\gamma_i)$ is attached to each entity; it is identical for all
+at the reference point, but can differ after a targeted intervention.
+
+An entity $i$ holds a real productive stock $K_i \ge 0$, counted in
+joules, which we call its \emph{capital}. This is its intrinsic
+productive size, not an accounting capital. A loan contract ties a
+lender to a borrower through a nominal \emph{principal} $q > 0$ and a
+per-step \emph{rate} $r > 0$. Summing over the contracts in which $i$
+is involved gives its claims $C_i$ and its debts $D_i$, then its
+\emph{net worth}
+\begin{equation}
+NW_i = K_i + C_i - D_i .
+\label{eq:nw}
+\end{equation}
+
+The asymmetry between the two stocks is constitutive: capital is real,
+productive and depreciable, whereas the principal is nominal, perpetual
+and not amortized. The debt network can therefore remain heavy while
+real assets erode.
+
+The rules algebraically enforce, at every step, $K_i \ge 0$,
+$\sum_i C_i = \sum_i D_i$, the equality between the sum of the net
+worths of the survivors and their total capital, and the real balance
+sheet
+\begin{equation}
+\sum_i K_i(t{+}1) - \sum_i K_i(t) = \text{endowments} + \text{shock}
+  + \text{production} - \text{depreciation} - \text{destruction},
+\label{eq:bilan}
+\end{equation}
+the five terms on the right being recorded separately at each step.
+The numerical check accounts for floating-point rounding.
+Loans and interest are purely internal transfers: there is neither
+creation nor leakage of joules outside the channels named
+in~\eqref{eq:bilan}.
+
+\subsection{A time step}\label{sec:pas}
+
+The phases run in this order, which is part of the model.
+Scheduled interventions are applied before births.
+
+\begin{enumerate}[label=(\roman*),leftmargin=2.2em]
+\item \textbf{Births.} A number $B_t \sim \mathrm{Poisson}(\lambda)$
+  of entities enters, each endowed with a capital $K^\circ$. The parameter $\lambda$ is
+  the \emph{birth intensity} and $K^\circ$ the \emph{birth endowment}.
+\item \textbf{Shock.} $K_i \leftarrow K_i \, e^{\eta_i}$, with
+  $\eta_i \sim \mathcal{N}(-\sigma^2/2,\ \sigma^2)$ independent. The
+  multiplicative mean equals one: no drift is imposed. The parameter
+  $\sigma$ fixes the common amplitude of the noise; the draw $\eta_i$ is
+  individual and renewed at each step. This is not a shared global
+  shock.
+\item \textbf{Production.} $K_i \leftarrow K_i + A\,K_i^{\gamma}$, with
+  $0<\gamma<1$. The parameter $A$ is the \emph{productivity} of the
+  technology and $\gamma$ its \emph{production exponent}. Concavity is
+  essential: it is what creates a gain from pooling
+  (\S\ref{sec:credit}).
+\item \textbf{Interest service.} This is the periodic payment of the
+  loan charge, without repayment of the principal. Each borrower pays
+  $\sum r q$ drawn from its capital; if it cannot, it pays pro rata and
+  enters service default.
+\item \textbf{Depreciation.} $K_i \leftarrow (1-\delta)K_i$, where
+  $\delta$ is the \emph{per-step depreciation rate}. It represents the
+  temporal erosion of the stock; its value therefore depends on the
+  duration chosen for a step (\S\ref{sec:temps}). Principals, for their
+  part, do not depreciate.
+\item \textbf{Market.} See \S\ref{sec:credit}.
+\item \textbf{Bankruptcies.} See \S\ref{sec:faillite}.
+\item \textbf{Measurements.} No logging option consumes a random draw:
+  trajectories with and without measurement are identical.
+\end{enumerate}
+
+\input{physique_echelles_en}
+The coupling of distinct physical and economic spheres joins an
+existing thermodynamic motivation \cite{herbert}, without reusing its
+model or identifying money with exergy.
+
+\subsection{Credit as cooperation, and the rate as sharing}
+\label{sec:credit}
+
+For two entities with the same concave technology, the marginal return
+$f'(K)=A\gamma K^{\gamma-1}$ is larger for the less endowed one.
+A transfer toward it therefore increases \emph{joint} production as
+long as it does not exceed the equalization of marginal returns. This
+result does not hold for any amount nor for any heterogeneous pair. It
+is the sole motive for credit in this model: there is neither
+anticipation, nor time preference, nor price.
+
+Figure~\ref{fig:art_technologie} illustrates the role of technology and
+the gain from lending. At fixed $\gamma$, $A$ multiplies extraction per
+step; on its own it is not a power in watts. The exponent $\gamma$
+measures individual returns to scale. Between zero and one, it makes
+the function concave and allows a reallocation gain: calling it
+directly a "propensity to collaborate" would be excessive. At
+$\gamma=1$ and identical technology, this gain disappears; its
+variation with $\gamma$ requires fixing the units and the states
+compared.
+
+\figurine{art_technologie}{1.0}{\textbf{Technology and cooperation gain.}
+On the left, the technologies $f_1(K)=2K^{1/4}$ and $f_2(K)=K^{1/2}$
+cross at $K=16$, for a production of 4 per step; the initial stocks
+are distinct, $(K_1,K_2)=(20,4)$. The coefficients are expressed in a
+single fixed stock unit. On the right, a loan of 1 toward 2 increases
+joint production up to the equalization of marginal returns. The area
+between gain and loss measures the joint surplus; the crossing of the
+productions on the left is not this equalization.
+These curves are analytical, at fixed states, without a statistical
+interval.}
+
+The market phase carries out $\lfloor\rho n\rfloor$ rounds for an
+eligible pool of $n$ entities in the configurations studied; $\rho$ is
+the market intensity (default value $1$). Encounters are pairwise.
+The amount targets the equalization of marginal returns in the main
+configuration. The free direction of the loan recovers the rich-to-poor
+transfer in the homogeneous regime, not necessarily in the
+heterogeneous regime.
+
+There is therefore a \emph{cooperation surplus} to be shared, and the
+interest rate is the sharing mechanism. For a contract of principal
+$q$, let $L$ denote the production loss suffered by the giver by
+parting with this stock, and $\Delta$ the joint production gain of the
+pair -- the surplus. The service paid per step then decomposes as
+\begin{equation}
+r\,q \;=\; L \;+\; p\,\Delta.
+\label{eq:partage}
+\end{equation}
+The number $p$ is the \emph{sharing}. The imposed \texttt{bargain} rule
+explores $p\in[0,1]$; the implicit sharing of another rule can exceed
+these bounds. At $p = 0$, the service exactly compensates the
+productive loss computed at contract creation; the receiver keeps the
+surplus. At $p = 1$, the lender also receives all of this surplus.
+This instantaneous comparison does not guarantee the contract's
+balance over its lifetime. Equation~\eqref{eq:partage} \emph{defines}
+$p$ for any rate rule, which makes it possible to place a given rule on
+the sharing scale -- this is what we exploit in
+\S\ref{sec:partage}. The reference rule, used by default, sets $r$ to
+the geometric mean of the marginal returns of the two entities.
+
+\subsection{Bankruptcy and cascade}
+\label{sec:faillite}
+
+An entity goes bankrupt if it is in service default or if $NW_i < 0$.
+The rule is deliberately brutal: its contracts are \emph{cancelled} --
+its creditors lose the principal, with no recovery or buffer -- and its
+residual capital is \emph{destroyed}. A default therefore directly
+annihilates assets held by others and can render them insolvent in
+turn; the new insolvencies form the next generation, and iteration
+continues to the fixed point \emph{within the same step}.
+
+This rule is what distinguishes a contagion from mere synchronization.
+When a borrower dies, each lender loses the corresponding principal,
+which defines a directed edge from the dead entity to the lender. An
+\emph{avalanche} is a weakly connected component of this loss graph,
+restricted to entities that died in the same step.
+\input{cascade_article_en}
+
+Two propagation measures follow: the \emph{branching ratio}
+$b_1 = 1 - (\text{roots}/\text{deaths})$, where a root is a bankruptcy
+that entered directly in the step's initial queue, and the \emph{mean
+offspring} $b_2$, the mean number of causal pairs between successive
+generations per death. The two coincide
+if and only if every non-root death has exactly one parent; their gap
+measures the excess of edges per death:
+$b_2-b_1=\sum_v(d_v-1)/N$,
+with $d_v$ the number of previous-generation parents of a non-root and
+$N$ the total number of deaths. This is neither the proportion of
+victims with several parents, nor the number of individually
+sufficient causes.

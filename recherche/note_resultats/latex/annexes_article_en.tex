@@ -1,0 +1,298 @@
+\appendix
+\FloatBarrier
+\input{glossaire_article_en}
+\clearpage
+\section{Checking the regime studied and the response calculations}\label{sec:stationnarite}
+For each seed $s$, arm and observable $X$, we compute
+\[
+ R_s(X)=\frac{\langle X\rangle_{3750<t\le4000}}
+                  {\langle X\rangle_{3000<t\le3250}},\qquad
+ t_X=\frac{\overline R(X)-1}{s_R/\sqrt{12}},
+\]
+where $s_R$ is the standard deviation of the twelve ratios. The 95\% CI is
+$\overline R\pm t_{0.975;11}s_R/\sqrt{12}$, with
+$t_{0.975;11}\simeq2.201$.
+This diagnostic compares two distant temporal levels; it analyzes
+neither the full correlation structure nor the stability of the distribution.
+
+\input{table_stationnarite_article_en}
+
+None of these contrasts exceeds the usual two-sided threshold, but the
+intervals allow drifts on the order of a percent. The temporal observations
+of a single run are not used as 1000 independent repetitions.
+The result does not automatically hold for an earlier window,
+another observable or an unpresented exploratory configuration.
+
+\paragraph{Renewal and memory of the initial state.}
+The renewal of a decile provides another time scale, but
+the ranking quantity must be specified and the disappearance of an
+entity distinguished from its exit from the decile. For a set $D(t_0)$
+defined at a reference date, retention
+$|D(t_0)\cap D(t_0+h)|/|D(t_0)|$ measures persistence in the group,
+while the fraction of its members still alive measures their survival.
+These two curves are not interchangeable; the term "first
+decile" must specify whether it denotes low or high values.
+Even low retention does not demonstrate forgetting of the
+initial configuration: commitments and correlations may persist beyond
+individuals. This check must be confronted with the autocorrelations of
+the observables and with distinct initializations. No quantified
+forgetting time is established here; the distance from the final window and
+the absence of detected drift are not enough to certify it.
+
+Population balances give exactly
+$N(t+1)-N(t)=B(t)-D(t)$ if $B$ and $D$ denote the entries and exits
+of the step under the same counting convention. Over a long stable window,
+$\overline B\simeq\overline D$ and $\overline B\simeq\lambda$;
+the ratio $\overline D/\overline N$ becomes close to
+$\lambda/\overline N$. This is not exactly the mean of
+$D(t)/N(t)$, and boundary terms are not zero by decree.
+The relation explains why a mortality elasticity can be
+almost the opposite of a population elasticity without constituting an
+independent causal finding.
+
+The elasticity of equation~\eqref{eq:eps} concerns a finite
+intervention. Its mean and CI are computed after forming the twelve
+paired log-ratios, not after averaging all time points
+in both arms. The decomposition formulas are sensitive to the
+choice of population: entities present at production may
+disappear before the end-of-step snapshot. This difference is
+preserved in the source data; it must not be erased to
+force the numerical closure of an ill-defined identity.
+
+\section{Distribution fits: definitions and limitations}\label{sec:ajustements}
+\subsection{Mass, per-bin density and survival function}
+For an integer size $S$, the mass $P(S=s)$ and the survival
+$P(S\ge s)$ are distinct. The histogram here represents the mass
+of a bin $[l,r[$ divided by $r-l$, so that a wide bin does not
+appear more probable merely because it contains more
+sizes. The fitted curve is summed over the same integer sizes
+before this division. A survival slope cannot be
+substituted directly for the mass exponent.
+
+The descriptive likelihood of the law~\eqref{eq:avalanche} is maximized
+per seed, over all sizes $s\ge1$. The numerical normalization
+uses $1\le s\le20000$; the mass of the last thousand values is
+checked to be below $10^{-10}$ at the optimum. The numerical search
+bounds are $-2\le\alpha\le5$ and
+$10^{-5}\le1/S_c\le2$; an optimum at a bound would signal
+insufficient identification. The 24 fits presented are interior.
+The fitting support is not chosen to maximize the apparent
+straightness of a subset of points.
+
+The cross-seed CIs and the bootstrap over whole runs measure the
+variability of the estimators or of the average curves obtained by this
+protocol. Fitting by product of probabilities does not demonstrate
+the independence of a run's avalanches. We therefore do not derive
+event-level standard errors or a certified goodness-of-fit test from it.
+In particular, this should be complemented by a comparison of families on
+the same support and an absolute-adequacy diagnostic accounting
+for temporal dependence \cite{clauset}.
+
+The descriptive coefficient shown is
+\[
+ R^2_{\log}=1-
+ \frac{\sum_j[\log\widehat p_j-\log p_{j,\rm fit}]^2}
+      {\sum_j[\log\widehat p_j-\overline{\log\widehat p}]^2},
+\]
+over the non-empty empirical bins. This is not a percentage
+of correctly predicted probability, and it is not the criterion
+optimized by the likelihood. It depends on the binning. Zeros are
+not replaced by an arbitrary small value to make them
+loggable.
+
+\subsection{Durations: discrete exponential and window choice}
+If $D\ge1$ follows a geometric law, with stopping probability $u$ at
+each step, then $P(D\ge d)=(1-u)^{d-1}$ and
+$\widehat u=1/\overline D$. Thus
+$\widehat\beta=-\log(1-1/\overline D)$ in
+$P(D\ge d)=\exp[-\beta(d-1)]$.
+The regressions of figure~\ref{fig:art_cycles} use this
+normalized form, not a log-log line. The $R^2$ there is computed
+on the non-zero log-survivals, at durations 1 to 11. Episodes remain
+potentially correlated and the window boundaries truncate some
+of them; the CIs are therefore based on the five seeds and not on
+a fictitious number of independent recessions.
+
+\subsection{The Vuong test and what it actually compares}
+In the existing analyses of net worth and interest, the threshold
+$x_{\min}$ is chosen by minimizing a Kolmogorov--Smirnov
+distance for a continuous power law. Above this same
+threshold and on the same values, a log-normal and an
+exponential are also fitted, conditioned on $X\ge x_{\min}$.
+The power law compared here has \emph{no upper cutoff}: this
+is not the discrete model with exponential cutoff used for avalanches.
+The \emph{left} truncation, which defines a tail sample,
+must not be confused with the \emph{right} cutoff.
+
+For the fitted densities $f$ and $g$, define
+$d_i=\log f(x_i)-\log g(x_i)$ and then
+\[
+ z=\frac{\sqrt n\,\overline d}{s_d},\qquad
+ s_d^2=\frac1{n-1}\sum_i(d_i-\overline d)^2.
+\]
+A positive value favors $f$ in average log-likelihood.
+The usual interpretation of $\pm1.96$ as a 5\%
+threshold requires regularity, model-separation
+and sampling assumptions. Here the threshold was selected, entities
+interact, and some fitted log-normals are very close
+to a power-law limit. The score is therefore reported as a diagnostic,
+not as certification of these assumptions \cite{vuong}.
+
+The flag $\sigma_{\rm LN}>10$ concerns 50 of the 72 interest
+fits and 46 of the 72 net-worth fits. It marks a
+numerical zone, not a mathematical boundary between two families.
+Two visible groups in a scatter of fit parameters do not
+mean that the agents form two economic populations:
+each point in that scatter represented one fit, not one entity.
+Per-fit results and their identifiers are available in
+\chemin{data_revision/rev_vuong_points.csv}.
+
+Comparing Pareto, cutoff power law and log-normal requires
+fixing the same domain, describing the threshold selection and evaluating
+goodness of fit, not merely counting parameters. A cutoff
+that diverged with system size would define an interesting
+limit, to be checked across several sizes; it does not make
+its finite-size fit free of charge.
+
+\section{Credit load and surplus weighting}
+\subsection{Definition and measurement of the load ratio}\label{sec:charge}
+Let $P_i$ denote the step's production, $I_i^{\text{received}}$ the interest
+received, $I_i^{\text{paid}}$ that actually paid, and $D_i$ the
+sum of principals due. Three ratios must be distinguished:
+\[
+ c_i^{\text{paid}}=\frac{I_i^{\text{paid}}}{P_i+I_i^{\text{received}}},\qquad
+ c_i^{\text{due}}=\frac{\sum_{\ell:i\,\mathrm{borrows}}r_\ell q_\ell}
+                         {P_i+I_i^{\text{received}}},\qquad
+ d_i^{\text{income}}=\frac{D_i}{P_i+I_i^{\text{received}}}.
+\]
+The first is a share of gross income paid; the second is the
+contractual charge due; the third relates a debt stock
+to a per-step income and is interpreted in a number of steps. The
+variable $D_i/P_i$ represents neither of the first two ratios.
+The denominator includes financial income, even though its
+aggregate sum is not new real production.
+
+\figurine{art_charge}{0.95}{\textbf{A correctly named load
+diagnostic.} Marginal rule M4.4, twelve seeds. For the snapshots
+$3000<t\le3990$, the variable is
+$I_i^{\text{paid}}/(P_i+I_i^{\text{received}})$; the response is the fraction
+of entities dying in the following ten steps. The bins have the
+explicit bounds shown, common to all seeds; they are
+not capital classes. The last incomplete window is
+excluded. The 95\% CIs compare the fractions obtained across twelve runs,
+without attributing binomial independence to repeated entities.
+All-cause deaths and insolvency roots are shown separately.}
+
+The panels record the interest paid, not the service due
+at the exact moment preceding payment. A pro-rata payment can
+make an unsustainable load look low; the moment of
+collection and the flows received within the step also matter.
+The diagram remains descriptive, conditional on the survivors observed
+in the panel. It justifies neither a causal link from load to
+death nor a general refutation of convexity. Convexity
+calculations or Jensen-gap computations on $D_i/P_i$ would not answer
+the question asked here about the load ratio as defined.
+
+\subsection{Proof of the weighting identity}\label{sec:ponderation}
+For $n$ contracts whose mean surplus is strictly positive,
+let $\overline p=n^{-1}\sum p_j$,
+$\overline\Delta=n^{-1}\sum\Delta_j$ and
+$p_w=\sum p_j\Delta_j/\sum\Delta_j$.
+Defining the empirical covariance with denominator $n$,
+\[
+ \operatorname{Cov}_n(p,\Delta)
+ =\frac1n\sum_j(p_j-\overline p)(\Delta_j-\overline\Delta)
+ =\frac1n\sum_jp_j\Delta_j-\overline p\,\overline\Delta,
+\]
+we immediately obtain
+\begin{equation}
+ p_w-\overline p=\frac{\operatorname{Cov}_n(p,\Delta)}{\overline\Delta}.
+ \label{eq:identite}
+\end{equation}
+If a corrected covariance with denominator $n-1$ is used,
+the numerator must be multiplied by $(n-1)/n$. The identity also
+holds in expectation when the moments exist and
+$\mathbb E[\Delta]\ne0$.
+
+For a constant fixed sharing rule, the gap is zero by construction.
+For a variable rule, it can be positive even if most
+contracts have a very small principal or surplus. The
+effective distribution of contracts determines its magnitude; an
+analytical grid covering rarely realized contracts cannot
+replace this distribution. Qualifying a rule from
+these theoretical cases alone would overstate their empirical reach.
+The accounting identity does not demonstrate an explanation of
+mortality or population differences between institutions.
+
+\section{Measurement supplements and tabulated values}\label{sec:tableaux}
+\subsection{Quantile ratios}
+The table below and figure~\ref{fig:art_quantiles} rest
+on the same observations. Each $\pm$ is a half 95\% Student CI
+of the twelve per-seed ratios, not a standard deviation across
+entities. "Gross income" means production plus interest received.
+\begin{small}\input{table_quantiles_en}\end{small}
+
+\subsection{Temporary reach of an intervention}
+An intervention limited to the entities present can die out
+with their cohort if entrants do not inherit it. This
+partial-reach experiment is a protocol control,
+not a main proof of the rebound mechanism. Conversely,
+modifying all entities and future entrants preserves
+the treatment despite population renewal. Modifying
+$\gamma$ changes the shape of the function and the dimensions of
+its coefficient: this is not the same operation as multiplying
+$A$ at fixed $\gamma$.
+
+\subsection{Multiple losses and sufficient causes}
+The graph can attribute several losses to a victim.
+This does not mean that each would have sufficed, in isolation, to
+make it insolvent. To illustrate this, an initial net worth
+of 5 and two losses of 3 lead to $-1$; no single loss
+suffices. With a net worth of 2, each of the two losses
+would suffice. It is the solvency margin before the losses that
+makes the difference, not merely the number of edges.
+
+The count of parents must also specify whether it retains only
+losses coming from the previous generation or all
+those of the step. A detailed sufficiency analysis also requires
+reconstructing the debts written off; it is not
+necessary to establish the existence of propagation nor the
+non-proportionality of the response. Earlier calculations
+remain archived, but their percentages are not used
+as evidence in this article.
+
+\subsection{Stock and production on the same realization}
+\figurine{rev_stock_trajectoire}{0.95}{\textbf{Observing the difference between
+stock and flow.} M4B central, seed 11, excerpt $3000<t\le3200$.
+Each line follows a single realization, with no measurement
+uncertainty artificially added; the orange points mark
+the down-steps. The contraction durations are computed separately
+on the two observables in figure~\ref{fig:art_cycles}.}
+
+\FloatBarrier
+\section{Local sources, configurations and reproducibility}\label{sec:sources_revision}
+The PDF can be compiled with only the LaTeX files and figures
+in this folder, without the internship report or the questionnaires.
+The new calculations are produced by
+\chemin{../scripts/revision_article.py}, which writes only into
+this article's folder and launches no simulation.
+The numerical exports, per-seed observations and
+SHA-256 checksums of the sources are in \chemin{data_article/}.
+The retained supplements from the previous version are in
+\chemin{data_revision/}. Recomputing from the microdata
+requires the local campaigns, which are not all version-controlled.
+
+\input{sources_article_en}
+
+The detailed configurations and the M4.4 identifiers of the
+initial campaign remain in
+\chemin{data_revision/runs_m44.csv}, which distinguishes the
+recorded parameters from the interventions. Some seeding metadata
+does not record the parameters; these gaps are not filled
+by silent deduction.
+The technical \texttt{K0} codes from the source files are
+kept for their traceability; in the scientific notation,
+the endowment is now read $K^\circ$ and its reduced ratio
+$\kappa^\circ$. Renaming the notation does not modify the engines.
+
+\input{complements_v2_en}

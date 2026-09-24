@@ -1,0 +1,623 @@
+\begin{abstract}\small
+A local technical improvement does not necessarily translate into a
+proportional response of the whole system. This work explores the
+hypothesis that part of the rebound effect might stem from the
+organization of exchanges, and not only from a change in behavior. We
+build a physical toy model: entities extract a resource, lend each
+other productive stock and can disappear, transmitting their losses to
+their creditors. Population, network and inequality form during the
+simulation; they are not fixed as targets.
+
+The work articulates three questions: which regularities emerge, which
+parameters allow them to be varied, and how the system responds to an
+improvement in its technology. The simulations produce cascades of
+varied sizes and long-tailed distributions of balance and interest.
+Power-law fits with cutoff for cascade sizes leave systematic
+deviations; self-organized criticality is not established. Contractions
+of activity are short, with a decay of durations close to exponential.
+The intensity of exchanges acts on propagation and tail statistics;
+changing the time step does not reduce to a change of unit.
+
+In the main configuration, increasing the extraction coefficient by
+50\,\% increases aggregate production by about 35\,\%, not 50\,\%:
+individual production increases while population decreases. The
+response depends notably on the size of new entities relative to the
+productive scale. These results establish an endogenous
+non-proportionality in the model, not a calibrated measure of the real
+energy rebound.
+\end{abstract}
+
+\section{Introduction: the internship's physical question}
+The rebound effect denotes the fact that an improvement in energy
+efficiency does not produce a proportional decrease in consumption. A
+usual explanation is behavioral: the service becoming cheaper, one
+consumes more of it. We explore here a different hypothesis, suggested
+by work on urban metabolism \cite{hendrick} and by the application of
+self-organized criticality to the economics of production \cite{bak}:
+\emph{what if part of the response were endogenous to the organization
+of exchanges}, that is a property of the way agents are coupled rather
+than a sum of individual decisions?
+
+This question calls for a model in which individual capacities can be
+modified during the simulation and the ensuing reorganization observed,
+without a rule having been written to produce a rebound. We build a
+toy model to this end. It has no prices, no labor, no final
+consumption, no households distinct from firms: it codes local
+interactions and lets macroscopic regularities emerge.
+
+Two objectives guide its construction: obtaining a collective response
+that is not proportional to a microscopic change, and letting classes
+of distributions emerge that can be confronted, with the necessary
+precautions, with those observed in the economy. The guiding hypothesis
+is that an organization exhibiting tendencies toward criticality might
+amplify or dampen a local perturbation. In a self-organized critical
+system, activity would spontaneously maintain itself near a propagation
+threshold; a wide range of event sizes would be an indication of this,
+not a proof. We do not assume this hypothesis to hold for the model
+built here.
+
+The stake of the internship is thus not only the last productivity
+experiment. It includes building a coherent model, searching for
+relevant endogenous variables, mapping sensitivities, and then running
+controlled interventions. The reader first meets a four-entity example,
+before the equations (\S\ref{sec:modele}). The protocol distinguishes
+families of experiments (\S\ref{sec:protocole}). We then examine
+emergence (\S\ref{sec:systeme}), steering and scales
+(\S\ref{sec:pilotage}), and then the technological response and its
+distribution (\S\ref{sec:rebond}). Secondary diagnostics and their
+limitations are developed in the appendix.
+
+\input{modele_article_en}
+
+\section{Experimental approaches in several steps}\label{sec:protocole}
+The first step is a \emph{mapping}: varying parameters to distinguish
+robust regularities from effects specific to a given configuration. The
+M4B study explores births, stock erosion, noise, endowment and the size
+of the encounter pool. It includes one-parameter-at-a-time variations,
+a global plan of 64 points with three seeds, two-parameter cuts and a
+confirmation with five new seeds. Its inventory counts 594 simulations,
+not all of whose results are reproduced here. The confirmation center is
+$\lambda=30$, $\delta=0.05$, $\sigma=0.25$, $K^\circ=25$, $k=3$, $A=1$,
+$\gamma=1/2$.
+
+The second step is \emph{scale identification}: determining what
+amounts to a freedom of unit and what actually changes the exchanges.
+Time-rescaling trials use three seeds per configuration, with durations
+brought back to a common unit. They are presented separately, since
+their protocol is not that of the technological interventions.
+
+The third step is the \emph{paired intervention}. At the main point,
+$\lambda=30$, $K^\circ=25$, $\sigma=\delta=0.01$, $A=1$, $\gamma=1/2$,
+$\rho=1$ and $k=2$. The population numbers about 1132 entities in the
+observed regime. Twelve states are seeded up to step 2000; each yields
+a control and variants, with the same initial state and the same
+generator at the branch point. Individual draws can then diverge with
+the population sizes. The M4.4 campaign comprises 372 inventoried
+simulations, not 372 independent repetitions of a single experiment.
+
+The M4B results and those of the main configuration are not
+interchangeable: beyond noise and depreciation, M4B uses a pool of $k$
+entities and a geometric target, while the main configuration uses
+pairwise encounters and a marginal-equalization target. Each figure
+states its family, its window and its number of seeds. Engine names
+serve to trace sources, not to replace these scientific definitions.
+
+The variation of $k$ belongs to the historical M4B exploration; the
+later main experiments fix encounters at $k=2$. This choice removes $k$
+from the levers of this configuration, without retroactively modifying
+the parameters of the earlier experiments. Software extensions have
+undergone compatibility checks in specified regimes; this does not make
+different market rules equivalent. Appendix~\ref{sec:compatibilite}
+distinguishes these checks from changes to the model.
+
+A seed, not an entity or a step, constitutes the unit of repetition.
+Unless stated otherwise, levels are averaged over $3000<t\le4000$, then
+ratios are computed seed by seed. A 95\% CI bar is a Student interval
+between these repetitions. A drift diagnostic compares the first and
+last quarters of the window; its formula, its results and its limited
+scope are given in Appendix~\ref{sec:stationnarite}. The absence of a
+detected mean drift does not demonstrate strict stationarity.
+
+\section{What emerges without being imposed}\label{sec:systeme}
+\subsection{A renewed population and a credit network}
+The rules fix the mean flow of births, not the population size, the
+lifetime or the lender/borrower roles. In the configurations retained,
+the series settle into a fluctuating regime with no observed unbounded
+growth. Entries balance exits on average, but a stable age distribution
+does not imply that any particular entity is at equilibrium. New
+entities grow, incur commitments and disappear at varied ages.
+
+Little's law relates, under a stable regime and with controlled
+temporal boundaries, the mean population to the entry flow multiplied
+by the mean lifetime. It is a demographic identity useful for
+organizing measurements, not an explanation of the lifetime. The
+lifetime depends on noise, the network and the bankruptcy rules. The
+deterministic equilibrium of an isolated entity does not by itself
+predict the collective state.
+
+\subsection{Directed cascades and a wide range of sizes}
+The loss graph makes it possible to distinguish propagation from
+temporal coincidence. The example in Figure~\ref{fig:cascade} gives the
+definition; the distributions in Figure~\ref{fig:art_avalanches} show
+the simulated realizations. We fit, on each seed, a discrete
+probability
+\begin{equation}
+ P(S=s)=Z^{-1}s^{-\alpha}\exp(-s/S_c),\qquad s\ge1,
+ \label{eq:avalanche}
+\end{equation}
+where $Z$ normalizes the sum of probabilities and $S_c$ describes a
+soft cutoff, not an absolute maximum size. At the main control, the
+twelve fits give $\alpha=1.623\pm0.009$ and $S_c=206\pm11$; under
+$A\times1.5$, $\alpha=1.667\pm0.009$ and $S_c=185\pm7$. These
+uncertainties describe the between-seed variability of this estimator.
+They validate neither the chosen family nor the identification of the
+cutoff with the system size.
+
+\figurine{art_avalanches}{1.0}{\textbf{Histograms, fits and repetitions.}
+M4.4, twelve seeds per condition, $3000<t\le4000$. Points give the
+per-class probability divided by class width; bars are between-seed
+95\% CIs. Curves are the means of the discrete cutoff-exponential fits,
+ribbons a bootstrap of 2000 draws of whole runs. Dashed lines indicate
+the reference slope $-\alpha$, not the complete truncated law. $R^2$
+values are computed on the logarithms of non-empty classes, then
+averaged across seeds. The left panel represents the control whose
+individual exponents are repeated on the right; the central panel
+represents the other series.
+\textsuperscript{1}Bars too long for the log scale are truncated at
+95\,\% of the level; their full values remain in the data.}
+
+The cutoff model is fitted by likelihood on integer sizes, not by
+selecting the straightest portion of the histogram. The mean $R^2$
+values, about $0.938$ and $0.928$, do not constitute a test of Pareto
+behavior. Despite these high values, the curves underestimate part of
+the intermediate sizes and overestimate the extremes: the visible
+deviations exceed several of the between-seed bars. The simple form of
+Equation~\eqref{eq:avalanche} therefore does not account for the whole
+distribution at the precision of the data. Choosing the cutoff to
+simultaneously optimize a bootstrap variance and an $R^2$ would also
+select favorable fluctuations; we retain here one stated model and
+support, with the caveats of Appendix~\ref{sec:ajustements}.
+
+At the main point, $b_1=\BUnControle\pm\BUnControleIC$ and
+$b_2=\BDeuxControle$: some deaths have several parents. The fact that
+$b_1<1$ is not, by itself, a test against criticality: its definition
+as the fraction of propagated deaths bounds it by construction.
+Conversely, an extended tail does not demonstrate SOC. Finite-size
+study and the definition of events across several steps remain
+necessary.
+
+\subsection{Short contractions, distinct from avalanches}
+An avalanche is a network event within a single step. A contraction is
+a sequence of steps over which an aggregate quantity decreases. They
+are therefore neither the same observation nor two definitions of the
+same size. In the central M4B regime, the mean durations of stock and
+production contractions are close to two steps.
+Figure~\ref{fig:art_cycles} formalizes their decay by a discrete
+exponential, $P(D\ge d)=\exp[-\beta(d-1)]$, $d=1,2,\ldots$.
+
+\figurine{art_cycles}{1.0}{\textbf{Contraction durations: an exponential,
+not an imposed power law.} Central M4B, five seeds 11--15,
+$1000<t\le4000$, unsmoothed; stock and production are treated
+separately. $\beta$ is estimated per seed from the mean duration. Points
+are the empirical survival values and their 95\% CIs; curves average
+the five fits. Descriptive $R^2$ values bear on the log-survival at
+the observed durations, whose points are dependent. Logarithmic bars
+are truncated according to the convention of
+Figure~\ref{fig:art_avalanches}. Episodes touching a window boundary
+are counted per the existing protocol; this is not a survival analysis
+correcting for censoring.}
+
+We find $\beta=0.731\pm0.029$ for stock and $0.696\pm0.035$ for
+production, with mean log-survival $R^2$ close to $0.98$. Wright
+\cite{wright} shows precisely why power law and exponential must be
+compared over the whole set of durations, without discarding the
+shortest episodes. His study covers annual GDP contractions of 17
+economies between 1870 and 1994; our uncalibrated steps are not years.
+The resemblance in shape motivates a future comparison; these short
+contractions do not by themselves support a power law of durations nor
+the SOC hypothesis.
+
+\subsection{Balance and interest distributions: what plausibility?}
+Net worth (denoted $NW$) is the model's quantity closest to a net
+wealth: real assets plus claims minus debts. Interest received
+constitutes a financial income flow. Their distributions emerge from
+entities subject to the same rules, not from wealth classes imposed at
+birth. In the main regime, the time-averaged Gini indices are close to
+$0.613$ for net worth and $0.513$ for interest received.
+Figure~\ref{fig:art_lorenz} represents distinct snapshots of these time
+averages.
+
+\figurine{art_lorenz}{1.0}{\textbf{The collective distribution persists
+despite individual turnover.} M4.4 control, twelve seeds: Lorenz curves
+at $t=2010$, $3000$ and $4000$, and between-seed 95\% CIs. Each
+observable has its own ranking.}
+
+To gauge orders of magnitude, the net-worth Gini of US households is
+$0.852$ in the 2019 SCF \cite{fedgini}: the main model is thus
+noticeably less unequal on this measure. The CBO reports a Gini of
+$0.516$ for income before means-tested transfers and taxes in 2019
+\cite{cbogini}. Its numerical closeness to $0.513$ does not validate the
+model's distribution: interest received includes neither wages nor all
+capital income, and our entities are not households weighted by size.
+A direct confrontation requires the same type of actor, the same
+period and the same accounting definition. We therefore do not compare
+the Gini of physical stock to that of income to conclude on economic
+plausibility.
+
+The tails of net worth and interest are compatible with power-law fits
+over part of the domain; their statistical identification remains open
+\cite{clauset,wildauer}. A log-normal and a cutoff power law each have
+two shape parameters at a fixed threshold. If the cutoff depends on
+system size, that dependence must be estimated across several sizes; it
+does not automatically remove a parameter from a fit performed at a
+finite size. The existing tests and their limitations are detailed in
+Appendix~\ref{sec:ajustements}.
+
+\section{Steering: which levers change which properties?}\label{sec:pilotage}
+\subsection{A hierarchy of sensitivities, not a single control knob}
+The M4B mapping separates effects that would be confounded in a
+comparison of only two trajectories. Noise $\sigma$ affects survival and
+exposure; endowment $K^\circ$ changes the entry position of young
+entities. Depreciation shifts the productive scale and also enters
+balance sheets; the birth rate $\lambda$ allows exploring populations of
+different sizes. These are tendencies within the domain studied, not
+exclusive roles nor demonstrated independences.
+
+\figurine{art_sensibilite}{0.72}{\textbf{Returning to the levers studied
+during model construction.} M4B confirmation, five independent seeds
+per cell, $T=4000$. Net-worth Gini computed on the final snapshot, not
+the Gini of capital nor of the pool. The other parameters are those of
+the historical M4B center, notably $k=3$; only $\sigma$ varies. The old
+sweep of $k$ is not shown here, as the later main experiments fix
+encounters at two entities. Bars are Student 95\% CIs recomputed from
+the per-seed values.}
+
+The finite-size variation is particularly important for the critical
+hypothesis. In the M4B confirmation, as $\lambda$ goes from 10 to 30
+then 100, the mean observed maximum avalanche size goes from 29 to 54
+then 110. The fitted cutoffs do not all behave as regularly: at
+$\lambda=100$, the estimated value is far beyond the sample, hence
+poorly identified. These observations support a finite-size study; they
+do not justify imposing a universal cutoff law or mixing the M4B and
+M4.4 exponents.
+
+\subsection{Encounter intensity as an experimental lever}
+In the main configuration, $\rho$ sets the number of encounters per
+step. Varying it from $0.5$ to $3$ allows measuring its response at
+five levels, with twelve seeds per level. The fitted exponents of the
+interest and net-worth tails, as well as branching, increase; the
+net-worth Gini varies more weakly.
+
+\figurine{art_rho}{0.95}{\textbf{Measuring steering on defined
+observables.} M4.4, five values of $\rho$, twelve seeds,
+$3000<t\le4000$. Exponents and branching are those of the per-seed
+analyses; the net-worth Gini is recomputed on the panels of the same
+window. Points: means and 95\% CIs. Curves: per-seed log-log fits;
+slopes and $R^2$ are then averaged, with 95\% CIs of the slopes.}
+
+The measured log-log slopes are $0.0465\pm0.0074$ for the interest
+exponent, $0.0272\pm0.0074$ for the net-worth exponent and
+$0.1345\pm0.0020$ for $b_1$. That of the net-worth Gini is
+$-0.0084\pm0.0023$: a weak but detectable effect on average, which
+should not be confused with the strong response of the pool's Gini. A
+significant mean slope does not imply that every increment is monotone
+within every seed. The result is a local steering lever, not a
+universal law nor proof of a distribution family.
+
+\subsection{Changing a scale is not always changing the system}
+Non-dimensionalization (\S\ref{sec:parametres_reduits}) removes a
+freedom of unit: multiplying all stocks and principals by $c$ and $A$
+by $c^{1-\gamma}$ preserves the homogeneous equations. The quantity
+$\kappa^\circ=K^\circ/K_{\rm aut}$ instead expresses a relative position
+that changes the dynamics. At $\gamma=1/2$, multiplying $A$ by 1.5
+multiplies $K_{\rm aut}$ by $2.25$; keeping $K^\circ$ fixed therefore
+divides $\kappa^\circ$ by $2.25$.
+
+This distinction organizes the experiments: a technical change at fixed
+endowment tests a relative displacement of new entrants, while a
+compensated endowment preserves that relative position. One must
+further distinguish compensating only the births after an intervention
+from rescaling \emph{the whole} initial state, including the nominal
+network. Only the latter directly falls under the exact symmetry of
+the equations.
+
+\subsection{The granularity of the time step}\label{sec:temps}
+Depreciation represents a temporal erosion. If a step lasts $\Delta t$
+and the continuous erosion rate is $d$, then $\delta=1-e^{-d\Delta t}$.
+Grouping $s$ steps therefore requires
+\[
+ \delta'=1-(1-\delta)^s,\qquad
+ \sigma'=\sqrt{s}\,\sigma,\qquad \lambda'=s\lambda.
+\]
+The last two relations compose, respectively, independent log-normal
+shocks and Poisson births \emph{in law}, for isolated phases. They do
+not guarantee that the coupled system follows the same law. Per-step
+flows must also be converted: $A'\simeq sA$ and $\rho'\simeq s\rho$; the
+nominal service of existing contracts must be converted if one
+transforms an already indebted state.
+
+\figurine{art_temps}{1.0}{\textbf{Changing the step does not stop at
+three substitutions.} Live-v1 experiments from an empty state, three
+seeds per configuration. Common window $1200<t_{\rm ancien}\le2000$.
+Flows of the grouped steps are divided by $s$, not the stocks. The
+first three trials group two steps; the fourth groups four. The last
+compares two configurations at $\delta=0.002$ before conversion, and
+therefore has its own reference. Points: per-seed averaged ratios;
+bars: Student 95\% CIs, wide with three repetitions.}
+
+The simulations of Figure~\ref{fig:art_temps} leave a residual even
+after converting all these coefficients. Two steps successively update
+production, commitments, population and encounters; a single more
+intense step does not reproduce this alternation. Reducing $\delta$
+alone does not remove the residual in the trial performed. These
+controls rule out a simple unit error as a complete explanation,
+without isolating each compositional effect. A proper convergence study
+would require jointly reducing all relevant increments and comparing at
+a fixed physical horizon. It remains to be carried out.
+
+\section{Collective response to a technological improvement}\label{sec:rebond}
+\subsection{What changes and what the elasticity measures}
+The main experiment multiplies $A$ by $m=1.5$ for all living entities
+and for future births, starting at step 2001. At unchanged stock and
+fixed exponent $\gamma$, each entity would produce exactly 50\,\% more:
+this is the proportional reference. But stocks, the network and the
+population size then evolve. We measure
+\begin{equation}
+ \varepsilon_s=\frac{\ln(\overline Y_{s,T}/\overline Y_{s,C})}{\ln(1.5)},
+ \qquad \widehat\varepsilon=\frac1{12}\sum_{s=1}^{12}\varepsilon_s,
+ \label{eq:eps}
+\end{equation}
+where $Y$ is total production, $T$ the treated arm, $C$ the control and
+the overbar a mean over $3000<t\le4000$. The denominator is the
+logarithm of the imposed technical factor, not a fitted constant. A
+proportional response gives $\varepsilon=1$; $0<\varepsilon<1$ means a
+sub-proportional increase; $\varepsilon<0$ would mean a decrease despite
+the improvement. This is a \emph{finite} elasticity, not an
+infinitesimal derivative.
+
+\subsection{A positive but non-proportional response}
+At fixed birth endowment, $\widehat\varepsilon=0.7473\pm0.0106$.
+\textbf{The collective response is not proportional to the individual
+improvement.} The representative factor $1.5^{0.7473}\simeq1.354$
+corresponds to about 35\,\% additional production. The arithmetic mean
+of the ratios is not exactly this transform of the mean of the
+logarithms; the per-seed values are kept.
+
+\figurine{art_reponse}{1.0}{\textbf{The same improvement, two birth
+conventions.} M4.4, twelve paired seeds. Left, relative treated/control
+gaps, smoothed over 101 steps per seed before computing the 95\% CIs.
+Right, finite elasticities on $3000<t\le4000$; pale points: seeds;
+bars: 95\% CIs. Compensation applies to births, $K^\circ\to2.25K^\circ$,
+not to already-present stocks and contracts. The line at 2 is a
+prediction of full-state symmetry, not a constraint imposed on this
+fit.}
+
+The end-of-step population contracts by about a quarter, while
+production per entity increases. To keep an exact decomposition after
+time averaging, one can define the mean population yield by
+$\overline y=\overline Y/\overline N$. Then
+$\ln(\overline Y_T/\overline Y_C)=
+\ln(\overline N_T/\overline N_C)+\ln(\overline y_T/\overline y_C)$
+by definition. $\overline y$ is not in general the time average of
+$Y(t)/N(t)$; one must also distinguish the step's producers from the
+end-of-step survivors. A decomposition identity does not constitute a
+demonstration of the demographic mechanism.
+
+If instead the endowment tracks the productive scale, the measure is
+$2.0029\pm0.0148$. This value is compatible with $1/(1-\gamma)=2$, the
+prediction of full homogeneous rescaling, but numerical compatibility
+does not make the two protocols identical. Precisely, at $\delta=0.01$
+and $\gamma=1/2$ fixed, $K_{\rm aut}$ goes from $9801$ to $22052.25$ when
+$A$ goes from $1$ to $1.5$. At unchanged endowment $K^\circ=25$, the
+ratio $\kappa^\circ$ goes from about $0.00255$ to $0.00113$: new
+entities enter smaller relative to this scale. Compensation consists in
+raising their endowment to $56.25$, in order to preserve $\kappa^\circ$,
+not to cancel the production increase or compensate a loss. It
+increases the real contribution per birth; the stocks of already
+present entities and their principals are not rescaled. The two arms
+thus compare different entry conventions, not the same energy
+intervention at unchanged contribution.
+\textbf{In both experiments production increases; it is the deviation
+from proportionality that changes sign.} A negative response to an
+increase in $A$ has not been established; its exploratory search is not
+presented here as a result.
+
+\subsection{An explanatory chain to test link by link}
+At fixed endowment, the improvement reduces $\kappa^\circ$: new
+entities enter smaller relative to the productive scale. The data
+simultaneously show a variation in the dispersion encountered on the
+market, in credit volume and in mortality. They motivate the chain
+below, whose arrows do not all carry the same status.
+
+\begin{figure}[htbp]\centering
+\begin{tikzpicture}[>=Stealth,font=\small,
+ box/.style={draw=blue!45!black,fill=blue!4,rounded corners,align=center,text width=3.3cm,minimum height=12mm}]
+\node[box] (a) at (0,0) {$A$ increases\\$K^\circ$ stays fixed};
+\node[box] (b) at (4.5,0) {$\kappa^\circ$ decreases\\scale identity};
+\node[box] (c) at (9,0) {composition of sizes\\and credit modified};
+\node[box] (d) at (9,-2) {higher mortality\\per entity};
+\node[box] (e) at (4.5,-2) {lower mean\\population};
+\node[box] (f) at (0,-2) {non-proportional\\total production};
+\draw[->,thick] (a)--(b);
+\draw[->,dashed] (b)--(c);
+\draw[->,dashed] (c)--(d);
+\draw[->,thick] (d)--(e);
+\draw[->,thick] (e)--(f);
+\end{tikzpicture}
+\caption{\textbf{Definitions, measured covariations and proposed
+mechanisms.} The first link is algebraic. The dashed links motivate an
+interpretation from the paired responses, without isolating a causal
+mediation. Under a stable regime, mortality per entity and population
+size are linked by the balance of entries and exits; the last step
+combines population size with production per entity, which increases.
+The solid lines do not therefore all denote an experimentally
+identified causality.}
+\label{fig:chaine}
+\end{figure}
+
+The elasticities of pool dispersion and of credit turnover are
+$\ElasticiteGini\pm\ElasticiteGiniIC$ and
+$\ElasticiteRotation\pm\ElasticiteRotationIC$ respectively. The
+\emph{pool} here denotes the entities drawn for an encounter, not the
+whole population; \emph{turnover} is the new principal lent per step
+relative to the total stock. Their numerical closeness is a consistency
+check, not proof that the first quantity alone causes the second.
+Mortality per entity responds with elasticity
+$\ElasticiteMortalite\pm\ElasticiteMortaliteIC$; under a stable regime,
+it is approximately $\lambda/\overline N$.
+
+Branching provides another measure: under $A\times1.5$ at fixed
+endowment, the treated-minus-control contrast of $b_1$ is
+$\EffetABranchement$; compensating $K^\circ$ leaves a contrast of
+$\EffetResiduelBranchement$. Maintaining $\kappa^\circ$ thus also
+brings this statistic closer to the control. The decrease in the
+fraction of propagated deaths does not imply a decrease in individual
+mortality risk: the two denominators differ.
+
+\subsection{Distributions change with cohorts}\label{sec:ou}
+The aggregate does not say where the distributions move. For each
+snapshot, we compute the quantiles, then their time average per seed
+and finally the treated/control ratio. The figure represents them; the
+tabulated values are in Appendix~\ref{sec:tableaux}.
+
+\figurine{art_quantiles}{1.0}{\textbf{Reading positions, not fixed
+groups.} M4.4, $A\times1.5$ at fixed endowment, twelve seeds,
+$3000<t\le4000$. The abscissa is placed at $\ln[q/(1-q)]$, then graded
+in percentiles: the nonlinear scale is explicit and keeps extreme
+quantiles legible. Pale points: per-seed ratios; solid points and bars:
+mean and 95\% CI. An ordinate of 1.8 means that the considered quantile
+is 1.8 times that of the control; it does not mean that the same
+entities gained 80\,\%.}
+
+Production shifts by approximately a factor of 1.8; the extreme
+quantiles of net worth and gross income increase less than their
+medians. The first decile of interest received decreases sharply. The
+compositional control confirms the importance of births: among the
+10\,\% of entities receiving the least interest, more than 99.9\,\% are
+at most ten steps old in the control, against about 24\,\% of the whole
+population. Their mean age is about 1.8 steps, against 111 steps for
+the whole population. These ages are measured among the survivors of
+the main control: $A=1$, $\gamma=1/2$, $\lambda=30$, $K^\circ=25$,
+$\delta=\sigma=0.01$, $\rho=1$, $k=2$, free direction and marginal rate.
+Over the snapshots from $3010$ to $4000$ spaced ten steps apart, the
+mean age is $110.97\pm1.88$ steps, and the average of the instantaneous
+medians is $40.05\pm0.16$ steps. Each statistic is first averaged in
+time per seed, then across the twelve seeds; the 95\% CIs bear on this
+latter average. This is neither the median of a sample pooling all
+instants nor the median lifetime. After $A\mapsto1.5A$ on the living
+and future entrants from step 2001, with $K^\circ$ unchanged, these two
+ages become respectively $94.94\pm0.86$ and $32.03\pm0.24$ steps. A
+broader exploration of the amplitudes of variation of $A$ and of values
+of $\gamma$ remains necessary for this distributional comparison. The
+young-decile diagnostic is specific to the ranking by interest. In the
+lowest \emph{capital} decile, the share aged ten steps or less is close
+to 49\,\%, not 100\,\%.
+
+\figurine{art_deciles}{1.0}{\textbf{Production, interest and net worth
+by capital decile.} M4.4, same arms and window. Entities are reranked
+by capital at each snapshot. Reading: the decile-1 point gives the
+share of production, interest or net worth held by the 10\,\% least
+capital-endowed entities at that instant, not by the same individuals
+over 1000 steps. The strong presence of young entities at the bottom of
+the ranking contributes to these differences; it is not sufficient to
+causally explain the whole profile. Net worth is $NW=K+C-D$; it
+replaces stock in the third panel, without changing the ranking
+criterion. Groups have equal sizes to within one entity; ties are
+broken by stable order. Bars: 95\% CIs across twelve per-seed means,
+each computed over the 100 snapshots of the window.}
+
+\section{The credit institution: a complementary lever}\label{sec:partage}
+The loan's service allocates the cooperation surplus defined in the
+model. Imposing a different share $p$ for the lender changes the
+collective state, without changing the technology or introducing new
+preferences. This sweep complements the physical steering; it is not
+the work's leading result.
+
+\figurine{art_institutions}{1.0}{\textbf{Sharing acts on levels, less on
+the balance-sheet Gini.} M4.4, five imposed shares, twelve seeds,
+$3000<t\le4000$. Descriptive per-seed linear regressions; mean equations
+and $R^2$ shown. Ratios are computed per seed at the $p=0$ arm, whose
+raw reference is shown above the panel. The green diamond locates the
+historical, so-called archaic, marginal rule at its observed mean
+share. It serves only as an illustrative reference, with uncertainty on
+both coordinates; it does not enter the regression of the constant
+shares. A line between simulated levels is not a validated prediction
+at other values of $p$.}
+
+The population goes from about 1904 to 1138 entities as $p$ goes from
+zero to one. The reference rule has a mean per-contract share close to
+$\PartageParContrat$, but a surplus-weighted share of $\PartagePondere$.
+The difference is not a contradiction: small and large surpluses do not
+carry the same weight in these averages. The covariance identity and
+its proof are given in Appendix~\ref{sec:ponderation}. It does not
+establish the causal mechanism of the population change.
+
+Debt relative to production alone does not measure the load ratio on
+gross income and does not allow ruling out a convexity of risk in this
+load. Appendix~\ref{sec:charge} defines and separately measures the
+ratio of interest paid to production \emph{plus interest received}. The
+weighting identity does not exempt one from this risk study.
+
+\section{Scope, limitations and next experiments}\label{sec:perspectives}
+The model answers a question of existence: can local rules with no
+rebound behavior produce a non-proportional aggregate response? In the
+configurations studied, yes. It does not yet settle the share of this
+mechanism in a real economy. Production added to the stock does not
+distinguish primary energy, useful service and final consumption; the
+energy rebound in the applied sense \cite{sorrell} requires these
+distinctions. The interpretation in terms of exergy entitlements
+remains a physical hypothesis, not an empirical calibration.
+
+Distributional plausibility is partial: tails emerge, but their
+families are not established, the Gini levels do not simultaneously
+reproduce the empirical references, and the "entity" unit is not yet an
+identified economic actor. Bankruptcy without recovery, perpetual
+principals and the absence of prices are strong hypotheses. The
+numerical robustness of the accounts removes none of these limitations.
+
+The SOC hypothesis requires more than a straight-line histogram: it
+requires an extended finite-size study, a controlled definition of the
+response to a perturbation, and a treatment of memory across steps.
+Roots of the intra-step graph may have accumulated fragility in
+previous steps. Conversely, merging events close in time can
+artificially create a large component. Temporal granularity and the
+measurement convention are therefore part of the scientific problem.
+
+The priority extensions are to compare conventions at controlled
+$\kappa^\circ$, to jointly study the heterogeneity of
+$(K^\circ,A,\gamma)$, and to test a finer-step limit. If $\gamma_i$
+varies, the dimension of $A_i$ varies: one must fix a common
+$K_{\rm ref}$ and a joint law of
+$(K_i^\circ/K_{\rm ref},A_iK_{\rm ref}^{\gamma_i-1},\gamma_i)$, rather
+than drawing values of $A_i$ arbitrarily. An exploratory search for a
+negative response to an increase in $A$ should state its ranges and
+windows in advance, separate the transient from the established
+response, and then confirm any identified configuration on new seeds.
+No such result is claimed here.
+
+Finally, extending sharing to $p<0$ would have the lender accept a
+service initially below its reference productive loss. A later benefit
+is possible but not guaranteed; it would depend on trajectories and
+bankruptcies. The engine currently imposes $0\le p\le1$ for the fixed
+share: this extension remains an experiment to design, not a regime
+already simulated.
+
+\section{Conclusion}
+The internship's work builds a device for studying the rebound effect
+from a physical angle: productive stocks, extraction flows and the
+network of commitments evolve together. It brings out collective
+regularities that are not imposed, then searches for the parameters
+that shift them. Cascade sizes, balance-sheet distributions and
+contraction durations do not call for a single statistical family;
+distinguishing them is essential to examining the critical hypothesis.
+
+The response to technology constitutes a result of this program: a
+uniform individual improvement can produce a sub-proportional
+collective increase, because the population and its relative positions
+reorganize. The non-dimensional endowment $\kappa^\circ$ makes it
+possible to separate two conventions that here lead to different
+responses. Time rescaling shows, for its part, that a change of
+granularity is not a simple symmetry. These results support the
+interest of an organizational explanation of the rebound, while leaving
+open the model's criticality and its quantitative confrontation with
+the real economy.

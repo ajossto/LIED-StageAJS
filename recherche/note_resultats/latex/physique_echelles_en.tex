@@ -1,0 +1,102 @@
+\subsection{Stocks, flows and the physics--economics correspondence}
+\label{sec:physique}
+The parallel between physics and economics is the center of the
+approach, not an analogy added after the fact. It is nonetheless
+necessary to distinguish a correspondence of dimensions, a
+representational hypothesis and an empirical validation.
+The model is a fundamental study of interactions: the entity remains
+generic, and can shed light on a concrete system if the relevant
+mechanisms are indeed present there, without implicitly becoming a
+person and then a firm.
+
+\begin{center}
+\begin{tabularx}{\linewidth}{@{}lXX@{}}
+\toprule
+Object & Dimension and operation & Proposed economic reading \\
+\midrule
+$K_i$ & Stock, in model joules & Mobilizable productive size \\
+$A_iK_i^{\gamma_i}$ & Production added during a step, in joules & Productive flow, not a wage \\
+$A_iK_i^{\gamma_i}/\Delta t$ & Mean power over a step & Production capacity per unit of time \\
+$q$ & Nominal principal, same unit of account as $K$ & Claim and debt, not amortized \\
+$rq$ & Transfer during a step & Interest service, not resource creation \\
+$NW_i$ & Accounting stock $K_i+C_i-D_i$ & Balance-sheet position, distinct from the physical stock \\
+\bottomrule
+\end{tabularx}
+\end{center}
+A watt is one joule per second. The engine's outputs are in joules
+\emph{per step}; calling them watts would require fixing $\Delta t$ in
+seconds, which has not been calibrated.\footnote{In the update
+$K\leftarrow K+A K^\gamma$, $A$ has dimension
+$\mathrm{J}^{1-\gamma}$ for the production of one step. The
+coefficient of a corresponding differential equation would have
+dimension $\mathrm{J}^{1-\gamma}/\mathrm{s}$. Comparing them without
+specifying the step would make a physical dimension disappear. The
+rate $r$ is a fraction due per step; $r/\Delta t$ has the inverse
+dimension of a time.}
+
+The interpretive hypothesis is that certain monetary transfers
+represent transfers of entitlements to mobilize exergy. The real stock
+and the nominal network are thus coupled, but not identical: a loan
+moves $K$ and simultaneously records a claim and a debt. Production
+represents an input to the modeled stock; the external reservoir that
+enables it is not described. The internal balance sheet is closed in
+accounting terms, not thermodynamically over the whole
+economy--environment system. Furthermore, the observable called
+"total income" is $\mathrm{prod}+\mathrm{int\_in}$: it adds
+production and transfers received, and must not be equated without
+correction to an aggregate net production.
+
+\subsection{Scales: which parameters are truly independent?}
+\label{sec:parametres_reduits}
+In the homogeneous regime, without noise or credit, the order
+production then depreciation gives
+\[
+ K_{t+1}=(K_t+A K_t^\gamma)(1-\delta),\qquad
+ K_{\rm aut}=\left[\frac{A(1-\delta)}{\delta}\right]^{1/(1-\gamma)}
+\]
+for $A>0$, $0<\delta<1$ and $0<\gamma<1$. $K_{\rm aut}$ is the stock toward which an isolated entity, without
+credit or noise, tends when extraction and depreciation offset each
+other. This deterministic fixed point is not a mean of the noisy
+system. Setting $x_i=K_i/K_{\rm aut}$ transforms
+production into
+\[
+ x_i\longleftarrow x_i+\frac{\delta}{1-\delta}x_i^\gamma .
+\]
+At fixed institution, the common scale of $A$ and $K^\circ$ can thus
+be replaced by the ratio $\kappa^\circ=K^\circ/K_{\rm aut}$: it
+measures the size of a new entity relative to what it could reach
+alone. A low value means it enters far below this scale. For a
+toy model, avoiding double-counting the same scale freedom is
+essential.\footnote{An equivalent option is to choose $K^\circ$ as the
+unit and to retain $a=A (K^\circ)^{\gamma-1}$. The point here is to
+eliminate \emph{one} unit-of-capital freedom, not to show that the
+other parameters are redundant: $\gamma$, $\delta$, $\sigma$,
+$\lambda$ and the institution remain relevant. An invariance of
+certain statistics with respect to $\lambda$ is not a trajectorial
+equivalence of populations of different sizes.}
+
+The rescaling $K,q,K^\circ\mapsto c(K,q,K^\circ)$ and
+$A\mapsto c^{1-\gamma}A$ preserves the homogeneous equations and the
+marginal rates. Absolute numerical thresholds and the engine's
+rounding limit software exactness; recalibrating the time step is not
+an exact symmetry of the discrete market: the numerical study is
+presented in \S\ref{sec:temps} and the non-equivalence of the
+operations is detailed in appendix~\ref{sec:composition_temps}. A rise
+in $A$ at fixed $K^\circ$ therefore changes $\kappa^\circ$, whereas its
+compensation $K^\circ\mapsto K^\circ\,m^{1/(1-\gamma)}$ preserves it.
+The two are distinct experiments: compensation is a control, not an
+imposed physical correction.
+
+The tension $T=K_{\rm aut}/K_{\rm eq}$, with
+$K_{\rm eq}=(Y/(N_{\rm prod}A))^{1/\gamma}$, compares the individual
+scale without credit to the observed productive scale. Here $Y$ is
+the total production of a step and $N_{\rm prod}$ the number of
+entities present in the productive phase, which can differ from the
+surviving headcount at the end of the step. $K_{\rm eq}$ is the
+fictitious stock that would give a representative entity the mean
+production $Y/N_{\rm prod}$; for $\gamma\ne1$, this is not the mean
+stock. A large $T$ therefore indicates a productively equivalent
+stock far below the autarkic scale. This tension is useful in
+particular at fixed $\delta$; it is neither a universal state
+variable, nor another name for the whole
+credit--mortality--population chain.

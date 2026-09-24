@@ -1,0 +1,122 @@
+%% Results note — self-contained proto-article, English draft (from the French revision of 17 September 2026).
+%% English translation of note.tex — mechanical build derived from the same figures and numbers.
+%% numbers_en.tex is regenerated from numbers.tex by scripts/make_numbers_en.py (decimal point only).
+%% THIS IS A WORK IN PROGRESS TRANSLATION — see the notice below. Not for citation.
+\documentclass[10pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb}
+\usepackage[margin=2cm]{geometry}
+\usepackage{booktabs,tabularx,array,longtable}
+\usepackage{enumitem}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{microtype}
+\usepackage{float}
+\usepackage[hyphens]{url}
+\usepackage{hyperref}
+\usepackage{caption}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning}
+\usepackage{placeins}
+\usepackage{fancyhdr}
+
+\DeclareUnicodeCharacter{202F}{\,}
+\hypersetup{colorlinks=true,linkcolor=blue!45!black,urlcolor=blue!45!black,
+  pdftitle={[WORK IN PROGRESS] Rebound effect, emergence and steering in a physical model of a credit society},
+  pdfauthor={Anatole Joseph-Stouls}}
+
+\setlist{nosep}
+\captionsetup{font=small,labelfont=bf}
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\chemin}[1]{\texttt{\path{#1}}}
+\graphicspath{{figures/}}
+\newcommand{\figurine}[3]{%
+  \begin{figure}[htbp]\centering
+  \includegraphics[width=#2\linewidth]{#1}
+  \caption{#3}\label{fig:#1}
+  \end{figure}}
+\input{numbers_en}
+
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0.4pt}
+\fancyhead[C]{\small\itshape Draft --- work in progress, not for citation --- English translation of a French working paper}
+\fancyfoot[C]{\thepage}
+
+\title{\vspace{-1.2cm}Rebound effect, emergence and steering\\[2pt]
+in a physical model of a credit society}
+\author{Anatole Joseph-Stouls\\
+\small LIED --- Laboratoire interdisciplinaire des \'energies de demain\\
+\small (Interdisciplinary Laboratory for Tomorrow's Energies)\\
+\small \texttt{anatole.joseph-stouls@ens-rennes.fr}}
+\date{}
+
+\begin{document}
+\maketitle
+\vspace{-0.3cm}
+
+\begin{center}
+\fbox{\begin{minipage}{0.92\linewidth}\small\centering
+\textbf{Work in progress --- draft translation.} This is an English
+translation of a French working paper still under active revision. It
+is shared for early feedback and discussion only, and should not be
+cited or treated as a finished result. Figure axis labels and legends
+are still in French pending regeneration in a later revision; the
+mapping of the figure content is given in the glossary
+(section~\ref{sec:glossaire}) and in the body text. The authoritative,
+up-to-date version is the French original.
+\end{minipage}}
+\end{center}
+
+\vspace{0.3cm}
+\input{corps_article_en}
+\FloatBarrier
+\clearpage
+\begin{thebibliography}{99}\small
+\bibitem{hendrick} M.~Hendrick, A.~Rinaldo and G.~Manoli,
+  ``A stochastic theory of urban metabolism'', \emph{PNAS} \textbf{122}(33),
+  e2501224122 (2025).
+\bibitem{bak} P.~Bak, K.~Chen, J.~A.~Scheinkman and M.~Woodford,
+  ``Self-Organized Criticality and Fluctuations in Economics'',
+  Santa Fe Institute Working Paper 1992-04-018 (1992).
+\bibitem{sorrell} S.~Sorrell and J.~Dimitropoulos,
+  ``The rebound effect: Microeconomic definitions, limitations and extensions'',
+  \emph{Ecological Economics} \textbf{65}(3), 636--649 (2008).
+\bibitem{yakovenko} V.~M.~Yakovenko and J.~B.~Rosser,
+  ``Colloquium: Statistical mechanics of money, wealth, and income'',
+  \emph{Rev. Mod. Phys.} \textbf{81}, 1703--1725 (2009).
+\bibitem{clauset} A.~Clauset, C.~R.~Shalizi and M.~E.~J.~Newman,
+  ``Power-Law Distributions in Empirical Data'', \emph{SIAM Review}
+  \textbf{51}(4), 661--703 (2009).
+\bibitem{herbert} E.~Herbert, G.~Giraud, A.~Louis-Napol\'eon and C.~Goupil,
+  ``Macroeconomic Dynamics in a Finite World: the Thermodynamic Potential
+  Approach'', \href{https://arxiv.org/abs/2204.02038v2}{arXiv:2204.02038v2} (2022).
+\bibitem{wildauer} R.~Wildauer and I.~Heck,
+  ``Was Pareto right? Do the US wealth and income distributions follow power
+  laws?'', Greenwich Papers in Political Economy, GPERC92, September 2024
+  version (series coverage: 2023),
+  \href{https://gala.gre.ac.uk/id/eprint/38597/}{institutional archive}.
+\bibitem{wright} I.~Wright, ``The duration of recessions follows an
+  exponential not a power law'', \emph{Physica A} \textbf{345}, 608--610
+  (2005), \href{https://arxiv.org/abs/cond-mat/0311585}{author's text}.
+\bibitem{fedgini} A.~Aladangady and A.~Forde, ``Wealth Inequality and the
+  Racial Wealth Gap'', \emph{FEDS Notes}, October 22, 2021,
+  \href{https://www.federalreserve.gov/econres/notes/feds-notes/wealth-inequality-and-the-racial-wealth-gap-20211022.html}{Federal Reserve}.
+\bibitem{cbogini} Congressional Budget Office, \emph{The Distribution of
+  Household Income, 2019}, November 2022,
+  \href{https://www.cbo.gov/publication/58781}{report and definitions}.
+\bibitem{vuong} Q.~H.~Vuong, ``Likelihood Ratio Tests for Model Selection
+  and Non-Nested Hypotheses'', \emph{Econometrica} \textbf{57}(2),
+  307--333 (1989), \href{https://doi.org/10.2307/1912557}{doi:10.2307/1912557}.
+\end{thebibliography}
+
+\noindent\textbf{Reproducibility.} Conventions, point data and sources
+are given in the appendices. The author's comments and the previous
+version are kept separately, and are not required to compile this
+article.
+\clearpage
+\input{annexes_article_en}
+\end{document}
