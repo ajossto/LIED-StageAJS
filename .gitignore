@@ -24,4 +24,17 @@ simulation_lab_data/
 # M3 : artefacts LaTeX supplémentaires et résultats bruts (12 Go, régénérables par seed)
 *.fls
 *.fdb_latexmk
-m3_credit_soc/experiments/m3/results/
+anciens_modeles/m3_credit_soc/experiments/m3/results/
+
+# Article (note_resultats, note_communication_encadrants) : snapshots de révision
+# — copies de sauvegarde de versions antérieures, redondantes avec l'historique git
+**/revision_*/reference/
+
+# Article : données brutes de simulation (régénérables) — seules les figures sont versionnées
+**/data_article/*.csv
+**/data_article/*.json
+data_revision/
+recherche/note_resultats/revision_*/*.csv
+recherche/note_resultats/revision_*/*.json
+recherche/note_communication_encadrants/revision_*/*.csv
+recherche/note_communication_encadrants/revision_*/*.json

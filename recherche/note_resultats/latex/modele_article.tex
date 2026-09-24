@@ -1,0 +1,171 @@
+\section{Un modèle physique et comptable minimal}\label{sec:modele}
+\input{exemple_article}
+
+\subsection{État, comptabilité, invariants}
+
+La population est ouverte et ne comporte qu'un type d'agent, appelé
+\emph{entité}. Aucun rôle --- prêteuse, emprunteuse, banque --- n'est déclaré ;
+toutes les entités suivent les mêmes règles, et toute différenciation observée
+est émergente.
+
+Les variables $K_i,C_i,D_i,NW_i$, l'âge et les flux reçus ou versés sont
+propres à l'entité $i$. Les paramètres $\lambda,\delta,\sigma,\rho$ et
+l'institution de crédit sont communs à toute la population.\footnote{Les
+paramètres $\lambda$, $\delta$ et $\sigma$ sont explicités au
+§\ref{sec:pas} ; $\rho$ et l'institution de crédit au §\ref{sec:credit}.
+Le glossaire de l'annexe~\ref{sec:glossaire} rassemble les notations.} La technologie
+$(A_i,\gamma_i)$ est attachée à chaque entité ; elle est identique pour toutes
+au point de référence, mais peut différer après une intervention ciblée.
+
+Une entité $i$ possède un stock réel productif $K_i \ge 0$, compté en joules,
+que nous appelons son \emph{capital}. Il s'agit de sa taille intrinsèque
+productive et non d'un capital comptable. Un contrat de prêt lie une prêteuse
+à une emprunteuse par un \emph{principal} nominal $q > 0$ et un \emph{taux}
+par pas $r > 0$. En sommant sur les contrats où $i$ intervient, on obtient ses
+créances $C_i$ et ses dettes $D_i$, puis sa \emph{valeur nette}
+\begin{equation}
+NW_i = K_i + C_i - D_i .
+\label{eq:nw}
+\end{equation}
+
+L'asymétrie entre les deux stocks est constitutive : le capital est réel,
+productif et dépréciable, tandis que le principal est nominal, perpétuel et
+non amorti. Le réseau de dettes peut donc rester lourd alors que les actifs
+réels s'érodent.
+
+Les règles imposent algébriquement, à chaque pas, $K_i \ge 0$,
+$\sum_i C_i = \sum_i D_i$, l'égalité entre la somme des valeurs nettes des
+survivantes et leur capital total, et le bilan réel
+\begin{equation}
+\sum_i K_i(t{+}1) - \sum_i K_i(t) = \text{dotations} + \text{choc}
+  + \text{production} - \text{dépréciation} - \text{destruction},
+\label{eq:bilan}
+\end{equation}
+les cinq termes de droite étant enregistrés séparément à chaque pas.
+La vérification numérique tient compte des arrondis en virgule flottante.
+Prêts et intérêts sont des transferts internes purs : il n'y a ni création ni
+fuite de joules hors des canaux nommés en~\eqref{eq:bilan}.
+
+\subsection{Un pas de temps}\label{sec:pas}
+
+Les phases s'exécutent dans cet ordre, qui fait partie du modèle.
+Les interventions programmées sont appliquées avant les naissances.
+
+\begin{enumerate}[label=(\roman*),leftmargin=2.2em]
+\item \textbf{Naissances.} Un nombre $B_t \sim \mathrm{Poisson}(\lambda)$
+  d'entités entre, chacune dotée d'un capital $K^\circ$. Le paramètre $\lambda$ est
+  l'\emph{intensité de naissance} et $K^\circ$ la \emph{dotation de naissance}.
+\item \textbf{Choc.} $K_i \leftarrow K_i \, e^{\eta_i}$, avec
+  $\eta_i \sim \mathcal{N}(-\sigma^2/2,\ \sigma^2)$ indépendants. La moyenne
+  multiplicative vaut un : aucune dérive n'est imposée. Le paramètre $\sigma$
+  fixe l'amplitude commune du bruit ; le tirage $\eta_i$ est individuel et
+  renouvelé à chaque pas. Ce n'est pas un choc global partagé.
+\item \textbf{Production.} $K_i \leftarrow K_i + A\,K_i^{\gamma}$, avec
+  $0<\gamma<1$. Le paramètre $A$ est la \emph{productivité} de la technologie
+  et $\gamma$ son \emph{exposant de production}. La concavité est essentielle :
+  c'est elle qui crée un gain à la mise en commun (§\ref{sec:credit}).
+\item \textbf{Service des intérêts.} Il s'agit du paiement périodique de la
+  charge du prêt, sans remboursement du principal. Chaque emprunteuse verse $\sum r q$ prélevé sur son
+  capital ; si elle ne le peut pas, elle verse au prorata et entre en défaut de
+  service.
+\item \textbf{Dépréciation.} $K_i \leftarrow (1-\delta)K_i$, où $\delta$ est le
+  \emph{taux de dépréciation par pas}. Il représente l'érosion temporelle
+  du stock ; sa valeur dépend donc de la durée choisie pour un pas
+  (§\ref{sec:temps}). Les principaux, eux, ne se déprécient pas.
+\item \textbf{Marché.} Voir §\ref{sec:credit}.
+\item \textbf{Faillites.} Voir §\ref{sec:faillite}.
+\item \textbf{Mesures.} Aucune option d'enregistrement ne consomme de tirage
+  aléatoire : les trajectoires avec et sans mesure sont identiques.
+\end{enumerate}
+
+\input{physique_echelles}
+Le couplage de sphères physique et économique distinctes rejoint une
+motivation thermodynamique existante \cite{herbert}, sans reprendre son modèle
+ni identifier la monnaie à l'exergie.
+
+\subsection{Le crédit comme coopération, et le taux comme partage}
+\label{sec:credit}
+
+Pour deux entités ayant la même technologie concave, le rendement marginal
+$f'(K)=A\gamma K^{\gamma-1}$ est plus grand chez la moins dotée.
+Un transfert vers elle augmente donc la production \emph{jointe} tant qu'il
+ne dépasse pas l'égalisation des rendements marginaux. Ce résultat ne vaut
+pas pour n'importe quel montant ni pour n'importe quelle paire hétérogène. C'est
+l'unique motif du crédit dans ce modèle : il n'y a ni anticipation, ni
+préférence temporelle, ni prix.
+
+La figure~\ref{fig:art_technologie} illustre le rôle de la technologie et
+le gain du prêt. À $\gamma$ fixé, $A$ multiplie l'extraction par pas ;
+ce n'est pas à lui seul une puissance en watts. L'exposant $\gamma$
+mesure les rendements d'échelle individuels. Entre zéro et un, il rend la
+fonction concave et permet un gain de réallocation : l'appeler directement
+« propension à collaborer » serait excessif. À $\gamma=1$ et technologie
+identique, ce gain disparaît ; sa variation avec $\gamma$ demande de fixer
+les unités et les états comparés.
+
+\figurine{art_technologie}{1.0}{\textbf{Technologie et gain de coopération.}
+À gauche, les technologies $f_1(K)=2K^{1/4}$ et $f_2(K)=K^{1/2}$
+se croisent à $K=16$, pour une production de 4 par pas ; les stocks
+initiaux sont distincts, $(K_1,K_2)=(20,4)$. Les coefficients sont
+exprimés dans une même unité de stock fixée. À droite, un prêt de 1 vers 2
+augmente la production jointe jusqu'à l'égalisation des rendements
+marginaux. La zone entre gain et perte mesure le surplus joint ;
+le croisement des productions à gauche n'est pas cette égalisation.
+Ces courbes sont analytiques,
+à états fixés, sans intervalle statistique.}
+
+La phase de marché réalise $\lfloor\rho n\rfloor$ tours pour un bassin
+admissible de $n$ entités dans les configurations étudiées ; $\rho$ est
+l'intensité de marché (valeur $1$ par défaut). Les rencontres sont par paires.
+Le montant vise la cible d'égalisation des rendements marginaux dans la
+configuration principale. Le sens libre du prêt retrouve le transfert
+riche vers pauvre en régime homogène, pas nécessairement en régime hétérogène.
+
+Il existe donc un \emph{surplus de coopération} à répartir, et le taux
+d'intérêt est le mécanisme de répartition. Pour un contrat de principal $q$,
+notons $L$ la perte de production que subit la donneuse en se séparant de ce
+stock, et $\Delta$ le gain de production jointe de la paire --- le surplus. Le
+service versé par pas se décompose alors comme
+\begin{equation}
+r\,q \;=\; L \;+\; p\,\Delta.
+\label{eq:partage}
+\end{equation}
+Le nombre $p$ est le \emph{partage}. La règle imposée \texttt{bargain} explore
+$p\in[0,1]$ ; le partage implicite d'une autre règle peut dépasser ces bornes.
+À $p = 0$, le service compense exactement la perte productive calculée
+à la création du contrat ; la receveuse conserve le surplus. À $p = 1$,
+la prêteuse reçoit aussi tout ce surplus. Cette comparaison instantanée
+ne garantit pas le bilan du contrat sur sa durée de vie. L'équation~\eqref{eq:partage} \emph{définit} $p$ pour n'importe quelle
+règle de taux, ce qui permet de situer une règle donnée sur l'échelle du
+partage --- c'est ce que nous exploitons au §\ref{sec:partage}. La règle de
+référence, employée par défaut, fixe $r$ à la moyenne géométrique des
+rendements marginaux des deux entités.
+
+\subsection{Faillite et cascade}
+\label{sec:faillite}
+
+Une entité fait faillite si elle est en défaut de service ou si $NW_i < 0$. La
+règle est délibérément brutale : ses contrats sont \emph{annulés} --- ses
+créancières perdent le principal, sans recouvrement ni amortisseur --- et son
+capital résiduel est \emph{détruit}. Un défaut anéantit donc directement des
+actifs détenus par d'autres et peut les rendre insolvables à leur tour ; les
+nouvelles insolvabilités forment la génération suivante, et l'on itère
+jusqu'au point fixe \emph{à l'intérieur du même pas}.
+
+Cette règle est ce qui distingue une contagion d'une simple synchronisation.
+Lorsqu'une emprunteuse meurt, chaque prêteuse perd le principal correspondant,
+ce qui définit une arête dirigée de la morte vers la prêteuse. Une
+\emph{avalanche} est une composante faiblement connexe de ce graphe de pertes,
+restreint aux entités mortes dans le même pas.
+\input{cascade_article}
+
+On en tire deux mesures de propagation : le \emph{rapport de branchement}
+$b_1 = 1 - (\text{racines}/\text{morts})$, où une racine est une faillite
+entrée directement dans la file initiale du pas, et la \emph{descendance
+moyenne} $b_2$, nombre moyen de couples causals entre générations successives
+par mort. Les deux coïncident
+si et seulement si chaque mort non racine a exactement un parent ; leur écart
+mesure l'excès d'arêtes par morte : $b_2-b_1=\sum_v(d_v-1)/N$,
+avec $d_v$ le nombre de parents de génération précédente d'une non-racine et
+$N$ le nombre total de mortes. Ce n'est ni la proportion de victimes à plusieurs
+parents, ni le nombre de causes individuellement suffisantes.

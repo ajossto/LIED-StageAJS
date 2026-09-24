@@ -1,0 +1,626 @@
+\begin{abstract}\small
+Une amélioration technique locale ne se traduit pas nécessairement par une
+réponse proportionnelle du système entier. Ce travail explore l'hypothèse
+qu'une partie de l'effet rebond puisse provenir de l'organisation des échanges,
+et pas seulement d'une modification des comportements. Nous construisons
+un modèle-jouet physique : des entités extraient une ressource, se prêtent du
+stock productif et peuvent disparaître, en transmettant leurs pertes à leurs
+créancières. La population, le réseau et les inégalités se forment au cours
+de la simulation ; ils ne sont pas fixés comme cibles.
+
+Le travail articule trois questions : quelles régularités émergent, quels
+paramètres permettent de les faire varier, et comment le système répond
+à une amélioration de sa technologie. Les simulations produisent des cascades
+de tailles variées et des distributions de bilan et d'intérêts à longue queue.
+Les ajustements en puissance avec coupure des tailles de cascade laissent
+des écarts systématiques ; l'auto-organisation critique n'est pas établie. Les contractions
+de l'activité sont courtes, avec une décroissance des durées proche d'une
+exponentielle. L'intensité des échanges agit sur la propagation et les
+statistiques de queue ; le changement de pas de temps ne se réduit pas à
+un changement d'unité.
+
+Dans la configuration principale, augmenter de 50\,\% le coefficient
+d'extraction augmente la production agrégée d'environ 35\,\%, et non de
+50\,\% : la production individuelle augmente tandis que la population diminue.
+La réponse dépend notamment de la taille des nouvelles entités relativement
+à l'échelle productive. Ces résultats établissent une non-proportionnalité
+endogène dans le modèle, pas une mesure calibrée du rebond énergétique réel.
+\end{abstract}
+
+\section{Introduction : la question physique du stage}
+L'effet rebond désigne le fait qu'une amélioration de l'efficacité énergétique
+ne produise pas une baisse proportionnelle de la consommation. Une explication
+usuelle est comportementale : le service devenant moins cher, on en consomme
+davantage. Nous explorons ici une hypothèse différente, suggérée par les
+travaux sur le métabolisme urbain \cite{hendrick} et par l'application de
+l'auto-organisation critique à l'économie de production \cite{bak} :
+\emph{et si une partie de la réponse était endogène à l'organisation des
+échanges}, c'est-à-dire une propriété de la manière dont les agents sont
+couplés plutôt qu'une somme de décisions individuelles ?
+
+Cette question demande un modèle où l'on puisse modifier les capacités
+individuelles pendant la simulation et observer la réorganisation qui
+s'ensuit, sans qu'une règle ait été écrite pour produire un rebond. Nous
+construisons un modèle-jouet à cette fin. Il ne comporte ni prix, ni travail,
+ni consommation finale, ni ménages distincts des firmes : il code des
+interactions locales et laisse les régularités macroscopiques émerger.
+
+Deux objectifs guident sa construction : obtenir une réponse collective
+non proportionnelle à une modification microscopique, et faire émerger des
+classes de distributions qui puissent être confrontées, avec les précautions
+nécessaires, à celles observées dans l'économie. L'hypothèse directrice est
+qu'une organisation présentant des tendances à la criticité pourrait amplifier
+ou atténuer une perturbation locale. Dans un système auto-organisé critique,
+l'activité se maintiendrait spontanément au voisinage d'un seuil de propagation ;
+une gamme étendue de tailles d'événement en serait un indice, non une preuve.
+Nous ne supposons pas cette hypothèse acquise pour le modèle construit.
+
+L'enjeu du stage n'est donc pas seulement la dernière expérience de
+productivité. Il comprend la construction d'un modèle cohérent,
+la recherche de variables endogènes pertinentes,
+la cartographie des sensibilités, puis les interventions contrôlées.
+Le lecteur rencontre d'abord un exemple à quatre entités, avant les équations
+(§\ref{sec:modele}). Le protocole distingue les familles d'expériences
+(§\ref{sec:protocole}). Nous examinons ensuite l'émergence
+(§\ref{sec:systeme}), le pilotage et les échelles (§\ref{sec:pilotage}),
+puis la réponse technologique et sa distribution (§\ref{sec:rebond}).
+Les diagnostics secondaires et leurs limites sont développés en annexe.
+
+\input{modele_article}
+
+\section{Des démarches expérimentales en plusieurs étapes}\label{sec:protocole}
+La première étape est une \emph{cartographie} : varier les paramètres pour
+distinguer les régularités robustes des effets propres à une configuration.
+L'étude M4B explore les naissances, l'érosion du stock, le bruit, la dotation
+et la taille du bassin de rencontre. Elle comprend des variations un paramètre
+à la fois, un plan global de 64 points à trois graines, des coupes à deux
+paramètres et une confirmation à cinq graines nouvelles. Son inventaire
+compte 594 simulations, dont les résultats ne sont pas tous reproduits ici.
+Le centre de confirmation est $\lambda=30$, $\delta=0{,}05$,
+$\sigma=0{,}25$, $K^\circ=25$, $k=3$, $A=1$, $\gamma=1/2$.
+
+La deuxième étape est l'\emph{identification des échelles} : déterminer ce
+qui relève d'une liberté d'unité et ce qui change réellement les échanges.
+Les essais de recalage temporel utilisent trois graines par configuration,
+avec des durées ramenées à une même unité. Ils sont présentés séparément,
+car leur protocole n'est pas celui des interventions technologiques.
+
+La troisième étape est l'\emph{intervention appariée}. Au point principal,
+$\lambda=30$, $K^\circ=25$, $\sigma=\delta=0{,}01$,
+$A=1$, $\gamma=1/2$, $\rho=1$ et $k=2$. La population compte environ
+1132 entités au régime observé. Douze états sont amorcés jusqu'au pas 2000 ;
+chacun donne un contrôle et des variantes, avec le même état initial et le
+même générateur à la bifurcation. Les tirages individuels peuvent ensuite
+diverger avec les effectifs. La campagne M4.4 comporte 372 simulations
+inventoriées, pas 372 répétitions indépendantes d'une même expérience.
+
+Les résultats M4B et ceux de la configuration principale ne sont pas
+interchangeables : outre le bruit et la dépréciation, M4B utilise un bassin
+de $k$ entités et une cible géométrique, alors que la configuration principale
+emploie des rencontres par paires et une cible d'égalisation marginale.
+Chaque figure indique sa famille, sa fenêtre et son nombre de graines.
+Les noms de moteurs servent à retrouver les sources, pas à remplacer ces
+définitions scientifiques.
+
+La variation de $k$ appartient à l'exploration historique M4B ; les
+expériences principales ultérieures fixent les rencontres à $k=2$.
+Ce choix retire $k$ des leviers de cette configuration, sans modifier
+rétroactivement les paramètres des expériences anciennes. Les extensions
+du logiciel ont fait l'objet de contrôles de compatibilité dans des
+régimes spécifiés ; cela ne rend pas équivalentes des règles de marché
+différentes. L'annexe~\ref{sec:compatibilite} distingue ces vérifications
+des changements du modèle.
+
+Une graine, et non une entité ou un pas, constitue l'unité de répétition.
+Sauf indication contraire, les niveaux sont moyennés sur $3000<t\le4000$,
+puis les rapports sont calculés graine par graine. Une barre IC95 est un
+intervalle de Student entre ces répétitions. Un diagnostic de dérive compare
+les premier et dernier quarts de la fenêtre ; sa formule, ses résultats et
+sa portée limitée figurent en annexe~\ref{sec:stationnarite}. L'absence de
+dérive moyenne détectée ne démontre pas une stationnarité stricte.
+
+\section{Ce qui émerge sans être imposé}\label{sec:systeme}
+\subsection{Une population renouvelée et un réseau de crédit}
+Les règles fixent le flux moyen des naissances, pas l'effectif de la
+population, la durée de vie ou les rôles de prêteuse et d'emprunteuse.
+Dans les configurations retenues, les séries s'établissent dans un régime
+fluctuant sans croissance illimitée observée. Les entrées compensent en
+moyenne les sorties, mais une distribution stable d'âges n'implique pas
+qu'une entité particulière soit à l'équilibre. Les nouvelles entités
+grandissent, contractent des engagements et disparaissent à des âges variés.
+
+La loi de Little relie, sous régime stable et avec des frontières temporelles
+maîtrisées, l'effectif moyen au flux d'entrée multiplié par la durée de vie
+moyenne. C'est une identité démographique utile pour organiser les mesures,
+pas une explication de la durée de vie. Celle-ci dépend du bruit, du réseau
+et des règles de faillite. L'équilibre déterministe d'une entité isolée
+ne prédit donc pas à lui seul l'état collectif.
+
+\subsection{Des cascades orientées et une gamme étendue de tailles}
+Le graphe des pertes permet de distinguer propagation et coïncidence temporelle.
+L'exemple de la figure~\ref{fig:cascade} donne la définition ; les distributions
+de la figure~\ref{fig:art_avalanches} montrent les réalisations simulées.
+Nous ajustons, sur chaque graine, une probabilité discrète
+\begin{equation}
+ P(S=s)=Z^{-1}s^{-\alpha}\exp(-s/S_c),\qquad s\ge1,
+ \label{eq:avalanche}
+\end{equation}
+où $Z$ normalise la somme des probabilités et $S_c$ décrit une coupure douce,
+non une taille maximale absolue. Au contrôle principal, les douze ajustements
+donnent $\alpha=1{,}623\pm0{,}009$ et $S_c=206\pm11$ ; sous
+$A\times1{,}5$, $\alpha=1{,}667\pm0{,}009$ et $S_c=185\pm7$.
+Ces incertitudes décrivent la variabilité entre graines de cet estimateur.
+Elles ne valident ni la famille choisie ni l'identification de la coupure
+à la taille du système.
+
+\figurine{art_avalanches}{1.0}{\textbf{Histogrammes, ajustements et répétitions.}
+M4.4, douze graines par condition, $3000<t\le4000$. Les points donnent la
+probabilité par classe divisée par la largeur de classe ; les barres sont
+des IC95 inter-graines. Les courbes sont les moyennes des ajustements
+discrets à coupure exponentielle, les rubans un bootstrap de 2000 tirages
+de runs entiers. Les droites tiretées indiquent la pente $-\alpha$ de
+référence, pas la loi tronquée complète. Les $R^2$ sont calculés sur les
+logarithmes des classes non vides, puis moyennés entre graines. Le panneau
+gauche représente le contrôle dont les exposants individuels sont repris
+à droite ; le panneau central représente l'autre série.
+\textsuperscript{1}Les barres trop longues pour l'échelle log sont tronquées
+à 95\,\% du niveau ; leurs valeurs intégrales restent dans les données.}
+
+Le modèle à coupure est ajusté par vraisemblance sur les tailles entières,
+pas par sélection du morceau le plus rectiligne de l'histogramme. Les
+$R^2$ moyens, environ $0{,}938$ et $0{,}928$, ne constituent pas un test
+de Pareto. Malgré ces valeurs élevées, les courbes sous-estiment une partie
+des tailles intermédiaires et surestiment les extrêmes : les écarts visibles
+dépassent plusieurs des barres inter-graines. La forme simple
+de l'équation~\eqref{eq:avalanche} ne rend donc pas compte de toute la
+distribution à la précision des données. Choisir la coupure pour
+optimiser simultanément une variance bootstrap et un $R^2$ sélectionnerait
+aussi les fluctuations favorables ; nous retenons ici un modèle et un support
+annoncés, avec les réserves de l'annexe~\ref{sec:ajustements}.
+
+Au point principal, $b_1=\BUnControle\pm\BUnControleIC$ et
+$b_2=\BDeuxControle$ : certains décès ont plusieurs parents. Le fait que
+$b_1<1$ n'est pas, à lui seul, un test contre la criticité : sa définition
+comme fraction de morts propagées le borne par construction. Réciproquement,
+une queue étendue ne démontre pas une SOC. L'étude de taille finie et la
+définition des événements entre plusieurs pas restent nécessaires.
+
+\subsection{Des contractions courtes, distinctes des avalanches}
+Une avalanche est un événement du réseau à l'intérieur d'un pas. Une
+contraction est une suite de pas où une grandeur agrégée diminue. Elles ne
+sont donc ni la même observation ni deux définitions d'une même taille.
+Dans le régime M4B central, les durées moyennes de contraction du stock et
+de la production sont proches de deux pas. La figure~\ref{fig:art_cycles}
+formalise leur décroissance par une exponentielle discrète,
+$P(D\ge d)=\exp[-\beta(d-1)]$, $d=1,2,\ldots$.
+
+\figurine{art_cycles}{1.0}{\textbf{Durées de contraction : une exponentielle,
+pas une puissance imposée.} M4B central, cinq graines 11--15,
+$1000<t\le4000$, sans lissage ; stock et production sont traités séparément.
+$\beta$ est estimé par graine depuis la durée moyenne. Les points sont les
+survies empiriques et leurs IC95 ; les courbes moyennent les cinq ajustements.
+Les $R^2$ descriptifs portent sur la log-survie aux durées observées, dont les
+points sont dépendants. Les barres logarithmiques sont tronquées selon la
+convention de la figure~\ref{fig:art_avalanches}. Les épisodes qui touchent
+une frontière de fenêtre sont comptés selon le protocole existant ; ce n'est
+pas une analyse de survie corrigeant la censure.}
+
+On trouve $\beta=0{,}731\pm0{,}029$ pour le stock et
+$0{,}696\pm0{,}035$ pour la production, avec des $R^2$ log-survie moyens
+proches de $0{,}98$. Wright \cite{wright} montre précisément pourquoi il
+faut comparer puissance et exponentielle sur l'ensemble des durées, sans
+éliminer les épisodes les plus courts. Son étude porte sur des contractions
+annuelles du PIB de 17 économies entre 1870 et 1994 ; nos pas non calibrés
+ne sont pas des années. La ressemblance de forme motive une comparaison
+future ; ces contractions courtes n'étayent pas une loi de puissance des
+durées ni, à elles seules, l'hypothèse SOC.
+
+\subsection{Distributions de bilan et d'intérêts : quelle plausibilité ?}
+La valeur nette (\emph{net worth}, notée $NW$) est la grandeur du modèle
+la plus proche d'un patrimoine net : actifs réels plus créances moins
+dettes. Les intérêts reçus constituent
+un flux de revenu financier. Leurs distributions émergent d'entités soumises
+aux mêmes règles, et non de classes de richesse imposées à la naissance.
+Au régime principal, les Gini temporellement moyennés sont proches de
+$0{,}613$ pour la valeur nette et $0{,}513$ pour les intérêts reçus.
+La figure~\ref{fig:art_lorenz} représente des instantanés distincts de ces
+moyennes temporelles.
+
+\figurine{art_lorenz}{1.0}{\textbf{La distribution collective persiste malgré
+le renouvellement individuel.} Contrôle M4.4, douze graines : courbes de
+Lorenz à $t=2010$, $3000$ et $4000$, et IC95 inter-graines. Chaque observable
+possède son propre classement.}
+
+Pour situer les ordres de grandeur, le Gini du patrimoine net des ménages
+américains est de $0{,}852$ dans la SCF 2019 \cite{fedgini} : le modèle
+principal est donc sensiblement moins inégalitaire sur cette mesure.
+Le CBO rapporte un Gini de $0{,}516$ pour le revenu avant transferts sous
+conditions de ressources et impôts en 2019 \cite{cbogini}. Sa proximité
+numérique avec $0{,}513$ ne valide pas la distribution du modèle : les
+intérêts reçus ne comprennent ni salaires, ni l'ensemble des revenus du
+capital, et nos entités ne sont pas des ménages pondérés selon leur taille.
+Une confrontation directe exige un même type d'acteur, une même période
+et une même définition comptable. Nous ne comparons donc pas le Gini du
+stock physique à celui du revenu pour conclure à la plausibilité économique.
+
+Les queues de valeur nette et d'intérêts sont compatibles avec des
+ajustements en puissance sur une partie du domaine ; leur identification
+statistique reste ouverte \cite{clauset,wildauer}. Une log-normale et une
+puissance à coupure ont chacune deux paramètres de forme à seuil fixé.
+Si la coupure dépend de la taille du système, cette dépendance doit être
+estimée sur plusieurs tailles ; elle ne retire pas automatiquement un
+paramètre à un ajustement réalisé à taille finie. Les tests existants et
+leurs limites sont détaillés en annexe~\ref{sec:ajustements}.
+
+\section{Pilotage : quels leviers changent quelles propriétés ?}\label{sec:pilotage}
+\subsection{Une hiérarchie de sensibilités, pas un unique bouton de contrôle}
+La cartographie M4B sépare des effets qui seraient confondus dans une
+comparaison de deux trajectoires seulement. Le bruit $\sigma$ affecte
+la survie et l'exposition ; la dotation $K^\circ$ change la position d'entrée des
+jeunes entités. La dépréciation déplace l'échelle productive et intervient
+aussi dans les bilans ; le taux de naissance $\lambda$ permet d'explorer
+des populations de tailles différentes. Ce sont des tendances dans le
+domaine étudié, pas des rôles exclusifs ni des indépendances démontrées.
+
+\figurine{art_sensibilite}{0.72}{\textbf{Revenir aux leviers étudiés pendant
+la construction du modèle.} Confirmation M4B, cinq graines indépendantes
+par cellule, $T=4000$. Gini de valeur nette calculé sur l'instantané final,
+non Gini du capital ni du bassin. Les autres paramètres sont ceux du
+centre historique M4B, notamment $k=3$ ; seul $\sigma$ varie.
+Le balayage ancien de $k$ n'est pas représenté ici, les expériences
+principales ultérieures fixant les rencontres à deux entités.
+Les barres sont des IC95 de Student
+recalculés depuis les valeurs par graine.}
+
+La variation de taille finie est particulièrement importante pour
+l'hypothèse critique. Dans la confirmation M4B, quand $\lambda$ passe
+de 10 à 30 puis 100, la taille maximale moyenne observée des avalanches
+passe de 29 à 54 puis 110. Les coupures ajustées ne se comportent pas
+toutes aussi régulièrement : à $\lambda=100$, la valeur estimée est
+très au-delà de l'échantillon, donc mal identifiée. Ces observations
+appuient une étude de taille finie ; elles ne justifient pas d'imposer
+une loi universelle de coupure ou de mélanger les exposants M4B et M4.4.
+
+\subsection{L'intensité des rencontres comme levier expérimental}
+Dans la configuration principale, $\rho$ règle le nombre de rencontres
+par pas. Le faire varier de $0{,}5$ à $3$ permet de mesurer sa réponse
+sur cinq niveaux, avec douze graines par niveau. Les exposants ajustés
+des queues d'intérêts et de valeur nette, ainsi que le branchement,
+augmentent ; le Gini de valeur nette varie plus faiblement.
+
+\figurine{art_rho}{0.95}{\textbf{Mesurer le pilotage sur des observables
+définies.} M4.4, cinq valeurs de $\rho$, douze graines,
+$3000<t\le4000$. Les exposants et le branchement sont ceux des analyses
+par graine ; le Gini de valeur nette est recalculé sur les panneaux de la
+même fenêtre. Points : moyennes et IC95. Courbes : ajustements log-log
+par graine ; pentes et $R^2$ sont ensuite moyennés, avec IC95 des pentes.}
+
+Les pentes log-log mesurées valent $0{,}0465\pm0{,}0074$ pour
+l'exposant des intérêts, $0{,}0272\pm0{,}0074$ pour celui de la valeur
+nette et $0{,}1345\pm0{,}0020$ pour $b_1$. Celle du Gini de valeur nette
+est $-0{,}0084\pm0{,}0023$ : un effet faible mais détectable en moyenne,
+qui ne doit pas être confondu avec la forte réponse du Gini du bassin.
+Une pente moyenne significative n'implique pas que chaque incrément soit
+monotone dans chaque graine. Le résultat est un levier local de pilotage,
+pas une loi universelle ni la preuve d'une famille de distribution.
+
+\subsection{Changer une échelle n'est pas toujours changer le système}
+L'adimensionnement (§\ref{sec:parametres_reduits}) supprime une liberté
+d'unité : multiplier tous les stocks et principaux par $c$ et $A$ par
+$c^{1-\gamma}$ conserve les équations homogènes. La quantité
+$\kappa^\circ=K^\circ/K_{\rm aut}$ exprime au contraire une position
+relative qui change la dynamique. À $\gamma=1/2$, multiplier $A$ par
+1,5 multiplie $K_{\rm aut}$ par $2{,}25$ ; garder $K^\circ$ fixe
+divise donc $\kappa^\circ$ par $2{,}25$.
+
+Cette distinction organise les expériences : un changement technique
+à dotation fixe teste un déplacement relatif des nouveaux entrants,
+tandis qu'une dotation compensée conserve cette position relative.
+Il faut encore distinguer la compensation des seules naissances après
+une intervention et le rééchelonnement de \emph{tout} l'état initial,
+y compris du réseau nominal. Seul le second relève directement de
+la symétrie exacte des équations.
+
+\subsection{La granularité du pas de temps}\label{sec:temps}
+La dépréciation représente une érosion temporelle. Si un pas dure
+$\Delta t$ et que le taux continu d'érosion est $d$, alors
+$\delta=1-e^{-d\Delta t}$. Regrouper $s$ pas exige donc
+\[
+ \delta'=1-(1-\delta)^s,\qquad
+ \sigma'=\sqrt{s}\,\sigma,\qquad \lambda'=s\lambda.
+\]
+Les deux dernières relations composent respectivement les chocs log-normaux
+indépendants et les naissances de Poisson \emph{en loi}, pour les phases
+isolées. Elles ne garantissent pas que le système couplé ait la même loi.
+Il faut également convertir les flux par pas : $A'\simeq sA$ et
+$\rho'\simeq s\rho$ ; le service nominal des contrats existants doit
+être converti si l'on transforme un état déjà endetté.
+
+\figurine{art_temps}{1.0}{\textbf{Le changement de pas ne s'arrête pas à
+trois substitutions.} Expériences Live-v1 depuis un état vide, trois
+graines par configuration. Fenêtre commune $1200<t_{\rm ancien}\le2000$.
+Les flux des pas regroupés sont divisés par $s$, pas les stocks. Les
+trois premiers essais regroupent deux pas ; le quatrième en regroupe quatre.
+Le dernier compare deux configurations à $\delta=0{,}002$ avant conversion,
+et possède donc sa propre référence. Points : rapports par graine moyennés ;
+barres : IC95 de Student, larges avec trois répétitions.}
+
+Les simulations de la figure~\ref{fig:art_temps} laissent un résidu même
+après conversion de tous ces coefficients. Deux pas mettent successivement
+à jour la production, les engagements, la population et les rencontres ;
+un seul pas plus intense ne reproduit pas cette alternance. La réduction
+du seul $\delta$ ne supprime pas le résidu dans l'essai réalisé.
+Ces contrôles écartent une simple erreur d'unité comme explication complète,
+sans isoler chacun des effets de composition. Une véritable étude de
+convergence demanderait de réduire conjointement tous les incréments
+pertinents et de comparer à horizon physique fixé. Elle reste à mener.
+
+\section{Réponse collective à une amélioration technologique}\label{sec:rebond}
+\subsection{Ce qui change et ce que mesure l'élasticité}
+L'expérience principale multiplie $A$ par $m=1{,}5$ sur toutes les
+entités vivantes et sur les naissances futures, à partir du pas 2001.
+À stock inchangé et exposant $\gamma$ fixé, chaque entité produirait
+exactement 50\,\% de plus : c'est la référence proportionnelle.
+Mais les stocks, le réseau et l'effectif évoluent ensuite. Nous mesurons
+\begin{equation}
+ \varepsilon_s=\frac{\ln(\overline Y_{s,T}/\overline Y_{s,C})}{\ln(1{,}5)},
+ \qquad \widehat\varepsilon=\frac1{12}\sum_{s=1}^{12}\varepsilon_s,
+ \label{eq:eps}
+\end{equation}
+où $Y$ est la production totale, $T$ le bras traité, $C$ le contrôle et
+la barre une moyenne sur $3000<t\le4000$. Le dénominateur est le
+logarithme du facteur technique imposé, pas une constante ajustée.
+Une réponse proportionnelle donne $\varepsilon=1$ ; $0<\varepsilon<1$
+signifie une hausse sous-proportionnelle ; $\varepsilon<0$ signifierait
+une baisse malgré l'amélioration. Il s'agit d'une élasticité \emph{finie},
+non d'une dérivée infinitésimale.
+
+\subsection{Une réponse positive mais non proportionnelle}
+À dotation de naissance fixe, $\widehat\varepsilon=0{,}7473\pm0{,}0106$.
+\textbf{La réponse collective n'est pas proportionnelle à l'amélioration
+individuelle.} Le facteur représentatif $1{,}5^{0{,}7473}\simeq1{,}354$
+correspond à environ 35\,\% de production supplémentaire. La moyenne
+arithmétique des rapports n'est pas exactement cette transformation de
+la moyenne des logarithmes ; les valeurs par graine sont conservées.
+
+\figurine{art_reponse}{1.0}{\textbf{Une même amélioration, deux conventions
+de naissance.} M4.4, douze graines appariées. À gauche, écarts relatifs
+traité/contrôle, lissés sur 101 pas par graine avant le calcul des IC95.
+À droite, élasticités finies sur $3000<t\le4000$ ; points pâles : graines ;
+barres : IC95. La compensation porte sur les naissances,
+$K^\circ\to2{,}25K^\circ$, pas sur les stocks et contrats déjà présents.
+La ligne à 2 est une prédiction de symétrie de tout l'état, non une
+contrainte imposée à cet ajustement.}
+
+La population de fin de pas se contracte d'environ un quart, alors que
+la production par entité augmente. Pour garder une décomposition exacte
+après moyenne temporelle, on peut définir le rendement moyen de population
+par $\overline y=\overline Y/\overline N$. Alors
+$\ln(\overline Y_T/\overline Y_C)=
+\ln(\overline N_T/\overline N_C)+\ln(\overline y_T/\overline y_C)$
+par définition. $\overline y$ n'est pas en général la moyenne temporelle
+de $Y(t)/N(t)$ ; il faut aussi distinguer les productrices du pas et les
+survivantes de fin de pas. Une identité de décomposition ne constitue
+pas une démonstration du mécanisme démographique.
+
+Si la dotation suit au contraire l'échelle productive, la mesure vaut
+$2{,}0029\pm0{,}0148$. Cette valeur est compatible avec
+$1/(1-\gamma)=2$, prédiction du rééchelonnement homogène complet,
+mais la compatibilité numérique ne rend pas identiques les deux protocoles.
+Précisément, à $\delta=0{,}01$ et $\gamma=1/2$ fixés,
+$K_{\rm aut}$ passe de $9801$ à $22052{,}25$ lorsque $A$ passe de
+$1$ à $1{,}5$. À dotation inchangée $K^\circ=25$, le rapport
+$\kappa^\circ$ passe d'environ $0{,}00255$ à $0{,}00113$ : les
+nouvelles entités entrent plus petites relativement à cette échelle.
+La compensation consiste à porter leur dotation à $56{,}25$, afin
+de conserver $\kappa^\circ$, et non à annuler la hausse de production
+ou à indemniser une perte. Elle augmente l'apport réel par naissance ;
+les stocks des entités déjà présentes et leurs principaux ne sont pas
+rééchelonnés. Les deux bras comparent donc des conventions d'entrée
+différentes, pas une même intervention énergétique à apport inchangé.
+\textbf{Dans les deux expériences la production augmente ; c'est l'écart
+à la proportionnalité qui change de signe.} Une réponse négative à une
+hausse de $A$ n'a pas été établie ; sa recherche exploratoire n'est pas
+présentée ici comme un résultat.
+
+\subsection{Une chaîne explicative à tester maillon par maillon}
+À dotation fixe, l'amélioration réduit $\kappa^\circ$ : les nouvelles
+entités entrent plus petites relativement à l'échelle productive.
+Les données montrent simultanément une variation de la dispersion rencontrée
+au marché, du volume de crédit et de la mortalité. Elles motivent la chaîne
+ci-dessous, dont les flèches n'ont pas toutes le même statut.
+
+\begin{figure}[htbp]\centering
+\begin{tikzpicture}[>=Stealth,font=\small,
+ box/.style={draw=blue!45!black,fill=blue!4,rounded corners,align=center,text width=3.3cm,minimum height=12mm}]
+\node[box] (a) at (0,0) {$A$ augmente\\$K^\circ$ reste fixe};
+\node[box] (b) at (4.5,0) {$\kappa^\circ$ diminue\\identité d'échelle};
+\node[box] (c) at (9,0) {composition des tailles\\et crédit modifiés};
+\node[box] (d) at (9,-2) {mortalité par entité\\plus élevée};
+\node[box] (e) at (4.5,-2) {effectif moyen\\plus faible};
+\node[box] (f) at (0,-2) {production totale\\non proportionnelle};
+\draw[->,thick] (a)--(b);
+\draw[->,dashed] (b)--(c);
+\draw[->,dashed] (c)--(d);
+\draw[->,thick] (d)--(e);
+\draw[->,thick] (e)--(f);
+\end{tikzpicture}
+\caption{\textbf{Définitions, covariations mesurées et mécanismes proposés.}
+Le premier lien est algébrique. Les liens pointillés motivent une
+interprétation à partir des réponses appariées, sans isoler une médiation
+causale. À régime stable, mortalité par entité et effectif sont liés par
+le bilan des entrées et sorties ; la dernière étape combine l'effectif
+avec la production par entité, qui augmente. Les traits pleins ne signifient
+donc pas tous une causalité identifiée expérimentalement.}
+\label{fig:chaine}
+\end{figure}
+
+Les élasticités de la dispersion du bassin et de la rotation du crédit
+valent respectivement $\ElasticiteGini\pm\ElasticiteGiniIC$ et
+$\ElasticiteRotation\pm\ElasticiteRotationIC$. Le \emph{bassin}
+désigne ici les entités tirées pour une rencontre, pas toute la population ;
+la \emph{rotation} est le nouveau principal prêté par pas rapporté au
+stock total. Leur proximité numérique est un contrôle de cohérence,
+pas la preuve que la première grandeur cause seule la seconde.
+La mortalité par entité répond d'élasticité
+$\ElasticiteMortalite\pm\ElasticiteMortaliteIC$ ; en régime stable,
+elle est approximativement $\lambda/\overline N$.
+
+Le branchement fournit une autre mesure : sous $A\times1{,}5$ à dotation
+fixe, le contraste traité moins contrôle de $b_1$ vaut $\EffetABranchement$ ; compenser $K^\circ$ laisse
+un contraste de $\EffetResiduelBranchement$. Maintenir
+$\kappa^\circ$ rapproche donc aussi cette statistique du contrôle.
+La baisse de la fraction de morts propagées n'implique pas une baisse
+du risque individuel de mourir : les deux dénominateurs sont différents.
+
+\subsection{Les distributions changent avec les cohortes}\label{sec:ou}
+L'agrégat ne dit pas où se déplacent les distributions. Pour chaque
+instantané, nous calculons les quantiles, puis leur moyenne temporelle
+par graine et enfin le rapport traité/contrôle. La figure les représente ;
+les valeurs tabulées sont en annexe~\ref{sec:tableaux}.
+
+\figurine{art_quantiles}{1.0}{\textbf{Lire des positions, pas des groupes fixes.}
+M4.4, $A\times1{,}5$ à dotation fixe, douze graines,
+$3000<t\le4000$. Les abscisses sont placées à
+$\ln[q/(1-q)]$, puis graduées en centiles : l'échelle non linéaire est
+explicite et laisse les quantiles extrêmes lisibles. Points pâles : rapports
+par graine ; points pleins et barres : moyenne et IC95.
+Une ordonnée 1,8 signifie que le quantile considéré vaut 1,8 fois celui
+du contrôle ; elle ne signifie pas que les mêmes entités ont gagné 80\,\%.}
+
+La production se déplace approximativement d'un facteur 1,8 ; les
+quantiles extrêmes de valeur nette et de revenu brut augmentent moins
+que leurs médianes. Le premier décile d'intérêts reçus diminue fortement.
+Le contrôle de composition confirme l'importance des naissances : parmi
+les 10\,\% d'entités recevant le moins d'intérêts, plus de 99,9\,\%
+ont au plus dix pas au contrôle, contre environ 24\,\% de l'ensemble
+de la population. Leur âge moyen est d'environ 1,8 pas, contre 111 pas
+pour l'ensemble. Ces âges sont mesurés chez les survivantes du contrôle
+principal : $A=1$, $\gamma=1/2$, $\lambda=30$, $K^\circ=25$,
+$\delta=\sigma=0{,}01$, $\rho=1$, $k=2$, sens libre et taux marginal.
+Sur les instantanés de $3010$ à $4000$ espacés de dix pas, l'âge
+moyen est $110{,}97\pm1{,}88$ pas, et la moyenne des médianes
+instantanées $40{,}05\pm0{,}16$ pas. Chaque statistique est d'abord
+moyennée dans le temps par graine, puis entre les douze graines ;
+les IC95 portent sur cette dernière moyenne. Il ne s'agit ni de la
+médiane d'un échantillon regroupant tous les instants ni de la durée
+de vie médiane. Après $A\mapsto1{,}5A$ sur les vivantes et les
+entrantes futures à partir du pas 2001, avec $K^\circ$ inchangé,
+ces deux âges deviennent respectivement $94{,}94\pm0{,}86$ et
+$32{,}03\pm0{,}24$ pas. Une exploration plus large des amplitudes
+de variation de $A$ et des valeurs de $\gamma$ reste nécessaire
+pour cette comparaison distributionnelle.
+Le diagnostic du décile jeune est propre au classement par intérêts.
+Dans le décile inférieur de \emph{capital}, la part d'âge inférieur
+ou égal à dix pas est proche de 49\,\%, pas de 100\,\%.
+
+\figurine{art_deciles}{1.0}{\textbf{Production, intérêts et valeur nette
+par décile de capital.}
+M4.4, mêmes bras et fenêtre. Les entités sont reclassées par capital à
+chaque instantané. Lecture : le point du décile 1 donne la part de
+production, d'intérêts ou de valeur nette détenue par les 10\,\% les moins
+dotées en capital à cet instant, et non par les mêmes individus pendant
+1000 pas. La forte présence de jeunes dans le bas du classement contribue
+à ces différences ; elle ne suffit pas à expliquer causalement tout le
+profil. La valeur nette est $NW=K+C-D$ ; elle remplace le stock
+dans le troisième panneau, sans changer le critère de classement.
+Les groupes ont des effectifs égaux à une entité près ; les ex æquo
+sont départagés par ordre stable. Barres : IC95 entre douze moyennes
+par graine, chacune calculée sur les 100 instantanés de la fenêtre.}
+
+\section{L'institution de crédit : un levier complémentaire}\label{sec:partage}
+Le service du prêt répartit le surplus de coopération défini dans le modèle.
+Imposer une part $p$ différente à la prêteuse change l'état collectif,
+sans changer la technologie ni introduire de nouvelles préférences.
+Ce balayage complète le pilotage physique ; il n'est pas le résultat
+directeur du travail.
+
+\figurine{art_institutions}{1.0}{\textbf{Le partage agit sur les niveaux,
+moins sur le Gini de bilan.} M4.4, cinq partages imposés, douze graines,
+$3000<t\le4000$. Régressions linéaires descriptives par graine ;
+équations et $R^2$ moyens affichés. Les rapports sont calculés par graine
+au bras $p=0$, dont la référence brute figure au-dessus du panneau.
+Le losange vert situe la règle marginale historique, dite archaïque,
+à son partage moyen observé. Il sert uniquement de référence illustrative,
+avec incertitude sur les deux coordonnées ; il n'entre pas dans la
+régression des partages constants. Une droite entre niveaux simulés
+n'est pas une prédiction validée aux autres valeurs de $p$.}
+
+La population va d'environ 1904 à 1138 entités quand
+$p$ passe de zéro à un. La règle de référence a un partage moyen par
+contrat proche de $\PartageParContrat$, mais un partage pondéré par
+surplus de $\PartagePondere$. La différence n'est pas une contradiction :
+les petits et les grands surplus n'ont pas le même poids dans ces moyennes.
+L'identité de covariance et sa preuve sont données en
+annexe~\ref{sec:ponderation}. Elle n'établit pas le mécanisme causal
+du changement de population.
+
+La dette rapportée à la seule production ne mesure pas le taux de charge
+sur le revenu brut et ne permet pas de réfuter une convexité du risque
+dans cette charge. L'annexe~\ref{sec:charge} définit et mesure séparément
+le rapport des intérêts versés à la production \emph{plus intérêts reçus}.
+L'identité de pondération ne dispense pas de cette étude du risque.
+
+\section{Portée, limites et expériences suivantes}\label{sec:perspectives}
+Le modèle répond à une question d'existence : des règles locales sans
+comportement de rebond peuvent-elles produire une réponse agrégée non
+proportionnelle ? Dans les configurations étudiées, oui. Il ne tranche
+pas encore la part de ce mécanisme dans une économie réelle.
+La production ajoutée au stock ne distingue pas énergie primaire,
+service utile et consommation finale ; le rebond énergétique au sens
+appliqué \cite{sorrell} demande ces distinctions. L'interprétation en
+droits d'accès à l'exergie reste une hypothèse physique, non une
+calibration empirique.
+
+La plausibilité distributionnelle est partielle : des queues émergent,
+mais leurs familles ne sont pas établies, les niveaux de Gini ne reproduisent
+pas simultanément les références empiriques et l'unité « entité » n'est
+pas encore un acteur économique identifié. La faillite sans recouvrement,
+les principaux perpétuels et l'absence de prix sont des hypothèses fortes.
+La robustesse numérique des comptes ne supprime aucune de ces limites.
+
+L'hypothèse SOC exige davantage qu'un histogramme rectiligne : il faut
+une étude de taille finie étendue, une définition contrôlée de la réponse
+à une perturbation et un traitement de la mémoire entre pas. Les racines
+du graphe intra-pas peuvent avoir accumulé une fragilité les pas précédents.
+À l'inverse, fusionner des événements proches dans le temps peut créer
+artificiellement une grande composante. La granularité temporelle et
+la convention de mesure font donc partie du problème scientifique.
+
+Les prolongements prioritaires sont de comparer les conventions à
+$\kappa^\circ$ contrôlé, d'étudier conjointement l'hétérogénéité de
+$(K^\circ,A,\gamma)$ et de tester une limite de pas plus fin. Si
+$\gamma_i$ varie, la dimension de $A_i$ varie : on doit fixer un
+$K_{\rm ref}$ commun et une loi jointe de
+$(K_i^\circ/K_{\rm ref},A_iK_{\rm ref}^{\gamma_i-1},\gamma_i)$,
+plutôt que tirer arbitrairement des valeurs de $A_i$.
+Une recherche exploratoire de réponse négative à une hausse de $A$
+devrait annoncer ses plages et fenêtres, séparer transitoire et réponse
+établie, puis confirmer sur des graines nouvelles toute configuration
+repérée. Aucun tel résultat n'est revendiqué ici.
+
+Enfin, étendre le partage à $p<0$ ferait accepter à la prêteuse un
+service initialement inférieur à sa perte productive de référence.
+Un bénéfice ultérieur est possible mais non garanti ; il dépendrait des
+trajectoires et des faillites. Le moteur impose actuellement
+$0\le p\le1$ pour le partage fixé : cette extension reste une expérience
+à concevoir, pas un régime déjà simulé.
+
+\section{Conclusion}
+Le travail du stage construit un dispositif pour étudier l'effet rebond
+sous un angle physique : stocks productifs, flux d'extraction et réseau
+d'engagements évoluent ensemble. Il met en évidence des régularités
+collectives non imposées, puis cherche les paramètres qui les déplacent.
+Les tailles de cascade, les distributions de bilan et les durées de
+contraction n'appellent pas une famille statistique unique ; leur
+distinction est indispensable à l'examen de l'hypothèse critique.
+
+La réponse à la technologie constitue un résultat de ce programme :
+une amélioration individuelle uniforme peut produire une hausse collective
+sous-proportionnelle, parce que la population et ses positions relatives
+se réorganisent. La dotation adimensionnée $\kappa^\circ$ permet de
+séparer deux conventions qui conduisent ici à des réponses différentes.
+Le recalage temporel montre, lui, qu'un changement de granularité n'est
+pas une simple symétrie. Ces résultats soutiennent l'intérêt d'une
+explication organisationnelle du rebond, tout en laissant ouvertes
+la criticité du modèle et sa confrontation quantitative à l'économie réelle.

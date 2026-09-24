@@ -1,0 +1,66 @@
+\section{Questions ouvertes et expériences discriminantes}
+\label{sec:perspectives}
+Le premier résultat à prolonger est la réponse collective à la technologie ;
+le partage du surplus constitue une seconde voie de recherche. Les pistes
+suivantes sont des intentions scientifiques, pas des résultats acquis ni
+des protocoles définitivement arrêtés.
+
+\paragraph{Hétérogénéité du trio $(K_0,A,\gamma)$.}
+Il faut étudier ensemble la dotation initiale, la productivité et la concavité :
+trio identique à toutes les naissances, tirage dans une distribution bornée,
+corrélations entre composantes, ou dépendance à l'état de la simulation.
+Comparer les conventions à $\kappa_0$ contrôlé puis libre permettrait de séparer
+hétérogénéité technologique et déplacement d'échelle. Si $\gamma_i$ varie,
+la dimension de $A_i$ varie aussi : un tirage uniforme de valeurs numériques
+de $A_i$ n'a pas de sens indépendant de l'unité choisie. Il faut fixer une
+échelle commune $K_{\rm ref}$ et, par exemple, spécifier
+$a_i=A_i K_{\rm ref}^{\gamma_i-1}$, puis documenter la loi jointe de
+$(K_{0,i}/K_{\rm ref},a_i,\gamma_i)$.
+Les sorties à suivre incluent survie des cohortes, production par entité,
+population, réseau de crédit et distributions de bilan ; quels indicateurs
+endogènes résument leur évolution micro- et macroscopique reste une question.
+
+\paragraph{Causalité entre pas et hypothèse de criticité.}
+Les avalanches enregistrées ferment la cascade \emph{dans un pas}.
+Cette convention de mesure ne signifie pas que la causalité du système
+s'y limite : le carnet de dettes, les stocks et les cohortes persistent et
+modifient les risques futurs. Une entité classée « racine » aujourd'hui peut
+donc porter une fragilité accumulée hier. Inversement, la criticité n'est pas
+définie en général comme un phénomène limité à un seul pas.
+La SOC reste ouverte : il faudrait définir une réponse spatio-temporelle à
+une perturbation, des horizons, un contrefactuel et une analyse de taille finie.
+Ni $b_1$ intra-pas, ni une corrélation retardée, ni une droite log--log ne
+suffisent à trancher seuls.
+
+\paragraph{Sur-altruisme et temporalité du contrat.}
+L'extension proposée consiste à accepter $p<0$ dans $rq=L+p\Delta$ :
+la prêteuse reçoit initialement moins que sa perte productive de référence.
+La dissipation et l'évolution des deux entités pourraient changer ce bilan
+ultérieurement ; cette inversion est une hypothèse à tester, pas une
+conséquence automatique du signe de $p$.\footnote{Le moteur de la campagne
+impose actuellement $0\leq p\leq1$ pour la règle \texttt{bargain}.
+Un prolongement devra spécifier l'admissibilité du service $rq$, le maintien
+ou non du taux nominal, l'horizon, les faillites et le contrefactuel sans prêt.
+Un gain productif instantané négatif n'est pas une valeur actualisée nette
+négative : le modèle ne fixe pas de taux d'actualisation.}
+Un premier test isolerait une paire, avec et sans contrat, puis répéterait
+la comparaison dans une population ; seuls les seconds essais renseigneraient
+les rétroactions démographiques et la propagation.
+
+\paragraph{Distributions et comparaison empirique.}
+Pareto demeure une hypothèse suggérée par les graphiques et imparfaitement
+testée faute de temps. Le corps exponentiel n'est plus une cible obligatoire :
+l'objectif est d'identifier la forme et le mécanisme, non de reproduire un
+gabarit universel supposé. Comparer les familles sur le même échantillon et le
+même domaine exige de tenir compte de leur flexibilité.\footnote{Pour deux
+familles emboîtées ajustées correctement, la vraisemblance maximale ne diminue
+pas lorsqu'on ajoute un paramètre ; pour des familles non emboîtées, le seul
+nombre de paramètres ne classe pas les ajustements. Une comparaison par
+AIC/BIC, validation hors échantillon ou test adapté complète l'adéquation
+absolue. Les observations de plusieurs instantanés d'un même run ne sont pas
+des réplications indépendantes.}
+La priorité empirique est une distribution de bilan ou d'intérêts dont
+l'unité statistique, la fenêtre et les conventions comptables soient
+compatibles ; l'entité générique ne sera assimilée à un acteur réel qu'à
+cette condition. Robustesse des queues, seuils de coupure, limite continue
+et autres règles de crédit restent des expériences possibles.

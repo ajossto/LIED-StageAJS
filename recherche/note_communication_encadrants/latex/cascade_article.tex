@@ -1,0 +1,28 @@
+\begin{figure}[htbp]\centering
+\begin{tikzpicture}[>=Stealth,font=\small,
+ dead/.style={draw=red!65!black,fill=red!6,rounded corners,align=center,minimum width=23mm,minimum height=10mm},
+ safe/.style={draw=green!45!black,fill=green!5,rounded corners,align=center,minimum width=26mm}]
+\node[dead] (a) at (0,0) {$e_1$ : racine\\$NW=-1$};
+\node[dead] (b) at (4,1) {$e_2$\\$2\to-2$};
+\node[dead] (c) at (4,-1) {$e_3$\\$1\to-2$};
+\node[dead] (d) at (8,1) {$e_4$\\$1\to-2$};
+\node[safe] (e) at (8,-1.2) {$e_5$ : survit\\$16\to10$};
+\draw[->,thick] (a)--node[above,sloped] {perte $4$} (b);
+\draw[->,thick] (a)--node[below,sloped] {perte $3$} (c);
+\draw[->,thick] (b)--node[above] {perte $3$} (d);
+\draw[->,dashed] (c)--node[below,sloped] {perte $3$} (e);
+\draw[->,dashed] (d)--node[right,font=\scriptsize] {perte $3$} (e);
+\end{tikzpicture}
+\caption{\textbf{Un arbre orienté de propagation, pas le sens du prêt.}
+Exemple comptablement réalisable avec cinq entités. Avant résolution,
+leurs stocks valent $(6,1,1,1,10)$ ; les prêts sont
+$e_2\to e_1:4$, $e_3\to e_1:3$, $e_4\to e_2:3$,
+$e_5\to e_3:3$ et $e_5\to e_4:3$.
+Les flèches du dessin vont au contraire de l'emprunteuse défaillante vers
+la créancière affectée. La composante des quatre mortes a une racine et
+deux générations de propagation : $S=4$, $b_1=b_2=3/4$.
+Les pertes subies par $e_5$, survivante, ne la font pas entrer dans
+l'avalanche des mortes. Le modèle général autorise plusieurs parents,
+contrairement à cet exemple arborescent.}
+\label{fig:cascade}
+\end{figure}

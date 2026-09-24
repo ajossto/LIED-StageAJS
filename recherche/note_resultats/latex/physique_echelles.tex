@@ -1,0 +1,93 @@
+\subsection{Stocks, flux et correspondance physique--économie}
+\label{sec:physique}
+Le parallèle entre physique et économie est le centre de la démarche, non une
+analogie ajoutée après calcul. Il faut néanmoins distinguer une correspondance
+de dimensions, une hypothèse de représentation et une validation empirique.
+Le modèle est une étude fondamentale d'interactions : l'entité reste générique,
+et peut éclairer un système concret si les mécanismes pertinents y sont
+effectivement présents, sans devenir implicitement une personne puis une firme.
+
+\begin{center}
+\begin{tabularx}{\linewidth}{@{}lXX@{}}
+\toprule
+Objet & Dimension et opération & Lecture économique proposée \\
+\midrule
+$K_i$ & Stock, en joules du modèle & Taille productive mobilisable \\
+$A_iK_i^{\gamma_i}$ & Production ajoutée pendant un pas, en joules & Flux productif, pas un salaire \\
+$A_iK_i^{\gamma_i}/\Delta t$ & Puissance moyenne sur un pas & Capacité de production par unité de temps \\
+$q$ & Principal nominal, même unité de compte que $K$ & Créance et dette, non amorties \\
+$rq$ & Transfert pendant un pas & Service d'intérêt, pas création de ressource \\
+$NW_i$ & Stock comptable $K_i+C_i-D_i$ & Position de bilan, distincte du stock physique \\
+\bottomrule
+\end{tabularx}
+\end{center}
+Un watt vaut un joule par seconde. Les sorties du moteur sont en joules
+\emph{par pas} ; les appeler des watts nécessiterait de fixer $\Delta t$ en
+secondes, ce qui n'a pas été calibré.\footnote{Dans l'écriture
+$K\leftarrow K+A K^\gamma$, $A$ a pour dimension
+$\mathrm{J}^{1-\gamma}$ pour la production d'un pas. Le coefficient d'une
+équation différentielle correspondante aurait la dimension
+$\mathrm{J}^{1-\gamma}/\mathrm{s}$. Les comparer sans préciser le pas ferait
+disparaître une dimension physique. Le taux $r$ est une fraction due par pas ;
+$r/\Delta t$ a la dimension inverse d'un temps.}
+
+L'hypothèse interprétative est que certains transferts monétaires représentent
+des transferts de droits à mobiliser de l'exergie. Le stock réel et le réseau
+nominal sont donc couplés, mais ne sont pas identiques : un prêt déplace $K$ et
+inscrit simultanément une créance et une dette. La production représente un
+apport au stock modélisé ; le réservoir extérieur qui le permet n'est pas
+décrit. Le bilan interne est fermé comptablement, pas thermodynamiquement sur
+l'ensemble économie--environnement. En outre, l'observable dite « revenu total »
+est $\mathrm{prod}+\mathrm{int\_in}$ : elle additionne production et transferts
+reçus et ne doit pas être assimilée sans correction à une production nette
+agrégée.
+
+\subsection{Échelles : quels paramètres sont réellement indépendants ?}
+\label{sec:parametres_reduits}
+En régime homogène, sans bruit ni crédit, l'ordre production puis
+dépréciation donne
+\[
+ K_{t+1}=(K_t+A K_t^\gamma)(1-\delta),\qquad
+ K_{\rm aut}=\left[\frac{A(1-\delta)}{\delta}\right]^{1/(1-\gamma)}
+\]
+pour $A>0$, $0<\delta<1$ et $0<\gamma<1$. $K_{\rm aut}$ est le stock vers lequel tend une entité isolée, sans
+crédit ni bruit, quand extraction et dépréciation se compensent. Ce point
+fixe déterministe n'est pas une moyenne du système bruité. Poser $x_i=K_i/K_{\rm aut}$ transforme
+la production en
+\[
+ x_i\longleftarrow x_i+\frac{\delta}{1-\delta}x_i^\gamma .
+\]
+À institution fixée, l'échelle commune de $A$ et $K^\circ$ peut ainsi être remplacée
+par le rapport $\kappa^\circ=K^\circ/K_{\rm aut}$ : il mesure la taille
+d'une nouvelle entité relativement à celle qu'elle pourrait atteindre seule.
+Une faible valeur signifie qu'elle entre très en dessous de cette échelle. Pour un toy-model, éviter de compter
+deux fois la même liberté d'échelle est essentiel.\footnote{Une possibilité
+équivalente est de choisir $K^\circ$ comme unité et de retenir
+$a=A (K^\circ)^{\gamma-1}$. Il s'agit ici d'éliminer \emph{une} liberté d'unité de
+capital, pas de démontrer que les autres paramètres sont redondants :
+$\gamma$, $\delta$, $\sigma$, $\lambda$ et l'institution restent pertinents.
+Une invariance de certaines statistiques vis-à-vis de $\lambda$ n'est pas une
+équivalence trajectorielle de populations de tailles différentes.}
+
+Le rééchelonnement $K,q,K^\circ\mapsto c(K,q,K^\circ)$ et
+$A\mapsto c^{1-\gamma}A$ conserve les équations homogènes et les taux
+marginaux. Les seuils numériques absolus et les arrondis du moteur limitent
+l'exactitude logicielle ; le recalage du pas de temps n'est pas une symétrie
+exacte du marché discret : l'étude numérique est présentée au
+§\ref{sec:temps} et la non-équivalence des opérations est détaillée en
+annexe~\ref{sec:composition_temps}. Une hausse de $A$ à $K^\circ$ fixe change donc
+$\kappa^\circ$, tandis que sa compensation $K^\circ\mapsto
+K^\circ\,m^{1/(1-\gamma)}$ le préserve. Les deux sont des expériences distinctes :
+la compensation est un contrôle, pas une correction physique imposée.
+
+La tension $T=K_{\rm aut}/K_{\rm eq}$, avec
+$K_{\rm eq}=(Y/(N_{\rm prod}A))^{1/\gamma}$, compare l'échelle individuelle
+sans crédit à l'échelle productive observée. Ici $Y$ est la production totale
+d'un pas et $N_{\rm prod}$ le nombre d'entités présentes à la phase productive,
+qui peut différer de l'effectif survivant de fin de pas. $K_{\rm eq}$ est
+le stock fictif qui donnerait à une entité représentative la production
+moyenne $Y/N_{\rm prod}$ ; pour $\gamma\ne1$, ce n'est pas le stock moyen.
+Un grand $T$ indique donc un stock productivement équivalent très inférieur
+à l'échelle autarcique. Cette tension est utile notamment à
+$\delta$ fixé ; elle n'est ni une variable d'état universelle, ni un autre nom
+de toute la chaîne crédit--mortalité--population.

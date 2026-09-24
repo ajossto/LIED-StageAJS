@@ -1,0 +1,98 @@
+%% Note de résultats — proto-article autonome, révision du 17 septembre 2026.
+%% Recalcul propre à l'article : ../scripts/revision_article.py.
+%% numbers.tex conserve les macros historiques de la campagne.
+\documentclass[10pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[french]{babel}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb}
+\usepackage[margin=2cm]{geometry}
+\usepackage{booktabs,tabularx,array,longtable}
+\usepackage{enumitem}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{microtype}
+\usepackage{float}
+\usepackage[hyphens]{url}
+\usepackage{hyperref}
+\usepackage{caption}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning}
+\usepackage{placeins}
+
+\DeclareUnicodeCharacter{202F}{\,}
+\hypersetup{colorlinks=true,linkcolor=blue!45!black,urlcolor=blue!45!black,
+  pdftitle={Effet rebond, émergence et pilotage dans un modèle physique de société de crédit},
+  pdfauthor={Anatole Joseph-Stouls}}
+
+\setlist{nosep}
+\captionsetup{font=small,labelfont=bf}
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\chemin}[1]{\texttt{\path{#1}}}
+\graphicspath{{figures/}}
+\newcommand{\figurine}[3]{%
+  \begin{figure}[htbp]\centering
+  \includegraphics[width=#2\linewidth]{#1}
+  \caption{#3}\label{fig:#1}
+  \end{figure}}
+\input{numbers}
+
+\title{\vspace{-1.2cm}Effet rebond, émergence et pilotage\\[2pt]
+dans un modèle physique de société de crédit}
+\author{Anatole Joseph-Stouls\\
+\small LIED --- Laboratoire interdisciplinaire des énergies de demain\\
+\small \texttt{anatole.joseph-stouls@ens-rennes.fr}}
+\date{}
+
+\begin{document}
+\maketitle
+\vspace{-0.7cm}
+\input{corps_article}
+\FloatBarrier
+\clearpage
+\begin{thebibliography}{99}\small
+\bibitem{hendrick} M.~Hendrick, A.~Rinaldo et G.~Manoli,
+  « A stochastic theory of urban metabolism », \emph{PNAS} \textbf{122}(33),
+  e2501224122 (2025).
+\bibitem{bak} P.~Bak, K.~Chen, J.~A.~Scheinkman et M.~Woodford,
+  « Self-Organized Criticality and Fluctuations in Economics »,
+  Santa Fe Institute Working Paper 1992-04-018 (1992).
+\bibitem{sorrell} S.~Sorrell et J.~Dimitropoulos,
+  « The rebound effect: Microeconomic definitions, limitations and extensions »,
+  \emph{Ecological Economics} \textbf{65}(3), 636--649 (2008).
+\bibitem{yakovenko} V.~M.~Yakovenko et J.~B.~Rosser,
+  « Colloquium: Statistical mechanics of money, wealth, and income »,
+  \emph{Rev. Mod. Phys.} \textbf{81}, 1703--1725 (2009).
+\bibitem{clauset} A.~Clauset, C.~R.~Shalizi et M.~E.~J.~Newman,
+  « Power-Law Distributions in Empirical Data », \emph{SIAM Review}
+  \textbf{51}(4), 661--703 (2009).
+\bibitem{herbert} E.~Herbert, G.~Giraud, A.~Louis-Napoléon et C.~Goupil,
+  « Macroeconomic Dynamics in a Finite World: the Thermodynamic Potential
+  Approach », \href{https://arxiv.org/abs/2204.02038v2}{arXiv:2204.02038v2} (2022).
+\bibitem{wildauer} R.~Wildauer et I.~Heck,
+  « Was Pareto right? Do the US wealth and income distributions follow power
+  laws? », Greenwich Papers in Political Economy, GPERC92, version septembre
+  2024 (couverture de série : 2023),
+  \href{https://gala.gre.ac.uk/id/eprint/38597/}{archive institutionnelle}.
+\bibitem{wright} I.~Wright, « The duration of recessions follows an
+  exponential not a power law », \emph{Physica A} \textbf{345}, 608--610
+  (2005), \href{https://arxiv.org/abs/cond-mat/0311585}{texte auteur}.
+\bibitem{fedgini} A.~Aladangady et A.~Forde, « Wealth Inequality and the
+  Racial Wealth Gap », \emph{FEDS Notes}, 22 octobre 2021,
+  \href{https://www.federalreserve.gov/econres/notes/feds-notes/wealth-inequality-and-the-racial-wealth-gap-20211022.html}{Federal Reserve}.
+\bibitem{cbogini} Congressional Budget Office, \emph{The Distribution of
+  Household Income, 2019}, novembre 2022,
+  \href{https://www.cbo.gov/publication/58781}{rapport et définitions}.
+\bibitem{vuong} Q.~H.~Vuong, « Likelihood Ratio Tests for Model Selection
+  and Non-Nested Hypotheses », \emph{Econometrica} \textbf{57}(2),
+  307--333 (1989), \href{https://doi.org/10.2307/1912557}{doi:10.2307/1912557}.
+\end{thebibliography}
+
+\noindent\textbf{Reproductibilité.} Les conventions, données des points et
+sources sont indiquées dans les annexes. Les commentaires de l'auteur et
+la version antérieure sont conservés séparément, sans être nécessaires à
+la compilation de cet article.
+\clearpage
+\input{annexes_article}
+\end{document}

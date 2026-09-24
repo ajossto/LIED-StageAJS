@@ -1,0 +1,67 @@
+\subsection{Compatibilité des moteurs et changements de règles}
+\label{sec:compatibilite}
+Trois niveaux de contrôle doivent être distingués : conserver les
+fonctionnalités du laboratoire de simulation, reproduire une trajectoire
+dans un régime de référence, et comparer deux modèles dont les règles
+diffèrent. Seul le deuxième porte directement sur la parité dynamique.
+
+Le rapport M4.2, section « Parité M4B », documente des tests à
+$A=1$, $\gamma=1/2$ et $k=2$ : identité des variables discrètes
+et comparaison des flottants à tolérance relative $10^{-9}$.
+La sonde de 1000 pas rapportée ne présente pas de divergence discrète,
+avec un écart relatif maximal des séries de $3{,}1\,10^{-12}$.
+Ce constat n'est pas une identité bit à bit ni une garantie à tout horizon.
+
+Pour M4.4, dans le dossier de campagne
+\chemin{m4_4_rebond_credit_soc/}, le fichier
+\chemin{results/analysis/parity_deviations_8000.csv}
+conserve 8000 écarts maximaux nuls sur les 26 colonnes comparées à
+la réalisation M4.3 de référence, dans le régime homogène à cible
+arithmétique. Le test \chemin{tests/test_parity_m4_3.py} définit ce
+périmètre. Le test \chemin{tests/test_v1_equivalence.py} compare
+séparément Live-v1 au mode de compatibilité
+\texttt{richest\_lends}, avec une intervention hétérogène ; un contrôle
+négatif vérifie que libérer le sens du prêt peut changer la trajectoire.
+La présence de ce test définit une exigence vérifiable ; elle ne remplace
+pas à elle seule un compte rendu d'exécution pour chaque version.
+
+Les chemins de campagnes M4.4 sont conservés comme identifiants de
+provenance. Le passage à une règle de marché différente doit être
+distingué d'une extension d'instrumentation, sans renommer les archives
+dont proviennent les données. La non-régression ne
+permet donc pas de fusionner les échantillons M4B, Live et M4.4.
+
+\subsection{Pourquoi le regroupement temporel n'est pas une symétrie}
+\label{sec:composition_temps}
+Un contre-exemple apparaît avant même d'introduire le marché. Sans bruit,
+crédit ni naissances, posons $F(K)=(1-\delta)(K+AK^\gamma)$.
+Deux pas successifs donnent
+\[
+F(F(K))=(1-\delta)^2(K+AK^\gamma)
+ +(1-\delta)A\big[(1-\delta)(K+AK^\gamma)\big]^\gamma.
+\]
+Un pas regroupé, avec $A'=2A$ et
+$1-\delta'=(1-\delta)^2$, donnerait au contraire
+\[
+G(K)=(1-\delta)^2(K+2AK^\gamma).
+\]
+En général $F\circ F\ne G$ : la seconde production se calcule sur
+un stock déjà modifié. Par exemple, à $K=100$, $A=1$,
+$\gamma=1/2$ et $\delta=0{,}01$, les valeurs sont environ
+$118{,}142$ et $117{,}612$. Le marché ajoute une alternance de
+rencontres, de contrats, d'intérêts et de faillites ; composer les lois
+de Poisson ou les seuls chocs ne compose pas ces opérations couplées.
+
+Les essais Live-v1 de la figure~\ref{fig:art_temps} mesurent la portée
+collective de cette différence. Après conversion complète des paramètres,
+le regroupement de deux pas donne, relativement à sa référence,
+$N:1{,}067\pm0{,}018$, $K_{\rm tot}:1{,}158\pm0{,}030$ et
+$Y:1{,}118\pm0{,}024$. En regroupant quatre pas, le rapport de
+production vaut $1{,}346\pm0{,}026$. Le protocole part d'un état vide,
+utilise trois graines et compare $1200<t_{\rm ancien}\le2000$ ;
+les flux sont divisés par le facteur de regroupement, pas les stocks.
+Les valeurs par graine et les autres variantes sont dans
+\chemin{data_article/temps_graines.csv} et
+\chemin{data_article/temps_points.csv}. Ces essais et le contre-exemple
+établissent l'absence d'une symétrie exacte ; ils ne constituent pas
+une étude de convergence vers une limite continue.

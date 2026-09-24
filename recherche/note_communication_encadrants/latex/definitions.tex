@@ -1,0 +1,168 @@
+%% Section de définitions — exigence d'autonomie du document.
+%% Toute notation et tout terme interne employés dans la note sont ici.
+\section{Définitions}
+\label{sec:definitions}
+
+Un lecteur qui n'a jamais vu ce projet doit pouvoir lire la note sans rien
+chercher ailleurs. Toutes les notations et tous les termes internes employés
+dans la suite sont donc rassemblés ici.
+
+\subsection{Paramètres du modèle}
+
+\begin{longtable}{@{}p{0.10\textwidth}p{0.86\textwidth}@{}}
+\toprule
+\textbf{symbole} & \textbf{sens, et plage explorée} \\
+\midrule
+\endhead
+$\lambda$ & \textbf{intensité de naissance} : nombre moyen d'entités créées
+  par pas, paramètre d'une loi de Poisson. Fixe la \emph{taille} du système
+  sans changer ses grandeurs intensives. Exploré sur $[1\,;100]$. \\
+$K_0$ & \textbf{dotation de naissance} : capital reçu par une entrante, en
+  joules. Protège les jeunes. Exploré sur $[2\,;200]$. \\
+$\sigma$ & \textbf{volatilité individuelle} : écart-type du choc log-normal
+  multiplicatif appliqué au capital à chaque pas. Levier dominant de la
+  démographie. Exploré sur $[0\,;1]$. \\
+$\delta$ & \textbf{taux de dépréciation} du capital par pas. Fixe l'échelle
+  du capital. Exploré sur $[0{,}01\,;0{,}10]$. \\
+$k$ & \textbf{taille du bassin de rencontre} : nombre d'entités tirées à
+  chaque tour de marché, parmi lesquelles la plus riche prête à la plus
+  pauvre. Exploré sur $\{2,\ldots,10\}$ dans M4B ; vaut 2 et devient un choix
+  constitutif dans les lignées récentes. \\
+$A$ & \textbf{productivité} de la technologie, facteur du terme de
+  production. C'est le levier d'« amélioration d'efficacité » de tout le volet
+  rebond. \\
+$\gamma$ & \textbf{exposant de production}, $0 < \gamma < 1$ : la production
+  $A K^\gamma$ est \emph{concave} en la taille. Vaut $1/2$ dans la lignée de
+  référence. \\
+$\rho$ & \textbf{intensité de la phase de marché} : nombre de tours de
+  rencontre par entité et par pas. Vaut 1 par défaut. C'est le seul levier
+  qui déplace les exposants de queue (§\ref{sec:controle}). \\
+$p$ & \textbf{partage du surplus coopératif}, imposé dans $[0,1]$ pour
+  \code{bargain}, mais potentiellement hors de cet intervalle pour une autre
+  règle : part du surplus
+  de la paire que le service d'intérêt transfère à la prêteuse. $p = 0$
+  altruiste, $p = 1$ asservissement total (§\ref{sec:partage}). \\
+\bottomrule
+\end{longtable}
+
+\subsection{Variables d'état et observables}
+
+\begin{longtable}{@{}p{0.15\textwidth}p{0.81\textwidth}@{}}
+\toprule
+\textbf{notation} & \textbf{définition} \\
+\midrule
+\endhead
+$K_i$ & \textbf{capital}, ou taille intrinsèque productive de l'entité $i$, en
+  joules. Réel, productif, dépréciable. \\
+$C_i$, $D_i$ & \textbf{créances} et \textbf{dettes} de $i$ : sommes des
+  principaux prêtés et empruntés. Nominaux, perpétuels, non amortis. \\
+$NW_i$ & \textbf{valeur nette}, $NW_i = K_i + C_i - D_i$. C'est le prédicat de
+  faillite : $NW_i < 0$ met l'entité en défaut. \\
+$q$, $r$ & \textbf{principal} et \textbf{taux par pas} d'un contrat. Le service
+  versé par pas vaut $rq$. \\
+$L$, $\Delta$ & pour un contrat : \textbf{perte de puissance extractrice} de la
+  donneuse, et \textbf{surplus coopératif} de la paire --- le gain de production
+  jointe permis par le transfert de stock. Le service se décompose en
+  $rq = L + p\Delta$. \\
+\code{prod} & \textbf{production} d'une entité sur un pas, $A K_i^\gamma$. Le
+  terme « puissance extractrice » désigne la même quantité. \\
+\code{int\_in}, \code{int\_out} & \textbf{intérêts reçus} et \textbf{versés} par
+  pas. \code{int\_in} est, dans l'ontologie retenue, l'analogue du revenu
+  monétaire usuel. \\
+$E_t$ & \textbf{énergie totale} présente dans le système en fin de pas,
+  $E_t = \sum_i K_i(t)$. Distincte de la production totale : la concavité de la
+  production et les variations d'effectif changent leur relation. \\
+$\varepsilon$ & \textbf{élasticité} de la production totale à la productivité.
+  La dérivée locale est $\mathrm{d}\ln(\mathrm{prod})/\mathrm{d}\ln A$ ;
+  M4.4 estime un contraste fini : moyenne par graine de
+  $\ln(\overline{Y}_{\text{traité}}/\overline{Y}_{\text{contrôle}})/\ln(1{,}5)$,
+  sur $3000<t\le4000$. \\
+$E$ & \textbf{réponse normalisée} : réponse observée divisée par la réponse
+  strictement proportionnelle $(m-1)p_{\mathrm{trait}}$, où $m$ est le
+  multiplicateur appliqué à $A$ et $p_{\mathrm{trait}}$ la part de production
+  traitée avant intervention. $E > 1$ est qualifié de rebond dans le modèle. \\
+\bottomrule
+\end{longtable}
+
+\subsection{Termes internes}
+
+\begin{description}[leftmargin=1.3em,style=nextline]
+\item[Bassin] L'échantillon de $k$ entités tiré à un tour de marché. Le
+  \emph{Gini du bassin} est le coefficient de Gini du capital mesuré sur les
+  entités entrant en rencontre, avant appariement.
+\item[Carnet] L'ensemble des contrats de prêt vivants à un instant donné. Le
+  \emph{taux moyen du carnet} est la moyenne des $r$ des contrats vivants. Un
+  contrat quitte le carnet dès que l'une de ses deux extrémités meurt.
+\item[Rotation du crédit] Volume de nouveaux contrats conclus par pas, rapporté
+  au capital total. Mesure la vitesse à laquelle le stock productif change de
+  mains. Ce n'est pas un nombre de contrats : c'est un flux rapporté à un stock.
+\item[Tension d'échelle] Rapport $T = K_{\mathrm{aut}}/K_{\mathrm{eq}}$ entre le
+  point fixe individuel sans crédit et le capital équivalent du système. Il
+  résume bien les effets d'échelle \textbf{à $\delta$ fixé}, et \emph{échoue}
+  comme paramètre d'état quand $\delta$ varie\footnote{\incertitude{} Le mot
+  « tension » a été employé dans deux sens dans les documents antérieurs :
+  celui-ci, et par extension la chaîne causale complète de la contraction de
+  population. Dans cette note il désigne \emph{uniquement} le rapport ci-dessus,
+  avec sa réserve ; la chaîne causale est nommée « la chaîne »
+  (§\ref{sec:chaine}). Cette distinction terminologique est retenue dans
+  la présente rédaction.}.
+\item[Capital équivalent $K_{\mathrm{eq}}$] Capital qui, s'il était détenu par
+  chaque entité, donnerait la production totale observée. Il sépare ce qui
+  relève de l'effectif de ce qui relève de l'échelle par entité.
+\item[Avalanche] Composante faiblement connexe du graphe des pertes de créances,
+  restreinte aux mortes d'une même résolution de cascade
+  (§\ref{sec:avalanches}).
+\item[Racine] Faillite entrée directement dans la file initiale d'un pas, sans
+  avoir été déclenchée par la perte d'une créance.
+\item[Rapport de branchement $b_1$] $1 - \text{racines}/\text{morts}$ : fraction
+  moyenne de morts qui ne sont pas des racines. Borné par 1 \emph{par
+  construction}.
+\item[Descendance moyenne $b_2$] Nombre moyen de couples causals par mort, lu
+  sur le graphe des cascades. Peut dépasser 1 quand une victime a plusieurs
+  parents.
+\item[Sur-détermination] Distinguer trois mesures. L'excès d'arêtes par
+  morte est $b_2-b_1=\sum_{v\text{ non racine}}(d_v-1)/N$, où $d_v$
+  est le nombre de parents retenus à la génération précédente et $N$ le
+  nombre total de mortes. Ce n'est pas la proportion de victimes à plusieurs
+  parents parmi les non-racines vues (\code{multi\_parent\_share}) :
+  une victime à trois parents contribue deux arêtes supplémentaires.
+  La suffisance d'une perte pour déclencher une faillite est encore une autre
+  propriété, étudiée par le plancher de suffisance du lot J.
+\item[Fardeau] Somme des principaux dus par une entité, rapportée à sa
+  production. C'est la variable dans laquelle la convexité du risque était
+  posée en hypothèse (§\ref{sec:partage}).
+\item[Contraste apparié] Comparaison graine par graine entre un bras traité et
+  le contrôle qui partage son amorçage et l'état du générateur à la bifurcation.
+  Cela ne garantit pas des chocs communs par entité après divergence des
+  effectifs. Les intervalles des contrastes moyens de M4.4 sont des
+  intervalles de Student à onze degrés de liberté ; les tableaux de dispersion
+  des exposants emploient aussi des écarts-types, explicitement distingués.
+\item[Bras] Une condition expérimentale d'une campagne : un jeu de paramètres
+  appliqué à l'ensemble des graines.
+\item[Portée] Étendue d'une intervention : \emph{globale} (toutes les entités),
+  \emph{nouvelles} (les entrantes seulement) ou \emph{fraction} (une part des
+  vivantes).
+\item[Amorçage (\emph{burn-in})] Pas initiaux écartés de toute mesure, le temps
+  que le système atteigne son régime stationnaire.
+\item[Élasticité] $\mathrm{d}\ln Y / \mathrm{d}\ln X$ : variation relative de
+  $Y$ par variation relative de $X$. Sauf mention contraire, $X$ est la
+  productivité $A$.
+\item[Coefficient de Gini] Mesure d'inégalité entre 0 (tous égaux) et 1 (tout
+  chez un seul). Calculé ici sur le capital, la valeur nette, la production ou
+  le revenu d'intérêt --- quatre grandeurs qu'il ne faut jamais confondre,
+  puisqu'elles donnent des valeurs allant de $0{,}05$ à $0{,}61$ sur le même
+  état.
+\item[PRCC] Coefficient de corrélation partielle de rang, mesuré sur un plan
+  d'expérience par hypercube latin. Entre $-1$ et $1$ ; mesure l'association
+  monotone d'un paramètre à une sortie, les autres tenus constants.
+\item[Statistique de Vuong] Test de comparaison de deux lois non emboîtées par
+  rapport de vraisemblance. $|z| > 1{,}96$ tranche en faveur de l'une ; en deçà
+  le test ne conclut pas --- ce qui ne signifie pas que les deux lois s'ajustent
+  aussi bien, mais que \emph{ce test} ne les sépare pas.
+\item[Estimateur de Hill] Estimateur de l'exposant de queue d'une loi de
+  puissance, calculé sur les points au-delà d'un seuil. La \emph{couverture} est
+  le nombre de points retenus au-delà de ce seuil ; elle gouverne la précision.
+\item[CCDF] Fonction de survie empirique, $P(S \ge s)$. Tracée en échelle
+  logarithmique, une loi de puissance y est une droite et une coupure de taille
+  finie un décrochement.
+\end{description}
