@@ -30,9 +30,10 @@ anciens_modeles/m3_credit_soc/experiments/m3/results/
 # — copies de sauvegarde de versions antérieures, redondantes avec l'historique git
 **/revision_*/reference/
 
-# Article : données brutes de simulation (régénérables) — seules les figures sont versionnées
-**/data_article/*.csv
-**/data_article/*.json
+# Article : data_article/*.csv et *.json sont les exports agrégés par figure
+# (quelques Ko à quelques dizaines de Ko chacun) — versionnés avec les figures.
+# La donnée brute de simulation (campagnes, panels, snapshots) vit hors de ce
+# dossier et n'est jamais concernée par cette règle.
 data_revision/
 recherche/note_resultats/revision_*/*.csv
 recherche/note_resultats/revision_*/*.json

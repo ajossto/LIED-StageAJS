@@ -1,0 +1,535 @@
+{
+  "date": "2026-09-25",
+  "article_reference": "recherche/note_resultats/latex/note.tex",
+  "figures": 57,
+  "files": [
+    {
+      "figure": "art_technologie",
+      "file": "figures/art_technologie.pdf",
+      "sha256": "582198d41c0aef461fb8c91cfe5d3f999d440146fd840ce69b0d59ccd1acfa09",
+      "identical_source": "recherche/note_resultats/latex/figures/art_technologie.pdf"
+    },
+    {
+      "figure": "m01_reseau_credit",
+      "file": "figures/m01_reseau_credit.png",
+      "sha256": "daa5f01fe9a4f28a457ccacf523fde7c95c22173dd88ce1da1e0669cc6e705f9",
+      "identical_source": "recherche/note_communication_encadrants/revision_2026-09-25/reference/latex/figures/m01_reseau_credit.png"
+    },
+    {
+      "figure": "m02_vue_macro",
+      "file": "figures/m02_vue_macro.png",
+      "sha256": "2e48959eb0d1e1136d1dd31c268de8759ebb81127edf0579c5c518be8532096e",
+      "identical_source": "recherche/note_communication_encadrants/revision_2026-09-25/reference/latex/figures/m02_vue_macro.png"
+    },
+    {
+      "figure": "t01_artefact_cohorte",
+      "file": "figures/t01_artefact_cohorte.png",
+      "sha256": "e093fd184fac1f95cbb6ef5a34bbd3f8899464eed64d03bed4a0d76868377011",
+      "identical_source": "recherche/note_communication_encadrants/revision_2026-09-25/reference/latex/figures/t01_artefact_cohorte.png"
+    },
+    {
+      "figure": "t02_derive_queue",
+      "file": "figures/t02_derive_queue.png",
+      "sha256": "4408f6ce8620d945c0df15e7ac60088316025f5264d6abf8d93e34363a9afdb0",
+      "identical_source": "recherche/note_communication_encadrants/revision_2026-09-25/reference/latex/figures/t02_derive_queue.png"
+    },
+    {
+      "figure": "t03_branchement_m4",
+      "file": "figures/t03_branchement_m4.png",
+      "sha256": "7a57ca8f11c09e527a98a4e42ba1ffce949f95faa46d3b6bdde0f50bae048d30",
+      "identical_source": "recherche/note_communication_encadrants/revision_2026-09-25/reference/latex/figures/t03_branchement_m4.png"
+    },
+    {
+      "figure": "t04_taille_finie_m4",
+      "file": "figures/t04_taille_finie_m4.png",
+      "sha256": "26a7595238c46158d9b5c54876415be84241b11950adee3e96a10558a8d9d047",
+      "identical_source": "recherche/note_communication_encadrants/revision_2026-09-25/reference/latex/figures/t04_taille_finie_m4.png"
+    },
+    {
+      "figure": "t05_effet_echelle_m42",
+      "file": "figures/t05_effet_echelle_m42.png",
+      "sha256": "dcdd296f22ed987057bf18460b7a5cc0bd7f6af8fc91e2c110d46f1bfe086331",
+      "identical_source": "recherche/note_communication_encadrants/revision_2026-09-25/reference/latex/figures/t05_effet_echelle_m42.png"
+    },
+    {
+      "figure": "p02_structure_nw",
+      "file": "figures/p02_structure_nw.png",
+      "sha256": "a26543aae3eef43dd9e3130a06ebe130a8c89d9c69245c3b1911da4869aa7b44",
+      "identical_source": "recherche/note_communication_encadrants/revision_2026-09-25/reference/latex/figures/p02_structure_nw.png"
+    },
+    {
+      "figure": "p01_lorenz",
+      "file": "figures/p01_lorenz.png",
+      "sha256": "39a211d47ecf2573954d6b6e2c7c75c3dee9945a4d7aa94e57e5031379dec0d1",
+      "identical_source": "recherche/note_communication_encadrants/revision_2026-09-25/reference/latex/figures/p01_lorenz.png"
+    },
+    {
+      "figure": "p08_gini_renouvellement",
+      "file": "figures/p08_gini_renouvellement.png",
+      "sha256": "99507cfc5529791477aff15bd07b8abfea85ed3b4ddbc6186c5a0e7c3815118e",
+      "identical_source": "recherche/note_communication_encadrants/revision_2026-09-25/reference/latex/figures/p08_gini_renouvellement.png"
+    },
+    {
+      "figure": "rev_lorenz",
+      "file": "figures/rev_lorenz.pdf",
+      "sha256": "d6a0bafd6bcd3d2ee9717f3ac04e50e32bc982127998b6f09ca01cda7f7e3369",
+      "identical_source": "recherche/note_resultats/latex/figures/rev_lorenz.pdf"
+    },
+    {
+      "figure": "art_lorenz",
+      "file": "figures/art_lorenz.pdf",
+      "sha256": "4f98104c2dda69af1fb5aca766dd6b4d88e7d2a5b6a2021ffb81410878610de3",
+      "identical_source": "recherche/note_resultats/latex/figures/art_lorenz.pdf"
+    },
+    {
+      "figure": "p03_vie_par_taille",
+      "file": "figures/p03_vie_par_taille.png",
+      "sha256": "8887ab830575c0e5aa7bf843c4f0f05fdd7b21c0a04139f966d9dbe9c28adba2",
+      "identical_source": "recherche/note_communication_encadrants/revision_2026-09-25/reference/latex/figures/p03_vie_par_taille.png"
+    },
+    {
+      "figure": "p04_avalanches_structure",
+      "file": "figures/p04_avalanches_structure.png",
+      "sha256": "4f7ede37f1bfe5114367172190d458a5d47d3dca02945f6ff65efe654415c968",
+      "identical_source": "recherche/note_communication_encadrants/revision_2026-09-25/reference/latex/figures/p04_avalanches_structure.png"
+    },
+    {
+      "figure": "p05_cascades_rank_size",
+      "file": "figures/p05_cascades_rank_size.png",
+      "sha256": "95e15b6fec1724b405d3b0a7a6659707d18164d4bc1be6a83cd97ae8878c8ee3",
+      "identical_source": "recherche/note_communication_encadrants/revision_2026-09-25/reference/latex/figures/p05_cascades_rank_size.png"
+    },
+    {
+      "figure": "p06_scaling_avalanches",
+      "file": "figures/p06_scaling_avalanches.png",
+      "sha256": "b983649476fba84dbca60ce1aa7748ff73ebcec9016bc685999bd085597da3bc",
+      "identical_source": "recherche/note_communication_encadrants/revision_2026-09-25/reference/latex/figures/p06_scaling_avalanches.png"
+    },
+    {
+      "figure": "art_avalanches",
+      "file": "figures/art_avalanches.pdf",
+      "sha256": "c617d69a947d6560b22b149218019b61eae24044033cf9d26991f1da1bf17d7c",
+      "identical_source": "recherche/note_resultats/latex/figures/art_avalanches.pdf"
+    },
+    {
+      "figure": "p07_hierarchie_prcc",
+      "file": "figures/p07_hierarchie_prcc.png",
+      "sha256": "e27175372621101f1599f3dbd9d629142632de2bbc49fdb2f742e668cb23dac8",
+      "identical_source": "recherche/note_communication_encadrants/revision_2026-09-25/reference/latex/figures/p07_hierarchie_prcc.png"
+    },
+    {
+      "figure": "stage_sensibilite_historique",
+      "file": "figures/stage_sensibilite_historique.pdf",
+      "sha256": "21fe6973de50313a95f5ba685cc614c746e12250ce181aa1bc30567d1b1384ed",
+      "identical_source": null
+    },
+    {
+      "figure": "p09_cycles_structure",
+      "file": "figures/p09_cycles_structure.png",
+      "sha256": "5f8d465986c55bbd709a8534333dd042e06d67c62ccc03cce9c07fd272275806",
+      "identical_source": "recherche/note_communication_encadrants/revision_2026-09-25/reference/latex/figures/p09_cycles_structure.png"
+    },
+    {
+      "figure": "p10_cycles_sensibilite",
+      "file": "figures/p10_cycles_sensibilite.png",
+      "sha256": "03e540350fef15b0517974398157bc583b13061e9c9d8e3252dcfb0b66649d43",
+      "identical_source": "recherche/note_communication_encadrants/revision_2026-09-25/reference/latex/figures/p10_cycles_sensibilite.png"
+    },
+    {
+      "figure": "rev_stock_trajectoire",
+      "file": "figures/rev_stock_trajectoire.pdf",
+      "sha256": "a386115854db1d4222683a18b999b8d4d67491a7e695c2904b791de25e0618a7",
+      "identical_source": "recherche/note_resultats/latex/figures/rev_stock_trajectoire.pdf"
+    },
+    {
+      "figure": "rev_cycles_stock",
+      "file": "figures/rev_cycles_stock.pdf",
+      "sha256": "98444ea88a1c3cfc163350b446955971d12676f4e9260b0e0cb1d3888cb1f458",
+      "identical_source": "recherche/note_resultats/latex/figures/rev_cycles_stock.pdf"
+    },
+    {
+      "figure": "art_cycles",
+      "file": "figures/art_cycles.pdf",
+      "sha256": "73c0b9d0d8aaf1609329cb52807ecda77f7b6ea425ff431ac968eadf21d35d08",
+      "identical_source": "recherche/note_resultats/latex/figures/art_cycles.pdf"
+    },
+    {
+      "figure": "p12_revenu_empirique",
+      "file": "figures/p12_revenu_empirique.png",
+      "sha256": "daec7099081e9dbb51c7ddf55b5410d28088290daabba08fb2d52eaadd535514",
+      "identical_source": "recherche/note_communication_encadrants/revision_2026-09-25/reference/latex/figures/p12_revenu_empirique.png"
+    },
+    {
+      "figure": "p13_queue_interets",
+      "file": "figures/p13_queue_interets.png",
+      "sha256": "3d7090de2469d9723d7d51b7a9935dff2de85d604bfa3badea53f3b9b26c7786",
+      "identical_source": "recherche/note_communication_encadrants/revision_2026-09-25/reference/latex/figures/p13_queue_interets.png"
+    },
+    {
+      "figure": "p14_erreur_seuil",
+      "file": "figures/p14_erreur_seuil.png",
+      "sha256": "7eae899c23455696389abe10c10af8e6c5975e5662551a21af010446e5ee1e09",
+      "identical_source": "recherche/note_communication_encadrants/revision_2026-09-25/reference/latex/figures/p14_erreur_seuil.png"
+    },
+    {
+      "figure": "p11_renouvellement_top",
+      "file": "figures/p11_renouvellement_top.png",
+      "sha256": "1fb0a1f62b7167105491b9d43206fe30cd0625d82dd4f73c9b1f120b9c3c3221",
+      "identical_source": "recherche/note_communication_encadrants/revision_2026-09-25/reference/latex/figures/p11_renouvellement_top.png"
+    },
+    {
+      "figure": "stage_renouvellement",
+      "file": "figures/stage_renouvellement.pdf",
+      "sha256": "a7f39b6513be60d5bf8e399fd16edf9d692f4e7ae86eaf8282d8ad6a9343ef58",
+      "identical_source": null
+    },
+    {
+      "figure": "r01_reponse_prod",
+      "file": "figures/r01_reponse_prod.png",
+      "sha256": "13fa2cce2157a6f3cbb2802af4388d2c36796d21c0229ee43bc0c4cd0b77acdd",
+      "identical_source": "recherche/note_resultats/latex/figures/r01_reponse_prod.png"
+    },
+    {
+      "figure": "rev_reponse",
+      "file": "figures/rev_reponse.pdf",
+      "sha256": "ec45103e9236d554e6dca7d70b922430a86b257231c0180e76145eac7a05f407",
+      "identical_source": "recherche/note_resultats/latex/figures/rev_reponse.pdf"
+    },
+    {
+      "figure": "r03_covariance_echelle",
+      "file": "figures/r03_covariance_echelle.png",
+      "sha256": "90a37fc954503238348cb40d651d735a39d1c9bcc24c867901ae8984560bae3c",
+      "identical_source": "recherche/note_communication_encadrants/revision_2026-09-25/reference/latex/figures/r03_covariance_echelle.png"
+    },
+    {
+      "figure": "r02_ablation_k0",
+      "file": "figures/r02_ablation_k0.png",
+      "sha256": "3841b13b9646c94d7f933101becec92a921c4992c5330679d701e3165bda0c42",
+      "identical_source": "recherche/note_communication_encadrants/revision_2026-09-25/reference/latex/figures/r02_ablation_k0.png"
+    },
+    {
+      "figure": "f01_ancrages",
+      "file": "figures/f01_ancrages.pdf",
+      "sha256": "380d0c4ce9466a83d19b94094c5a35e5b66ca95b53a78741a303f535b6036b4f",
+      "identical_source": "recherche/note_communication_encadrants/revision_2026-09-25/reference/latex/figures/f01_ancrages.pdf"
+    },
+    {
+      "figure": "art_reponse",
+      "file": "figures/art_reponse.pdf",
+      "sha256": "ed540237a920fb07c7b69ba23694baa12e94bb2005cfd83a8c2f6861835aa741",
+      "identical_source": "recherche/note_resultats/latex/figures/art_reponse.pdf"
+    },
+    {
+      "figure": "art_quantiles",
+      "file": "figures/art_quantiles.pdf",
+      "sha256": "2cac359eb60f3bf8e28ea4054279902825b9c4e7c3f4ec7fcff44b36e59de4c9",
+      "identical_source": "recherche/note_resultats/latex/figures/art_quantiles.pdf"
+    },
+    {
+      "figure": "art_deciles",
+      "file": "figures/art_deciles.pdf",
+      "sha256": "c5e75a89695b3c0f6659d0a1a78b287e7a3a67dbea8f3520f006c2350d1cbf3a",
+      "identical_source": "recherche/note_resultats/latex/figures/art_deciles.pdf"
+    },
+    {
+      "figure": "f05_position_nette",
+      "file": "figures/f05_position_nette.pdf",
+      "sha256": "2a343fbc63d3c94170da3d3451dc19630d367f18c4c8148fbef5738ae80aff08",
+      "identical_source": "recherche/note_communication_encadrants/revision_2026-09-25/reference/latex/figures/f05_position_nette.pdf"
+    },
+    {
+      "figure": "f07_chaine",
+      "file": "figures/f07_chaine.pdf",
+      "sha256": "fc2e1cb4c39ec551d54040e123b45330b41ecffa2f8f159b88c7f761d51722a4",
+      "identical_source": "recherche/note_resultats/latex/figures/f07_chaine.pdf"
+    },
+    {
+      "figure": "f06_mortalite_rotation",
+      "file": "figures/f06_mortalite_rotation.pdf",
+      "sha256": "d68a937c47b21f944365cf7172c2f0dc3d66cbea39352dafec75f466ede377b2",
+      "identical_source": "recherche/note_communication_encadrants/revision_2026-09-25/reference/latex/figures/f06_mortalite_rotation.pdf"
+    },
+    {
+      "figure": "f09_b1_b2",
+      "file": "figures/f09_b1_b2.pdf",
+      "sha256": "3a3b08fdc4ac26bfb9d89b2df68328adf1aa7a190453da0ca55cba4c61d7e7f4",
+      "identical_source": "recherche/note_resultats/latex/figures/f09_b1_b2.pdf"
+    },
+    {
+      "figure": "f10_k0",
+      "file": "figures/f10_k0.pdf",
+      "sha256": "2c1316cb7b878ae89fc86b69c7d848ad491f970f972ba5b2153287e20e48844f",
+      "identical_source": "recherche/note_resultats/latex/figures/f10_k0.pdf"
+    },
+    {
+      "figure": "f08_avalanches_ccdf",
+      "file": "figures/f08_avalanches_ccdf.pdf",
+      "sha256": "3e58411cb80cb6645b690e3bd9b0d090bd73150e705eaaeba2d9217937b41ac5",
+      "identical_source": "recherche/note_resultats/latex/figures/f08_avalanches_ccdf.pdf"
+    },
+    {
+      "figure": "f19_ablation",
+      "file": "figures/f19_ablation.pdf",
+      "sha256": "79aee50ff8326e2936861ae36edb626e18d81dcc51e62c3ad3b26aa68e042800",
+      "identical_source": "recherche/note_communication_encadrants/revision_2026-09-25/reference/latex/figures/f19_ablation.pdf"
+    },
+    {
+      "figure": "f11_couverture",
+      "file": "figures/f11_couverture.pdf",
+      "sha256": "c1408a13703608ffd43da66b4d07abd5d597468bfae491cfd96d3c60c7f50a0f",
+      "identical_source": "recherche/note_communication_encadrants/revision_2026-09-25/reference/latex/figures/f11_couverture.pdf"
+    },
+    {
+      "figure": "f12_alpha_bras",
+      "file": "figures/f12_alpha_bras.pdf",
+      "sha256": "62c50e375bc337e41c6ab4392b395efea02ea4eddc7a897f59fc03353c9c391f",
+      "identical_source": "recherche/note_communication_encadrants/revision_2026-09-25/reference/latex/figures/f12_alpha_bras.pdf"
+    },
+    {
+      "figure": "art_institutions",
+      "file": "figures/art_institutions.pdf",
+      "sha256": "f197681a599a62ef8fb8ebed3f69b76bca120227d3d1fdd7b16e16541054c1fe",
+      "identical_source": "recherche/note_resultats/latex/figures/art_institutions.pdf"
+    },
+    {
+      "figure": "art_charge",
+      "file": "figures/art_charge.pdf",
+      "sha256": "1aa005dd9406e7c25b25917488780229da4d54bd9d20eaa62ff5e091bc5c61d0",
+      "identical_source": "recherche/note_resultats/latex/figures/art_charge.pdf"
+    },
+    {
+      "figure": "f16_bargain_systeme",
+      "file": "figures/f16_bargain_systeme.pdf",
+      "sha256": "701670760a0930bc5f1ff35468e95121b80ad1ee3c15474b4fd5f512df09007f",
+      "identical_source": "recherche/note_communication_encadrants/revision_2026-09-25/reference/latex/figures/f16_bargain_systeme.pdf"
+    },
+    {
+      "figure": "art_rho",
+      "file": "figures/art_rho.pdf",
+      "sha256": "424e3c170813602543ca275db6ce82f118efa37e71845039aa155ac0bae2d6e9",
+      "identical_source": "recherche/note_resultats/latex/figures/art_rho.pdf"
+    },
+    {
+      "figure": "f18_rotation_rho",
+      "file": "figures/f18_rotation_rho.pdf",
+      "sha256": "f8e3cc4e7bfe92e93c5e71bbe7375d8d952cdb6c47db875070f5e6a380db7cf2",
+      "identical_source": "recherche/note_communication_encadrants/revision_2026-09-25/reference/latex/figures/f18_rotation_rho.pdf"
+    },
+    {
+      "figure": "f20_rampes",
+      "file": "figures/f20_rampes.pdf",
+      "sha256": "ecb7337f793cac70fb6d471b63f3487bcf3a8f3a21c86c8cba3e4b7f3460f977",
+      "identical_source": "recherche/note_communication_encadrants/revision_2026-09-25/reference/latex/figures/f20_rampes.pdf"
+    },
+    {
+      "figure": "art_temps",
+      "file": "figures/art_temps.pdf",
+      "sha256": "0ddb9bd3883df51cf87318be12e160a1e5a3e126b6b51c49a599f58685ba58ad",
+      "identical_source": "recherche/note_resultats/latex/figures/art_temps.pdf"
+    },
+    {
+      "file": "data_article/ages_graines.csv",
+      "sha256": "bbd5a5bbb9654309ac800e967fbf00ab1f440f8753629121a75806dc62e15d87"
+    },
+    {
+      "file": "data_article/ages_v2.json",
+      "sha256": "4abc8b3e827369d7af6eace52cf57e19d8606ebda686ebd29e57115f669337c7"
+    },
+    {
+      "file": "data_article/ages_v2_graines.csv",
+      "sha256": "96f66e5f0541df695a36323a5d8e48602081d157944ebdcf548043898e6d1d89"
+    },
+    {
+      "file": "data_article/art_avalanches.png",
+      "sha256": "d827466d7c353ce3aa7c54b28f13df514c738ca464878e8f0e4e97088e77739f"
+    },
+    {
+      "file": "data_article/art_charge.png",
+      "sha256": "401ac7c65805778f82fce665b7ad0e0216a7e21e29ff2430dbba1fa450ec72ca"
+    },
+    {
+      "file": "data_article/art_cycles.png",
+      "sha256": "66b1b47a44a8824cec9f8c6fdc2387a3bcf31bf4b6c994d21ac6a748bda53bf3"
+    },
+    {
+      "file": "data_article/art_deciles.png",
+      "sha256": "1c75fd25fbff757a6742526a10ac5bfe4964bbbdf85d74d8b6e2c120f8d911f9"
+    },
+    {
+      "file": "data_article/art_institutions.png",
+      "sha256": "23c2c170de9840a19aa351ab73a3dd50f3e6e045057bfb6eafe9fd044ddf276f"
+    },
+    {
+      "file": "data_article/art_lorenz.png",
+      "sha256": "f3b87bc73e12de9821f0ca90d5aff7ea6f02da488bd8be87fd39b9884663b00f"
+    },
+    {
+      "file": "data_article/art_quantiles.png",
+      "sha256": "c04adf7982fe020aeb6a66a70a7b9eca8d1de8240ef3475a08208bf000b3a4a2"
+    },
+    {
+      "file": "data_article/art_reponse.png",
+      "sha256": "03ba1c7648910fd9ece68b53fbec4b9c2ecbed77ecaa876b1dc8ea97d151a726"
+    },
+    {
+      "file": "data_article/art_rho.png",
+      "sha256": "a6d21f96359e17e44851d34aa7dddcaee55de43b8d48a95fde8811b376e8075a"
+    },
+    {
+      "file": "data_article/art_sensibilite.png",
+      "sha256": "9e9603f365247c683947059c85b4aaeca64940316388b4cc9a5b9b7723b0dc53"
+    },
+    {
+      "file": "data_article/art_technologie.png",
+      "sha256": "52e5725f9ee89ed3a2a98eb1d7a215a740276635cf5c4d268919b535c0ac81d4"
+    },
+    {
+      "file": "data_article/art_temps.png",
+      "sha256": "e899132e6edc9d2d5c9620de8ffdb404e3f60b4a0860ddf652a111120b1db5d4"
+    },
+    {
+      "file": "data_article/avalanches_counts.csv",
+      "sha256": "c1db3e980f919bf6ed949e448572e07fc909bb8d5d8e3335eb5c95d35502b3cb"
+    },
+    {
+      "file": "data_article/avalanches_fits.csv",
+      "sha256": "ea9884f693827d94790fc4c173056b82672b35a0d0d33051ea530e6b4b3785de"
+    },
+    {
+      "file": "data_article/avalanches_points.csv",
+      "sha256": "945b9f5a5ac252f910f0034b928cec19609c6bcfec5ee540ef98642d8ec0247e"
+    },
+    {
+      "file": "data_article/charge_graines.csv",
+      "sha256": "e0e136ea122f57b9d55179aa507452fc7e9c370a7b045ffb819ac50afa2449b6"
+    },
+    {
+      "file": "data_article/charge_points.csv",
+      "sha256": "2cdee116d95bd1629cd2f5613bb9f087288bbfc285ed66607a7b0a8a10eca65a"
+    },
+    {
+      "file": "data_article/charge_resume.csv",
+      "sha256": "8faa0877242e78641f53beb23db53fcb8f25e500702028fa4b11e32c439d2fa6"
+    },
+    {
+      "file": "data_article/cycles_fits.csv",
+      "sha256": "1d2b8f4a17c674a16e33c8344fa2d877b2cd4152b8ebb601e286d48b5d41e7d9"
+    },
+    {
+      "file": "data_article/cycles_points.csv",
+      "sha256": "2376d9a6c89315d18df76950599110d33a7bb446c7f11218014041a865289b91"
+    },
+    {
+      "file": "data_article/deciles_v2_graines.csv",
+      "sha256": "c55efe5f41d8b4a877646ff123886d49f9bfb7b1ba03e3e41349a47268de226c"
+    },
+    {
+      "file": "data_article/deciles_v2_points.csv",
+      "sha256": "5259d91f7a9d0cf8a2be9490ecb1d6cf9648adc433778d1d509c2093572203ca"
+    },
+    {
+      "file": "data_article/diagnostic_chaine.json",
+      "sha256": "ac46d5a224406399f4a035626c8402638bc1b7aadc202a403cb40d11a4d7e2fa"
+    },
+    {
+      "file": "data_article/elasticites_graines.csv",
+      "sha256": "415b488069b64ab5fbbb44fe8986e28f237c806f9ccad593bf9c958ae5204080"
+    },
+    {
+      "file": "data_article/environnement.json",
+      "sha256": "2afedd3df53cad00198f143963f107d3a6c647bd2da654392e9d37d8322224f5"
+    },
+    {
+      "file": "data_article/historique_m4b_nw_confirmation.csv",
+      "sha256": "4577e8ef62d015d897818615a25d1c7f063599423f86a758cea648829a45f19e"
+    },
+    {
+      "file": "data_article/historique_m4b_sensibilite_points.csv",
+      "sha256": "89f1a442a42a64789da61c1cd99d0ca24ee8849fcf7511110d0699be59d1a8ca"
+    },
+    {
+      "file": "data_article/institutions_fits.csv",
+      "sha256": "b64e9a91d4c34126e967b3a40b754ee49649d34a7174e356f4bd7a82657d224f"
+    },
+    {
+      "file": "data_article/institutions_points.csv",
+      "sha256": "130e3435f308f83130abded5cd36f074546f3e435f45b7670ae7497553443e35"
+    },
+    {
+      "file": "data_article/institutions_references.csv",
+      "sha256": "78f21d5182825700dee0ce385ec78a8c6503b290a513dbf6e49c088ca0dd2d4d"
+    },
+    {
+      "file": "data_article/lorenz_ginis.csv",
+      "sha256": "d42c5bfe21d27dba095f4f8d96f869d8827cd9554d0f878a28294f3c272eefe6"
+    },
+    {
+      "file": "data_article/lorenz_points.csv",
+      "sha256": "1fadbc2dee96ee7e751b8dadb0c46fa103486c3577ea77bc2677d7f396129cd5"
+    },
+    {
+      "file": "data_article/m4b_lois_confirmation.csv",
+      "sha256": "d0c6498ea2171497674202f99232655fff26541071f16ac395e59e1cb9b6f390"
+    },
+    {
+      "file": "data_article/m4b_nw_confirmation.csv",
+      "sha256": "4577e8ef62d015d897818615a25d1c7f063599423f86a758cea648829a45f19e"
+    },
+    {
+      "file": "data_article/m4b_sensibilite_points.csv",
+      "sha256": "be02e087e1e3d87e3729ff29367a1c40add879b0940df9d26a5fef4f7041cc3c"
+    },
+    {
+      "file": "data_article/manifest.json",
+      "sha256": "c5805613d00b6cc0f3b36ba4a10814c424400fcb83909ee52410bbe8ca0b9422"
+    },
+    {
+      "file": "data_article/renouvellement_points.csv",
+      "sha256": "e1a772a5822cb3f2bd0b67a8dd2bc7317a65d2cf4456acb4130fef1ee46c32e9"
+    },
+    {
+      "file": "data_article/renouvellement_sources.json",
+      "sha256": "b5b691326e74a45e59dec9d4d3ef2d2148d5772fdad27fd9387816558f2b343a"
+    },
+    {
+      "file": "data_article/resultats.json",
+      "sha256": "f5b345fbdd293862e0a4ca1cc5394770ffa1c0d94989c73930df9a9ac3e4ac0c"
+    },
+    {
+      "file": "data_article/rho_fits.csv",
+      "sha256": "412a9b91e6e108b4af3bfea8396abc6cf37cade37c12d8e25994c1ed0d34f498"
+    },
+    {
+      "file": "data_article/rho_nw_graines.csv",
+      "sha256": "d426abf5ba0379ecc8b2212a014181fd948da002618b940afb1d7ad28c99d17e"
+    },
+    {
+      "file": "data_article/rho_points.csv",
+      "sha256": "22fefe2f9f5485fce46b4e697be3df6db7579223f14a5a7480f00c6a1bb0bd82"
+    },
+    {
+      "file": "data_article/stationnarite_graines.csv",
+      "sha256": "c3bce7251f7883d6e3b9bb966d8ffeb107039d471b9a720bb71f18dcc48cb91a"
+    },
+    {
+      "file": "data_article/stationnarite_resume.csv",
+      "sha256": "dd8ed942d776142932d019f16b73e60d22cf376319196e071d5b7bc655147468"
+    },
+    {
+      "file": "data_article/technologie_courbes_v2.csv",
+      "sha256": "663cb0029bfeeb8c87bb09d415c4eed1f87434b45985eafeafdd4176b6334e7d"
+    },
+    {
+      "file": "data_article/technologie_points.csv",
+      "sha256": "b1369694c0755fbf64f03444b7b82b452f75bc7737871a6fc281822dfd1d5f80"
+    },
+    {
+      "file": "data_article/temps_graines.csv",
+      "sha256": "ca55c675cb8b437192f329efa1f0514804f6237d30198939e58792ff72edb870"
+    },
+    {
+      "file": "data_article/temps_points.csv",
+      "sha256": "449a1c86e6f6696d9cdded6f1544d86aa99b57e54a780f654dfece892c608fc7"
+    }
+  ]
+}

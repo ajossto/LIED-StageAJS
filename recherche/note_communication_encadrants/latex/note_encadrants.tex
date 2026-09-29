@@ -4,11 +4,9 @@
 %%   cd recherche/note_communication_encadrants/latex
 %%   pdflatex note_encadrants && pdflatex note_encadrants
 %%
-%% Les figures et les macros de nombres sont RASSEMBLÉES par
-%% ../scripts/collect_figures.py. Aucune figure n'est dessinée ici, aucun
-%% nombre de M4.4 n'est écrit à la main : `numbers_m4_4.tex` est la copie de
-%% `m4_4_rebond_credit_soc/report/numbers.tex`, elle-même engendrée depuis
-%% results/analysis/ et confrontée aux figures par tests/test_figures.py.
+%% Révision du 25 septembre 2026 depuis note_resultats (version 0).
+%% Figures et exports copiés localement ; schémas TikZ et renouvellement documentés.
+%% Ne pas relancer les collecteurs historiques pour reconstruire cette rédaction.
 \documentclass[11pt,a4paper]{article}
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
@@ -22,6 +20,9 @@
 \usepackage{xcolor}
 \usepackage{microtype}
 \usepackage{float}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning}
+\usepackage{placeins}
 \PassOptionsToPackage{hyphens}{url}
 \usepackage{hyperref}
 
@@ -45,7 +46,7 @@
 \DeclareUnicodeCharacter{00BD}{\ensuremath{\tfrac{1}{2}}}
 
 \hypersetup{colorlinks=true,linkcolor=blue!45!black,urlcolor=blue!45!black,
-  pdftitle={Note de communication — modélisation multi-agents de l'effet rebond},
+  pdftitle={Rapport de stage — modélisation multi-agents de l'effet rebond},
   pdfauthor={Anatole Joseph-Stouls}}
 \setlist{nosep}
 \setcounter{tocdepth}{2}
@@ -80,49 +81,46 @@ peut-elle produire un effet rebond ?\\
 \small ENS Rennes, département mécatronique, parcours \emph{Recherche aux interfaces}\\
 \small Encadrement : Éric Herbert, Petros Chatzimpiros, Christophe Goupil,
 Jean-Philippe Brunetton}
-\date{Campagnes : mars--août 2026 ; rédaction et vérifications : 14 septembre 2026}
+\date{Campagnes : mars--août 2026 ; rédaction révisée le 25 septembre 2026}
 
 \begin{document}
 \maketitle
 
 \begin{abstract}
-\noindent Cette note rend compte, de façon exhaustive, d'un programme de
-modélisation mené de mars à août 2026 : construire un modèle multi-agents
-minimal d'une société d'entités échangeant une ressource unique comptée en
-joules, vérifier quels phénomènes économiques réels s'y retrouvent, et
-chercher si un effet rebond peut y émerger.
+Ce rapport retrace la construction d'un modèle physique de société de crédit,
+des premières hypothèses aux interventions technologiques. La question du
+stage est de savoir si l'organisation des échanges peut produire une réponse
+collective non proportionnelle à une amélioration technique individuelle,
+et faire émerger des régularités économiques sans les imposer aux agents.
 
-\textbf{Sur le premier volet}, le modèle retrouve endogènement une dizaine de
-traits qualitatifs : un régime stationnaire borné avec renouvellement, une
-différenciation durable entre créancières et débitrices sans qu'aucun type
-n'ait été déclaré, une inégalité qui se loge dans les bilans et non dans la
-taille productive, des cascades de faillites causales de toutes tailles avec
-loi de puissance tronquée, une survie qui croît avec la taille, et une
-activité agrégée à asymétrie négative dont la mémoire suit la durée de vie
-des entités. Les limites restent importantes : queue de Pareto non démontrée,
-absence de longs épisodes aux horizons étudiés et absence de filiation.
-La recherche du corps exponentiel est conservée comme étape historique ;
-elle n'est plus une cible imposée au modèle.
+Les entités extraient une ressource, prêtent du stock productif et peuvent
+faire faillite en transmettant des pertes à leurs créancières. Le retrait
+des agents bancaires spéciaux, les échecs de propagation des premiers moteurs,
+puis la simplification des règles de faillite structurent la démarche.
+La population, les rôles financiers et les distributions de bilan émergent
+au cours de la simulation. Les cascades couvrent une gamme étendue de tailles,
+mais les ajustements de puissance avec coupure présentent des écarts
+systématiques : ni cette famille de lois ni l'auto-organisation critique
+ne sont démontrées. Les contractions agrégées restent courtes.
 
-\textbf{Sur le second volet}, une amplification qualifiée de rebond au sens
-interne est observée, sans calibration énergétique empirique. Le caractère
-sous- ou super-proportionnel de la réponse à long terme dépend d'une convention
-de modélisation --- la dotation de naissance suit-elle ou non l'échelle
-technologique --- et ce n'est pas un détail : sous dotation fixe la réponse
-est \emph{sous}-pro\-por\-tion\-nelle ($\varepsilon = \Epsilon$), sous dotation
-compensée elle vaut exactement $1/(1-\gamma)$, donc fortement
-super-proportionnelle. La dernière campagne, M4.4, montre où va le surcroît
-de production dans les distributions --- certains quantiles extrêmes
-augmentent moins que les médianes, sans suivi d'un groupe fixe --- et
-découvre que l'institution de crédit employée par toute la lignée, qui paraît
-partager le surplus à parts égales, asservit en réalité sur la valeur : par
-contrat elle partage à $\PartageParContrat$, par joule à $\PartagePondere$,
-et l'écart est exactement $\operatorname{Cov}(p,\Delta)/\mathbb{E}[\Delta]$.
+Au point principal, augmenter de 50\,\% le coefficient d'extraction sur les
+entités présentes et futures accroît la production totale d'environ 35\,\% :
+la production individuelle augmente tandis que la population diminue.
+L'élasticité finie vaut $0{,}7473\pm0{,}0106$ à dotation de naissance fixe,
+et $2{,}0029\pm0{,}0148$ lorsque la dotation des entrantes suit l'échelle
+productive (IC95 entre douze graines). Le second résultat est compatible
+avec la prédiction d'une symétrie homogène complète, sans que cette symétrie
+soit le protocole d'intervention effectivement réalisé.
 
-\textbf{Le verdict externe reste suspendu.} Non par manque de résultats, mais
-parce que plusieurs des observables du modèle n'ont pas de cible empirique
-directement comparable. Cette absence est elle-même documentée comme un
-résultat du travail.
+Le travail met aussi en évidence la différence entre partage moyen par
+contrat et partage pondéré par le surplus. Cette différence obéit à une
+identité comptable ; elle ne suffit pas à expliquer les écarts démographiques.
+Le rapport conserve les résultats négatifs et les révisions d'interprétation,
+notamment le retrait d'une réfutation trop forte de la convexité du risque.
+Ces résultats établissent une réponse collective endogène dans le modèle,
+sans constituer une mesure calibrée du rebond énergétique réel.
+
+
 \end{abstract}
 
 \tableofcontents
@@ -132,8 +130,7 @@ résultat du travail.
 \addcontentsline{toc}{section}{Avertissement de lecture}
 
 \paragraph{Ce que cette note est.} Un proto-rapport de stage autonome : elle décrit
-le modèle, sa raison d'être, sa généalogie, et l'intégralité des résultats
-obtenus, y compris ceux hérités des versions antérieures. Elle ne suppose la
+le modèle, sa raison d'être, sa généalogie, et les résultats documentés, y compris ceux hérités des versions antérieures. Elle ne suppose la
 lecture d'aucun autre document. Elle retrace le raisonnement, les hypothèses,
 les impasses et les résultats négatifs. Le document frère
 \chemin{recherche/note_resultats/} est un proto-article scientifique consacré
@@ -145,7 +142,8 @@ changements d'hypothèses y restent datés ; les vérifications de rédaction
 complètent les campagnes sans réécrire leur histoire.
 
 \paragraph{Le marquage des énoncés.} Le stage s'impose une règle de confiance
-explicite. Chaque affirmation porte son niveau :
+explicite. Les distinctions suivantes guident la lecture ; les marqueurs signalent
+les passages où le statut de preuve doit être particulièrement explicite :
 
 \begin{itemize}
 \item \fait{} --- mesuré dans les données ou lu dans le code, protocole
@@ -317,6 +315,8 @@ résultats anciens sans les rejouer (§\ref{sec:parite}).
 \part{Le modèle : ce qu'il fait, exactement}
 
 \section{L'entité, le joule, et ce qui circule}
+\label{sec:modele}
+\input{exemple_article}
 
 \subsection{Une seule sorte d'agent}
 
@@ -361,7 +361,12 @@ elle n'a pas été réexaminée.}.
 
 \input{physique_echelles}
 
-\subsection{La chronologie d'un pas}
+\subsection{La chronologie d'un pas}\label{sec:pas}
+
+Les états $K_i,C_i,D_i,NW_i$ et les flux sont individuels ;
+$\lambda,\delta,\sigma,\rho$ sont communs. La technologie
+$(A_i,\gamma_i)$ peut être individuelle dans les moteurs Live.
+Les notations sont regroupées en annexe~\ref{sec:definitions}.
 
 L'ordre fait partie du modèle : le modifier changerait la date de paiement des
 nouveaux prêts, l'ensemble des entités admissibles au marché, et la
@@ -371,13 +376,15 @@ construction des cascades.
 \item \textbf{Interventions (moteurs Live et M4.4).} Les modifications
       programmées sont appliquées avant les naissances.
 \item \textbf{Naissances.} $B_t \sim \mathrm{Poisson}(\lambda)$ ; chaque
-      entrante reçoit une dotation $K_0$.
+      entrante reçoit une dotation $K^\circ$.
 \item \textbf{Choc multiplicatif.} $K_i \leftarrow K_i e^{\eta_i}$, avec
       $\eta_i \sim \mathcal{N}(-\sigma^2/2, \sigma^2)$ --- de moyenne
-      multiplicative unitaire, donc sans dérive imposée.
+      multiplicative unitaire, donc sans dérive imposée. Le paramètre
+      $\sigma$ est commun, mais les chocs sont individuels et indépendants,
+      renouvelés à chaque pas.
 \item \textbf{Production.} $K_i \leftarrow K_i + A\,K_i^{\gamma}$, avec
       $0 < \gamma < 1$ : la production est \textbf{concave} en la taille. C'est la
-      seule source de croissance réelle.
+      source de production réelle ; les dotations constituent un autre apport extérieur.
 \item \textbf{Intérêts.} Chaque emprunteuse paie $\sum r q$ depuis son
       capital ; si elle ne peut pas, elle paie au prorata et entre en défaut de
       service.
@@ -404,17 +411,40 @@ construction des cascades.
       sans enregistrement sont identiques.
 \end{enumerate}
 
-\subsection{Le crédit comme institution de coopération}
+\subsection{Le crédit comme institution de coopération}\label{sec:credit}
 
 C'est le c\oe{}ur du modèle, et le point où le mot « collaboratif » de la
 question dorsale prend un sens précis.
 
-La production étant concave, une même quantité de capital produit \emph{plus}
-chez une petite que chez une grosse. Un transfert de stock de la riche vers la
-pauvre augmente donc la production \emph{jointe} de la paire. Le marché
-réalise cela dans sa restriction homogène : la plus riche met une part de son
-stock à disposition de la plus pauvre. Le noyau technologique généralisé
-optimise la production jointe sans imposer ce sens en régime hétérogène.
+Pour deux entités ayant la même technologie concave, le rendement marginal
+$f'(K)=A\gamma K^{\gamma-1}$ est plus grand chez la moins dotée.
+Un transfert vers elle augmente donc la production \emph{jointe} tant qu'il
+ne dépasse pas l'égalisation des rendements marginaux. Ce résultat ne vaut
+pas pour n'importe quel montant ni pour n'importe quelle paire hétérogène. C'est
+l'unique motif du crédit dans ce modèle : il n'y a ni anticipation, ni
+préférence temporelle, ni prix.
+
+La figure~\ref{fig:art_technologie} illustre le rôle de la technologie et
+le gain du prêt. À $\gamma$ fixé, $A$ multiplie l'extraction par pas ;
+ce n'est pas à lui seul une puissance en watts. L'exposant $\gamma$
+mesure les rendements d'échelle individuels. Entre zéro et un, il rend la
+fonction concave et permet un gain de réallocation : l'appeler directement
+« propension à collaborer » serait excessif. À $\gamma=1$ et technologie
+identique, ce gain disparaît ; sa variation avec $\gamma$ demande de fixer
+les unités et les états comparés.
+
+\figurine{art_technologie}{1.0}{\textbf{Technologie et gain de coopération.}
+À gauche, les technologies $f_1(K)=2K^{1/4}$ et $f_2(K)=K^{1/2}$
+se croisent à $K=16$, pour une production de 4 par pas ; les stocks
+initiaux sont distincts, $(K_1,K_2)=(20,4)$. Les coefficients sont
+exprimés dans une même unité de stock fixée. À droite, un prêt de 1 vers 2
+augmente la production jointe jusqu'à l'égalisation des rendements
+marginaux. La zone entre gain et perte mesure le surplus joint ;
+le croisement des productions à gauche n'est pas cette égalisation.
+Ces courbes sont analytiques,
+à états fixés, sans intervalle statistique.}
+
+
 
 \textbf{Il y a donc un surplus coopératif à partager}, et le taux d'intérêt est
 le mécanisme de partage. Pour un contrat de principal $q$, deux quantités sont
@@ -424,8 +454,9 @@ donneuse, et $\Delta$, le surplus coopératif de la paire. Le service vaut
 r\,q = L + p\,\Delta.
 \]
 La règle imposée \code{bargain} explore $p\in[0,1]$ ; le partage implicite
-d'une autre règle peut sortir de cet intervalle. À $p=0$ la donneuse fait une opération blanche et la receveuse garde tout le
-surplus ; à $p=1$ c'est l'inverse. \textbf{Cette lecture du taux comme
+d'une autre règle peut sortir de cet intervalle. À $p=0$, le service compense la perte productive calculée à la création
+du contrat ; à $p=1$, la prêteuse reçoit également tout le surplus.
+Ce bilan instantané ne garantit pas le bilan du prêt sur sa durée de vie. \textbf{Cette lecture du taux comme
 paramètre de partage est une contribution de la dernière campagne} : les
 lignées antérieures employaient une formule --- la moyenne géométrique des
 rendements marginaux --- sans savoir quel partage elle réalisait. La
@@ -458,9 +489,12 @@ une mortalité en \textbf{contagion}. Les versions antérieures, qui
 redistribuaient ou amortissaient, produisaient des morts \emph{synchronisées}
 mais pas de propagation (§\ref{sec:trajectoire}).
 
+\input{cascade_article}
+
 \subsection{Les invariants, et ce qu'ils garantissent}
 
-\fait{} Le moteur maintient exactement, à chaque pas :
+\fait{} Les règles imposent algébriquement les identités suivantes ; les
+contrôles numériques tiennent compte des arrondis des flottants :
 $K_i \ge 0$ ; $\sum_i C_i = \sum_i D_i$ ; la somme des valeurs nettes des
 survivantes égale leur capital total ; et le bilan réel
 \[
@@ -482,19 +516,23 @@ réponse à la question d'interprétabilité.
 ménages distincts des firmes, ni filiation, ni héritage, ni transmission}. Il
 ne sépare pas l'outil, l'énergie incorporée, la maintenance, le service utile
 et le surplus. Les prêts sont perpétuels, nominaux et sans recouvrement. Le
-marché sélectionne la plus riche et la plus pauvre d'un échantillon de
-taille $k$, ce qui est une règle de rencontre très particulière.
+marché M4B sélectionne la plus riche et la plus pauvre d'un échantillon
+de taille $k$ ; les configurations récentes retiennent des paires et
+optimisent leur production jointe. Ce sont des règles de rencontre spécifiques.
 
 \figurine{m02_vue_macro}{1.0}{\textbf{Le système est borné, et il le reste.}
 Capital total, crédit nouveau, population et levier $\sum D / \sum K$ sur
-4000 pas. Aucune dérive, aucune extinction, aucun emballement : le régime est
-stationnaire avec renouvellement permanent. C'est le préalable à toute
+4000 pas. Sur cette réalisation, aucune dérive durable, extinction ou croissance
+illimitée n'est visible. Ce diagnostic visuel ne démontre pas une
+stationnarité stricte ; le contrôle quantitatif est donné en
+annexe~\ref{sec:stationnarite}. C'est le préalable à toute
 comparaison distributionnelle --- et le premier moteur du stage, lui, divergeait
 pour une partie de son espace de paramètres.}
 
 \clearpage
 
-\input{definitions}
+Le glossaire est regroupé en annexe~\ref{sec:definitions}, dans
+l’ordre d’introduction des notions du modèle et des méthodes.
 
 \clearpage
 
@@ -611,7 +649,7 @@ partie~\ref{part:phenomenes}.
 \fait{} \textbf{M4.2} généralise la production en $A\,K^\gamma$ et découvre que
 l'effet naïvement attribué à la concavité $\gamma$ est en réalité dominé par un
 \textbf{déplacement d'échelle} du capital. La dynamique possède une covariance
-exacte sous remise à l'échelle, et c'est le rapport $K_0/K^*_{\mathrm{aut}}$ qui
+exacte sous remise à l'échelle, et c'est le rapport $K^\circ/K^*_{\mathrm{aut}}$ qui
 devient la combinaison structurelle à contrôler.
 
 \figurine{t05_effet_echelle_m42}{0.85}{\textbf{M4.2 : ce n'était pas la
@@ -691,18 +729,23 @@ silence.}
 
 \subsection{Ce que la parité autorise, et ce qu'elle n'autorise pas}
 
-\inference{} \textbf{Ce qu'elle autorise.} Chaque moteur \emph{contient} le
-précédent comme cas particulier : M4.2 à $\gamma=1/2$ et $A=1$ \emph{est} M4B ;
-M4.4 avec \code{loan\_direction="richest\_lends"} \emph{est} M4.3Live-v1. Un
-résultat établi sur un prédécesseur reste donc vrai du moteur actuel sur la
-restriction correspondante --- non par ressemblance statistique, mais par
-identité de trajectoire.
+\inference{} Les comparaisons soutiennent la continuité des moteurs dans
+les restrictions, scénarios et horizons testés. M4.2 reproduit M4B en régime
+homogène à tolérance numérique ; ce maillon n'est pas bit à bit.
+Le mode \code{richest\_lends} de M4.4 conserve une référence Live-v1,
+sans rendre le sens libre équivalent en technologie hétérogène.
+L'annexe~\ref{sec:compatibilite} précise les contrôles conservés.
+Les exécutions du tableau sont celles consignées le 25 août ; elles n'ont
+pas été rejouées pendant la présente adaptation rédactionnelle.
 
-\incertitude{} \textbf{Ce qu'elle n'autorise pas.} Chaque parité vaut
-\emph{sous sa restriction}. M4.2 hors de $\gamma = 1/2$ n'est pas M4B, et rien
-ne garantit que les résultats de M4B y survivent. C'est précisément pourquoi la
-campagne M4.4 a commencé par re-mesurer les élasticités déjà publiées avant
-d'aller plus loin (§\ref{sec:ancrages}) --- et elle les a retrouvées.
+\incertitude{} Un test de non-régression ne valide ni toutes les configurations,
+ni l'interprétation empirique. La conservation d'une interface, l'égalité
+d'une trajectoire et la comparaison de deux règles économiques sont trois
+questions différentes. Le changement de règle de fixation du taux d'emprunt
+est un changement substantiel de modèle, distinct du sens du prêt et de
+l'instrumentation. Le renommage scientifique envisagé par l'auteur reste
+différé ; les identifiants techniques des archives sont conservés.
+
 
 \inference{} Cette chaîne n'était pas prévue au départ. Le passage de
 \code{random.Random} à \code{numpy.random.default\_rng}, par exemple, n'avait
@@ -724,6 +767,28 @@ travail, pour quatre raisons : contrôler ce que produisent les moteurs et les
 agents ; naviguer entre graines et cellules de campagne ; \textbf{repérer des
 phénomènes non anticipés} ; et reformuler les questions à partir de ce qu'on
 voit. Une grande partie des figures de cette note en vient directement.
+
+\subsection{Prolongement de septembre : figures, instrumentation et transmission}
+Le travail de rédaction a aussi bénéficié des avancées du laboratoire après
+les campagnes du stage. Le journal de septembre documente une révision des
+figures natives, des exports vectoriels et de leurs métadonnées, puis une
+reprise de simulations historiques dans un périmètre contrôlé. Ce travail
+n'est pas une nouvelle validation empirique du modèle.
+
+Une limite pratique est devenue explicite : une recette graphique ne peut
+pas reconstruire des trajectoires individuelles ou des réseaux qui n'ont
+pas été enregistrés. La disponibilité d'instantanés, de journaux individuels
+ou de panneaux varie entre lignées. L'autonomie du PDF est assurée par des
+copies locales ; la reproductibilité scientifique exige également les états,
+paramètres, graines, plans d'intervention et versions de moteur.
+Pour les moteurs Live, le plan programmé fait partie de l'entrée du run :
+les seuls paramètres initiaux et la graine ne décrivent pas le traitement.
+
+Les deux runs M4.3 utilisés ici pour le renouvellement sont identifiés dans
+les exports du rapport. Les résultats historiques conservent leurs images
+et sources datées ; une figure régénérée ailleurs dans Simulation Lab n'est
+pas substituée silencieusement à une preuve déjà citée. L'adaptation présente
+ne modifie ni moteur ni campagne et ne relance aucune simulation.
 
 \subsection{Le mode de travail, dit franchement}
 
@@ -762,7 +827,7 @@ présences : un modèle qui reproduirait tout ne serait pas informatif, et un
 modèle dont on ne dirait que les réussites ne serait pas honnête.
 
 La source principale est la campagne de sensibilité M4B --- 594 simulations,
-$\delta \in [0{,}01\,;0{,}10]$, $\sigma \in [0\,;1]$, $K_0 \in [2\,;200]$,
+$\delta \in [0{,}01\,;0{,}10]$, $\sigma \in [0\,;1]$, $K^\circ \in [2\,;200]$,
 $k \in \{2,\ldots,10\}$, $\lambda \in [1\,;100]$ --- complétée par les
 lignées ultérieures, qui en héritent par la chaîne de parité.
 
@@ -816,7 +881,7 @@ Défaut de liquidité comme canal de contagion & \textbf{réfuté} &
 \section{Le point de référence, chiffré}
 
 \fait{} Au centre de campagne --- $\lambda = 30$, $\delta = 0{,}05$,
-$\sigma = 0{,}25$, $K_0 = 25$, $k = 3$ --- sur cinq graines de confirmation
+$\sigma = 0{,}25$, $K^\circ = 25$, $k = 3$ --- sur cinq graines de confirmation
 (11 à 15), fenêtre $[1000\,;4000]$. Les incertitudes sont des écarts-types
 inter-graines\footnote{Source :
 \code{recherche/sensibilite\_m4b/report/rapport\_final.tex},
@@ -883,7 +948,7 @@ nettes débitrices, et la corrélation entre position nette et âge vaut 0,52.
 \figurine{p02_structure_nw}{1.0}{\textbf{La structure de la valeur nette.}
 Cycle de vie de la position nette, et profondeur du trou d'insolvabilité au
 décès. Cette profondeur médiane, rapportée au capital par tête, vaut environ
-$-8{,}6~\%$ et reste \emph{invariante} le long de $\delta$, $K_0$, $k$ et
+$-8{,}6~\%$ et reste \emph{invariante} le long de $\delta$, $K^\circ$, $k$ et
 $\lambda$ : elle ne dépend guère que de la volatilité. C'est une cible
 analytique forte, non encore exploitée.}
 
@@ -937,12 +1002,50 @@ instantané, avec IC95 ; les IC atteignant zéro ne sont pas affichés.
 La normalisation compare les formes, pas les niveaux. Ces instantanés finaux
 ne sont pas les moyennes temporelles utilisées dans les statistiques de campagne.}
 
+\subsection{Valeur nette et intérêts : une relecture au point principal}
+La valeur nette (\emph{net worth}, notée $NW$) est la grandeur du modèle
+la plus proche d'un patrimoine net : actifs réels plus créances moins
+dettes. Les intérêts reçus constituent
+un flux de revenu financier. Leurs distributions émergent d'entités soumises
+aux mêmes règles, et non de classes de richesse imposées à la naissance.
+Au régime principal, les Gini temporellement moyennés sont proches de
+$0{,}613$ pour la valeur nette et $0{,}513$ pour les intérêts reçus.
+La figure~\ref{fig:art_lorenz} représente des instantanés distincts de ces
+moyennes temporelles.
+
+\figurine{art_lorenz}{1.0}{\textbf{La distribution collective persiste malgré
+le renouvellement individuel.} Contrôle M4.4, douze graines : courbes de
+Lorenz à $t=2010$, $3000$ et $4000$, et IC95 inter-graines. Chaque observable
+possède son propre classement.}
+
+Pour situer les ordres de grandeur, le Gini du patrimoine net des ménages
+américains est de $0{,}852$ dans la SCF 2019 (Aladangady et Forde (2021), références §\ref{sec:biblio}) : le modèle
+principal est donc sensiblement moins inégalitaire sur cette mesure.
+Le CBO rapporte un Gini de $0{,}516$ pour le revenu avant transferts sous
+conditions de ressources et impôts en 2019 (CBO (2022), références §\ref{sec:biblio}). Sa proximité
+numérique avec $0{,}513$ ne valide pas la distribution du modèle : les
+intérêts reçus ne comprennent ni salaires, ni l'ensemble des revenus du
+capital, et nos entités ne sont pas des ménages pondérés selon leur taille.
+Une confrontation directe exige un même type d'acteur, une même période
+et une même définition comptable. Nous ne comparons donc pas le Gini du
+stock physique à celui du revenu pour conclure à la plausibilité économique.
+
+Les queues de valeur nette et d'intérêts sont compatibles avec des
+ajustements en puissance sur une partie du domaine ; leur identification
+statistique reste ouverte (Clauset et al. (2009) ; Wildauer et Heck (2024), références §\ref{sec:biblio}). Une log-normale et une
+puissance à coupure ont chacune deux paramètres de forme à seuil fixé.
+Si la coupure dépend de la taille du système, cette dépendance doit être
+estimée sur plusieurs tailles ; elle ne retire pas automatiquement un
+paramètre à un ajustement réalisé à taille finie. Les tests existants et
+leurs limites sont détaillés en annexe~\ref{sec:ajustements}.
+
+
 \subsection{Les grandes vivent plus longtemps}
 
 \fait{} L'espérance de vie restante croît avec la taille instantanée --- d'un
 facteur environ deux du bas au haut de l'échelle observée --- et le capital de
-naissance $K_0$ agit essentiellement comme une protection des jeunes : la durée
-de vie croît presque linéairement avec $\log K_0$.
+naissance $K^\circ$ agit essentiellement comme une protection des jeunes : la durée
+de vie croît presque linéairement avec $\log K^\circ$.
 
 \figurine{p03_vie_par_taille}{1.0}{\textbf{La survie croît avec la taille.} À
 gauche, les couples (taille instantanée, vie restante) ; à droite, la moyenne
@@ -973,9 +1076,10 @@ morts indépendantes. À droite, la profondeur causale atteint 10. C'est
 exactement ce que M3 ne produisait pas : là, le rapport racines/taille valait 1
 et la profondeur ne dépassait pas 2.}
 
-\fait{} Les tailles suivent une \textbf{loi de puissance tronquée}, qui bat la
-loi pure dans chaque cellule et chaque graine de confirmation. L'exposant
-converge vers environ $2{,}31$ à grande taille. Les scalings mesurés sont
+\fait{} Les ajustements historiques M4B privilégient une puissance avec coupure
+dans une partie du domaine étudié. L'exposant ajusté se rapproche de
+$2{,}31$ dans les grandes configurations. Ce constat comparatif ne valide
+pas l'adéquation absolue de la famille. Les scalings mesurés sont
 \[
 s_{\max} \propto \lambda^{0{,}58}, \qquad
 \chi = \frac{\langle s^2 \rangle}{\langle s \rangle} \propto \lambda^{0{,}51}.
@@ -985,8 +1089,8 @@ s_{\max} \propto \lambda^{0{,}58}, \qquad
 avec intervalles de Wilson, fonction de survie, et volume de créances détruites.
 La coupure est visible dans la fenêtre observable --- c'est pour cela que la loi
 tronquée bat la loi pure. À $\lambda = 100$, la coupure sort de la fenêtre et la
-loi pure redevient meilleure : les deux constats sont cohérents, et c'est un
-effet de taille finie, non un changement de mécanisme.}
+loi pure redevient meilleure : les deux constats sont cohérents, et cela motive une étude
+des effets de taille finie, sans établir une loi universelle de taille finie.}
 
 \figurine{p06_scaling_avalanches}{1.0}{\textbf{Les lois d'échelle.} Taille
 maximale et susceptibilité contre l'intensité de naissance. Les exposants
@@ -1000,6 +1104,46 @@ Le branchement est une \textbf{grandeur endogène observée}, dépendante de
 la configuration et de l'institution. La SOC reste non établie ; un plafond
 universel à 0,30 ne peut pas servir d'argument.
 
+\subsection{Relecture des avalanches dans la configuration M4.4}
+Nous ajustons, sur chaque graine, une probabilité discrète
+\begin{equation}
+ P(S=s)=Z^{-1}s^{-\alpha}\exp(-s/S_c),\qquad s\ge1,
+ \label{eq:avalanche}
+\end{equation}
+où $Z$ normalise la somme des probabilités et $S_c$ décrit une coupure douce,
+non une taille maximale absolue. Au contrôle principal, les douze ajustements
+donnent $\alpha=1{,}623\pm0{,}009$ et $S_c=206\pm11$ ; sous
+$A\times1{,}5$, $\alpha=1{,}667\pm0{,}009$ et $S_c=185\pm7$.
+Ces incertitudes décrivent la variabilité entre graines de cet estimateur.
+Elles ne valident ni la famille choisie ni l'identification de la coupure
+à la taille du système.
+
+\figurine{art_avalanches}{1.0}{\textbf{Histogrammes, ajustements et répétitions.}
+M4.4, douze graines par condition, $3000<t\le4000$. Les points donnent la
+probabilité par classe divisée par la largeur de classe ; les barres sont
+des IC95 inter-graines. Les courbes sont les moyennes des ajustements
+discrets à coupure exponentielle, les rubans un bootstrap de 2000 tirages
+de runs entiers. Les droites tiretées indiquent la pente $-\alpha$ de
+référence, pas la loi tronquée complète. Les $R^2$ sont calculés sur les
+logarithmes des classes non vides, puis moyennés entre graines. Le panneau
+gauche représente le contrôle dont les exposants individuels sont repris
+à droite ; le panneau central représente l'autre série.
+\textsuperscript{1}Les barres trop longues pour l'échelle log sont tronquées
+à 95\,\% du niveau ; leurs valeurs intégrales restent dans les données.}
+
+Le modèle à coupure est ajusté par vraisemblance sur les tailles entières,
+pas par sélection du morceau le plus rectiligne de l'histogramme. Les
+$R^2$ moyens, environ $0{,}938$ et $0{,}928$, ne constituent pas un test
+de Pareto. Malgré ces valeurs élevées, les courbes sous-estiment une partie
+des tailles intermédiaires et surestiment les extrêmes : les écarts visibles
+dépassent plusieurs des barres inter-graines. La forme simple
+de l'équation~\eqref{eq:avalanche} ne rend donc pas compte de toute la
+distribution à la précision des données. Choisir la coupure pour
+optimiser simultanément une variance bootstrap et un $R^2$ sélectionnerait
+aussi les fluctuations favorables ; nous retenons ici un modèle et un support
+annoncés, avec les réserves de l'annexe~\ref{sec:ajustements}.
+
+
 \subsection{Une hiérarchie de paramètres nette, et séparable}
 
 \fait{} Le criblage montre cinq rôles distincts :
@@ -1011,7 +1155,7 @@ universel à 0,30 ne peut pas servir d'argument.
 \item \textbf{le bassin de marché $k$} modifie peu la démographie mais
       fortement les inégalités et les cascades : le Gini du capital passe
       d'environ $0{,}14$ à $k=2$ à $0{,}01$ à $k=10$ ;
-\item \textbf{la dotation $K_0$} protège les jeunes ;
+\item \textbf{la dotation $K^\circ$} protège les jeunes ;
 \item \textbf{la dépréciation $\delta$} fixe l'échelle du capital --- le point
       fixe individuel sans crédit ni bruit vaut
       $K_{\mathrm{aut}}=[A(1-\delta)/\delta]^{1/(1-\gamma)}$, pour
@@ -1027,6 +1171,13 @@ Corrélations partielles de rang sur le plan d'expérience par hypercube latin.
 La séparation des rôles est nette --- c'est ce qui rend le modèle
 \emph{pilotable}, et donc utilisable pour une expérience contrôlée. Un modèle
 dont tous les paramètres feraient la même chose ne permettrait aucune ablation.}
+
+\figurine{stage_sensibilite_historique}{1.0}{\textbf{Bruit et taille des rencontres dans l'exploration historique.}
+Confirmation M4B, cinq graines par cellule, centre à $k=3$.
+Le Gini de valeur nette est mesuré sur l'instantané final ; les barres
+représentent la variabilité entre graines, pas la volatilité temporelle
+au sein d'une trajectoire. Cette figure conserve l'étude de $k$ retirée
+du corps de l'article ; les rencontres ultérieures sont fixées à $k=2$.}
 
 \subsection{Une activité agrégée qui ressemble à un cycle économique --- en
 partie}
@@ -1117,6 +1268,37 @@ durées. IC95 de Student entre graines. La fréquence des seules contractions
 est environ la moitié de celle des épisodes des deux signes. Aucun recalage
 du pas sur une année ou une autre durée réelle n'est revendiqué.}
 
+\subsection{Comparer les durées à une exponentielle discrète}
+Une avalanche est un événement du réseau à l'intérieur d'un pas. Une
+contraction est une suite de pas où une grandeur agrégée diminue. Elles ne
+sont donc ni la même observation ni deux définitions d'une même taille.
+Dans le régime M4B central, les durées moyennes de contraction du stock et
+de la production sont proches de deux pas. La figure~\ref{fig:art_cycles}
+formalise leur décroissance par une exponentielle discrète,
+$P(D\ge d)=\exp[-\beta(d-1)]$, $d=1,2,\ldots$.
+
+\figurine{art_cycles}{1.0}{\textbf{Durées de contraction : une exponentielle,
+pas une puissance imposée.} M4B central, cinq graines 11--15,
+$1000<t\le4000$, sans lissage ; stock et production sont traités séparément.
+$\beta$ est estimé par graine depuis la durée moyenne. Les points sont les
+survies empiriques et leurs IC95 ; les courbes moyennent les cinq ajustements.
+Les $R^2$ descriptifs portent sur la log-survie aux durées observées, dont les
+points sont dépendants. Les barres logarithmiques sont tronquées selon la
+convention de la figure~\ref{fig:art_avalanches}. Les épisodes qui touchent
+une frontière de fenêtre sont comptés selon le protocole existant ; ce n'est
+pas une analyse de survie corrigeant la censure.}
+
+On trouve $\beta=0{,}731\pm0{,}029$ pour le stock et
+$0{,}696\pm0{,}035$ pour la production, avec des $R^2$ log-survie moyens
+proches de $0{,}98$. Wright (Wright (2005), références §\ref{sec:biblio}) montre précisément pourquoi il
+faut comparer puissance et exponentielle sur l'ensemble des durées, sans
+éliminer les épisodes les plus courts. Son étude porte sur des contractions
+annuelles du PIB de 17 économies entre 1870 et 1994 ; nos pas non calibrés
+ne sont pas des années. La ressemblance de forme motive une comparaison
+future ; ces contractions courtes n'étayent pas une loi de puissance des
+durées ni, à elles seules, l'hypothèse SOC.
+
+
 \section{Ce qui n'est pas retrouvé, et ce qui est réfuté}
 
 \subsection{Une cible historique abandonnée : le corps exponentiel imposé}
@@ -1172,21 +1354,61 @@ de données ou tout protocole.
 travail visible}, et les exposants sont \emph{caractérisés sous cette
 hypothèse}, jamais démontrés.
 
-\subsection{Le renouvellement du sommet n'est pas de la mobilité sociale}
+\subsection{Renouvellement du sommet, survie et mémoire}
+\fait{} Le spécimen historique M4B, à $\sigma=0{,}5$, montre un renouvellement
+rapide du décile supérieur. Ce constat porte sur cette configuration et sa
+date d'ancrage ; il n'établit pas un temps caractéristique universel.
 
-\fait{} Le décile supérieur se renouvelle intégralement en moins de cent pas.
+\figurine{p11_renouvellement_top}{0.72}{\textbf{Le spécimen historique à fort bruit.}
+M4B, $\lambda=30$, $\delta=0{,}05$, $\sigma=0{,}5$, $K^\circ=25$,
+$k=2$, graine 14. Fraction du décile supérieur initial de valeur nette
+encore dans ce décile aux instantanés suivants. La sortie du décile
+ne signifie pas nécessairement le décès.}
 
-\figurine{p11_renouvellement_top}{0.72}{\textbf{Un renouvellement total, et
-très rapide.} Part du décile supérieur initial encore présente, en fonction du
-décalage temporel. La chute est immédiate.}
+\paragraph{Complément de septembre : distinguer deux renouvellements.}
+Les instantanés des deux runs M4.3 « baseline » produits pour la révision
+des figures permettent de suivre les identifiants. Pour le décile supérieur
+de valeur nette $D(t_0)$, nous calculons
+\[
+R(h)=\frac{|D(t_0)\cap D(t_0+h)|}{|D(t_0)|},\qquad
+S(h)=\frac{|D(t_0)\cap V(t_0+h)|}{|D(t_0)|},
+\]
+où $V(t)$ est l'ensemble des vivantes. Une sortie temporaire suivie d'un
+retour peut faire remonter $R$, alors que $S$ ne peut que décroître.
+Les ex æquo au seuil du quantile 0,9 sont tous inclus, comme dans la
+figure native ; l'effectif peut donc dépasser légèrement 10\,\%.
 
-\incertitude{} \textbf{Cela ne doit pas s'appeler mobilité sociale.} Les
-identités du sommet changent en grande partie parce que les vies sont courtes,
-et parce qu'il n'existe ni héritage ni filiation dans le moteur. Une mesure de
-mobilité sociale exigerait au minimum des positions initiales et finales
-définies, des matrices de transition entre quantiles, des horizons comparables,
-et --- selon l'objet visé --- un mécanisme intergénérationnel absent
-aujourd'hui. C'est un ajout identifié, non réalisé.
+\figurine{stage_renouvellement}{1.0}{\textbf{Rester au sommet ou rester en vie.}
+M4.3, graines 1 et 2, $A=1$, $\gamma=1/2$, $\lambda=30$,
+$\delta=\sigma=0{,}01$, $K^\circ=25$, $\rho=1$, cible arithmétique,
+horizon 8000. Deux dates d'ancrage : $t_0=50$ (transitoire) et $t_0=2000$.
+Traits pleins : rétention dans le décile supérieur de NW ; pointillés :
+survie des mêmes membres. Les courbes sont des réalisations, sans IC
+artificiel ni ajustement exponentiel. Ce complément lit les instantanés
+existants ; il ne rejoue pas les moteurs.}
+
+À $t_0=50$, le premier instantané où la rétention est au plus 50\,\%
+se situe à $h=350$ et 300 pas (graines 1 et 2), contre 500 et 450 pour
+la survie. À $t_0=2000$, ces décalages valent respectivement 200 et 100
+pour la rétention, 300 et 250 pour la survie. Ce sont des premiers
+franchissements \emph{observés} à une résolution de 50 pas, sans
+interpolation ; un aller-retour entre instantanés n'est pas exclu.
+Ils ne sont ni un temps de relaxation ajusté ni une durée de vie médiane.
+Au pas 8000, entre 2,6 et 4,5\,\% des membres des quatre groupes
+de référence sont encore vivants et dans le décile supérieur : le
+renouvellement n'est pas intégral à cet horizon.
+Le changement de date d'ancrage modifie le groupe suivi et le résultat.
+
+\incertitude{} Le renouvellement des membres ne démontre pas l'oubli de
+l'état initial : dettes, corrélations et distributions peuvent en conserver
+la trace. Ces deux réalisations M4.3 ne certifient pas l'amorçage des douze
+bras M4.4 ; il faudrait comparer autocorrélations et initialisations
+alternatives. Le diagnostic de dérive en annexe~\ref{sec:stationnarite}
+répond à une autre question. Enfin, parler de mobilité sociale demande
+de distinguer transitions de rang parmi les survivantes, remplacement
+par décès et transmission intergénérationnelle ; cette dernière n'existe
+pas dans le modèle.
+
 
 \subsection{Le canal de liquidité est muet}
 
@@ -1320,12 +1542,12 @@ Portée partielle, court horizon & \textbf{rebond} &
 Portée partielle, long horizon & \textbf{non tranchable} &
   la cohorte traitée disparaît, sa part tend vers zéro : le dénominateur de
   la mesure s'éteint \\
-Portée globale, dotation $K_0$ fixe & \textbf{sous-proportionnel} &
+Portée globale, dotation $K^\circ$ fixe & \textbf{sous-proportionnel} &
   $A \times 1{,}5$ donne $+36{,}1 \pm 0{,}4~\%$ de production, soit
   $E \simeq 0{,}72$ et $\varepsilon \simeq 0{,}76$\footnotemark : la production
   \emph{par entité} est multipliée par $1{,}80$, mais la population par
   $0{,}754$ \\
-Portée globale, dotation $K_0$ compensée & \textbf{rebond fort} &
+Portée globale, dotation $K^\circ$ compensée & \textbf{rebond fort} &
   la population ne se contracte plus ; $E \simeq 2{,}53$ et
   $\varepsilon \simeq 2{,}02$ \\
 \bottomrule
@@ -1369,28 +1591,33 @@ M4.4 utilisaient sa valeur arrondie à $2{,}201$, sans effet au chiffre publié.
 
 \subsection{La covariance d'échelle, et pourquoi elle explique le dernier cas}
 
-\fait{} Le dernier résultat n'est pas un accident numérique : il se
-\emph{démontre}. Le moteur possède une covariance exacte sous remise à
-l'échelle du capital. Sous compensation de la dotation de naissance, le niveau
-agrégé varie comme
-\[
-A^{1/(1-\gamma)}, \qquad \varepsilon = \frac{1}{1-\gamma}.
-\]
-Cette loi analytique concerne les équations homogènes sous rééchelonnement
-cohérent des stocks et des contrats. Les tests numériques couvrent plusieurs
-valeurs de $\gamma$, mais documentent des seuils absolus non rééchelonnés
-(\code{MIN\_LOAN}, \code{ZERO\_TOL}) et des ambiguïtés d'arrondi sur le nombre
-de créancières. Ils ne prouvent donc pas une covariance logicielle universelle.
-La relaxation après un changement de $A$ est une question distincte de
-la correspondance entre deux trajectoires entièrement rééchelonnées.
+\fait{} Les équations homogènes possèdent une covariance d'échelle sous
+$K,q,K^\circ\mapsto c(K,q,K^\circ)$ et $A\mapsto c^{1-\gamma}A$.
+Lorsque tout l'état est rééchelonné de façon cohérente, le niveau productif
+varie comme $A^{1/(1-\gamma)}$, d'où $\varepsilon=1/(1-\gamma)$.
+Les tests numériques ont une portée finie : des seuils absolus
+(\code{MIN\_LOAN}, \code{ZERO\_TOL}) ne sont pas rééchelonnés et les
+arrondis peuvent modifier certains comptages. Ils n'établissent pas une
+covariance universelle du logiciel.
 
-\figurine{r03_covariance_echelle}{1.0}{\textbf{La loi d'élasticité, vérifiée.}
-La covariance d'échelle du moteur, confrontée aux mesures. L'accord est à la
-précision machine. \textbf{C'est important méthodologiquement} : cela explique
-pourquoi la réponse peut être super-proportionnelle \emph{sans invoquer
-rétrospectivement un mécanisme comportemental absent du code}. Un modèle où
-l'on ne pourrait pas faire cette vérification laisserait la porte ouverte à
-n'importe quelle interprétation.}
+Dans l'intervention M4.4, seuls $A$ et la dotation des naissances futures
+sont modifiés ; les stocks et contrats présents ne sont pas rééchelonnés.
+L'élasticité mesurée $2{,}0029\pm0{,}0148$ est compatible avec 2,
+sans être exactement contrainte à cette valeur. Le contrôle de symétrie
+et la relaxation après intervention répondent à deux questions distinctes.
+
+\figurine{r03_covariance_echelle}{1.0}{\textbf{Contrôle historique de covariance d'échelle.}
+Comparaison dans les configurations testées ; un accord numérique ne doit
+pas être étendu aux seuils absolus du logiciel, ni assimilé à la compensation
+des seules naissances de l'expérience d'intervention.}
+
+À $\delta=0{,}01$, $\gamma=1/2$, passer de $A=1$ à $1{,}5$ porte
+$K_{\rm aut}$ de 9801 à $22052{,}25$. Si $K^\circ=25$, le rapport
+$\kappa^\circ$ passe de $0{,}00255$ à $0{,}00113$.
+La compensation porte $K^\circ$ à $56{,}25$ pour préserver ce rapport :
+elle augmente l'apport réel par naissance et ne compense pas une perte
+de revenu. Les deux bras diffèrent donc aussi par leur apport extérieur.
+
 
 \subsection{Le pivot : la dotation de naissance}
 
@@ -1513,6 +1740,57 @@ de l'effectif de ce qui relève de l'échelle par entité. C'est une distinction
 que le programme s'impose systématiquement, entre un résultat, une identité et
 un corrélat.
 
+\subsection{Ce qui change et ce que mesure l'élasticité}
+L'expérience principale multiplie $A$ par $m=1{,}5$ sur toutes les
+entités vivantes et sur les naissances futures, à partir du pas 2001.
+À stock inchangé et exposant $\gamma$ fixé, chaque entité produirait
+exactement 50\,\% de plus : c'est la référence proportionnelle.
+Mais les stocks, le réseau et l'effectif évoluent ensuite. Nous mesurons
+\begin{equation}
+ \varepsilon_s=\frac{\ln(\overline Y_{s,T}/\overline Y_{s,C})}{\ln(1{,}5)},
+ \qquad \widehat\varepsilon=\frac1{12}\sum_{s=1}^{12}\varepsilon_s,
+ \label{eq:eps}
+\end{equation}
+où $Y$ est la production totale, $T$ le bras traité, $C$ le contrôle et
+la barre une moyenne sur $3000<t\le4000$. Le dénominateur est le
+logarithme du facteur technique imposé, pas une constante ajustée.
+Une réponse proportionnelle donne $\varepsilon=1$ ; $0<\varepsilon<1$
+signifie une hausse sous-proportionnelle ; $\varepsilon<0$ signifierait
+une baisse malgré l'amélioration. Il s'agit d'une élasticité \emph{finie},
+non d'une dérivée infinitésimale.
+
+\subsection{Une réponse positive mais non proportionnelle}
+À dotation de naissance fixe, $\widehat\varepsilon=0{,}7473\pm0{,}0106$.
+\textbf{La réponse collective n'est pas proportionnelle à l'amélioration
+individuelle.} Le facteur représentatif $1{,}5^{0{,}7473}\simeq1{,}354$
+correspond à environ 35\,\% de production supplémentaire. La moyenne
+arithmétique des rapports n'est pas exactement cette transformation de
+la moyenne des logarithmes ; les valeurs par graine sont conservées.
+
+\figurine{art_reponse}{1.0}{\textbf{Une même amélioration, deux conventions
+de naissance.} M4.4, douze graines appariées. À gauche, écarts relatifs
+traité/contrôle, lissés sur 101 pas par graine avant le calcul des IC95.
+À droite, élasticités finies sur $3000<t\le4000$ ; points pâles : graines ;
+barres : IC95. La compensation porte sur les naissances,
+$K^\circ\to2{,}25K^\circ$, pas sur les stocks et contrats déjà présents.
+La ligne à 2 est une prédiction de symétrie de tout l'état, non une
+contrainte imposée à cet ajustement.}
+
+La population de fin de pas se contracte d'environ un quart, alors que
+la production par entité augmente. Pour garder une décomposition exacte
+après moyenne temporelle, on peut définir le rendement moyen de population
+par $\overline y=\overline Y/\overline N$. Alors
+$\ln(\overline Y_T/\overline Y_C)=
+\ln(\overline N_T/\overline N_C)+\ln(\overline y_T/\overline y_C)$
+par définition. $\overline y$ n'est pas en général la moyenne temporelle
+de $Y(t)/N(t)$ ; il faut aussi distinguer les productrices du pas et les
+survivantes de fin de pas. Une identité de décomposition ne constitue
+pas une démonstration du mécanisme démographique.
+
+La comparaison à dotation compensée et ses restrictions ont été détaillées
+plus haut. Dans les deux bras, la production augmente ; c'est l'écart à la
+proportionnalité qui change de signe.
+
 \section{Résultat 2 --- des hausses de quantiles inégalement réparties}
 
 \fait{} Rapport entre le bras traité et son contrôle apparié, quantile par
@@ -1542,17 +1820,53 @@ revenu d'intérêt passe de $0{,}295$ à $0{,}033$ joule par pas --- un facteur
 dix vers le bas --- pendant que la médiane augmente de $24{,}2$ à $42{,}1$.
 Le premier décile reste non nul : les faibles intérêts diminuent fortement.
 
-\figurine{rev_quantiles}{1.0}{\textbf{Les quantiles et leur incertitude.}
-M4.4, $A\times1{,}5$ à $K_0$ fixe, $3000<t\le4000$. Points pâles :
-douze rapports par graine ; points pleins et barres : moyenne et IC95 de Student.
-Les centiles sont des catégories non équidistantes en probabilité, sans
-segments d'interpolation. Les populations et identités ne sont pas constantes.}
+\figurine{art_quantiles}{1.0}{\textbf{Lire des positions, pas des groupes fixes.}
+M4.4, $A\times1{,}5$ à dotation fixe, douze graines,
+$3000<t\le4000$. Les abscisses sont placées à
+$\ln[q/(1-q)]$, puis graduées en centiles : l'échelle non linéaire est
+explicite et laisse les quantiles extrêmes lisibles. Points pâles : rapports
+par graine ; points pleins et barres : moyenne et IC95.
+Une ordonnée 1,8 signifie que le quantile considéré vaut 1,8 fois celui
+du contrôle ; elle ne signifie pas que les mêmes entités ont gagné 80\,\%.}
 
-\figurine{rev_deciles}{1.0}{\textbf{Parts par décile de capital.}
-Mêmes bras et fenêtre. Reclassement par capital à chaque instantané dans
-chaque bras ; dénominateur : total de l'observable du même instantané.
-Les IC95 portent sur les parts moyennes de chaque run. Leur proximité
-n'établit pas une absence de redistribution entre groupes fixes.}
+\figurine{art_deciles}{1.0}{\textbf{Production, intérêts et valeur nette
+par décile de capital.}
+M4.4, mêmes bras et fenêtre. Les entités sont reclassées par capital à
+chaque instantané. Lecture : le point du décile 1 donne la part de
+production, d'intérêts ou de valeur nette détenue par les 10\,\% les moins
+dotées en capital à cet instant, et non par les mêmes individus pendant
+1000 pas. La forte présence de jeunes dans le bas du classement contribue
+à ces différences ; elle ne suffit pas à expliquer causalement tout le
+profil. La valeur nette est $NW=K+C-D$ ; elle remplace le stock
+dans le troisième panneau, sans changer le critère de classement.
+Les groupes ont des effectifs égaux à une entité près ; les ex æquo
+sont départagés par ordre stable. Barres : IC95 entre douze moyennes
+par graine, chacune calculée sur les 100 instantanés de la fenêtre.}
+
+\subsection{Âge des survivantes et composition des petits quantiles}
+Le contrôle de composition confirme l'importance des naissances : parmi
+les 10\,\% d'entités recevant le moins d'intérêts, plus de 99,9\,\%
+ont au plus dix pas au contrôle, contre environ 24\,\% de l'ensemble
+de la population. Leur âge moyen est d'environ 1,8 pas, contre 111 pas
+pour l'ensemble. Ces âges sont mesurés chez les survivantes du contrôle
+principal : $A=1$, $\gamma=1/2$, $\lambda=30$, $K^\circ=25$,
+$\delta=\sigma=0{,}01$, $\rho=1$, $k=2$, sens libre et taux marginal.
+Sur les instantanés de $3010$ à $4000$ espacés de dix pas, l'âge
+moyen est $110{,}97\pm1{,}88$ pas, et la moyenne des médianes
+instantanées $40{,}05\pm0{,}16$ pas. Chaque statistique est d'abord
+moyennée dans le temps par graine, puis entre les douze graines ;
+les IC95 portent sur cette dernière moyenne. Il ne s'agit ni de la
+médiane d'un échantillon regroupant tous les instants ni de la durée
+de vie médiane. Après $A\mapsto1{,}5A$ sur les vivantes et les
+entrantes futures à partir du pas 2001, avec $K^\circ$ inchangé,
+ces deux âges deviennent respectivement $94{,}94\pm0{,}86$ et
+$32{,}03\pm0{,}24$ pas. Une exploration plus large des amplitudes
+de variation de $A$ et des valeurs de $\gamma$ reste nécessaire
+pour cette comparaison distributionnelle.
+Le diagnostic du décile jeune est propre au classement par intérêts.
+Dans le décile inférieur de \emph{capital}, la part d'âge inférieur
+ou égal à dix pas est proche de 49\,\%, pas de 100\,\%.
+
 
 \subsection{Producteurs ou rentiers}
 
@@ -1583,24 +1897,49 @@ pas une trajectoire individuelle commune à chaque membre.
 
 \section{Résultat 3 --- une tension de la lignée se dénoue}
 \label{sec:chaine}
+\begin{figure}[htbp]\centering
+\begin{tikzpicture}[>=Stealth,font=\small,
+ box/.style={draw=blue!45!black,fill=blue!4,rounded corners,align=center,text width=3.3cm,minimum height=12mm}]
+\node[box] (a) at (0,0) {$A$ augmente\\$K^\circ$ reste fixe};
+\node[box] (b) at (4.5,0) {$\kappa^\circ$ diminue\\identité d'échelle};
+\node[box] (c) at (9,0) {composition des tailles\\et crédit modifiés};
+\node[box] (d) at (9,-2) {mortalité par entité\\plus élevée};
+\node[box] (e) at (4.5,-2) {effectif moyen\\plus faible};
+\node[box] (f) at (0,-2) {production totale\\non proportionnelle};
+\draw[->,thick] (a)--(b);
+\draw[->,dashed] (b)--(c);
+\draw[->,dashed] (c)--(d);
+\draw[->,thick] (d)--(e);
+\draw[->,thick] (e)--(f);
+\end{tikzpicture}
+\caption{\textbf{Définitions, covariations mesurées et mécanismes proposés.}
+Le premier lien est algébrique. Les liens pointillés motivent une
+interprétation à partir des réponses appariées, sans isoler une médiation
+causale. À régime stable, mortalité par entité et effectif sont liés par
+le bilan des entrées et sorties ; la dernière étape combine l'effectif
+avec la production par entité, qui augmente. Les traits pleins ne signifient
+donc pas tous une causalité identifiée expérimentalement.}
+\label{fig:chaine_stage}
+\end{figure}
 
-\fait{} La contraction de population s'expliquait par une chaîne : le Gini du
-bassin de marché gouverne la rotation du crédit, la rotation gouverne la
-mortalité, la mortalité gouverne l'effectif. \textbf{Les trois maillons n'ont
+\inference{} La contraction de population motive une chaîne reliant
+dispersion du bassin, rotation du crédit, mortalité et effectif. \textbf{Les trois maillons n'ont
 pas le même statut}, et c'est le point à établir avant tout chiffre.
 
 \begin{itemize}
-\item \textbf{Le maillon de la rotation est vérifié.} L'élasticité de la
+\item \textbf{Les réponses de dispersion et de rotation sont compatibles.} L'élasticité de la
       rotation vaut $\ElasticiteRotation \pm \ElasticiteRotationIC$ et celle du
       Gini $\ElasticiteGini \pm \ElasticiteGiniIC$. Elles sont lues dans des
       \emph{fichiers différents} --- la série pour le volume, la sonde de marché
-      pour le Gini --- donc leur accord mesure quelque chose.
-\item \textbf{Le maillon de l'effectif est une identité.} À l'état
-      stationnaire, les morts par pas valent le taux de naissance : la
-      mortalité par entité vaut l'inverse de l'effectif \emph{par
-      construction}. Mesuré : $\ElasticiteMortalite$ contre
-      $-(\ElasticitePop)$. C'est un contrôle de stationnarité déguisé, et il
-      passe.
+      pour le Gini --- donc leur accord est un contrôle croisé de cohérence. Il ne démontre
+      pas à lui seul une causalité de la dispersion vers le crédit.
+\item \textbf{L'effectif et les sorties sont liés par le bilan démographique.}
+      En régime stable, le nombre moyen de décès par pas est proche de
+      $\lambda$ ; le rapport décès moyens/effectif moyen est donc proche
+      de $\lambda/\overline N$. Il ne vaut pas en général la moyenne
+      temporelle du risque $D(t)/N(t)$. À $\lambda$ fixé, la proximité
+      des élasticités $\ElasticiteMortalite$ et $-(\ElasticitePop)$
+      est un contrôle de cohérence, pas une cause indépendante.
 \item \textbf{Le maillon du milieu est le seul à contenir un exposant.}
 \end{itemize}
 
@@ -1682,18 +2021,15 @@ décès, propagation et pertes de créances.
 de branchement sous les trois bras, avec IC95 de Student des niveaux
 sur douze graines ; les effets entre bras sont, eux, appariés.}
 
-\figurine{f08_avalanches_ccdf}{0.78}{\textbf{Et la forme de la distribution
-d'avalanches survit.} Fonction de survie empirique, quatre graines par bras. La
+\figurine{f08_avalanches_ccdf}{0.78}{\textbf{Fonctions de survie d'avalanches par réalisation.} Fonction de survie empirique, quatre graines par bras. La
 coupure de taille finie est visible au-delà de la centaine de faillites.}
 
 
-\figurine{rev_avalanches}{1.0}{\textbf{Un diagnostic visuel avec incertitudes
-et pentes par graine.} M4.4, douze graines par bras, $3000<t\le4000$.
-Survies moyennes et IC95 de Student à gauche ; tendances descriptives sur
-$2\le S\le30$ et ruban bootstrap de runs entiers. Les IC atteignant zéro
-sont omis de l'axe logarithmique. À droite : pentes individuelles et IC95
-de leur moyenne. Les points cumulatifs sont dépendants ; cette régression
-visuelle ne prouve pas Pareto et ne remplace pas l'estimation de densité.}
+La figure~\ref{fig:art_avalanches} remplace l'ancienne régression
+visuelle de survie par un ajustement discret sur les tailles entières.
+Les exposants historiques de campagne présentés ci-dessous conservent
+leur estimateur ; ils ne sont pas les paramètres du nouvel ajustement
+sur $s\ge1$. Les protocoles ne doivent pas être fusionnés.
 
 \subsection{Un écart inter-lignées, partiellement expliqué}
 
@@ -1781,11 +2117,11 @@ $z = \VuongInteretLN$. Sur la valeur nette, \DegenereesNW{} sur
 \fait{} Le couple loi de puissance contre exponentielle, lui, tranche :
 $z = \VuongInteretExp$ et $z = \VuongNWExp$.
 
-\figurine{rev_vuong}{1.0}{\textbf{Une discrimination non concluante dans ces données.}
-Statistique de Vuong contre le paramètre de forme de la log-normale ajustée.
-Les croix marquent le dépassement du seuil diagnostique $\sigma=10$, non une
-frontière mathématique. Un point est un ajustement ; bras et graines sont
-exportés. Les lignes horizontales $\pm1{,}96$ sont des repères usuels du diagnostic.}
+La méthode et la formule du score de Vuong sont exposées en
+annexe~\ref{sec:ajustements}. Les points de l'ancien nuage représentent
+des ajustements et non des individus : deux groupes de scores ne prouvent
+pas l'existence de deux populations économiques. Le seuil sélectionné et
+les dépendances entre entités limitent l'interprétation des seuils gaussiens.
 
 \inference{} La proximité d'une limite de loi de puissance dans les ajustements
 log-normaux tronqués peut expliquer la difficulté de discrimination observée.
@@ -1829,10 +2165,10 @@ $\EtendueInteretMin$ à $\EtendueInteretMax$ ($\EtendueInteretPct~\%$) ---
 pendant que la population varie de vingt-cinq pour-cent et la production de
 quatre-vingts.
 
-\figurine{f12_alpha_bras}{0.95}{\textbf{Les exposants sont invariants sous les
+\figurine{f12_alpha_bras}{0.95}{\textbf{Les exposants ajustés varient peu sous les
 leviers du rebond.} Exposant du revenu d'intérêt et de la valeur nette pour les
 six bras, avec intervalle inter-graines. Les leviers déplacent massivement les
-niveaux ; ils laissent la \emph{forme} de la queue là où elle est.}
+niveaux ; ces mesures ne démontrent pas l'invariance de toute la queue.}
 
 \section{Résultat 6 --- le taux d'intérêt comme partage, et une découverte}
 \label{sec:partage}
@@ -1856,53 +2192,66 @@ $\RapportPopMarginalPUn \pm \RapportPopMarginalPUnIC$). Alors que le bras qui
 partage \emph{effectivement} à un demi donne vingt-sept pour-cent de population
 en plus (rapport $\RapportPopMarginalPDemi \pm \RapportPopMarginalPDemiIC$).
 
-\figurine{rev_institutions}{1.0}{\textbf{La moyenne contractuelle ne prédit
-pas à elle seule la démographie.} M4.4, douze graines par bras, $3000<t\le4000$.
-À gauche : effectif aux cinq partages imposés et règle historique positionnée
-à son partage moyen observé ; les deux coordonnées de ce dernier ont leur
-IC95. Centre et droite : rapports au bras $p=0$ calculés graine par graine,
-puis moyenne et IC95. L'incertitude du dénominateur est ainsi incluse.
-Les catégories ne sont pas reliées ; aucune population n'est prédite par
-interpolation entre deux partages non simulés.}
+\figurine{art_institutions}{1.0}{\textbf{Le partage agit sur les niveaux,
+moins sur le Gini de bilan.} M4.4, cinq partages imposés, douze graines,
+$3000<t\le4000$. Régressions linéaires descriptives par graine ;
+équations et $R^2$ moyens affichés. Les rapports sont calculés par graine
+au bras $p=0$, dont la référence brute figure au-dessus du panneau.
+Le losange vert situe la règle marginale historique, dite archaïque,
+à son partage moyen observé. Il sert uniquement de référence illustrative,
+avec incertitude sur les deux coordonnées ; il n'entre pas dans la
+régression des partages constants. Une droite entre niveaux simulés
+n'est pas une prédiction validée aux autres valeurs de $p$.}
 
-\subsection{L'explication d'abord proposée était fausse}
+\subsection{Une hypothèse de convexité et la correction de son diagnostic}
+\hyp{} Une première piste attribuait les écarts de mortalité à la convexité
+du risque en fonction de la charge : à charge moyenne identique, une
+plus grande dispersion pourrait accroître le risque moyen.
+L'ancienne analyse utilisait notamment dette/production. Ce rapport compare
+un stock à un flux et ne mesure pas la part du revenu consacrée au service.
+La conclusion antérieure de réfutation de la convexité est donc retirée.
+Cette correction porte sur la mesure et sur l'inférence ; elle ne démontre
+pas que l'hypothèse initiale soit vraie.
 
-\hyp{} La première explication proposée était : si le risque de mourir est
-\emph{convexe} dans le fardeau porté, une même moyenne de fardeau tue davantage
-lorsqu'elle est plus dispersée. C'est l'inégalité de Jensen.
+\subsection{Définition et mesure du taux de charge}\label{sec:charge}
+Notons $P_i$ la production du pas, $I_i^{\text{reçu}}$ les intérêts
+reçus, $I_i^{\text{versé}}$ ceux effectivement payés, et $D_i$ la
+somme des principaux dus. Trois rapports doivent être distingués :
+\[
+ c_i^{\text{versé}}=\frac{I_i^{\text{versé}}}{P_i+I_i^{\text{reçu}}},\qquad
+ c_i^{\text{dû}}=\frac{\sum_{\ell:i\,\mathrm{emprunte}}r_\ell q_\ell}
+                         {P_i+I_i^{\text{reçu}}},\qquad
+ d_i^{\text{revenu}}=\frac{D_i}{P_i+I_i^{\text{reçu}}}.
+\]
+Le premier est une part de revenu brut versée ; le deuxième est la
+charge contractuelle due ; le troisième rapporte un stock de dette
+à un revenu par pas et s'interprète en nombre de pas. La
+variable $D_i/P_i$ ne représente aucun des deux premiers rapports.
+Le dénominateur inclut les revenus financiers, même si leur
+somme agrégée n'est pas une nouvelle production réelle.
 
-\negatif{} \textbf{La mesure la réfute.} Le risque n'est pas convexe dans le
-fardeau : il est \textbf{non monotone}. Il croît d'abord fortement, culmine à un
-fardeau modeste, puis \emph{décroît} sur tout le reste de l'échelle --- une
-entité très endettée relativement à sa production est une entité qui a
-\emph{pu} emprunter, donc une entité solide. Et la courbure ajustée sur le
-corps ne survit pas au conditionnement par le capital : sur
-\ClassesCapitalTotal{} classes, \ClassesCapitalConvexes{} seule reste convexe.
-\textbf{Le facteur dominant est le capital, pas le fardeau}\footnote{Il fallait
-le conditionnement pour le voir. Sans lui, la convexité apparente n'aurait dit
-que « les petites meurent » --- un énoncé vrai et sans contenu. C'est un
-exemple précis du genre de piège que la discipline de mesure du programme
-existe pour attraper.}.
+\figurine{art_charge}{0.95}{\textbf{Un diagnostic de charge correctement
+nommé.} Règle marginale M4.4, douze graines. Pour les instantanés
+$3000<t\le3990$, la variable est
+$I_i^{\text{versé}}/(P_i+I_i^{\text{reçu}})$ ; la réponse est la fraction
+des entités décédant dans les dix pas suivants. Les classes ont les
+bornes explicites indiquées, communes aux graines ; elles ne sont
+pas des classes de capital. La dernière fenêtre incomplète est
+exclue. Les IC95 comparent les fractions obtenues dans douze runs,
+sans attribuer une indépendance binomiale aux entités répétées.
+Les décès toutes causes et les racines par insolvabilité sont séparés.}
 
-\fait{} L'écart de Jensen, lui, est massif et se comporte comme l'argument le
-voulait : la mortalité par insolvabilité vaut $\MortaliteObservee$ ; évaluée au
-fardeau \emph{moyen}, la même courbe donne $\MortaliteAuFardeauMoyen$, un
-facteur $\RapportJensen$. Et cet écart croît de façon monotone avec le partage,
-de $\EcartJensenPZero$ sous l'altruisme à $\EcartJensenPUn$ sous
-l'asservissement.
+Les panneaux enregistrent les intérêts versés, pas le service dû
+au moment exact précédant le paiement. Un paiement au prorata peut
+faire paraître faible une charge pourtant insoutenable ; le moment
+de prélèvement et les flux reçus dans le pas comptent aussi.
+Le diagramme reste descriptif, conditionnel aux survivantes observées
+dans le panneau. Il ne justifie ni une causalité de la charge vers
+le décès ni une réfutation générale de convexité. Des calculs de
+convexité ou d'écart de Jensen sur $D_i/P_i$ ne répondraient pas
+à la question posée sur le taux de charge ainsi défini.
 
-\incertitude{} La lecture contrefactuelle --- « si toutes portaient le fardeau
-moyen, la mortalité serait six fois moindre » --- \textbf{n'est pas légitime} :
-déplacer toutes les entités au fardeau moyen changerait le système entier, donc
-la courbe elle-même. L'énoncé qui tient porte sur la \emph{fonction mesurée},
-pas sur une intervention.
 
-\figurine{f21_hasard}{1.0}{\textbf{La convexité posée, et ce que la mesure en
-dit.} À gauche, le risque d'insolvabilité à dix pas contre le fardeau, avec
-l'erreur binomiale : la courbe n'est pas convexe, elle est non monotone. Les
-deux traits horizontaux sont la mortalité observée et celle qu'on lirait au
-fardeau moyen. À droite, la courbure ajustée dans chaque classe de capital :
-elle disparaît dès que le capital est tenu fixe.}
 
 \subsection{Une identité de pondération, et son interprétation}
 
@@ -1931,47 +2280,37 @@ se montre altruiste là où il y a peu.} Le $\PartageParContrat$ n'était pas
 faux : il comptait des \emph{contrats} là où le système compte des
 \emph{joules}.
 
-\figurine{f22_ponderation}{1.0}{\textbf{Compter des contrats ou compter des
-joules.} À gauche, le partage pondéré par le surplus contre le partage moyen
-par contrat. Les bras à partage fixe tombent sur la diagonale --- c'est le
-témoin, nul au dix-millième. La règle historique en est à quarante et un
-points, et cet écart \emph{est} la covariance entre la part prise et la taille
-de ce sur quoi elle est prise. À droite, l'écart de Jensen par bras.}
+\paragraph{Preuve de l'identité.}
+Pour $n$ contrats, posons $\overline p=n^{-1}\sum_jp_j$,
+$\overline\Delta=n^{-1}\sum_j\Delta_j>0$ et
+$p_w=\sum_jp_j\Delta_j/\sum_j\Delta_j$. Alors
+\[
+\operatorname{Cov}_n(p,\Delta)=n^{-1}\sum_jp_j\Delta_j-
+\overline p\,\overline\Delta,
+\qquad p_w-\overline p=\frac{\operatorname{Cov}_n(p,\Delta)}{\overline\Delta}.
+\]
+La covariance empirique utilise ici le dénominateur $n$ ; avec $n-1$,
+un facteur $(n-1)/n$ est nécessaire. Une moyenne pondérée par le surplus
+peut ainsi différer de la moyenne contractuelle sans invoquer une
+non-linéarité du dommage.
 
-\fait{} \textbf{La forme du partage est inscrite dans la règle.} Les trois fonctions
-du moteur permettent d'examiner le partage sur une grille, sans lire un run.
-Cette grille n'est pas la distribution des contrats effectivement conclus :
-elle ne reproduit donc pas à elle seule la covariance de la campagne.
-Évaluées sur une grille de paires en régime homogène, elles donnent un partage
-impliqué qui vaut \textbf{exactement un demi à la limite des contrats
-infinitésimaux} et croît monotonement avec le principal --- jusqu'à
-\textbf{dépasser l'unité} sur les paires les plus inégales, c'est-à-dire à
-prendre plus que la totalité du surplus.
+\paragraph{Ce que les grilles analytiques apportaient.}
+Les fonctions du moteur ont aussi été évaluées sur des paires fictives.
+Certains contrats y donnent un partage implicite supérieur à un ; ces
+cas ne disent pas leur fréquence dans les échanges réellement conclus.
+Les anciennes figures de Jensen et les grilles restent dans la version
+archivée du rapport. Elles ne servent plus à établir une réfutation du
+risque convexe ni une explication complète de la démographie.
 
-\figurine{g03_partage_analytique}{1.0}{\textbf{La covariance, dérivée des
-fonctions du moteur.} Aucun run n'est lu : les courbes sont l'évaluation
-directe de $p = (rq - L)/\Delta$ sur une grille de paires. À gauche contre le
-principal, à droite contre le surplus coopératif. La règle part du partage
-équitable et franchit l'asservissement total, en fonction de la taille du
-contrat.}
 
-\inference{} \textbf{C'est le résultat à retenir de ce programme, et il déborde
-le modèle.} Une institution peut être \emph{équitable en moyenne sur les
-contrats} et \emph{asservissante sur la valeur} --- et c'est la seconde lecture
-que le système subit. Il n'y a besoin d'aucune non-linéarité du dommage pour
-l'obtenir : la covariance suffit.
-
-\incertitude{} Ce qui manque est une \textbf{démonstration} que le partage
-impliqué croît avec le principal pour \emph{toute} paire admissible. Ce qui est
-établi est une évaluation sur une grille, pas une preuve.
-
-\subsection{Deux conséquences, et une seconde invariance}
+\subsection{Propagation, niveaux et faible variation du Gini}
 
 \fait{} \textbf{Un service plus léger n'achète pas la stabilité.} Le partage
 altruiste rend le système \emph{plus} contagieux : le rapport de branchement
 passe de $\TauxmarginalBUn$ à $\TauxpZeroBUn$, soit $+5{,}7~\%$. Il achète de
 la population --- soixante-huit pour-cent de plus --- et cette population
-achète de la contagion, parce qu'elle multiplie les chemins de cascade.
+achète de la contagion, parce qu'elle peut multiplier les chemins de cascade ; cette explication reste
+une interprétation, sans médiation causale isolée.
 
 \figurine{f16_bargain_systeme}{1.0}{\textbf{Ce que le partage déplace dans le
 système.} Branchement, tension, rotation du crédit et taux moyen du carnet
@@ -1979,23 +2318,23 @@ contre le partage. Le losange est la règle historique, à l'abscisse de son
 partage moyen : sur les quatre grandeurs, elle se situe du côté de
 l'asservissement et non au milieu.}
 
-\fait{} \textbf{Le Gini de valeur nette ne bouge pas.} Il vaut
+\fait{} \textbf{Le Gini de valeur nette varie faiblement.} Il vaut
 $\TauxmarginalGiniNW$ sous la règle historique et $\TauxpZeroGiniNW$ sous
 l'altruisme --- \textbf{six \emph{dixièmes} de pour-cent d'étendue} sur tout le
 balayage, pendant que la population varie de soixante-huit pour-cent et le
 capital d'un facteur trois. Le Gini du capital, lui, passe de
 $\TauxmarginalGiniK$ à $\TauxpZeroGiniK$, soit quarante pour-cent de moins.
 
-La figure~\ref{fig:rev_institutions} montre simultanément la faible variation
+La figure~\ref{fig:art_institutions} montre simultanément la faible variation
 du Gini de valeur nette et la variation des niveaux ; la stabilité d'un Gini
 n'établit pas l'invariance de toute la distribution.
 
-\inference{} \textbf{Deux familles de leviers entièrement différentes laissent
-la même chose intacte : la forme de la distribution de valeur nette.} Ce modèle
-a une structure d'inégalité que ni la technologie ni le partage du surplus ne
-déplacent. Un seul levier des trois testés la déplace : \textbf{l'intensité de
-la phase de marché}. Ce n'est ni ce qu'on produit ni comment on se partage le
-surplus qui fixe la forme de la distribution, c'est \emph{combien on échange}.
+\inference{} Technologie et partage déplacent fortement les niveaux,
+mais faiblement certaines statistiques de dispersion dans le domaine étudié.
+Une faible variation de Gini ou d'exposant ajusté n'établit pas l'invariance
+de toute la distribution. Le balayage de l'intensité de marché apporte
+un autre levier de comparaison, avec ses propres fenêtres et incertitudes.
+
 
 \section{Résultat 7 --- ce qui contrôle les exposants}
 \label{sec:controle}
@@ -2033,12 +2372,22 @@ les deux estimateurs de branchement}, au sens strict ci-dessus. Le contraste
 avec les leviers du rebond est net : ceux-ci laissaient les exposants à quatre
 pour-cent près.
 
-\figurine{rev_rho}{1.0}{\textbf{L'intensité de marché contrôle ce
-qu'aucun autre levier ne déplace.} Les deux exposants de queue, le rapport de
-branchement et le Gini du bassin contre l'intensité, en échelle logarithmique,
-avec des ajustements log-log par graine. Points : moyennes et IC95 sur douze
-graines, sans segments entre niveaux ; courbe et ruban : moyenne et IC95 des
-courbes ajustées, non intervalle de prédiction.}
+\figurine{art_rho}{0.95}{\textbf{Mesurer le pilotage sur des observables
+définies.} M4.4, cinq valeurs de $\rho$, douze graines,
+$3000<t\le4000$. Les exposants et le branchement sont ceux des analyses
+par graine ; le Gini de valeur nette est recalculé sur les panneaux de la
+même fenêtre. Points : moyennes et IC95. Courbes : ajustements log-log
+par graine ; pentes et $R^2$ sont ensuite moyennés, avec IC95 des pentes.}
+
+Le tableau historique ci-dessus donne le Gini du \emph{bassin}.
+La figure actualisée porte au contraire sur le Gini de \emph{valeur nette}
+de la population, recalculé sur les panneaux de la même fenêtre.
+Sa pente log-log vaut $-0{,}0084\pm0{,}0023$, contre
+$0{,}0465\pm0{,}0074$ et $0{,}0272\pm0{,}0074$ pour les exposants
+d'intérêts et de NW, et $0{,}1345\pm0{,}0020$ pour $b_1$.
+Ces IC95 entre douze graines caractérisent des régressions descriptives ;
+une pente moyenne non nulle ne rend pas chaque incrément monotone dans
+chaque réalisation et ne prouve pas une loi universelle.
 
 \fait{} \textbf{Un point où les deux estimateurs divergent qualitativement.} Au
 niveau le plus haut du levier, la descendance moyenne franchit l'unité
@@ -2075,56 +2424,28 @@ $\rho \times \bar{G}$. Les deux coïncident au bas du balayage et divergent
 franchement au-delà, parce que les rondes tardives trouvent un bassin déjà
 égalisé par les premières.}
 
-\section{Résultat 8 --- sur-détermination et suffisance ne se confondent pas}
+\section{Résultat 8 --- plusieurs pertes ne sont pas plusieurs causes suffisantes}
+Le suivi des arêtes permet d'identifier plusieurs créancières affectées et
+plusieurs pertes atteignant une même victime. Il ne suffit pas pour savoir
+si chaque perte aurait, isolément, déclenché la faillite.
+Une valeur nette initiale de 5 suivie de deux pertes de 3 aboutit à $-1$,
+alors qu'aucune perte seule ne suffit. Avec une valeur nette initiale de 2,
+chacune des deux pertes suffirait.
 
-Le résultat~4 mesurait que plusieurs faillites amont atteignent souvent une
-même victime. On ne pouvait pas en conclure que chacune aurait \emph{suffi}.
+La campagne avait tenté d'encadrer cette suffisance depuis les créances
+perdues et la valeur nette de mort. La reconstruction dépend aussi des
+dettes effacées et du moment d'entrée dans la file de faillite ; une valeur
+nette observée après d'autres annulations n'est pas nécessairement la marge
+avant le choc. Les pourcentages et l'ancien « plancher certifié » sont
+conservés dans l'archive de campagne, mais ne sont plus retenus ici comme
+preuve sans réaudit de cette chronologie.
 
-\fait{} \textbf{L'encadrement est exact.} Pour une victime de cascade, la
-valeur nette d'avant cascade est positive --- sinon elle serait une racine ---
-et vaut la valeur nette de mort, plus les créances perdues, \emph{moins} les
-dettes effacées. Ce dernier terme n'est pas tracé, mais il est positif : la
-valeur nette d'avant est donc \emph{au plus} la somme des deux premiers, et
-l'on peut certifier qu'une arête aurait suffi dès que son principal dépasse ce
-majorant. Le compte obtenu est un \textbf{plancher}, jamais un plafond.
+Le comptage génération à génération et celui de toutes les pertes du pas
+restent des conventions distinctes. L'écart $b_2-b_1$ compte un excès
+d'arêtes par morte, pas une proportion de victimes ni une mesure de
+suffisance. Le résultat acquis demeure l'existence d'une propagation et
+de victimes à plusieurs parents ; la suffisance contrefactuelle reste ouverte.
 
-\fait{} \textbf{Le témoin s'est retourné en mesure.} Sur les victimes à une
-seule arête, le plancher devrait valoir un exactement ; il vaut $0{,}981$.
-L'écart n'est pas un défaut du calcul : c'est l'effacement de dette pris sur le
-fait --- $\IncidenceEffacement~\%$ des victimes meurent avec une valeur nette
-\emph{positive}, parce qu'une de leurs créancières est morte dans le même pas,
-après que la file eut été constituée.
-
-\fait{} \textbf{Deux conventions d'attribution, deux réponses.} En attribution
-stricte génération à génération, $\PartMultiParentStricte~\%$ des morts non
-racines ont plusieurs parents. En comptant toutes les créances perdues \emph{au
-pas de la mort}, $\PartSurDeterminees~\%$ des victimes en ont plusieurs. C'est
-le second compte qui vaut ici : une créance perdue ampute la victime, que sa
-source soit ou non de la génération précédente\footnote{Les deux nombres sont
-corrects, et ils ne se contredisent pas : ils comptent deux choses différentes.
-Les publier ensemble sans dire cela produirait une contradiction apparente.}.
-
-\fait{} Sur ces victimes sur-déterminées, le plancher de suffisance vaut
-$\PlancherSuffisance \pm \PlancherSuffisanceIC~\%$ : \textbf{la majorité avait
-bien une cause qui, seule, aurait suffi}, et le choc est très concentré --- la
-plus grosse créance perdue en porte $\ConcentrationChoc$ en moyenne. Mais la forme
-forte est rare : $\ToutesCausesSuffisantes~\%$ seulement avaient \emph{toutes}
-leurs causes individuellement suffisantes, pour une moyenne de
-$\CausesSuffisantesMoyen$ cause suffisante par victime.
-
-\inference{} La réserve est donc levée \textbf{dans les deux sens}. Compter les
-parents surestime largement le nombre de causes qui auraient suffi. Mais
-l'attribution à parent unique n'est pas arbitraire non plus : dans la majorité
-des cas il existe bien une perte dominante certifiée suffisante par le majorant. Ce qui est faux, c'est de croire que \emph{chaque} parent était une
-cause suffisante.
-
-\figurine{rev_suffisance}{1.0}{\textbf{Plusieurs causes, rarement chacune
-suffisante.} À gauche, la part du choc portée par la plus grosse créance perdue, sur
-les victimes sur-déterminées : très concentrée. À droite, par bras, la part des
-victimes recevant plusieurs chocs et, parmi elles, la part dont au moins une
-cause était certainement suffisante. \textbf{La seconde série est un plancher.}
-Les dénominateurs diffèrent ; IC95 inter-graines à droite. L'histogramme
-regroupe les victimes, sans supposer leur indépendance.}
 
 \section{Résultat annexe --- la mémoire du carnet de crédit}
 
@@ -2197,8 +2518,8 @@ qu'on pourrait être tenté de tirer.
 
 \section{Les six choses que la dernière campagne n'établit pas}
 
-\incertitude{} Reprises telles quelles du rapport de campagne, parce qu'il vaut
-mieux les écrire que les laisser supposer.
+\incertitude{} Ces limites reprennent la campagne en tenant compte des
+corrections méthodologiques apportées depuis.
 
 \begin{enumerate}
 \item \textbf{L'existence des queues de Pareto n'est pas prouvée}.
@@ -2211,10 +2532,9 @@ mieux les écrire que les laisser supposer.
 \item \textbf{Un huitième de l'écart de branchement avec M4B reste non
       attribué}, et il est imputé --- sans vérification --- à la taille du
       bassin d'appariement.
-\item \textbf{Le taux de suffisance n'est connu que par un plancher.}
-      L'effacement de dette intra-cascade n'est pas tracé par
-      l'instrumentation ; son incidence est mesurée à
-      $\IncidenceEffacement~\%$, donc le plancher est serré, sans être exact.
+\item \textbf{La suffisance individuelle des pertes reste à réauditer.}
+      Les pourcentages historiques ne sont plus retenus comme preuve sans
+      reconstruction des dettes effacées et de la chronologie de faillite.
 \item \textbf{L'absence de dépendance au chemin n'est établie qu'à l'échelle
       des paliers employés.}
 \item \textbf{Le canal de liquidité est muet} dans ce régime : la contagion est
@@ -2272,29 +2592,36 @@ récession, pas de mobilité intergénérationnelle représentée, et une SOC no
 établie. Le branchement est endogène : le plateau historique M4B proche de
 $0{,}30$ n'est pas une borne universelle, comme le montre le contrôle M4.4.
 
-\paragraph{Second volet --- le rebond.} Une amplification qualifiée de rebond
-au sens interne du modèle est mesurée ; elle n'est pas un rebond énergétique
-empiriquement calibré. \textbf{La réponse de long terme est sous- ou
-super-proportionnelle selon la convention de dotation}, sans que la réponse
-de production elle-même change nécessairement de signe. Le cas le
-plus proche d'une politique réelle d'efficacité --- traiter une fraction des
-acteurs --- produit un effet qui \emph{s'éteint}. Ce qui est acquis, et qui est
-un vrai résultat, est que \textbf{l'organisation marchande modifie la réponse
-agrégée à une amélioration technologique}, et qu'on peut dire par quel canal :
-la contraction démographique induite par une dotation de naissance qui ne suit
-pas l'échelle.
+\paragraph{Second volet --- la réponse collective.}
+À dotation fixe, $A\times1{,}5$ accroît la production d'environ 35\,\%
+dans la configuration principale, tandis que l'effectif diminue.
+L'organisation du système modifie donc la réponse agrégée à une amélioration
+individuelle. La compensation des naissances change cette réponse, mais
+également l'apport extérieur. La chaîne tailles--crédit--mortalité constitue
+une interprétation étayée par plusieurs mesures, pas une médiation causale
+isolée expérimentalement. Une intervention limitée à une cohorte peut
+s'éteindre avec elle ; une réponse négative à une hausse de $A$ reste à
+chercher. Aucune de ces mesures n'est un rebond énergétique empiriquement calibré.
 
-\paragraph{Et un résultat qui déborde la question.} L'institution de crédit
-employée par toute la lignée paraissait partager le surplus de coopération à
-parts égales. Elle le fait \emph{par contrat} ($\PartageParContrat$) et pas
-\emph{par joule} ($\PartagePondere$), et l'écart est exactement
-$\operatorname{Cov}(p,\Delta)/\mathbb{E}[\Delta]$. C'est une propriété de la
-règle de taux, dérivable des seules fonctions du moteur. \textbf{Une
-institution peut être équitable en moyenne sur les contrats et asservissante
-sur la valeur} --- et c'est la seconde lecture que subit le système.
+\paragraph{Un apport sur le partage, et une leçon de méthode.}
+Le partage moyen par contrat et celui pondéré par le surplus diffèrent,
+avec une identité exacte reliant leur écart à une covariance.
+La valeur de cette covariance dépend des contrats réalisés ; elle ne se
+déduit pas des seules fonctions de taux et ne prouve pas à elle seule
+l'explication démographique. La correction du diagnostic de charge montre
+pourquoi les définitions d'observables font partie du résultat scientifique.
+Le stage laisse ainsi un modèle instrumenté, des expériences comparables
+sous conditions explicites et un programme de tests encore ouvert.
+
 
 \clearpage
+\input{bibliographie}
+\clearpage
 \appendix
+\input{definitions}
+\clearpage
+\input{methodes_actualisees}
+
 
 \section{Le dictionnaire de correspondance modèle $\leftrightarrow$ données}
 \label{sec:dictionnaire}
@@ -2338,7 +2665,7 @@ avalanche & morts reliées causalement par destruction de créances &
   les données réelles identifient rarement les liens racine--descendants \\
 rapport $b$ & fraction moyenne de morts non racines &
   rapport de branchement d'une contagion &
-  proximité de 1 = criticité de branchement, \textbf{pas} preuve de SOC \\
+  fraction bornée par 1 ; proximité de 1 ne suffit pas à établir une criticité \\
 \bottomrule
 \end{longtable}
 
@@ -2356,20 +2683,20 @@ légendes.
 \section{Provenance des figures}
 \label{sec:provenance}
 
-\fait{} Les figures historiques ont été produites par les campagnes ou
-Simulation Lab, puis copiées. Les nouveaux graphiques de rédaction sont
-recalculés par \chemin{recherche/revision_documents/build_visuals.py} depuis
-les données conservées ; leurs points et incertitudes sont exportés.
-Le tableau historique ci-dessous et l'annexe complémentaire donnent leur provenance. L'empreinte sous chaque nom est celle du fichier source au
-moment de la copie : elle permet de vérifier qu'une figure de cette note est
-bien celle du dossier d'origine.
+Les figures historiques sont conservées dans leurs copies locales.
+Les figures \code{art\_*} et leurs exports proviennent de la version 0
+française de l'article, \chemin{recherche/note_resultats/}, révisée les
+15--17 septembre. Le complément de renouvellement est calculé par
+\chemin{../scripts/renewal_stage.py} depuis deux runs M4.3 existants.
+Le tableau en annexe~\ref{sec:sources_revision} recense uniquement les
+figures effectivement incluses, avec leurs références dans ce rapport.
+\chemin{data_article/manifest_rapport.json} donne les empreintes des
+fichiers utilisés. Les schémas pédagogiques sont explicitement fictifs.
 
-\incertitude{} Les figures issues de \code{simulation\_lab\_data/} viennent
-d'un répertoire \emph{non versionné}. C'est la raison de la copie plutôt que du
-lien : une note qui cesserait de compiler parce qu'un run a été nettoyé ne
-serait pas un document autonome.
-
-\input{provenance}
+Les figures remplacées restent dans la sauvegarde du 25 septembre et ne
+constituent plus des preuves courantes. Les copies assurent l'autonomie de
+compilation même lorsqu'un run local est nettoyé ; elles ne constituent pas
+une reproduction indépendante des campagnes.
 
 \subsection*{Traçabilité par identifiant de run}
 
@@ -2424,7 +2751,7 @@ de tests du programme compte 19 tests, tous verts, pour 2204 secondes.
 
 \input{annexe_sources_revision}
 
-\input{bibliographie}
+
 
 \section{Où trouver quoi}
 

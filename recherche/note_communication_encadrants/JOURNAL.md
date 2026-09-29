@@ -186,3 +186,11 @@ Onze, dans `QUESTIONS.md`, chacune avec l'hypothèse provisoire retenue pour que
 la note soit complète sans la réponse. Les trois de fond : le sens à donner au
 mot « tension » (Q1), la figure énergétique manquante (Q10), et laquelle des
 deux mesures de ε publier (Q11).
+
+## 25 septembre 2026 — adaptation depuis l'article V0 et les avancées
+
+À la demande de l'auteur, transfert des corrections des deux carnets de `note_resultats/` vers le rapport long. Référence V0 confirmée, travail autonome demandé. Sauvegarde complète préalable dans `revision_2026-09-25/reference/` ; registre de 49 décisions dans `REGISTRE_TRANSFERT.md`.
+
+Résumé, conclusions, charge, compensation, lois, causalité et suffisance révisés ; exemples pédagogiques, figures corrigées, âges et méthodes transférés. Bibliographie avant les annexes et glossaire en annexe A. Étude historique de k conservée. Nouveau complément descriptif sur rétention/survie du décile supérieur de NW, à deux dates d'ancrage dans deux runs M4.3 déjà disponibles. Exports et SHA-256 conservés. Aucun run ni test moteur lancé ; article et questionnaires intacts.
+
+Contrôles numériques et documentaires, compilation autonome et relecture visuelle ciblée détaillés dans `revision_2026-09-25/CONTROLES.md`. Le README et REPRISE décrivent désormais cette version ; les registres historiques restent inchangés.

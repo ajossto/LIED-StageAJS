@@ -1,0 +1,204 @@
+{
+  "avalanche_control": {
+    "alpha": 1.6234977205662597,
+    "ci95": 0.009160289710485226,
+    "cutoff": 206.33870216331874,
+    "cutoff_ci95": 10.881031008162854,
+    "r2": 0.9377705706488294
+  },
+  "avalanche_all_A150": {
+    "alpha": 1.6674422245876956,
+    "ci95": 0.008983127233486182,
+    "cutoff": 185.28221305363343,
+    "cutoff_ci95": 7.418727462432462,
+    "r2": 0.9279591396569526
+  },
+  "cycles_K_tot": {
+    "beta": 0.7305620127184536,
+    "ci95": 0.028625327337918716,
+    "r2": 0.981046080247715
+  },
+  "cycles_prod_tot": {
+    "beta": 0.6956856881683532,
+    "ci95": 0.03461559121170489,
+    "r2": 0.9827457985320975
+  },
+  "ages": [
+    {
+      "arm": "control",
+      "field": "K",
+      "metric": "age_low10",
+      "mean": 61.194669583147125
+    },
+    {
+      "arm": "control",
+      "field": "K",
+      "metric": "age_all",
+      "mean": 110.97325898340443
+    },
+    {
+      "arm": "control",
+      "field": "K",
+      "metric": "young10_low10",
+      "mean": 0.4860646829839547
+    },
+    {
+      "arm": "control",
+      "field": "K",
+      "metric": "young10_all",
+      "mean": 0.23955851320324403
+    },
+    {
+      "arm": "control",
+      "field": "int_in",
+      "metric": "age_low10",
+      "mean": 1.805620945427946
+    },
+    {
+      "arm": "control",
+      "field": "int_in",
+      "metric": "age_all",
+      "mean": 110.97325898340443
+    },
+    {
+      "arm": "control",
+      "field": "int_in",
+      "metric": "young10_low10",
+      "mean": 0.9993167154890742
+    },
+    {
+      "arm": "control",
+      "field": "int_in",
+      "metric": "young10_all",
+      "mean": 0.23955851320324403
+    },
+    {
+      "arm": "control",
+      "field": "nw",
+      "metric": "age_low10",
+      "mean": 7.314042875812657
+    },
+    {
+      "arm": "control",
+      "field": "nw",
+      "metric": "age_all",
+      "mean": 110.97325898340443
+    },
+    {
+      "arm": "control",
+      "field": "nw",
+      "metric": "young10_low10",
+      "mean": 0.8823331087027292
+    },
+    {
+      "arm": "control",
+      "field": "nw",
+      "metric": "young10_all",
+      "mean": 0.23955851320324403
+    },
+    {
+      "arm": "all_A150",
+      "field": "K",
+      "metric": "age_low10",
+      "mean": 46.82839198175575
+    },
+    {
+      "arm": "all_A150",
+      "field": "K",
+      "metric": "age_all",
+      "mean": 94.93618434675629
+    },
+    {
+      "arm": "all_A150",
+      "field": "K",
+      "metric": "young10_low10",
+      "mean": 0.5572449800171896
+    },
+    {
+      "arm": "all_A150",
+      "field": "K",
+      "metric": "young10_all",
+      "mean": 0.2830028596989879
+    },
+    {
+      "arm": "all_A150",
+      "field": "int_in",
+      "metric": "age_low10",
+      "mean": 1.6185399411837356
+    },
+    {
+      "arm": "all_A150",
+      "field": "int_in",
+      "metric": "age_all",
+      "mean": 94.93618434675629
+    },
+    {
+      "arm": "all_A150",
+      "field": "int_in",
+      "metric": "young10_low10",
+      "mean": 0.9998203241190899
+    },
+    {
+      "arm": "all_A150",
+      "field": "int_in",
+      "metric": "young10_all",
+      "mean": 0.2830028596989879
+    },
+    {
+      "arm": "all_A150",
+      "field": "nw",
+      "metric": "age_low10",
+      "mean": 4.509331181836338
+    },
+    {
+      "arm": "all_A150",
+      "field": "nw",
+      "metric": "age_all",
+      "mean": 94.93618434675629
+    },
+    {
+      "arm": "all_A150",
+      "field": "nw",
+      "metric": "young10_low10",
+      "mean": 0.9375699062315529
+    },
+    {
+      "arm": "all_A150",
+      "field": "nw",
+      "metric": "young10_all",
+      "mean": 0.2830028596989879
+    }
+  ],
+  "rho_alpha_int_in": {
+    "slope": 0.04645407332180106,
+    "ci95": 0.0074452158590299486,
+    "r2": 0.8204285803415835
+  },
+  "rho_alpha_nw": {
+    "slope": 0.027242187853121224,
+    "ci95": 0.007417972818871136,
+    "r2": 0.7770647324051788
+  },
+  "rho_b1": {
+    "slope": 0.13446599727862033,
+    "ci95": 0.0020337536387089344,
+    "r2": 0.960140030538977
+  },
+  "rho_gini_nw": {
+    "slope": -0.008408239155864873,
+    "ci95": 0.002273593820238641,
+    "r2": 0.7692290995431027
+  },
+  "epsilon_all_A150": {
+    "mean": 0.7472600944149551,
+    "ci95": 0.010569174966855072
+  },
+  "epsilon_all_A150_K0comp": {
+    "mean": 2.0029361934413386,
+    "ci95": 0.014783300432515542
+  },
+  "epsilon_new_A150": {
+    "mean": 0.749499141150607,
+    "ci95": 0.014725471923901742
+  }
+}

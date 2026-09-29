@@ -1,0 +1,51 @@
+{
+  "convention": "100 instantanés 3010..4000 par pas de 10 ; moyenne temporelle par graine puis moyenne sur 12 graines ; âge des survivantes, pas durée de vie",
+  "sources": {
+    "m4_4_rebond_credit_soc/results/campaign/arms/free/control/seed0/panels.npz": "d479143582bd9f0d199c6728d43da301e2c1cf3431b4bf6665846dc79f5147d1",
+    "m4_4_rebond_credit_soc/results/campaign/arms/free/control/seed1/panels.npz": "b1d8b80e0432cca01e2c41ea054d23c76441b5e686b227509ddecd067e7216b6",
+    "m4_4_rebond_credit_soc/results/campaign/arms/free/control/seed2/panels.npz": "ebd46e42f6b224dca89805b6edbed23b47bcec25af7729d944d60857f9da5221",
+    "m4_4_rebond_credit_soc/results/campaign/arms/free/control/seed3/panels.npz": "89cd7cdd088c49d0cf81bb7d3d6d336a6ba1093c55ef9d2797d509fbdbbf8f08",
+    "m4_4_rebond_credit_soc/results/campaign/arms/free/control/seed4/panels.npz": "1438c616a40a1c67d8e2b13c44468561aedff4c264c351ebab33f7daed1cfbfb",
+    "m4_4_rebond_credit_soc/results/campaign/arms/free/control/seed5/panels.npz": "d20f661df90808a4f04225ba25cb95caad5c2c4a0b53bc94dba59c1cadd0d4bd",
+    "m4_4_rebond_credit_soc/results/campaign/arms/free/control/seed6/panels.npz": "b6bdad4c73a32961b8babc5f3ccd4e6b97a97352172d30c4498818b0257fac78",
+    "m4_4_rebond_credit_soc/results/campaign/arms/free/control/seed7/panels.npz": "7cf6b30157fc940775ace162e6096963cd7dc5f032fcdf112f1d8ef1b3fbf71e",
+    "m4_4_rebond_credit_soc/results/campaign/arms/free/control/seed8/panels.npz": "6d5a2b35b37c9ee8cf779c991967f419d2d8560be0560adf328f755b8ca8de9d",
+    "m4_4_rebond_credit_soc/results/campaign/arms/free/control/seed9/panels.npz": "6b61f3abe3d763b28daf8f0f062f08b29b0713e3f5f6240352f2ed2c5d98ac44",
+    "m4_4_rebond_credit_soc/results/campaign/arms/free/control/seed10/panels.npz": "fe2256c791866c2da21f5d1e0517c60d853abc60a03a34249802a8b9720a5571",
+    "m4_4_rebond_credit_soc/results/campaign/arms/free/control/seed11/panels.npz": "a85d61cfe675515443c6588ff57578258d368243f7bc4513eecb52e337b7d87c",
+    "m4_4_rebond_credit_soc/results/campaign/arms/free/all_A150/seed0/panels.npz": "39c81acb21d15255bf1e69d86928f8e3c53ca4ac98561eb3f7e2dba9e54fd3ad",
+    "m4_4_rebond_credit_soc/results/campaign/arms/free/all_A150/seed1/panels.npz": "b76d0f74652ea98701cb6a5ef9b1160b6d082bf0d523096efd8c9a29d6955925",
+    "m4_4_rebond_credit_soc/results/campaign/arms/free/all_A150/seed2/panels.npz": "4a531bd89576d3ffcbe2fe45c765353d12a5edc29b68ed0bb6e677c82fc80afc",
+    "m4_4_rebond_credit_soc/results/campaign/arms/free/all_A150/seed3/panels.npz": "d0e33dcafd87a2d137948a5d06e8b49772c29943d07f75549e059b3471f3d5e3",
+    "m4_4_rebond_credit_soc/results/campaign/arms/free/all_A150/seed4/panels.npz": "d5b12671404f1a8dc834c5f1af019c97329acf0e450eb723ab38dac2e6186a8f",
+    "m4_4_rebond_credit_soc/results/campaign/arms/free/all_A150/seed5/panels.npz": "5efcb7bc35786a8be7f0315d7ad77ea60620b48fc8b2df2f7530c8805f1234c0",
+    "m4_4_rebond_credit_soc/results/campaign/arms/free/all_A150/seed6/panels.npz": "978046a19c7c1ad802d9425af76c1e94d636b3a44828b942c04652fb8b08c2b9",
+    "m4_4_rebond_credit_soc/results/campaign/arms/free/all_A150/seed7/panels.npz": "473c6951f56e675fa7047194b2972925456c578f102dcd1ac683ca56759b5ded",
+    "m4_4_rebond_credit_soc/results/campaign/arms/free/all_A150/seed8/panels.npz": "5da833f6375809795abf9a90e3da3eaa600bfeceeb95860fcc00e4fc0d8ad8ad",
+    "m4_4_rebond_credit_soc/results/campaign/arms/free/all_A150/seed9/panels.npz": "ddb5f409a7ae5752e9cb5d8d5430e25dc112335672729c4de725010531bc9b31",
+    "m4_4_rebond_credit_soc/results/campaign/arms/free/all_A150/seed10/panels.npz": "7eb0311fdd13d52e24c0b2ddde7a76596ae4294bcd52ecaf0b54bb036f56fe79",
+    "m4_4_rebond_credit_soc/results/campaign/arms/free/all_A150/seed11/panels.npz": "b6e5641f60f8f9859531213d459ab3b3090b3fe5bb178cbd89df813cf6c80e72"
+  },
+  "results": {
+    "control": {
+      "mean_age": {
+        "mean": 110.97325898340443,
+        "ci95": 1.879748124036491
+      },
+      "mean_snapshot_median_age": {
+        "mean": 40.053333333333335,
+        "ci95": 0.1573937188187558
+      }
+    },
+    "all_A150": {
+      "mean_age": {
+        "mean": 94.93618434675629,
+        "ci95": 0.8552874089768558
+      },
+      "mean_snapshot_median_age": {
+        "mean": 32.029999999999994,
+        "ci95": 0.2367047655250009
+      }
+    }
+  }
+}

@@ -1,168 +1,50 @@
-%% Section de définitions — exigence d'autonomie du document.
-%% Toute notation et tout terme interne employés dans la note sont ici.
-\section{Définitions}
+\section{Glossaire dans l'ordre d'introduction des notions}
 \label{sec:definitions}
+Les notions introduites ensemble sont regroupées. Les symboles des fichiers
+historiques, notamment \code{K0}, restent inchangés dans les données.
 
-Un lecteur qui n'a jamais vu ce projet doit pouvoir lire la note sans rien
-chercher ailleurs. Toutes les notations et tous les termes internes employés
-dans la suite sont donc rassemblés ici.
-
-\subsection{Paramètres du modèle}
-
-\begin{longtable}{@{}p{0.10\textwidth}p{0.86\textwidth}@{}}
-\toprule
-\textbf{symbole} & \textbf{sens, et plage explorée} \\
-\midrule
-\endhead
-$\lambda$ & \textbf{intensité de naissance} : nombre moyen d'entités créées
-  par pas, paramètre d'une loi de Poisson. Fixe la \emph{taille} du système
-  sans changer ses grandeurs intensives. Exploré sur $[1\,;100]$. \\
-$K_0$ & \textbf{dotation de naissance} : capital reçu par une entrante, en
-  joules. Protège les jeunes. Exploré sur $[2\,;200]$. \\
-$\sigma$ & \textbf{volatilité individuelle} : écart-type du choc log-normal
-  multiplicatif appliqué au capital à chaque pas. Levier dominant de la
-  démographie. Exploré sur $[0\,;1]$. \\
-$\delta$ & \textbf{taux de dépréciation} du capital par pas. Fixe l'échelle
-  du capital. Exploré sur $[0{,}01\,;0{,}10]$. \\
-$k$ & \textbf{taille du bassin de rencontre} : nombre d'entités tirées à
-  chaque tour de marché, parmi lesquelles la plus riche prête à la plus
-  pauvre. Exploré sur $\{2,\ldots,10\}$ dans M4B ; vaut 2 et devient un choix
-  constitutif dans les lignées récentes. \\
-$A$ & \textbf{productivité} de la technologie, facteur du terme de
-  production. C'est le levier d'« amélioration d'efficacité » de tout le volet
-  rebond. \\
-$\gamma$ & \textbf{exposant de production}, $0 < \gamma < 1$ : la production
-  $A K^\gamma$ est \emph{concave} en la taille. Vaut $1/2$ dans la lignée de
-  référence. \\
-$\rho$ & \textbf{intensité de la phase de marché} : nombre de tours de
-  rencontre par entité et par pas. Vaut 1 par défaut. C'est le seul levier
-  qui déplace les exposants de queue (§\ref{sec:controle}). \\
-$p$ & \textbf{partage du surplus coopératif}, imposé dans $[0,1]$ pour
-  \code{bargain}, mais potentiellement hors de cet intervalle pour une autre
-  règle : part du surplus
-  de la paire que le service d'intérêt transfère à la prêteuse. $p = 0$
-  altruiste, $p = 1$ asservissement total (§\ref{sec:partage}). \\
+\begin{longtable}{@{}p{.21\linewidth}p{.73\linewidth}@{}}
+\toprule Notion ou symbole & Définition et précaution de lecture \\
+\midrule\endhead
+Entité & Agent générique ; aucun rôle de ménage, firme ou banque n'est imposé. \\
+$K_i$ & Stock réel productif en joules du modèle, appelé capital. Distinct du patrimoine net. \\
+$f_i(K)=A_iK^{\gamma_i}$ & Production ajoutée pendant un pas. $A_i$ fixe son niveau et $\gamma_i$ sa concavité ; $0<\gamma_i<1$. Ce flux par pas n'est une puissance en watts qu'après calibration du temps. \\
+$K^\circ$, $\gamma^\circ$ & Dotation et exposant technologique à la naissance ; $\gamma^\circ=1/2$ dans la référence homogène. La dotation est un apport réel extérieur. \\
+$q$, $r$, $rq$ & Principal nominal du contrat, taux par pas et service d'intérêt dû. Le principal est perpétuel et non amorti. Le service payé peut différer du dû. \\
+$C_i$, $D_i$, $NW_i$ & Créances, dettes et valeur nette (\emph{net worth}) : $NW_i=K_i+C_i-D_i$. L'insolvabilité $NW_i<0$ et le défaut de service sont deux entrées en faillite. \\
+$\Delta t$ & Durée d'un pas, non calibrée en secondes ou en années. Elle détermine le sens des flux et taux par pas. \\
+$K_{\rm aut}$ & Point fixe d'une entité homogène sans bruit ni crédit, avec production puis dépréciation : $[A(1-\delta)/\delta]^{1/(1-\gamma)}$. Ce n'est pas une moyenne collective. \\
+$\kappa^\circ$ & Dotation réduite $K^\circ/K_{\rm aut}$. La préserver en augmentant $A$ exige de changer l'apport par naissance. \\
+$K_{\rm eq}$ & Stock équivalent $(Y/(N_{\rm prod}A))^{1/\gamma}$ donnant la production collective $Y$ pour $N_{\rm prod}$ productrices identiques. \\
+$T$ (tension) & Rapport $K_{\rm aut}/K_{\rm eq}$ ; repère utile à $\delta$ fixé, non variable d'état universelle. Dans les configurations, $T$ désigne aussi l'horizon de simulation : le contexte distingue les deux. \\
+$\lambda$, $B_t$ & Intensité des naissances et nombre réalisé, $B_t\sim\mathrm{Poisson}(\lambda)$. $\lambda$ explore notamment la taille de population sans garantir l'invariance de toutes les statistiques intensives. \\
+$\sigma$, $\eta_i$ & Amplitude commune du bruit et tirage individuel $\eta_i\sim\mathcal N(-\sigma^2/2,\sigma^2)$. Les chocs sont renouvelés et indépendants ; ce n'est pas un choc global commun. \\
+$\delta$ & Fraction du stock dépréciée par pas. Pour une érosion continue de taux $d$, $\delta=1-e^{-d\Delta t}$. \\
+$k$, bassin & Nombre d'entités tirées pour une rencontre. L'exploration M4B variait $k$ ; les configurations récentes retiennent des paires ($k=2$). Le Gini du bassin n'est pas le Gini de toute la population. \\
+$\rho$ & Intensité du marché : $\lfloor\rho n\rfloor$ rencontres pour $n$ entités admissibles dans la configuration principale. \\
+$L$, $\Delta$, $p$ & Perte de production de la donneuse, surplus joint et fraction de ce surplus transférée à la prêteuse : $rq=L+p\Delta$. La règle \code{bargain} impose $p\in[0,1]$ ; le partage implicite d'une autre règle peut dépasser ces bornes. \\
+Carnet & Ensemble des contrats vivants. Le taux moyen du carnet est une moyenne sur les contrats ; il ne pondère pas nécessairement leurs montants ou surplus. \\
+Avalanche, racine & Composante faiblement connexe du graphe des pertes entre mortes d'un même pas ; une racine entre dans la file initiale de faillite. Les flèches vont de la débitrice morte vers la créancière affectée. \\
+$b_1$, $b_2$ & Fraction de morts propagées $1-\mathrm{racines}/\mathrm{morts}$ et nombre de couples causals entre générations successives par morte. $b_1$ est borné par 1 par construction ; $b_2$ peut dépasser 1. \\
+Parents multiples, suffisance & $b_2-b_1$ compte un excès d'arêtes par morte. Ni cet excès ni la part de victimes à plusieurs parents ne mesure les pertes individuellement suffisantes. Le diagnostic de suffisance reste à réauditer. \\
+Parité & Comparaison de moteurs dans un régime, à des graines et horizons spécifiés. Égalité bit à bit, tolérance flottante et maintien de fonctionnalités sont des exigences différentes. \\
+Bras, graine, contraste apparié & Un bras est une condition expérimentale. Une graine est l'unité de répétition. Les bras appariés partagent un état d'amorçage et de générateur, sans garantie de chocs individuels identiques après divergence des populations. \\
+Amorçage & Phase initiale écartée de l'estimation. Sa durée choisie ne prouve pas à elle seule la stationnarité ou l'oubli de l'état initial. \\
+IC95, écart-type & L'IC95 inter-graines quantifie l'incertitude sur une moyenne entre répétitions. L'écart-type décrit leur dispersion ; les deux ne sont pas interchangeables. \\
+Gini, Lorenz & Mesures de concentration d'une grandeur explicitement nommée. Un Gini stable ne prouve pas une distribution invariante ; comparer patrimoine, capital et intérêts exige des définitions compatibles. \\
+Quantile, décile & Position dans une distribution ou groupe de rangs. Le classement est refait à chaque instantané ; un rapport de quantiles ne suit pas un groupe fixe. La grandeur mesurée peut différer de celle qui sert à classer. \\
+$S$, $\alpha$, $S_c$ & Taille entière d'avalanche, exposant et coupure dans $P(S=s)\propto s^{-\alpha}e^{-s/S_c}$. Ajustement descriptif, non certification de criticité. \\
+CCDF & Fonction de survie $P(S\ge s)$ ; distincte de la masse $P(S=s)$ et de la densité par classe. Leurs pentes ne sont pas directement interchangeables. \\
+PRCC & Corrélation partielle de rang sur un plan de paramètres ; association conditionnelle, non effet causal isolé. \\
+$E_t$, $Y_t$, durée $D$ & Stock total $\sum_iK_i$, production totale du pas et durée d'une suite de baisses. La durée $D$ ne désigne pas ici la dette individuelle $D_i$. \\
+Rétention, survie & Fraction d'un décile fixé à $t_0$ encore dans le décile, ou encore vivante, à $t_0+h$. La rétention peut remonter ; aucune des deux ne prouve le mélange statistique du système. \\
+Âge, durée de vie & L'âge concerne les entités vivantes à l'observation ; la durée de vie exige naissance et décès. Une moyenne de médianes instantanées n'est pas une médiane de toutes les observations regroupées. \\
+$\varepsilon$, $E$ & Élasticité finie : moyenne des log-rapports appariés divisés par $\ln(1{,}5)$. $E$ désigne historiquement une réponse relative divisée par $(m-1)p_{\rm trait}$ ; $p_{\rm trait}$ est la part de production traitée, distincte du partage $p$. \\
+Portée & Intervention sur les vivantes et les entrantes futures, sur les entrantes seules ou sur une fraction des vivantes. Le renouvellement peut éteindre un traitement non transmis aux naissances. \\
+Rotation du crédit & Nouveau principal prêté par pas, rapporté au stock total : flux de montants, non nombre de contrats. \\
+Revenu brut, intérêts & Le revenu brut du modèle est production plus intérêts reçus. Les intérêts sont des transferts internes et ne constituent pas une nouvelle production agrégée ni l'ensemble du revenu des ménages réels. \\
+Charge et dette/revenu & Charge versée : $I_i^{\rm versé}/(P_i+I_i^{\rm reçu})$ ; charge due : service contractuel/revenu brut. Dette/revenu est un stock rapporté à un flux et s'exprime en pas. \\
+Vuong, couverture & Score de log-vraisemblance comparée sur un échantillon commun. Son interprétation normale exige des hypothèses non automatiquement satisfaites ici. La couverture est l'effectif au-dessus du seuil de queue sélectionné. \\
+Hill & Estimateur d'exposant de queue conditionnel à un support et à une hypothèse de puissance ; il ne valide pas seul cette hypothèse. \\
 \bottomrule
 \end{longtable}
-
-\subsection{Variables d'état et observables}
-
-\begin{longtable}{@{}p{0.15\textwidth}p{0.81\textwidth}@{}}
-\toprule
-\textbf{notation} & \textbf{définition} \\
-\midrule
-\endhead
-$K_i$ & \textbf{capital}, ou taille intrinsèque productive de l'entité $i$, en
-  joules. Réel, productif, dépréciable. \\
-$C_i$, $D_i$ & \textbf{créances} et \textbf{dettes} de $i$ : sommes des
-  principaux prêtés et empruntés. Nominaux, perpétuels, non amortis. \\
-$NW_i$ & \textbf{valeur nette}, $NW_i = K_i + C_i - D_i$. C'est le prédicat de
-  faillite : $NW_i < 0$ met l'entité en défaut. \\
-$q$, $r$ & \textbf{principal} et \textbf{taux par pas} d'un contrat. Le service
-  versé par pas vaut $rq$. \\
-$L$, $\Delta$ & pour un contrat : \textbf{perte de puissance extractrice} de la
-  donneuse, et \textbf{surplus coopératif} de la paire --- le gain de production
-  jointe permis par le transfert de stock. Le service se décompose en
-  $rq = L + p\Delta$. \\
-\code{prod} & \textbf{production} d'une entité sur un pas, $A K_i^\gamma$. Le
-  terme « puissance extractrice » désigne la même quantité. \\
-\code{int\_in}, \code{int\_out} & \textbf{intérêts reçus} et \textbf{versés} par
-  pas. \code{int\_in} est, dans l'ontologie retenue, l'analogue du revenu
-  monétaire usuel. \\
-$E_t$ & \textbf{énergie totale} présente dans le système en fin de pas,
-  $E_t = \sum_i K_i(t)$. Distincte de la production totale : la concavité de la
-  production et les variations d'effectif changent leur relation. \\
-$\varepsilon$ & \textbf{élasticité} de la production totale à la productivité.
-  La dérivée locale est $\mathrm{d}\ln(\mathrm{prod})/\mathrm{d}\ln A$ ;
-  M4.4 estime un contraste fini : moyenne par graine de
-  $\ln(\overline{Y}_{\text{traité}}/\overline{Y}_{\text{contrôle}})/\ln(1{,}5)$,
-  sur $3000<t\le4000$. \\
-$E$ & \textbf{réponse normalisée} : réponse observée divisée par la réponse
-  strictement proportionnelle $(m-1)p_{\mathrm{trait}}$, où $m$ est le
-  multiplicateur appliqué à $A$ et $p_{\mathrm{trait}}$ la part de production
-  traitée avant intervention. $E > 1$ est qualifié de rebond dans le modèle. \\
-\bottomrule
-\end{longtable}
-
-\subsection{Termes internes}
-
-\begin{description}[leftmargin=1.3em,style=nextline]
-\item[Bassin] L'échantillon de $k$ entités tiré à un tour de marché. Le
-  \emph{Gini du bassin} est le coefficient de Gini du capital mesuré sur les
-  entités entrant en rencontre, avant appariement.
-\item[Carnet] L'ensemble des contrats de prêt vivants à un instant donné. Le
-  \emph{taux moyen du carnet} est la moyenne des $r$ des contrats vivants. Un
-  contrat quitte le carnet dès que l'une de ses deux extrémités meurt.
-\item[Rotation du crédit] Volume de nouveaux contrats conclus par pas, rapporté
-  au capital total. Mesure la vitesse à laquelle le stock productif change de
-  mains. Ce n'est pas un nombre de contrats : c'est un flux rapporté à un stock.
-\item[Tension d'échelle] Rapport $T = K_{\mathrm{aut}}/K_{\mathrm{eq}}$ entre le
-  point fixe individuel sans crédit et le capital équivalent du système. Il
-  résume bien les effets d'échelle \textbf{à $\delta$ fixé}, et \emph{échoue}
-  comme paramètre d'état quand $\delta$ varie\footnote{\incertitude{} Le mot
-  « tension » a été employé dans deux sens dans les documents antérieurs :
-  celui-ci, et par extension la chaîne causale complète de la contraction de
-  population. Dans cette note il désigne \emph{uniquement} le rapport ci-dessus,
-  avec sa réserve ; la chaîne causale est nommée « la chaîne »
-  (§\ref{sec:chaine}). Cette distinction terminologique est retenue dans
-  la présente rédaction.}.
-\item[Capital équivalent $K_{\mathrm{eq}}$] Capital qui, s'il était détenu par
-  chaque entité, donnerait la production totale observée. Il sépare ce qui
-  relève de l'effectif de ce qui relève de l'échelle par entité.
-\item[Avalanche] Composante faiblement connexe du graphe des pertes de créances,
-  restreinte aux mortes d'une même résolution de cascade
-  (§\ref{sec:avalanches}).
-\item[Racine] Faillite entrée directement dans la file initiale d'un pas, sans
-  avoir été déclenchée par la perte d'une créance.
-\item[Rapport de branchement $b_1$] $1 - \text{racines}/\text{morts}$ : fraction
-  moyenne de morts qui ne sont pas des racines. Borné par 1 \emph{par
-  construction}.
-\item[Descendance moyenne $b_2$] Nombre moyen de couples causals par mort, lu
-  sur le graphe des cascades. Peut dépasser 1 quand une victime a plusieurs
-  parents.
-\item[Sur-détermination] Distinguer trois mesures. L'excès d'arêtes par
-  morte est $b_2-b_1=\sum_{v\text{ non racine}}(d_v-1)/N$, où $d_v$
-  est le nombre de parents retenus à la génération précédente et $N$ le
-  nombre total de mortes. Ce n'est pas la proportion de victimes à plusieurs
-  parents parmi les non-racines vues (\code{multi\_parent\_share}) :
-  une victime à trois parents contribue deux arêtes supplémentaires.
-  La suffisance d'une perte pour déclencher une faillite est encore une autre
-  propriété, étudiée par le plancher de suffisance du lot J.
-\item[Fardeau] Somme des principaux dus par une entité, rapportée à sa
-  production. C'est la variable dans laquelle la convexité du risque était
-  posée en hypothèse (§\ref{sec:partage}).
-\item[Contraste apparié] Comparaison graine par graine entre un bras traité et
-  le contrôle qui partage son amorçage et l'état du générateur à la bifurcation.
-  Cela ne garantit pas des chocs communs par entité après divergence des
-  effectifs. Les intervalles des contrastes moyens de M4.4 sont des
-  intervalles de Student à onze degrés de liberté ; les tableaux de dispersion
-  des exposants emploient aussi des écarts-types, explicitement distingués.
-\item[Bras] Une condition expérimentale d'une campagne : un jeu de paramètres
-  appliqué à l'ensemble des graines.
-\item[Portée] Étendue d'une intervention : \emph{globale} (toutes les entités),
-  \emph{nouvelles} (les entrantes seulement) ou \emph{fraction} (une part des
-  vivantes).
-\item[Amorçage (\emph{burn-in})] Pas initiaux écartés de toute mesure, le temps
-  que le système atteigne son régime stationnaire.
-\item[Élasticité] $\mathrm{d}\ln Y / \mathrm{d}\ln X$ : variation relative de
-  $Y$ par variation relative de $X$. Sauf mention contraire, $X$ est la
-  productivité $A$.
-\item[Coefficient de Gini] Mesure d'inégalité entre 0 (tous égaux) et 1 (tout
-  chez un seul). Calculé ici sur le capital, la valeur nette, la production ou
-  le revenu d'intérêt --- quatre grandeurs qu'il ne faut jamais confondre,
-  puisqu'elles donnent des valeurs allant de $0{,}05$ à $0{,}61$ sur le même
-  état.
-\item[PRCC] Coefficient de corrélation partielle de rang, mesuré sur un plan
-  d'expérience par hypercube latin. Entre $-1$ et $1$ ; mesure l'association
-  monotone d'un paramètre à une sortie, les autres tenus constants.
-\item[Statistique de Vuong] Test de comparaison de deux lois non emboîtées par
-  rapport de vraisemblance. $|z| > 1{,}96$ tranche en faveur de l'une ; en deçà
-  le test ne conclut pas --- ce qui ne signifie pas que les deux lois s'ajustent
-  aussi bien, mais que \emph{ce test} ne les sépare pas.
-\item[Estimateur de Hill] Estimateur de l'exposant de queue d'une loi de
-  puissance, calculé sur les points au-delà d'un seuil. La \emph{couverture} est
-  le nombre de points retenus au-delà de ce seuil ; elle gouverne la précision.
-\item[CCDF] Fonction de survie empirique, $P(S \ge s)$. Tracée en échelle
-  logarithmique, une loi de puissance y est une droite et une coupure de taille
-  finie un décrochement.
-\end{description}
