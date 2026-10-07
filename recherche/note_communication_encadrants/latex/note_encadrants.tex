@@ -81,7 +81,7 @@ peut-elle produire un effet rebond ?\\
 \small ENS Rennes, département mécatronique, parcours \emph{Recherche aux interfaces}\\
 \small Encadrement : Éric Herbert, Petros Chatzimpiros, Christophe Goupil,
 Jean-Philippe Brunetton}
-\date{Campagnes : mars--août 2026 ; rédaction révisée le 25 septembre 2026}
+\date{Campagnes : mars--août 2026 ; rédaction révisée le 7 octobre 2026}
 
 \begin{document}
 \maketitle
@@ -314,6 +314,12 @@ résultats anciens sans les rejouer (§\ref{sec:parite}).
 
 \part{Le modèle : ce qu'il fait, exactement}
 
+\emph{Cette partie décrit le moteur tel qu'il est : ce qu'une entité possède, comment
+un pas de temps se déroule, et ce qui se passe quand un contrat n'est pas honoré.
+Elle précède tout résultat, parce que chaque affirmation ultérieure dépend de ces
+règles ; elle ne cherche pas à les justifier économiquement, seulement à les rendre
+inambiguës.}
+
 \section{L'entité, le joule, et ce qui circule}
 \label{sec:modele}
 \input{exemple_article}
@@ -537,6 +543,12 @@ pour une partie de son espace de paramètres.}
 \part{Comment on est arrivé là}
 \label{part:trajectoire}
 
+\emph{Les résultats de ce rapport ne se comprennent pas sans le chemin qui y mène :
+des modèles abandonnés, des pièges de mesure rencontrés, et une chaîne de
+vérifications qui maintient les anciens résultats sous le nouveau moteur. Cette partie
+raconte ce chemin, y compris ses échecs, et décrit l'outil de simulation qui a
+rendu possible une comparaison systématique.}
+
 \section{Une démarche en accordéon}
 \label{sec:trajectoire}
 
@@ -589,7 +601,7 @@ stationnaire.} L'exposant ajusté dérive avec l'horizon d'observation. Une
 régression log-log à bon $r^2$ ne suffit donc pas à identifier une loi de
 puissance --- leçon qui vaut pour tout le reste de la note.}
 
-\subsection{M2 et M3 : le crédit devient causal, mais ne propage pas}
+\subsection{M2 et M3 : le crédit devient causal, mais sans propagation observée}
 
 \negatif{} Dans \textbf{M2}, la démographie et les distributions étaient
 essentiellement celles d'un processus de croissance-renouvellement de type
@@ -609,6 +621,11 @@ sectoriels corrélés --- et l'analyse de leur structure montre que ce sont des
 morts \textbf{synchronisées}, pas une propagation : rapport racines/taille égal
 à 1, profondeur au plus 2. \textbf{Synchroniser n'est pas contaminer}, et la
 distinction n'était visible qu'en construisant explicitement le graphe causal.
+
+\incertitude{} Ces deux valeurs viennent des notes de diagnostic du stage (juillet),
+produites sur la structure causale telle que M3 la permettait ; elles n'ont pas
+été rejouées pour ce rapport, et la comparaison avec M4 (figure~\ref{fig:p04_avalanches_structure})
+suppose que la même définition d'avalanche a servi des deux côtés.
 
 \subsection{M4 : la percée}
 
@@ -816,6 +833,12 @@ personnels est un chantier distinct : le récit n'en invente pas.
 \clearpage
 \part{Premier volet : quels phénomènes réels le système retrouve}
 \label{part:phenomenes}
+
+\emph{Première moitié de la question : avant de parler de rebond, le modèle reproduit-il
+des régularités observées dans les économies réelles (inégalités, cycles, tailles
+d'événements) ? Les phénomènes sont classés en trois groupes : retrouvés, non
+retrouvés, et sans données comparables. L'accord qualitatif n'y est jamais présenté
+comme une validation du mécanisme.}
 
 \section{Comment lire cette partie}
 
@@ -1071,8 +1094,9 @@ travail a dû apprendre à éviter.}.
 de la synchronisation.} À gauche, la part de racines décroît régulièrement avec
 la taille de l'avalanche --- une grande avalanche n'est pas un grand paquet de
 morts indépendantes. À droite, la profondeur causale atteint 10. C'est
-exactement ce que M3 ne produisait pas : là, le rapport racines/taille valait 1
-et la profondeur ne dépassait pas 2.}
+ce que M3 ne produisait pas d'après les notes de diagnostic (rapport
+racines/taille égal à 1, profondeur au plus 2), sans que la comparaison ait été
+rejouée.}
 
 \fait{} Les ajustements historiques M4B privilégient une puissance avec coupure
 dans une partie du domaine étudié. L'exposant ajusté se rapproche de
@@ -1468,6 +1492,12 @@ données n'est pas une raison pour multiplier les paramètres.
 \part{Second volet : reproduit-on un effet rebond ?}
 \label{part:rebond}
 
+\emph{Seconde moitié de la question : une amélioration d'efficacité appliquée en cours
+de simulation produit-elle une réponse plus que proportionnelle ? Cette partie fixe
+d'abord ce que « rebond » veut dire dans le modèle, puis relate une première
+expérience écartée, le verdict de M4.3Live, et une formulation du résultat
+volontairement prudente.}
+
 \section{Le problème de définition, posé avant de mesurer}
 
 \incertitude{} Sorrell et Dimitropoulos montrent que le terme « effet rebond »
@@ -1495,6 +1525,22 @@ $m=1{,}5$ et les moyennes portent sur $3000<t\le4000$ ; l'estimation publiée
 est la moyenne des contrastes logarithmiques des douze graines.
 Il s'agit d'une élasticité sur un choc fini, non d'une dérivée locale. $E > 1$ est
 qualifié de rebond \emph{dans le modèle}.
+
+\incertitude{} \textbf{Écart de vocabulaire avec la littérature.} Dans la
+littérature économique de l'efficacité énergétique, avec un service $S$ rendu par
+une consommation $C=S/A$, le rebond est la part du gain d'ingénierie perdue par
+la réponse comportementale ; il vaut alors $\mathrm{d}\ln S/\mathrm{d}\ln A$. Un
+rebond \emph{partiel} est compris entre $0$ et $100\,\%$, un rebond de $100\,\%$
+annule l'économie attendue, et au-delà on parle de rétro-effet
+(\emph{backfire}, paradoxe de Jevons). Si l'on identifiait la production $Y$ du
+modèle au service, notre $\widehat\varepsilon$ serait donc ce rebond, et le seuil
+$E>1$ retenu ici correspondrait au \emph{rétro-effet}, non au rebond partiel :
+un $\widehat\varepsilon=0{,}75$ se lirait « $75\,\%$ de rebond », non « pas de rebond ».
+Cette lecture suppose que la production est le service et que la ressource
+consommée est la production rapportée à $A$, ce que le moteur ne sépare pas
+(voir ci-dessous) ; nous ne l'adoptons donc pas : dans tout ce rapport, « rebond »
+garde le sens interne $E>1$ défini ci-dessus, qu'il ne faut pas confondre avec le
+rebond partiel de la littérature.
 
 \incertitude{} Cette définition permet une mesure interne rigoureuse. Elle ne
 résout pas la correspondance empirique entre production, service utile et
@@ -1686,6 +1732,14 @@ canal.
 \part{Les résultats complets de la dernière campagne (M4.4)}
 \label{part:m44}
 
+\emph{Compte rendu détaillé de la campagne la plus récente : ce qu'elle demandait,
+huit résultats numérotés et un résultat annexe. Chacun est présenté avec son
+protocole, ses incertitudes et ce qu'il n'établit pas. Un changement de régime est à
+garder en tête : les paramètres de la campagne de sensibilité M4B (centre
+$\delta=0{,}05$, $\sigma=0{,}25$, $k=3$) ne sont pas ceux du régime étudié ici
+($\delta=\sigma=0{,}01$ par défaut du moteur M4.4, avec une intensité de rencontres
+$\rho=1$), et les exposants ne se transposent pas de l'un à l'autre sans vérification.}
+
 \section{Ce que M4.4 demande, et sur quoi}
 
 Les lignées précédentes avaient établi un énoncé sur des \emph{agrégats} :
@@ -1740,6 +1794,27 @@ Student, et les valeurs publiées antérieurement en traits verticaux.}
 de l'effectif de ce qui relève de l'échelle par entité. C'est une distinction
 que le programme s'impose systématiquement, entre un résultat, une identité et
 un corrélat.
+
+\inference{} L'accord est exact au quatrième chiffre, et le journal du programme
+donne pour la lignée précédente un écart-type d'estimation de $0{,}0048$, soit
+exactement $0{,}0106$ divisé par le quantile de Student à onze degrés de liberté.
+C'est ce qu'on attend de trajectoires identiques (mêmes numéros de graine, règles
+inchangées) plutôt que d'une réplication indépendante ; nous le lisons ainsi, sans
+l'avoir vérifié graine à graine. Le tableau atteste alors la \emph{reproductibilité
+du fork}, utile comme test de non-régression, et non une confirmation
+indépendante de la valeur $0{,}7473$.
+
+\fait{} \textbf{La porte écrite avant mesure.} Le plan de la campagne avait fixé,
+avant toute mesure, une bande pour $\mathrm{d}\ln\bar G/\mathrm{d}\ln A$ :
+$[0{,}527\,;\,0{,}559]$. La valeur mesurée est $0{,}5263\pm0{,}0069$, c'est-à-dire
+juste sous la borne inférieure et non dans la bande, au sens strict. Le
+journal du programme lit cet écart comme indiscernable de la borne basse (à
+$0{,}06$ demi-intervalle) et excluant la borne haute ; il note aussi que la
+bande a été construite à partir de $\mathrm{d}\ln N/\mathrm{d}\ln A=-0{,}7043$ de la
+lignée précédente, que ce bras mesure à nouveau : prédiction et mesure
+partagent une entrée, de sorte que le test vérifie surtout que le bras
+reproduit la lignée. Nous ne présentons donc cette porte ni comme franchie
+ni comme échouée, mais comme peu informative.
 
 \subsection{Ce qui change et ce que mesure l'élasticité}
 L'expérience principale multiplie $A$ par $m=1{,}5$ sur toutes les
@@ -2475,6 +2550,11 @@ parcours. Les deux trajectoires coïncident à l'intervalle près.}
 
 \clearpage
 \part{Ce que rien de tout cela n'établit}
+
+\emph{Un rapport de recherche se juge autant à ses limites qu'à ses résultats. Cette
+partie recense les limites structurelles du modèle, les six choses que la dernière
+campagne n'établit pas, les travaux identifiés mais non réalisés, et l'état de la
+question dorsale à la fin du stage.}
 
 \section{Les limites structurelles}
 
