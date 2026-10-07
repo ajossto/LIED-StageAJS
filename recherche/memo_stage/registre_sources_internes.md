@@ -90,10 +90,10 @@ fragile des classes et absence de loi de puissance démontrée.
 - **Nature :** critiques d'agents, réponses, rapports formels, manifestes et CSV
   de vérification.
 - **Sources canoniques :**
-  - `/home/anatole/jupyter/archives/codex_analysis_workspace/reviews/`
-  - `/home/anatole/jupyter/archives/codex_analysis_workspace/papers/`
-  - `/home/anatole/jupyter/archives/codex_analysis_workspace/data/round3/`
-  - `/home/anatole/jupyter/archives/codex_analysis_workspace/data/round4/`
+  - `/home/anatole/jupyter/codex_analysis_workspace/reviews/`
+  - `/home/anatole/jupyter/codex_analysis_workspace/papers/`
+  - `/home/anatole/jupyter/codex_analysis_workspace/data/round3/`
+  - `/home/anatole/jupyter/codex_analysis_workspace/data/round4/`
 - **Empreintes témoins :**
   - `review_critique_paper_v2_baseline.txt` :
     `64033e7060174c58aaa2caf0779636aa6074b70b36627751ca28b5cd2d530e49`
