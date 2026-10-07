@@ -39,3 +39,7 @@ recherche/note_resultats/revision_*/*.csv
 recherche/note_resultats/revision_*/*.json
 recherche/note_communication_encadrants/revision_*/*.csv
 recherche/note_communication_encadrants/revision_*/*.json
+
+# Environnement virtuel et dossiers de compilation
+.venv/
+render_check/
