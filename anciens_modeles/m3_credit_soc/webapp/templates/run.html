@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>M3 — détail du run</title>
+<link rel="stylesheet" href="/static/style.css">
+<style>
+.figure-bloc { margin: .6rem 0 1.2rem 0; }
+.figure-bloc img { width: 100%; height: auto; border: 1px solid var(--bord);
+                   border-radius: 6px; background: #fff; }
+</style>
+</head>
+<body>
+<div id="retour"><a href="/">← Retour à l'index du protocole</a></div>
+<main id="contenu"><p class="note">Chargement…</p></main>
+<script>
+const runId = new URLSearchParams(location.search).get("id");
+const fmt = (x, d = 1) => x == null ? "—" :
+  (typeof x === "number" && !Number.isInteger(x) ? x.toFixed(d) : x.toLocaleString("fr-FR"));
+
+const TITRES_FIGS = {
+  "macro_overview.png": "Vue macroscopique (population, stocks, crédit, faillites)",
+  "distributions_taille.png": "Distributions individuelles — histogrammes de densité (barres de Poisson)",
+  "cascades_rank_size.png": "Avalanches causales — occurrences et rang-taille",
+  "ages_richesse.png": "Structure d'âge et diagnostic anti-cohorte",
+  "credit_market.png": "Taille du marché du crédit (encours total aux instants de snapshot)",
+};
+
+function g(obj, ...keys) {
+  for (const k of keys) { obj = obj?.[k]; }
+  return obj;
+}
+
+function validationCard(v) {
+  if (!v) return "";
+  const ts = Object.keys(v.distributions || {}).sort((a, b) => a - b);
+  const last = ts.length ? v.distributions[ts[ts.length - 1]] : {};
+  const nw = last.nw || {}, L = last.L || {}, inc = last.income || {};
+  const boot = nw.tail_boot || {};
+  const ren = v.renewal || {}, ageNW = g(v, "age", "nw") || {};
+  const fin = v.interest_share_income || {}, auc = v.network_auc || {};
+  const ligne = (label, val) => val == null ? "" : `<dt>${label}</dt><dd>${val}</dd>`;
+  return `<section class="carte"><h2>Extraits de la validation statistique
+      <span class="note">(validation.json — fenêtre t = ${ts[ts.length - 1] || "?"})</span></h2>
+    <dl class="config">
+      ${ligne("Corps de NW (meilleure famille)", g(nw, "body", "best"))}
+      ${ligne("ΔAIC de l'exponentielle (NW)", fmt(g(nw, "body", "delta_aic_expon")))}
+      ${ligne("Queue de NW : α (CSN)", g(nw, "tail_csn", "alpha")?.toFixed(2))}
+      ${ligne("IC bootstrap 95 %", boot.alpha_lo ? `[${boot.alpha_lo.toFixed(2)} ; ${boot.alpha_hi.toFixed(2)}]` : null)}
+      ${ligne("LR Pareto vs lognormale (R, corrigé)", g(nw, "lr_pl_vs_ln", "R") != null ? g(nw, "lr_pl_vs_ln", "R").toFixed(1) + " (R<0 : lognormale préférée)" : null)}
+      ${ligne("Corps de L", g(L, "body", "best") ? g(L, "body", "best") + " — med/mean " + fmt(g(L, "body", "med_over_mean"), 2) + " (exponentielle : 0,69)" : null)}
+      ${ligne("Revenu, familles complètes", g(inc, "full_families", "best"))}
+      ${ligne("Gini(NW) / top 10 %", nw.gini ? nw.gini.toFixed(3) + " / " + fmt(100 * g(nw, "top_shares", "top10")) + " %" : null)}
+      ${ligne("corr(âge, log NW)", ageNW.corr_age_log?.toFixed(3))}
+      ${ligne("Renouvellement du top (survie / né récent)", ren.survival != null ? `${(100 * ren.survival).toFixed(0)} % / ${(100 * ren.frac_recent).toFixed(0)} %` : null)}
+      ${ligne("Part des intérêts, revenu top 1 %", fin.top1 != null ? (100 * fin.top1).toFixed(1) + " %" : null)}
+      ${ligne("AUC dettes→mort / levier→mort", auc.debts ? `${auc.debts.toFixed(2)} / ${(auc.leverage || 0).toFixed(2)}` : null)}
+      ${ligne("corr(HHI → morts futures)", v.corr_hhi_future_deaths?.toFixed(2))}
+    </dl></section>`;
+}
+
+async function main() {
+  const res = await fetch("/api/run/" + encodeURIComponent(runId));
+  if (!res.ok) {
+    document.getElementById("contenu").innerHTML =
+      `<p class="note">Run introuvable : ${runId}</p>`;
+    return;
+  }
+  const d = await res.json();
+  const cfg = d.config, sm = d.summary;
+  const cles = ["seed", "T", "sigma", "s", "c", "k", "lam", "d0", "L0", "K0",
+                "beta_L", "credit", "loan_target", "claim_loss", "flow_loss",
+                "market_selection", "shock_rho_macro", "shock_rho_sector",
+                "n_init", "merge_pairs"];
+  const figs = (d.figures || []).map(f => `
+    <div class="figure-bloc">
+      <img src="/api/run/${encodeURIComponent(d.id)}/fig/${f}"
+           alt="${TITRES_FIGS[f] || f}" loading="lazy">
+    </div>`).join("");
+  document.getElementById("contenu").innerHTML = `
+    <section class="carte">
+      <h2>${d.id} <span class="badge ${sm.status}">${sm.status}</span></h2>
+      <div class="stat-ligne">
+        <span>population finale <b>${fmt(sm.pop_final)}</b></span>
+        <span>contrats actifs <b>${fmt(sm.n_loans_final)}</b></span>
+        <span>naissances <b>${fmt(sm.total_births)}</b></span>
+        <span>morts <b>${fmt(sm.total_deaths)}</b></span>
+        <span>durée <b>${fmt(sm.wall_seconds)} s</b></span>
+      </div>
+      <details><summary class="note">Configuration complète</summary>
+        <dl class="config">${cles.map(k => `<dt>${k}</dt><dd>${cfg[k]}</dd>`).join("")}</dl>
+      </details>
+    </section>
+    <section class="carte"><h2>Figures
+      <span class="note">(matplotlib, style simulation_lab — cliquer pour ouvrir en taille réelle)</span></h2>
+      ${figs || `<p class="note">Pas de figures disponibles${d.figures_error ? " : " + d.figures_error : ""}.</p>`}
+    </section>
+    ${validationCard(d.validation)}`;
+  document.querySelectorAll(".figure-bloc img").forEach(img => {
+    img.style.cursor = "zoom-in";
+    img.onclick = () => window.open(img.src, "_blank");
+  });
+  document.title = "M3 — " + d.id;
+}
+main();
+setInterval(() => fetch("/api/heartbeat", {method: "POST"}).catch(() => {}), 5000);
+</script>
+</body>
+</html>

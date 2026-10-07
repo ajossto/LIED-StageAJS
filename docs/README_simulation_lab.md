@@ -158,9 +158,9 @@ Les simulations supprimées par l’interface ne sont pas effacées immédiateme
 En plus des runs lancés via l’outil, l’interface détecte aussi les anciens dossiers
 de résultats déjà présents dans :
 
-- `Modèle_sans_banque_wip/resultats/`
-- `Modèle_sans_banque_wip/src/resultats/`
-- `claude3-v2/src/resultats/`
+- `anciens_modeles/Modèle_sans_banque/resultats/`
+- `anciens_modeles/Modèle_sans_banque/src/resultats/`
+- `anciens_modeles/claude3-v2/src/resultats/`
 
 et, plus généralement, tout dossier de `~/jupyter` contenant un `meta.json` de simulation
 reconnaissable.

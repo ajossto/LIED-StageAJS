@@ -25,6 +25,12 @@
 \hypersetup{colorlinks=true,linkcolor=blue!45!black,urlcolor=blue!45!black}
 \setlist{nosep}
 \newcommand{\code}[1]{\texttt{#1}}
+% Figures ENGENDRÉES par scripts/make_figures.py — voir la docstring du module.
+\newcommand{\figurine}[3]{%
+  \begin{figure}[H]\centering
+  \includegraphics[width=#2\linewidth]{figures/#1}
+  \caption{#3}\label{fig:#1}
+  \end{figure}}
 \newcommand{\Kaut}{K^{*}_{\mathrm{aut}}}
 \newcommand{\fait}{\textbf{[Fait observé]}}
 \newcommand{\inference}{\textbf{[Inférence]}}
@@ -150,6 +156,17 @@ $\delta^{*} > 0$, $a$ reçoit ; sinon, $b$ reçoit. Les rôles de \emph{donneuse
 et de \emph{receveuse} sont ensuite dérivés, et c'est la receveuse qui porte la
 dette.
 
+\figurine{f01_institution}{1.0}{\textbf{Ce que la règle de richesse
+s'interdisait, avant toute mesure.} À gauche, la part $\lambda^{*}$ que
+l'optimum de production jointe laisse à l'entité la moins efficace, en
+fonction de l'avance technologique de l'autre : elle vaut $1/2$ en régime
+homogène --- où les deux règles coïncident donc exactement --- et
+\lambdaStarOld{} à $A_2/A_1 = 1{,}5$. À droite, la conséquence dans le plan
+des capitaux : entre les deux droites, l'optimum veut faire circuler le
+capital de la moins riche vers la plus riche, et v1 refusait la paire. C'est
+la région que ce chantier ouvre, et sa largeur ne dépend que du rapport des
+technologies.}
+
 \paragraph{La nomenclature n'est pas cosmétique.} Tant que le code dit
 « prêteuse », un lecteur suppose la règle de richesse, et une régression peut
 s'y cacher. Les variables de la boucle de marché s'appellent donc \code{a},
@@ -189,6 +206,16 @@ $r = \sqrt{m_a m_b}$ avec $m_i = \gamma_i A_i K_i^{\gamma_i-1}$
 opération qui les mêle étant un produit, dont la version flottante est
 commutative. C'est vérifié par une assertion d'égalité stricte, et non par une
 tolérance (\code{tests/test\_loan\_direction.py}).
+
+\figurine{g03_taux}{0.98}{\textbf{La règle de taux ne contient ni rôle ni
+comparaison de capitaux, et l'alternative n'aurait pas cette propriété.} À
+gauche, le taux en vigueur --- moyenne \emph{géométrique} des rendements
+marginaux --- et le rendement marginal commun d'après l'échange, qui est une
+moyenne \emph{arithmétique} des capitaux, en fonction de la dispersion de la
+paire. À droite, leur écart. Ce qu'il faut regarder est qu'ils ne coïncident
+qu'à capitaux égaux : adopter l'alternative changerait le taux de toute paire
+dispersée, donc la trajectoire, donc la parité --- ce serait un chantier à
+part entière et non un ajustement.}
 
 \incertitude{} Une alternative existe et mérite d'être nommée, parce qu'elle
 est plus naturelle qu'il n'y paraît : à l'optimum, les deux rendements
@@ -293,15 +320,15 @@ pourquoi c'est écrit dans la docstring de la méthode.
 \subsection{La mesure}
 \label{sec:cout}
 
-\begin{figure}[H]
-\centering
-\includegraphics[width=\linewidth]{figures/cost_profile.png}
-\caption{Coût par pas et taille du carnet, 4000 pas, graine 0, régime de
-référence. Les deux moteurs tournent dans deux processus séparés, en
-parallèle, chacun sur son cœur. Source :
-\code{results/analysis/cost\_profile.csv}.}
-\label{fig:cout}
-\end{figure}
+\figurine{g01_cout}{1.0}{\textbf{Le carnet mort de v1 croît en $\lambda t$, et
+c'est ce qui rend le coût total quadratique en horizon.} 4000 pas, graine 0,
+régime de référence ; les deux moteurs tournent dans deux processus séparés,
+en parallèle, chacun sur son cœur. À gauche, le coût d'un pas : celui de v1
+monte régulièrement, celui de v2 non. À droite, en échelle logarithmique, la
+grandeur qui l'explique --- le nombre de clefs parcourues à la phase
+d'intérêts. Ce qu'il faut regarder est que la courbe de v2 se confond avec la
+population vivante (tireté), tandis que celle de v1 s'en détache dès les
+premiers pas et atteint deux ordres de grandeur au-dessus.}
 
 \fait{} Sur 4000 pas et à population constante, le carnet de v1 porte
 \costVoneKeys{} clefs pour \costVonePop{} entités vivantes :
@@ -361,6 +388,15 @@ réintroduit : il faudrait pour cela un motif institutionnel, pas seulement la
 possibilité technique.
 
 \section{L'ordre des phases, en option}
+\figurine{g04_ordre_phases}{0.98}{\textbf{Échanger les deux dernières phases
+du pas conserve le capital total et le redistribue.} À gauche, les deux
+ordonnancements ; les deux blocs échangés sont en couleur. À droite, ce que
+l'échange fait au capital de fin de pas : une débitrice perd
+$\delta \times$ son dû, une créancière gagne $\delta \times$ son versement, et
+la somme --- le trait noir --- est plate à zéro. Ce qu'il faut regarder est
+que ce mécanisme n'est pas un choc mais un \emph{flux} : il agit à chaque pas,
+sans jamais créer d'événement, ce qui explique qu'il déplace les agrégats
+sans changer le nombre de défauts.}
 \label{sec:ordre-conception}
 
 Le champ \code{phase\_order} vaut \code{"v1"} par défaut --- production,
@@ -407,6 +443,15 @@ même instant du pas, là où v1 mélangeait la production et le capital de fin 
 pas. Et le $\delta$ employé est celui du pas courant : un dérivé \emph{a
 posteriori} lit un $\delta$ de fichier de configuration et ne verrait pas une
 intervention sur $\delta$.
+
+\figurine{f12_tension}{1.0}{\textbf{Ce que le calcul natif rend exact.} À
+gauche, les deux échelles que la tension compare, sur le bras de contrôle,
+graine 0. À droite, sa décroissance et le rapport de Jensen
+$K_{\text{eq}}/\overline{K}$ sur l'axe de droite. Ce qu'il faut regarder est
+ce dernier : il vaut \jensenControleResiduel{} en régime, soit un écart à 1 de
+plus de deux pour cent. C'est précisément la quantité que v1 devait estimer,
+son numérateur venant de la production et son dénominateur du capital de fin
+de pas --- deux instants différents du même pas.}
 
 Le calcul vit dans \code{m4\_3live\_v2/tension.py}, module du \emph{moteur} et
 non des scripts. Ce n'est pas un rangement : \code{scripts} est un nom de
@@ -457,11 +502,27 @@ $K^{\Delta\gamma} = 1$, donc « le levier ne fait rien »), et celle qu'on ferai
 au capital équivalent, $K_{\text{eq}}^{\Delta\gamma}$.
 
 \fait{} Sur un état de référence à $t = 200$, un levier $\gamma : 0{,}5 \to
-0{,}6$ donne une amplitude mesurée de $1{,}960149$, contre $1{,}000000$ pour la
-prédiction naïve et $1{,}952475$ pour la prédiction au capital équivalent
-(écart $-0{,}39$\,\%). C'est le contenu informatif de la mesure : un levier sur
-$\gamma$ n'est pas un cadran de puissance, et l'échelle de capital du système
-suffit à le prédire à mieux que un demi pour cent.
+0{,}6$ donne une amplitude mesurée de \amplGammaM{}, contre \amplGammaNaive{}
+pour la prédiction naïve et \amplGammaKeq{} pour la prédiction au capital
+équivalent (écart \amplGammaEcart\,\%). C'est le contenu informatif de la
+mesure : un levier sur $\gamma$ n'est pas un cadran de puissance, et l'échelle
+de capital du système suffit à le prédire à mieux que un demi pour cent.
+
+\fait{} Ces valeurs sont engendrées par \code{scripts/amplitude.py}, qui
+relance les quatre leviers et écrit la mesure du moteur dans
+\code{results/analysis/amplitude.csv}. Elles étaient auparavant recopiées à la
+main depuis la sortie de \code{tests/test\_amplitude.py} : un test
+\emph{imprime} ses valeurs, il ne les persiste pas, de sorte que rien ne les
+rattachait à une source.
+
+\figurine{f13_amplitude}{1.0}{\textbf{Trois manières de répondre à « de
+combien ce levier agit-il ? », dont une seule est une mesure.} À gauche, pour
+chacun des quatre leviers, l'amplitude enregistrée par le moteur, la
+prédiction naïve « $K = 1$ » et la prédiction au capital équivalent. Ce qu'il
+faut regarder est la troisième colonne : la prédiction naïve y annonce
+\amplGammaNaive{}, c'est-à-dire que le levier ne ferait \emph{rien}. À droite,
+la part de production que chaque levier touche \emph{ex ante}, en échelle
+logarithmique.}
 
 \section{Les trois sémantiques de parité, et leur état}
 \label{sec:parite}
@@ -497,6 +558,16 @@ sémantiques ne se confondent pas.
   la préserver --- il la préserve, c'est la mesure ci-dessus. La branche
   \code{"deprec\_first"} ne la préserve pas, par construction.
 \end{description}
+
+\figurine{g02_parite}{1.0}{\textbf{L'écart à M4.3 n'est pas petit : il est
+nul, à chacun des \parityFinalSteps{} pas et sur chacune des
+\parityFinalColumns{} colonnes.} À gauche, les grandeurs comparées et, en
+tireté, la valeur d'un seul bit de $K_{\text{tot}}$ --- l'échelle à laquelle
+une égalité flottante se joue. À droite, pour chacune des trois passes de
+parité, le cumul des pas comparés (qui monte) et le cumul des pas présentant
+un écart (qui reste plat à zéro, confondu avec l'axe). Une tolérance aurait
+produit une figure très différente : une bande étroite autour de zéro, et non
+zéro.}
 
 \subsection{La seule différence, expliquée ligne à ligne}
 
@@ -694,6 +765,9 @@ $<$~1~s \\
 \code{\$PY m4\_3live\_v2\_credit\_soc/tests/test\_web\_live.py} & 30~s \\
 \code{\$PY m4\_3live\_v2\_credit\_soc/scripts/cost\_profile.py --steps 4000} &
 447~s (2 processus) \\
+\code{\$PY m4\_3live\_v2\_credit\_soc/scripts/amplitude.py} & 102~s \\
+\code{\$PY m4\_3live\_v2\_credit\_soc/scripts/make\_figures.py} & 26~s (\nombreFigures{} figures) \\
+\code{\$PY m4\_3live\_v2\_credit\_soc/tests/test\_figures.py} & $<$~1~s \\
 \bottomrule
 \end{tabular}
 \end{center}

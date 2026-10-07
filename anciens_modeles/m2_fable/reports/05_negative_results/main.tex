@@ -1,0 +1,169 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[french]{babel}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb}
+\usepackage[margin=2.6cm]{geometry}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true,linkcolor=blue!50!black}
+
+\newcommand{\NW}{\mathrm{NW}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\code}[1]{\texttt{#1}}
+
+\title{Résultats négatifs et artefacts identifiés\\
+\large Réplication critique du modèle M2 (workspace \code{m2\_fable})}
+\author{Agent de réplication (workspace \code{m2\_fable})}
+\date{3 juillet 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Ce rapport rassemble, sans les diluer dans les succès, tout ce qui est
+\emph{réfuté}, \emph{artefactuel} ou \emph{non stationnaire} dans le modèle
+M2 et dans le protocole qui l'accompagnait. Il est le complément du rapport
+de validation ; rien ici n'est caché ailleurs.
+\end{abstract}
+
+\section{Hypothèses du rapport de conception réfutées}
+
+\subsection{H1 — le corps exponentiel de $\NW$ (réfutée)}
+Critère §6.1 (« l'exponentielle gagne l'AIC ou $\Delta\mathrm{AIC} \le 2$ ») :
+échec sur $\NW$, revenu et $w$, 3 seeds $\times$ 3 fenêtres, y compris avec
+le MLE tronqué qui corrige le biais anti-exponentiel de la méthode
+originale. Fisk gagne sur $\NW$ ($\Delta\mathrm{AIC}_{\exp} \approx 43$--$61$
+par instantané de $n \approx 1500$) ; log-normale sur revenu et $w$. Plus
+grave que la forme : le \emph{mécanisme} postulé ([YR] éq.~7, drift $A_0>0$
+vers le plancher équilibré par la diffusion) est contredit par la mesure —
+le drift du corps est ascendant ($\E[\Delta \NW] = +4{,}15$/pas), le corps
+est un régime de transport réinjecté en bas et absorbé en haut/en bas, pas
+un équilibre de Boltzmann. La quasi-exponentialité observée
+($\mathrm{med}/\mathrm{mean} \approx \ln 2$, QQ linéaire) est donc une
+coïncidence de forme à expliquer, pas la signature du mécanisme [YR].
+Le revenu, variable de la thèse énoncée, a un corps en \emph{bosse}
+($\mathrm{med}/\mathrm{mean} = 0{,}92$) : pour le revenu, même la
+quasi-exponentialité échoue.
+
+\subsection{H2 — la stabilité de $\mu$ par rétroaction SOC (réfutée en
+l'état)}
+La stabilité de l'exposant est réelle (6000 pas sans dérive) mais elle
+survit \emph{intégralement} à l'ablation du crédit : mêmes exposants
+($2{,}6$--$2{,}8$), même absence de dérive. Aucun des trois maillons de la
+boucle §3.4 n'est observé : pas de cascades à queue lourde (faillites/pas
+$\approx$ Poisson étroit, max 21), pas de corrélation concentration du
+crédit $\to$ faillites ($|r| < 0{,}11$), pas d'écart mesurable entre modèle
+complet et modèle nul. La stabilité vient du mélange démographique
+(trajectoires GBM tuées au plancher, âges exponentiels — mécanisme de type
+Reed). H2 n'est pas « fausse » au sens fort (la boucle pourrait exister dans
+un autre régime de paramètres) mais elle est \emph{oiseuse} dans le régime
+étudié : le phénomène qu'elle devait expliquer existe sans elle.
+
+\subsection{Prédiction §3.5 — même exposant pour revenu et $\NW$ (réfutée)}
+$\alpha(\text{revenu}) = 4{,}1$--$4{,}7$ contre $\alpha(\NW) = 2{,}6$--$2{,}8$.
+La relation observée est $\alpha_y \approx 2\alpha_w - 1$ (revenu dominé par
+l'extraction $\sqrt{w}$ jusque dans le top décile), pas
+$\alpha_y = \alpha_{\NW}$ (revenu dominé par les intérêts). La
+financiarisation des grosses fortunes est insuffisante. Ce désaccord était
+déjà visible dans les chiffres de [E7c] ($4{,}54$--$4{,}85$ contre
+$2{,}70$--$2{,}84$) mais n'y était pas relevé.
+
+\section{Artefacts de protocole identifiés (outillage hérité)}
+
+\subsection{Le LR loi de puissance / log-normale était biaisé pro-Pareto}
+Le script historique \code{tail\_test.py} ajuste la log-normale de
+comparaison par les moments de $\ln x$ de la queue, sans renormalisation par
+la troncature en $x_{\min}$. Contrôle sur données log-normales pures
+($n = 20\,000$) : $R = +575$, $p \approx 0$ « en faveur de la loi de
+puissance ». Les LR de [E7c] ($+566$ à $+694$) sont du même ordre :
+\textbf{la conclusion « loi de puissance $\gg$ log-normale » du rapport de
+conception n'est pas soutenue par ses propres données}. Avec le LR corrigé
+(MLE de log-normale tronquée), le verdict s'inverse sur M2 : $R < 0$ dans
+31 fenêtres sur 31 (baseline, ablations, runs longs), significatif dans la
+plupart. Limite symétrique à connaître : sur une Pareto pure, le LR corrigé
+est quasi nul (la log-normale tronquée imite une Pareto) — le test corrigé
+est \emph{peu puissant}, il ne peut pas « prouver » une Pareto, seulement
+rejeter la log-normale (ce qu'il ne fait jamais ici).
+
+\subsection{Le critère AIC du corps était biaisé anti-exponentiel}
+Ajuster des familles non tronquées sur les 95\,\% inférieurs fait perdre la
+vraie famille : sur exponentielle pure, gamma gagne avec
+$\Delta\mathrm{AIC} = 31$ ($n = 5000$). Le verdict « corps non exponentiel »
+de [E7c] était donc fragile \emph{a priori} — il se trouve confirmé par la
+méthode corrigée, mais c'est un coup de chance du rapport, pas une garantie
+de sa méthode.
+
+\subsection{Critère « mortalité du top décile $> 0$ » mal posé}
+Mesurée au pas de la faillite, elle est structurellement nulle : on ne meurt
+qu'insolvable, donc plus dans le top. Le renouvellement entre fenêtres est
+la mesure informative (et elle est excellente : survie du top $11$--$17$\,\%
+par 1000 pas).
+
+\section{Vices de spécification du modèle}
+
+\subsection{Le transfert au prorata rend le carnet non stationnaire}
+Règle §2.2 phase 7 (contrats prêtés de la faillie scindés entre ses
+créanciers) : croissance combinatoire du nombre de contrats
+($1244 \to 43\,977$ entre $t = 1000$ et $2000$ en baseline ;
+$2{,}58 \cdot 10^6$ sur la case $(\sigma=0{,}25, \varepsilon_0/w_0=0{,}25,
+k=6)$ de la grille). Le prototype qui a produit [E7c] annulait ces contrats —
+l'écart entre spécification et prototype, non documenté dans le rapport,
+masquait ce vice. L'ablation montre que l'annulation ne change aucune
+conclusion distributionnelle : la règle prorata est un coût sans bénéfice
+mesurable. Correctif implémenté et validé après coup : variante
+\code{merge\_pairs} (fusion des contrats d'une même paire au taux moyen
+pondéré par le principal — préserve exactement $\NW$, créances/dettes, flux
+d'intérêts totaux et prorata de faillite) ; trajectoire macroscopique
+identique à la baseline, carnet borné à 9514 contrats contre $43\,977$.
+
+\subsection{La moyenne géométrique des taux est constitutive, pas
+conventionnelle}
+En moyenne arithmétique, le marché meurt (176 prêts en 2000 pas, tous à des
+emprunteurs déjà condamnés, zéro contrat actif en régime). Le rapport
+classait ce choix parmi les « conventions à figer, pas à régler » (§4) et
+suggérait même la moyenne arithmétique comme levier pour \emph{renforcer} le
+canal additif (X1.3) — c'est exactement l'inverse : elle l'éteint. Toute
+robustesse revendiquée « sans réglage » doit donc exclure cette dimension :
+le modèle vit sur une convention porteuse.
+
+\subsection{La fenêtre de naissance est un régime, pas un réglage — mais
+elle est étroite}
+Ligne $\sigma = 0{,}15$ de la grille : mortalité quasi nulle, population
+$15\,000$--$20\,000$ et croissante à $T=2000$ (borne basse
+$w_0 \gtrsim 1/(\sigma+\delta)^2 = 25$ à peine satisfaite par $w_0 = 30$).
+Le comportement est binaire (mortalité ou non), conforme à la lecture
+« condition d'existence » du rapport ; mais l'étroitesse mesurée de la
+fenêtre (un facteur $< 2$ sur $\sigma$) borne la portée du « sans réglage
+fin » : la \emph{forme} est robuste dans la fenêtre, l'\emph{existence du
+régime} ne l'est pas.
+
+\section{Non-réplications et écarts avec [E7c]}
+\begin{itemize}[nosep]
+\item $N^* \approx 1650$ ici contre $\approx 1760$ [E7c] à $\lambda = 10$ :
+  compatible (règles de marché différentes : le prototype gardait
+  $\theta = 0{,}35$ et offre $= w/2$).
+\item $\mathrm{med}/\mathrm{mean}(\NW) = 0{,}69$ ici contre $0{,}52$--$0{,}55$
+  [E7c] : probablement une différence de définition (corps tronqué ou non) ;
+  la valeur du prototype n'est pas reproductible faute de définition
+  précise dans le log.
+\item LR pro-Pareto de [E7c] : non répliqué avec le test corrigé (inversé).
+\item Exposants et corrélations d'âge : répliqués.
+\end{itemize}
+
+\section{Ce que ces résultats négatifs enseignent}
+Le cœur générateur de M2 est le triplet \{choc multiplicatif $\sigma$,
+extraction-dépréciation, plancher $d_0$ + réinjection Poisson\} — un
+processus de renouvellement démographique de type Reed. Il suffit à produire
+population bornée, queue lourde d'exposant stationnaire et classes
+dynamiques. Le crédit, les cascades et l'architecture SOC — la partie la
+plus originale et la plus coûteuse du modèle — n'ajoutent, dans le régime
+étudié, rien de mesurable à la distribution. La charge de la preuve est
+désormais inversée : c'est aux défenseurs de la thèse SOC d'exhiber un
+régime (autre $k$, autre densité de marché, chocs corrélés ?) où le crédit
+fait une différence distributionnelle détectable.
+
+\end{document}

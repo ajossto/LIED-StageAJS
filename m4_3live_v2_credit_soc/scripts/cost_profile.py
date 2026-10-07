@@ -19,7 +19,9 @@ identiques :
 Les deux moteurs tournent dans deux processus séparés, en parallèle, pour que
 la mesure de l'un ne soit pas polluée par la charge de l'autre — chacun a son
 cœur. Sorties : `results/analysis/cost_profile.csv` (une ligne par pas et par
-moteur) et `report/figures/cost_profile.png`.
+moteur) et `results/analysis/cost_profile_summary.csv` (une ligne par moteur).
+La figure du rapport de conception est engendrée depuis ces fichiers par
+`scripts/make_figures.py`, comme toutes les autres.
 
     python3 scripts/cost_profile.py [--steps 4000] [--seed 0]
 """
@@ -38,7 +40,6 @@ JUPYTER = ROOT.parent
 V1_ROOT = JUPYTER / "m4_3live_credit_soc"
 
 ANALYSIS = ROOT / "results" / "analysis"
-FIGURES = ROOT / "report" / "figures"
 
 #: Régime de référence des deux lignées (`scripts/campaign.py`, BASE).
 BASE = dict(gamma=0.5, A=1.0, lam=30.0, delta=0.01, sigma=0.01, K0=25.0,
@@ -109,54 +110,6 @@ def summarise(rows: list[dict], steps: int) -> dict:
     }
 
 
-def figure(rows: list[dict], path: Path) -> None:
-    import matplotlib
-
-    matplotlib.use("Agg")
-    import matplotlib.pyplot as plt
-
-    try:
-        sys.path.insert(0, str(JUPYTER))
-        from simulation_lab.plot_utils import apply_style
-
-        apply_style()
-    except Exception:
-        pass
-
-    colours = {"v1": "#c1440e", "v2": "#294c60"}
-    labels = {"v1": "v1 (clefs mortes conservées)", "v2": "v2 (purge à la mort)"}
-    figure, axes = plt.subplots(1, 2, figsize=(11, 4))
-
-    for engine in ("v1", "v2"):
-        subset = [row for row in rows if row["engine"] == engine]
-        if not subset:
-            continue
-        steps = [row["t"] for row in subset]
-        seconds = [row["seconds"] for row in subset]
-        window = 101
-        smooth = [
-            median(seconds[max(0, i - window // 2): i + window // 2 + 1])
-            for i in range(len(seconds))
-        ]
-        axes[0].plot(steps, smooth, color=colours[engine], lw=1.2, label=labels[engine])
-        axes[1].plot(steps, [row["book_keys"] for row in subset],
-                     color=colours[engine], lw=1.2, label=labels[engine])
-
-    axes[0].set_title("coût d'un pas (médiane glissante sur 101 pas)", fontsize=9)
-    axes[0].set_xlabel("t (pas)")
-    axes[0].set_ylabel("secondes par pas")
-    axes[1].set_title("clefs du carnet parcourues à la phase d'intérêts", fontsize=9)
-    axes[1].set_xlabel("t (pas)")
-    axes[1].set_ylabel("len(by_borrower)")
-    for axis in axes:
-        axis.grid(True, alpha=0.2)
-        axis.legend(fontsize=7)
-    figure.tight_layout()
-    path.parent.mkdir(parents=True, exist_ok=True)
-    figure.savefig(path, dpi=130, bbox_inches="tight")
-    plt.close(figure)
-
-
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--steps", type=int, default=4000)
@@ -179,7 +132,6 @@ def main(argv=None) -> int:
         writer = csv.DictWriter(handle, fieldnames=list(summary[0]))
         writer.writeheader()
         writer.writerows(summary)
-    figure(rows, FIGURES / "cost_profile.png")
 
     for row in summary:
         print(

@@ -1,0 +1,622 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage{fontspec}
+\usepackage[french]{babel}
+\usepackage{amsmath,amssymb}
+\usepackage[margin=2.3cm]{geometry}
+\usepackage{booktabs,longtable,tabularx,array}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{microtype}
+\usepackage{url}
+\usepackage{hyperref}
+
+\hypersetup{colorlinks=true,linkcolor=blue!45!black,urlcolor=blue!45!black}
+\setlist{nosep}
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\NW}{\mathrm{NW}}
+\newcommand{\E}{\mathbb{E}}
+
+\title{Protocole de l'étude de sensibilité du modèle M4B\\
+\large Cartographie des paramètres, plan d'expérience et règles de confirmation}
+\author{Campagne \code{recherche/sensibilite\_m4b}}
+\date{17 juillet 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Ce protocole fige, avant les simulations de production, la conduite d'une
+étude de sensibilité du modèle de société de crédit M4B. Il définit l'objet
+étudié, le statut expérimental de chaque paramètre, le dictionnaire des
+grandeurs de réponse, le plan d'expérience en six volets (contrôle de
+taille, contrôle temporel, courbes un-facteur-à-la-fois, plan global
+espace-remplissant, coupes bidimensionnelles, phase confirmatoire), le
+diagnostic obligatoire du garde-fou de population et les règles de passage
+de l'exploration à la confirmation. Les plages initiales sont des points de
+départ soumis à un audit par cellules pilotes ; leur révision éventuelle
+sera consignée dans le rapport préliminaire. L'audit du moteur (tests
+unitaires et comptables, parité avec le modèle source M4, neutralité des
+options de mesure) et le chiffrage du coût de calcul sont rapportés ici car
+ils conditionnent le budget du plan.
+\end{abstract}
+
+\tableofcontents
+
+\section{Objet, périmètre et principes}
+
+\subsection{Objet}
+
+Le modèle étudié est M4B, moteur minimal de société de crédit installé
+dans le dossier \path{m4b_credit_soc_mini} du dépôt. M4B reproduit la
+mécanique validée du modèle M4 (dossier \path{m4_credit_soc_fable}, traité
+en lecture seule comme référence historique) en supprimant toutes
+les variantes d'ablation. L'étude doit cartographier honnêtement :
+
+\begin{enumerate}
+\item quels paramètres contrôlent le régime démographique, le réseau de
+  crédit, les faillites en cascade et les distributions individuelles ;
+\item où se trouvent les non-linéarités, seuils, interactions et
+  changements de régime ;
+\item quelles signatures sont robustes aux paramètres, aux graines, à la
+  durée et aux choix de fenêtre statistique ;
+\item quels paramètres semblent actifs, redondants ou assimilables à des
+  conventions d'échelle, afin d'éclairer une éventuelle réduction du
+  modèle avant son successeur M5.
+\end{enumerate}
+
+L'objectif n'est ni de chercher la configuration qui « donne le plus de
+criticité auto-organisée », ni de ne retenir que les résultats compatibles
+avec les rapports antérieurs. Les extinctions, explosions, absences d'effet
+et contradictions sont des résultats à conserver et à expliquer.
+
+\subsection{Recours exceptionnel à M4}
+
+Aucune campagne M4 n'est menée. Le seul recours exécutable à M4 admis par
+ce protocole est le test de parité existant
+(\code{tests/test\_mini.py}), exécuté une fois comme contrôle de provenance
+de la réduction (section~\ref{sec:audit}). Toute affirmation de la présente
+étude est vérifiée sur M4B.
+
+\section{Le modèle M4B}
+\label{sec:modele}
+
+Cette section résume la mécanique exécutée, d'après le code du moteur
+(\code{m4b/model.py}) et son rapport de mécanique
+(\code{report/mecanique\_m4b.pdf}). Elle rend le protocole autonome ; le
+rapport de mécanique reste la référence détaillée.
+
+\subsection{État}
+
+Chaque entité $i$ possède un unique stock réel, son capital productif
+$K_i(t)\ge 0$, exprimé en joules (J), l'unité de ressource du projet. Les
+créances et dettes proviennent exclusivement de contrats de prêt
+$(\ell,b,q,r)$ : prêteuse $\ell$, emprunteuse $b$, principal nominal $q>0$
+(J), taux $r>0$ par pas. Les contrats sont perpétuels : seuls les intérêts
+$rq$ sont servis, le principal n'est jamais amorti et ne se déprécie pas.
+Deux prêts successifs entre la même paire orientée fusionnent au taux moyen
+pondéré. Pour chaque entité, $C_i$ est le total de ses créances, $D_i$ sa
+dette nominale, et sa valeur nette vaut
+\[
+\NW_i = K_i + C_i - D_i .
+\]
+
+\subsection{Chronologie d'un pas}
+
+L'ordre des huit phases fait partie du modèle :
+
+\begin{enumerate}
+\item \textbf{Naissances} : $B_t\sim\mathrm{Poisson}(\lambda)$ entités
+  naissent avec $K_0$ et aucun contrat.
+\item \textbf{Choc} : $K_i \leftarrow K_i e^{\eta_i}$,
+  $\eta_i \overset{\text{iid}}{\sim}
+  \mathcal N(-\sigma^2/2,\,\sigma^2)$, donc $\E[e^{\eta_i}]=1$.
+\item \textbf{Production} : $K_i \leftarrow K_i + \alpha\sqrt{K_i}$, avec
+  $\alpha=1$ (convention d'échelle, hors campagne).
+\item \textbf{Intérêts} : chaque emprunteuse paie son service
+  $S_b=\sum r q$ si $K_b\ge S_b$ ; sinon elle verse tout son capital au
+  prorata et fait \emph{défaut de service}.
+\item \textbf{Dépréciation} : $K_i \leftarrow (1-\delta)K_i$ ; les
+  principaux nominaux sont inchangés.
+\item \textbf{Marché} : un round par entité vivante non défaillante ; on
+  tire $k$ entités distinctes, la plus riche prête à la plus pauvre au taux
+  $r=\sqrt{r_\ell r_b}$ avec $r_x = \alpha/(2\sqrt{K_x})$, vers la cible
+  commune $K^\ast=\sqrt{K_\ell K_b}$ ; le transfert
+  $q=\min(K_\ell-K^\ast,\,\max(0,K^\ast-K_b))$ conserve le capital total et
+  les valeurs nettes des deux parties.
+\item \textbf{Faillites} : toute vivante en défaut de service ou de valeur
+  nette négative meurt ; ses prêteuses perdent l'intégralité de leur
+  créance, ses propres créances sont annulées et son capital résiduel est
+  détruit ; les survivantes devenues insolvables forment la génération
+  suivante, jusqu'au point fixe (cascade).
+\item \textbf{Mesure} : séries, avalanches, instantanés ; aucune phase de
+  mesure ne consomme de tirage aléatoire.
+\end{enumerate}
+
+Une avalanche est une composante faiblement connexe du graphe des arêtes de
+perte restreint aux mortes du pas ; sa taille $s$ est son nombre de mortes,
+sa profondeur la génération maximale, ses racines les membres de la
+première file. La mesure est strictement intra-pas.
+
+\subsection{Statuts d'arrêt}
+
+Une exécution s'arrête à l'horizon $T$, ou avant si la population atteint
+zéro (statut \code{extinction}, absorbant) ou dépasse \code{pop\_max}
+(statut \code{explosion} dans le vocabulaire du moteur). Ce protocole ne
+reprend pas ce vocabulaire à son compte : atteindre \code{pop\_max} est une
+\emph{censure numérique} qui déclenche le diagnostic de la
+section~\ref{sec:popmax}, jamais une conclusion.
+
+\section{Statut expérimental des paramètres}
+\label{sec:parametres}
+
+\begin{center}
+\begin{tabularx}{\textwidth}{@{}llX@{}}
+\toprule
+Paramètre & Défaut & Statut dans l'étude \\
+\midrule
+$\lambda$ (\code{lam}) & 10 & scientifique ; traité d'abord comme axe de
+taille finie et démographique (contrôle de scaling), ensuite seulement
+comme levier économique \\
+$\delta$ (\code{delta}) & 0{,}05 & scientifique : dépréciation du capital \\
+$\sigma$ (\code{sigma}) & 0{,}25 & scientifique : volatilité du choc \\
+$K_0$ (\code{K0}) & 25 & scientifique : capital de naissance \\
+$k$ (\code{k}) & 3 & scientifique, discret : taille de l'échantillon du
+marché local \\
+\code{seed} & --- & réplication stochastique, jamais un mécanisme \\
+$T$ (\code{T}) & 2000 & durée d'observation : contrôle de probité
+temporelle uniquement (section~\ref{sec:temps}) \\
+\code{pop\_max} & 30\,000 & garde-fou d'arrêt : censure, jamais une borne
+dynamique \\
+$\alpha=1$, tolérances & --- & conventions et constantes du moteur, non
+promues en paramètres \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+Le classement d'importance final portera sur $\delta,\sigma,K_0,k$ (leviers
+microscopiques) d'une part, et sur $\lambda$ (taille) d'autre part, sans
+les fusionner dans un classement unique non qualifié. $T$, le burn-in et
+les fenêtres n'entrent dans aucun classement.
+
+\subsection{Rôle strict de l'étude temporelle}
+\label{sec:temps}
+
+La variation de $T$, du burn-in et des fenêtres sert exclusivement à
+vérifier la probité des résultats. Une conclusion n'est robuste dans le
+temps que si : elle persiste lorsque l'horizon est prolongé ; elle ne
+dépend pas d'une seule définition du burn-in ; les métriques cumulatives et
+par fenêtres donnent une lecture compatible ; les dérives résiduelles sont
+quantifiées et visibles. Le burn-in par défaut est $T/4$ ; les burn-ins
+$T/8$ et $T/2$ ainsi que la coupure de la fenêtre par défaut en deux
+demi-fenêtres sont systématiquement calculés. Pour les régimes lents
+(petits $\sigma$ et $\delta$), $T$ pourra être poussé au-delà de 10\,000,
+avec un suivi explicite du coût de calcul et de stockage.
+
+\section{Questions scientifiques}
+
+\begin{enumerate}
+\item \textbf{Régime} : dans quelles régions de l'espace
+  $(\delta,\sigma,K_0,k)$ la population est-elle stationnaire, éteinte, ou
+  en croissance soutenue ? Où sont les frontières et de quelle nature
+  sont-elles (brutales ou graduelles) ?
+\item \textbf{Taille} : quelles grandeurs sont intensives (indépendantes de
+  $\lambda$ après normalisation) et lesquelles portent un effet de taille
+  finie (coupure des avalanches, maximum absolu) ?
+\item \textbf{Crédit et cascades} : comment l'exposition (dette/capital,
+  degrés, concentration) et la propagation (rapport de branchement,
+  fraction induite, profondeur) répondent-elles aux paramètres ?
+\item \textbf{Distributions} : comment les distributions individuelles
+  ($K$, valeur nette, revenu, âge) et les inégalités (Gini, parts hautes)
+  se déforment-elles ?
+\item \textbf{Robustesse} : quelles signatures (exposant de taille
+  d'avalanche, rapport de branchement, $N/\lambda$) sont stables sous
+  graines, durées et fenêtres ?
+\item \textbf{Réduction} : quels paramètres sont actifs, faiblement
+  identifiables, redondants ou assimilables à des conventions d'échelle ?
+\end{enumerate}
+
+\section{Dictionnaire des métriques}
+\label{sec:metriques}
+
+Toutes les métriques fenêtrées sont calculées sur la fenêtre par défaut
+$[T/4,\,t_{\mathrm{fin}}]$ (et sur les fenêtres de contrôle de la
+section~\ref{sec:temps}), où $t_{\mathrm{fin}}\le T$ est le dernier pas
+exécuté. Une fenêtre de moins de 30 pas est déclarée invalide et la cellule
+est traitée comme non mesurable (mais conservée et comptée). L'extraction
+est implémentée dans \code{scripts/lib\_metrics.py} ; chaque run produit un
+JSON de métriques réutilisable.
+
+\subsection{Régime et démographie}
+
+\begin{longtable}{p{0.27\textwidth}p{0.40\textwidth}p{0.08\textwidth}p{0.15\textwidth}}
+\toprule
+Métrique & Définition & Unité & Statut \\
+\midrule
+\endhead
+statut & \code{ok} / \code{extinction} / censure par \code{pop\_max} &
+--- & primaire \\
+$\bar N$ & moyenne de la population sur la fenêtre & entités & primaire \\
+$\bar N/\lambda$ & taille normalisée par l'intensité des naissances
+(loi de Little : $\bar N/\lambda$ estime l'espérance de durée de vie) &
+pas & primaire \\
+pente relative & pente OLS de $N(t)$ multipliée par la longueur de fenêtre,
+rapportée à $\bar N$ ; erreur type corrigée par le temps d'autocorrélation
+intégré $\tau_{\mathrm{int}}$ & --- & primaire \\
+$\tau_{\mathrm{int}}$, ESS & temps d'autocorrélation intégré de $N(t)$ ;
+taille d'échantillon effective $n/\tau_{\mathrm{int}}$ & pas & secondaire \\
+CV de $N$ & écart-type/moyenne de $N(t)$ & --- & secondaire \\
+naissances, morts & moyennes par pas ; taux de mortalité
+$\overline{\mathrm{morts}}/\bar N$ & pas$^{-1}$ & secondaire \\
+âge au décès & moyenne, médiane, q90 des âges dans \code{deaths.csv} &
+pas & secondaire \\
+stationnarité & écart relatif de $\bar N$ entre les deux demi-fenêtres, et
+en unités d'écart-type regroupé & --- & primaire (validité) \\
+\bottomrule
+\end{longtable}
+
+\subsection{Crédit, exposition et réseau}
+
+\begin{longtable}{p{0.27\textwidth}p{0.40\textwidth}p{0.08\textwidth}p{0.15\textwidth}}
+\toprule
+Métrique & Définition & Unité & Statut \\
+\midrule
+\endhead
+prêts par tête & $\overline{n_{\mathrm{prêts}}}/\bar N$ & --- & primaire \\
+dette/capital & $\sum D_i / \sum K_i$ sur l'instantané final & --- &
+primaire \\
+crédit nouveau / capital & volume de prêts nouveaux par pas rapporté à
+$\overline{K_{\mathrm{tot}}}$ & pas$^{-1}$ & secondaire \\
+intérêts / capital & intérêts payés par pas rapportés à
+$\overline{K_{\mathrm{tot}}}$ & pas$^{-1}$ & secondaire \\
+pertes / capital & créances détruites par pas rapportées à
+$\overline{K_{\mathrm{tot}}}$ & pas$^{-1}$ & secondaire \\
+degrés & moyennes et maxima des degrés prêteur et emprunteur (instantané
+final) & --- & secondaire \\
+concentration & Gini des principaux ; part du 1\,\% des plus gros contrats
+& --- & secondaire \\
+fractions exposées & parts d'entités emprunteuses et prêteuses & --- &
+secondaire \\
+\bottomrule
+\end{longtable}
+
+\subsection{Avalanches et propagation causale}
+
+Événements de \code{avalanches.csv} avec $t$ dans la fenêtre. Le seuil bas
+des ajustements est $s_{\min}=2$ (les tailles 1 sont des morts isolées).
+
+\begin{longtable}{p{0.27\textwidth}p{0.40\textwidth}p{0.08\textwidth}p{0.15\textwidth}}
+\toprule
+Métrique & Définition & Unité & Statut \\
+\midrule
+\endhead
+fréquence & événements par pas & pas$^{-1}$ & secondaire \\
+quantiles de taille & médiane, q90, q99, maximum ; maximum rapporté à
+$\bar N$ & --- & primaire \\
+susceptibilité & $\langle s^2\rangle/\langle s\rangle$ & --- & primaire \\
+rapport de branchement & $b = 1 - \sum_a R_a / \sum_a S_a$ ($R_a$ racines,
+$S_a$ taille) ; fraction induite $1-b$ complémentaire & --- & primaire \\
+profondeur & moyenne et maximum des générations & --- & secondaire \\
+exposant $\hat\alpha$ & MLE discrète de $p(s)=s^{-\alpha}/\zeta(\alpha,2)$,
+$s\ge 2$ ; erreur type asymptotique & --- & primaire \\
+loi tronquée & MLE discrète de $p(s)\propto s^{-\alpha}e^{-s/s_c}$ ;
+coupure $s_c$ & --- & primaire \\
+LRT coupure & $2(\ell_{\mathrm{tronquée}}-\ell_{\mathrm{pure}})$, p-valeur
+conservatrice $\tfrac12\chi^2_1$ (paramètre au bord) & --- & secondaire \\
+Vuong PL/LN & test de Vuong loi de puissance contre log-normale discrète
+renormalisée ($z>0$ : puissance favorisée) & --- & primaire \\
+volume causal & moyenne et maximum de \code{volume\_j} & J & secondaire \\
+\bottomrule
+\end{longtable}
+
+\textbf{Règle d'identifiabilité.} Un ajustement de loi n'est tenté que si
+la fenêtre contient au moins 100 avalanches de taille $\ge 2$ ; sinon la
+métrique est marquée \emph{non identifiable} et aucun nombre n'est produit.
+Jamais de conclusion de loi de puissance sur le seul $r^2$ d'une régression
+log-log. Les événements de graines différentes ne sont \emph{jamais}
+fusionnés avant un ajustement : chaque graine est ajustée séparément, puis
+les estimateurs sont agrégés (moyenne, écart-type inter-graines).
+
+\subsection{Distributions individuelles et inégalités}
+
+Sur l'instantané final (et, pour les runs confirmatoires, sur les
+instantanés périodiques après burn-in) : moyenne, médiane, q90, q99,
+maximum, Gini (partie positive), part du décile supérieur et écart-type
+logarithmique de $K$, $\NW$, revenu brut ($P_i + $ intérêts reçus) et
+revenu net. Contrôles : corrélation de Spearman âge--$K$ (effet de
+cohorte), part d'entités à valeur nette négative, renouvellement du haut de
+la distribution (pour les runs à instantanés périodiques : recouvrement du
+top 1\,\% entre instantanés successifs). Statut : Gini de $K$ et part du
+décile sont primaires, le reste secondaire. Les familles sont comparées sur
+les mêmes supports et avec les mêmes règles de troncature.
+
+\subsection{Intégrité numérique}
+
+Par run : identité comptable
+$\Delta K_{\mathrm{tot}} = I_t + G_t + P_t - \Delta_t - X_t$ (résidu
+relatif maximal), contrôle du carnet (\code{book\_errors} de
+\code{summary.json} : contrats orphelins, agrégats, créances $=$ dettes),
+$K\ge0$, durée d'exécution, taille disque, statut d'arrêt. Un run avec
+résidu relatif $>10^{-9}$ ou erreurs de carnet est exclu des estimateurs et
+compté comme anomalie dans le journal.
+
+\section{Plan d'expérience}
+\label{sec:plan}
+
+\subsection{Référence et centre de campagne}
+
+La référence du modèle est
+\[
+\lambda=10,\quad \delta=0{,}05,\quad \sigma=0{,}25,\quad K_0=25,\quad
+k=3,\quad T=2000 .
+\]
+Le centre de la campagne est le même point à $\lambda=30$. Justification :
+au benchmark (section~\ref{sec:audit}), la fenêtre par défaut d'un run de
+référence contient $\sim$2\,100 avalanches de taille $\ge2$ contre
+$\sim$5\,600 à $\lambda=30$, pour un coût de 80\,s par run ; les queues y
+sont mieux identifiées sans changer les grandeurs intensives
+($\bar N/\lambda = 14{,}8$ aux deux tailles). Le lien avec la référence est
+maintenu par l'axe de taille $\lambda\in\{10,30,100\}$, mesuré avec le
+même panel de graines.
+
+\subsection{Panels de graines}
+
+\begin{itemize}
+\item \textbf{Pilotes} : graines $\{1,2\}$.
+\item \textbf{Exploration} (OAT, plan global, coupes 2D) : graines
+  $\{1,2,3\}$, identiques pour toutes les cellules d'une même comparaison
+  (contrastes appariés).
+\item \textbf{Confirmation} : graines $\{11,\dots,15\}$, disjointes de
+  l'exploration ; augmentées au-delà de cinq près d'une frontière de
+  régime ou lorsque la variance inter-graines domine l'effet.
+\end{itemize}
+
+Le partage d'un panel permet des contrastes appariés entre cellules ; on ne
+parlera pas de « common random numbers » au sens strict, car deux
+configurations consomment ensuite des tirages en nombre différent.
+
+\subsection{Volets successifs}
+
+\begin{enumerate}
+\item \textbf{Pilotes d'audit des plages} (graines $\{1,2\}$, $T=2000$) :
+  les coins de l'espace $(\delta,\sigma)\in\{0{,}02;0{,}10\}\times
+  \{0{,}10;0{,}50\}$, les extrêmes $K_0\in\{5,100\}$ et $k\in\{2,10\}$, les
+  contrôles $\sigma=0$ (avec $k=3$, $k=2$ et $\delta=0{,}02$), le coin de
+  mortalité $(K_0{=}5,\sigma{=}0{,}50,\delta{=}0{,}10)$, le centre, un
+  contrôle temporel $T=4000$ au centre, une sonde lente
+  $(\delta{=}0{,}02,\sigma{=}0{,}10)$ à $T=8000$ et une sonde de coût
+  $\lambda=100$ lente. Critères de révision des bornes : une plage n'est
+  retenue que si elle produit au moins un régime non trivial ; un coin qui
+  ne produit que des extinctions immédiates ou des censures est resserré ou
+  documenté comme régime propre.
+\item \textbf{Contrôle de taille} : $\lambda\in\{10,30,100\}$ au centre
+  microscopique, graines d'exploration puis de confirmation ; lecture des
+  grandeurs intensives et du scaling de la coupure $s_c$ et du maximum.
+\item \textbf{Contrôle temporel} : $T\in\{2000,4000\}$ au centre et sur
+  les cellules confirmatoires ; burn-ins $T/8$, $T/4$, $T/2$ ;
+  demi-fenêtres. Prolongation au-delà de $T=8000$ uniquement pour les
+  régimes lents avérés.
+\item \textbf{Courbes OAT} autour du centre ($T=2000$, graines
+  $\{1,2,3\}$) :
+  $\delta\in\{0{,}02;0{,}03;0{,}05;0{,}07;0{,}10\}$,
+  $\sigma\in\{0;0{,}10;0{,}15;0{,}20;0{,}25;0{,}325;0{,}40;0{,}50\}$,
+  $K_0\in\{5;10;25;50;100\}$ (échelle logarithmique),
+  $k\in\{2;3;4;6;10\}$, $\lambda\in\{10;30;100\}$. Objectif : monotonies,
+  seuils, formes non linéaires, avec incertitude inter-graines et
+  contrastes appariés.
+\item \textbf{Plan global espace-remplissant} : hypercube latin stratifié
+  de 64 points sur $(\delta,\sigma,K_0)$ continus
+  ($\delta\in[0{,}02;0{,}10]$ et $\sigma\in[0{,}05;0{,}50]$ linéaires,
+  $K_0\in[5;100]$ log-uniforme) avec équilibrage du facteur discret
+  $k\in\{2,3,4,6,10\}$ (12 ou 13 points par niveau), $\lambda=30$,
+  $T=2000$, graines $\{1,2,3\}$, soit 192 runs. Le plan est engendré par un
+  générateur pseudo-aléatoire dédié de graine 20260717 et sauvegardé dans
+  \code{manifests/}. Aucun indice de Sobol ne sera revendiqué : le plan
+  n'est pas un plan de Saltelli.
+\item \textbf{Coupes 2D ciblées} : deux à trois cartes $7\times7$ (ou
+  résolution adaptée) choisies \emph{après} le screening sur les
+  interactions et frontières candidates, graines $\{1,2,3\}$.
+\item \textbf{Phase confirmatoire} : cellules retenues rejouées à
+  $T=4000$, graines $\{11,\dots,15\}$, écriture enrichie (instantanés
+  périodiques) ; robustesse aux fenêtres exigée. Les runs confirmatoires
+  sont versés dans Simulation Lab avec figures et métadonnées, marqués à
+  conserver.
+\end{enumerate}
+
+\subsection{Analyses de sensibilité}
+
+Lectures complémentaires, jamais un classement unique sans métrique
+précisée :
+
+\begin{itemize}
+\item courbes OAT avec incertitude inter-graines et contrastes appariés ;
+\item corrélations de rang partielles (PRCC) et régressions linéaires
+  standardisées sur le plan global, avec intervalles bootstrap (rééchantillonnage
+  des points du plan) ;
+\item surface de réponse non linéaire (polynôme de degré 2 avec
+  interactions, moindres carrés) validée hors échantillon par validation
+  croisée ; importance par permutation si le pouvoir prédictif hors
+  échantillon le justifie ($R^2_{\mathrm{CV}}>0{,}5$ typiquement) ;
+\item cartes de régime extinction / stationnaire / croissance-censure et
+  diagrammes 2D des interactions confirmées ;
+\item décomposition de la variabilité : pour chaque métrique, part de
+  variance entre cellules (paramètres) et intra-cellule (graines), estimée
+  sur le plan global.
+\end{itemize}
+
+Toute analyse exploratoire ayant servi à choisir des cellules est
+étiquetée comme telle et séparée de la confirmation.
+
+\section{Diagnostic obligatoire du garde-fou \code{pop\_max}}
+\label{sec:popmax}
+
+\code{pop\_max} censure une trajectoire par sécurité ; l'atteindre ne
+démontre jamais une explosion. Pour toute cellule censurée :
+
+\begin{enumerate}
+\item répétition avec plafonds élevés (\code{pop\_max} $\in$
+  \{30\,000 ; 60\,000 ; 120\,000\}) et le même panel de graines ;
+\item examen des pentes, accélérations et temps de franchissement des
+  plafonds successifs, plutôt que de la seule population finale ;
+\item encadrement adaptatif de la frontière par des cellules voisines des
+  deux côtés dans l'espace des paramètres ;
+\item vérification d'un changement qualitatif entre un régime voisin
+  stationnaire (qui peut frôler un plafond sans le franchir durablement) et
+  un régime à croissance soutenue (qui franchit successivement les
+  plafonds) ;
+\item si la moyenne stationnaire augmente continûment jusqu'à croiser un
+  plafond arbitraire, la cellule est classée « censurée par le garde-fou »
+  et non « explosive ».
+\end{enumerate}
+
+Le rapport final montrera le diagnostic par des trajectoires et une carte
+locale, et distinguera formellement changement de régime, forte population
+stationnaire et censure numérique.
+
+\section{Règles de passage à la confirmation et critères d'arrêt}
+\label{sec:confirmation}
+
+\subsection{Sélection des cellules confirmatoires}
+
+Sont retenues pour la phase confirmatoire : (i) le centre et la référence ;
+(ii) l'axe de taille $\lambda\in\{10,30,100\}$ ; (iii) les cellules aux
+plus grands effets standardisés du screening ; (iv) des paires encadrant
+chaque frontière de régime identifiée ; (v) les interactions candidates des
+coupes 2D ; (vi) le contrôle $\sigma=0$. La liste précise, arrêtée après le
+screening, sera consignée dans le rapport préliminaire avec sa
+justification.
+
+\subsection{Critères de confirmation}
+
+Un effet exploratoire est dit \emph{confirmé} si, sur les graines
+$\{11,\dots,15\}$ à $T=4000$ : son signe et son ordre de grandeur
+persistent ; le contraste apparié moyen dépasse deux fois l'écart-type
+inter-graines du contraste (ou l'intervalle à 95\,\% exclut zéro) ; il est
+insensible au choix du burn-in ($T/8$, $T/4$, $T/2$) et cohérent entre
+demi-fenêtres. Sinon, l'effet est rapporté comme non confirmé --- résultat
+négatif à part entière.
+
+\subsection{Critères d'arrêt de la campagne}
+
+La campagne s'arrête lorsque : les volets 1--7 sont exécutés ou
+explicitement comptabilisés comme échecs ou censures ; chaque censure
+\code{pop\_max} a reçu son diagnostic ; les cellules confirmatoires ont
+leurs cinq graines (ou plus près des frontières) ; les métriques primaires
+du centre ont un écart-type inter-graines documenté ; et les rapports sont
+compilés. Aucune cellule n'est exclue silencieusement : toute cellule
+plannifiée apparaît dans les manifestes avec son statut final.
+
+\section{Audit du moteur, benchmark et budget}
+\label{sec:audit}
+
+\subsection{Audit (exécuté le 17 juillet 2026)}
+
+\begin{itemize}
+\item \textbf{Tests moteur} : \code{tests/test\_mini.py}, 6 tests OK en
+  10\,s, dont la \emph{parité exacte M4/M4B} sur deux régimes (graine 0,
+  120 pas, $\lambda=10$, $\sigma=0{,}25$, $k=3$ ; graine 7, 90 pas,
+  $\lambda=18$, $\sigma=0{,}31$, $k=2$) : séries, états individuels,
+  contrats et avalanches identiques champ à champ. C'est l'unique recours
+  exécutable à M4 de l'étude (contrôle de provenance).
+\item \textbf{Tests statistiques} : \code{tests/test\_reporting.py},
+  4 tests OK (manifeste de figures, histogramme adaptatif, Gini/Lorenz,
+  MLE tronquée).
+\item \textbf{Neutralité des mesures} : deux contrôles dédiés --- même
+  configuration exécutée avec écriture minimale puis complète
+  (\code{snapshot\_every} 0 vs 50, \code{individual\_every} 0 vs 1) :
+  \code{series.csv} bit à bit identiques ($\lambda=10$ et $\lambda=30$,
+  graine 0).
+\item \textbf{Intégrité} : sur les six runs de benchmark, résidu comptable
+  relatif maximal $\le 6\cdot10^{-16}$, zéro erreur de carnet.
+\item \textbf{Provenance} : le moteur n'est pas suivi par git ; la
+  provenance est fixée par \code{MODEL\_VERSION} (\code{m4b-mini-3}) et par
+  le condensat SHA-256 des trois fichiers du moteur, tronqué à 16
+  caractères : \code{f3a7ce02cd9185c7}. Ce condensat est inscrit dans
+  chaque manifeste de run et vérifié avant toute réutilisation.
+\item \textbf{Inventaire des runs existants} : Simulation Lab contient 10
+  runs M4B, tous des validations d'intégration ($T\le260$, sauf un run de
+  référence $T=2000$ à une seule graine) ; aucun ne satisfait les critères
+  de réutilisation d'une cellule de campagne (panel de graines, phase,
+  écriture contrôlée). La campagne ne réutilise donc aucun run existant ;
+  tout est reproduit sous manifeste.
+\end{itemize}
+
+\subsection{Benchmark de coût (graine 0, $T=2000$, écriture minimale)}
+
+\begin{center}
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+Cellule & Durée (s) & Population finale & Disque \\
+\midrule
+$\lambda=10$ centre micro. & 24 & 156 & 4{,}0 Mo \\
+$\lambda=30$ & 80 & 441 & 11 Mo \\
+$\lambda=100$ & 291 & 1\,569 & 36 Mo \\
+$\lambda=30$, instantanés/100 pas & 83 & 441 & 13 Mo \\
+$\lambda=10$, écriture complète & 39 & 156 & 30 Mo \\
+$\lambda=10$, $\delta=0{,}02$, $\sigma=0{,}10$ & 42 & 230 & 4{,}1 Mo \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Le coût croît approximativement comme $\lambda\,T$ (population
+proportionnelle à $\lambda$, marché en un round par tête). L'écriture
+d'instantanés périodiques est quasi gratuite ; la table longitudinale
+individuelle complète domine le disque et reste réservée aux besoins
+explicites.
+
+\subsection{Budget}
+
+Machine : 8 cœurs, 31 Go de RAM, $\sim$106 Go libres. Au plus 6 processus
+simultanés (2 cœurs laissés au système), un processus par run. Budget
+prévisionnel de production : pilotes $\sim$30 runs ; OAT $\sim$70 runs ;
+plan global 192 runs ; coupes 2D $\sim$200--300 runs ; confirmation
+$\sim$60--80 runs ($T=4000$) ; diagnostics \code{pop\_max} selon besoin.
+Soit de l'ordre de 600 runs, $\sim$15--20 h CPU, $\sim$2 à 3 h de mur en
+parallèle, et $\sim$5--8 Go de disque en écriture minimale --- dans le
+budget de la machine. Les runs de screening utilisent
+\code{snapshot\_every=0} et \code{individual\_every=0} (neutralité
+démontrée ci-dessus) ; les runs confirmatoires activent les instantanés
+périodiques.
+
+\section{Infrastructure et traçabilité}
+
+\begin{itemize}
+\item \textbf{Arborescence} : \path{scripts/} (exécution, métriques,
+  analyses), \path{manifests/} (plans et échecs), \path{results/runs/}
+  (données primaires par run), \path{results/metrics/} (JSON de
+  métriques), \path{figures/} et \path{report/}.
+\item \textbf{Identifiant de run} : \code{m4b\_} suivi des 12 premiers
+  caractères hexadécimaux du SHA-256 de la configuration canonique
+  complète (paramètres, graine, horizon, \code{pop\_max}, options
+  d'écriture, condensat du moteur). Déterministe et non ambigu.
+\item \textbf{Manifeste par run} : version et condensat du moteur,
+  paramètres, graine, horizon, options d'écriture, statut du modèle,
+  $t_{\mathrm{fin}}$, population finale, comptes globaux, erreurs de
+  carnet, durée, taille disque, chemin des données, date et machine.
+\item \textbf{Reprise} : les scripts d'exécution sautent toute cellule
+  dont le manifeste est valide (même condensat moteur) et relancent le
+  reste ; ils sont relançables après interruption.
+\item \textbf{Journal technique} : \code{JOURNAL.md} dans le dossier de
+  campagne, tenu au fil de l'eau (décisions, anomalies, résultats
+  négatifs).
+\item \textbf{Livrables} : les interprétations scientifiques sont dans
+  les trois rapports LaTeX (protocole, rapport préliminaire, rapport
+  final) ; les CSV/JSON sont des annexes techniques. Chaque
+  figure et tableau des rapports doit être reproductible depuis les
+  manifestes ; l'annexe de traçabilité du rapport final liste chaque run
+  cité avec son identifiant, ses paramètres, sa graine et son statut.
+\end{itemize}
+
+\section*{Hors périmètre : horizon M5}
+\addcontentsline{toc}{section}{Hors périmètre : horizon M5}
+
+L'étude ne modifie pas le moteur, n'implémente aucune réduction de
+paramètres, ne fait varier aucun paramètre en cours de run et n'annonce
+aucun effet rebond. Le rapport final devra en revanche livrer : les
+baselines et unités qui permettront d'isoler l'effet du futur exposant de
+concavité $\gamma$ ($F_\gamma(K)=\alpha K^\gamma$, $\gamma=1/2$ étant le
+cas M4B) ; les variables nécessaires à une future mesure d'effet rebond au
+sens de Sorrell et Dimitropoulos (2008) ; et une feuille de route pour
+l'étude analytique (points fixes, échelles, conditions de stationnarité,
+prédictions falsifiables).
+
+\end{document}

@@ -1,0 +1,128 @@
+{
+ "run": "m4_4__bras__free__control__seed0",
+ "run_path": "m4_4_rebond_credit_soc/results/campaign/arms/free/control/seed0",
+ "generator": "m4_4_rebond_credit_soc/scripts/reporting_bridge.py -> m4_3_credit_soc/reporting.py (labels FR)",
+ "conversion": "scripts/lab_svg_vers_pdf.py (librsvg + cairo, vectoriel, aucune retouche du contenu)",
+ "figures": [
+  {
+   "name": "lab_macro_overview",
+   "lab_figure": "macro_overview",
+   "source_svg": "m4_4_rebond_credit_soc/results/campaign/arms/free/control/seed0/figures/macro_overview.svg",
+   "sha256_svg": "7b699e7a63a34874e5c3a5fea6199f2c1599afc22fd6f8e28e742eb823a1df90",
+   "sha256_pdf": "e2f8e70feda40382be08fcdf6f405eeb464f93c910588c3c427204f4a918905c",
+   "size_pt": [
+    1212,
+    835
+   ],
+   "description": "Capital total, nouveau crédit, population et rapport dettes/capital (ce dernier mesuré aux instantanés). Encart de gauche : zoom sur le capital et la population, sur une fenêtre d'au plus 300 pas ; les deux grandeurs y sont encadrées sur la même fraction de leur axe, donc à la même position relative dans leur courbe mère. Encart de droite : même fenêtre d'abscisses pour le nouveau crédit, cadré sur ses propres données. Les rectangles de la vue complète repèrent la fenêtre, chacun sur l'axe vertical de sa grandeur."
+  },
+  {
+   "name": "lab_instantaneous_life_expectancy_by_leverage",
+   "lab_figure": "instantaneous_life_expectancy_by_leverage",
+   "source_svg": "m4_4_rebond_credit_soc/results/campaign/arms/free/control/seed0/figures/instantaneous_life_expectancy_by_leverage.svg",
+   "sha256_svg": "f945644d305b6d79263f96777d17f2155c10dc61d6c8c9f4ddf28d20608dec03",
+   "sha256_pdf": "445ca0d694ef16569fcf350b8a6b4ceee8fdcfc1374395d8f01ef0defdd3f3bf",
+   "size_pt": [
+    1233,
+    478
+   ],
+   "description": "Vie restante d'une entité, tronquée à un horizon H adaptatif (≈99,9e percentile des âges au décès après burn-in, plafonné par la marge de recul disponible). À gauche : tous les landmarks. À droite : moyenne conditionnelle par classes équipeuplées, avec bande interdécile."
+  },
+  {
+   "name": "lab_gini_networth_interest",
+   "lab_figure": "gini_networth_interest",
+   "source_svg": "m4_4_rebond_credit_soc/results/campaign/arms/free/control/seed0/figures/gini_networth_interest.svg",
+   "sha256_svg": "9a2787bdd6746fc3573b274cce754ca9f6770d03b7562cceeb959da71d6d5c05",
+   "sha256_pdf": "18cc326d031d6046ea6371480edd6059e6c704a8bd213d4f74168083b287bc99",
+   "size_pt": [
+    874,
+    460
+   ],
+   "description": "Coefficient de Gini de la valeur nette NW et des intérêts reçus aux instantanés. Les valeurs négatives sont ramenées à 0, le Gini n'étant pas défini sinon."
+  },
+  {
+   "name": "lab_lorenz_networth",
+   "lab_figure": "lorenz_networth",
+   "source_svg": "m4_4_rebond_credit_soc/results/campaign/arms/free/control/seed0/figures/lorenz_networth.svg",
+   "sha256_svg": "05b36133051f935ae744c19ca87d139b5b4f750d24f1fedce5e7dfc268e4eb47",
+   "sha256_pdf": "6b4c82fa0a60e6e4086a45517053ba1328b4419b903af5ee11ad497e0146dbc7",
+   "size_pt": [
+    622,
+    568
+   ],
+   "description": "Courbes de Lorenz de « Valeur nette NW (valeurs négatives ramenées à 0) » à chaque instantané ; trait fin et pâle pour les instantanés intermédiaires, la couleur étant d'autant plus dense que le pas est grand, trait plein et couleur sœur pour l'état final. Les pas représentés sont donnés par `intermediate_steps` et `final_step`."
+  },
+  {
+   "name": "lab_entity_networth_histo_temporal_mean",
+   "lab_figure": "entity_networth_histo_temporal_mean",
+   "source_svg": "m4_4_rebond_credit_soc/results/campaign/arms/free/control/seed0/figures/entity_networth_histo_temporal_mean.svg",
+   "sha256_svg": "f32ff81b0b171c697cfd46048c4f70867b65a7a3702ea61e7cf0786e46fd5daf",
+   "sha256_pdf": "dc1dba3900f830147ba64c71af26dbcf77bc9ca3835f99649f77853ff95b7dcc",
+   "size_pt": [
+    827,
+    491
+   ],
+   "description": "Densité de « Valeur nette NW (J) », moyenne pondérée par le temps sur les instantanés ; barres horizontales = étendue du bin adaptatif, barres verticales = enveloppe D1–D9 entre instantanés ; bande claire = régression de queue en loi de puissance."
+  },
+  {
+   "name": "lab_soc_top_decile_renewal",
+   "lab_figure": "soc_top_decile_renewal",
+   "source_svg": "m4_4_rebond_credit_soc/results/campaign/arms/free/control/seed0/figures/soc_top_decile_renewal.svg",
+   "sha256_svg": "5881bf9eb825894304b6bdd375eda0e2eb6739ece793a863d0e8cb3a5c6ae590",
+   "sha256_pdf": "267830107955b0f4f33b221ea9ff01650ee1a4243d9293227cac7f0cb16b8bc4",
+   "size_pt": [
+    873,
+    495
+   ],
+   "description": "Part des entités du décile supérieur de valeur nette du premier instantané encore présentes dans ce décile au fil du temps, et ajustement exponentiel dont τ est le temps caractéristique de perte de mémoire de l'état initial."
+  },
+  {
+   "name": "lab_avalanche_size_ccdf",
+   "lab_figure": "avalanche_size_ccdf",
+   "source_svg": "m4_4_rebond_credit_soc/results/campaign/arms/free/control/seed0/figures/avalanche_size_ccdf.svg",
+   "sha256_svg": "57ef1008a47395b42661361ee7ea3a55a8bb33fa14039e2d08f57131a7ec3ee7",
+   "sha256_pdf": "22db2184bfb0007cc5c91302481e0ff5485b1a0a1f3a125694ac81e1009abba9",
+   "size_pt": [
+    829,
+    527
+   ],
+   "description": "Probabilité de survie des tailles d'avalanches, et survie du même ajustement tronqué."
+  },
+  {
+   "name": "lab_avalanche_depth",
+   "lab_figure": "avalanche_depth",
+   "source_svg": "m4_4_rebond_credit_soc/results/campaign/arms/free/control/seed0/figures/avalanche_depth.svg",
+   "sha256_svg": "2ae53bf51ebc239433346153320dbddd13c03a7fe4926773efd83631ce343d79",
+   "sha256_pdf": "1acfac75cd3bc214e1d54a1a23dee25d0fc8a3240248b044bdcfa74cfb717181",
+   "size_pt": [
+    728,
+    491
+   ],
+   "description": "Profondeur causale d'une avalanche selon sa taille."
+  },
+  {
+   "name": "lab_avalanche_roots_share",
+   "lab_figure": "avalanche_roots_share",
+   "source_svg": "m4_4_rebond_credit_soc/results/campaign/arms/free/control/seed0/figures/avalanche_roots_share.svg",
+   "sha256_svg": "24840885d0ed6a8d4f5ee3f95371ae1d0184168ee48da6fb13f0b2eac98ecd79",
+   "sha256_pdf": "39c057c63554a329d99df69a0490106fbbdeddce99874001b25cf4aa16919c04",
+   "size_pt": [
+    729,
+    491
+   ],
+   "description": "Part des faillites racines dans une avalanche, selon sa taille. Les courbes grises en arrière-plan sont les isocourbes y = k/x : une avalanche à k racines exactement tombe sur la k-ième."
+  },
+  {
+   "name": "lab_loan_roles_contracts",
+   "lab_figure": "loan_roles_contracts",
+   "source_svg": "m4_4_rebond_credit_soc/results/campaign/arms/free/control/seed0/figures/loan_roles_contracts.svg",
+   "sha256_svg": "c5d589e0d33fbad8d8fd2c6c375b74c9e1a037ac4e3a4b6009ccbc8af5556abf",
+   "sha256_pdf": "21a8c04684f3dd588337908a5094c927ea5e4dc1f8d628c4a674ed8498ea6c02",
+   "size_pt": [
+    688,
+    586
+   ],
+   "description": "Distribution jointe du nombre de contrats actifs détenus par une entité comme prêteuse et comme emprunteuse, en fin de run, avec régression par moindres carrés ordinaires. Les coefficients de cette régression sont dans le champ `ols` (pente, ordonnée à l'origine, R², erreur-type)."
+  }
+ ]
+}

@@ -1,0 +1,42 @@
+{
+ "plan": "hypothese_K0",
+ "note": "Hypothèse structurelle (27/07, datée avant runs) : τ̂ piloté par K0/K*_aut. À γ=1/2 fixe, K0 reproduit les rapports des cellules extrêmes (0,301 et 0,0036). Prédictions si vraie : τ̂≈1,89 et ≈1,99.",
+ "cells": [
+  {
+   "name": "k0_match_g033",
+   "parameters": {
+    "A": 1.0,
+    "lam": 30.0,
+    "delta": 0.05,
+    "sigma": 0.25,
+    "K0": 108.7,
+    "pop_max": 30000,
+    "snapshot_every": 0,
+    "individual_every": 0,
+    "figures": false,
+    "gamma": 0.5,
+    "T": 4000
+   },
+   "n_runs": 3,
+   "base_seed": 1
+  },
+  {
+   "name": "k0_match_g067",
+   "parameters": {
+    "A": 1.0,
+    "lam": 30.0,
+    "delta": 0.05,
+    "sigma": 0.25,
+    "K0": 1.31,
+    "pop_max": 30000,
+    "snapshot_every": 0,
+    "individual_every": 0,
+    "figures": false,
+    "gamma": 0.5,
+    "T": 4000
+   },
+   "n_runs": 3,
+   "base_seed": 1
+  }
+ ]
+}

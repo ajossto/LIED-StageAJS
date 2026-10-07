@@ -1,0 +1,513 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[french]{babel}
+\usepackage{lmodern}
+\usepackage{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{tabularx}
+\usepackage{xltabular}
+\usepackage{longtable}
+\usepackage{float}
+\usepackage{enumitem}
+\usepackage[strings]{underscore}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\input{typo_francaise}
+\geometry{margin=2.6cm}
+\setlist[itemize]{leftmargin=*,nosep}
+\setlist[enumerate]{leftmargin=*,nosep}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue!45!black,
+  citecolor=blue!45!black,
+  urlcolor=blue!45!black,
+  pdftitle={Conception d'un modèle à distribution Boltzmann-Pareto émergente par auto-organisation critique},
+  pdfauthor={Claude (Fable 5)}
+}
+
+\newcommand{\NW}{\mathit{NW}}
+\renewcommand{\arraystretch}{1.2}
+
+\title{Conception d'un modèle à distribution Boltzmann-Pareto\\[2pt]
+émergente par auto-organisation critique\\[6pt]
+\large Document de conception --- modèle \texttt{M2}}
+\author{Claude (Fable~5), à la demande d'Anatole Joseph-Stouls}
+\date{2 juillet 2026}
+
+\begin{document}
+\maketitle
+
+\begin{center}
+\begin{minipage}{0.86\linewidth}
+\small\centering
+\textbf{Statut du document~:} document de conception --- pas d'implémentation ici.\\
+Destinataire~: agent d'implémentation (Opus~4.8~+ Sonnet).
+\end{minipage}
+\end{center}
+
+\bigskip
+
+\section*{Sources}
+\addcontentsline{toc}{section}{Sources}
+
+Sources lues à l'appui (citées dans le texte)~:
+
+\begin{itemize}
+  \item Bouchaud \& Mézard 2000 (\emph{Wealth condensation in a simple model of economy}, \texttt{arXiv:cond-mat/0002374}) --- noté \textbf{[BM]}, équations numérotées comme dans l'article.
+  \item Yakovenko \& Rosser 2009 (\emph{Colloquium: Statistical mechanics of money, wealth, and income}, Rev.~Mod.~Phys.~81, 1703) --- noté \textbf{[YR]}.
+  \item \texttt{anciens_modeles/modele-27-04-WIP/src/\{config,models,simulation\}.py} --- noté \textbf{[WIP]}.
+  \item \texttt{anciens_modeles/modele-27-04-WIP/RAPPORT_ELAGAGE_MODELE.md} --- noté \textbf{[ÉLAGAGE]}.
+  \item \texttt{anciens_modeles/modele-27-04-WIP/analyse_des_equations_de_la_vie_d_une_entite.pdf} --- noté \textbf{[ODE]}.
+  \item \texttt{recherche/analyse_distributions_taille_revenu/latex/rapport.pdf} --- noté \textbf{[DISTRIB]}.
+  \item Explorations numériques faites pour ce document~: \texttt{recherche/conception_boltzmann_pareto_soc/exploration/} (prototype \texttt{proto_m1.py}, sondes \texttt{probe_body_age.py}, \texttt{probe_renewal.py}, logs \texttt{run_*.log}) --- notées \textbf{[E0]--[E7]}, résumées en annexe~A. \textbf{L'annexe~A est une pièce maîtresse~:} elle documente une chaîne de sept résultats d'ablation qui contraint fortement la conception~; la lire avant d'implémenter.
+\end{itemize}
+
+\tableofcontents
+
+\section*{Résumé exécutif}
+\addcontentsline{toc}{section}{Résumé exécutif}
+
+On propose un modèle réduit --- \textbf{M2} --- à bilan \textbf{une colonne} (un scalaire de capital $w \geq 0$ par entité, plus un carnet de contrats de prêt), à \textbf{règles et paramètres strictement identiques} pour toutes les entités. La variable cible de la forme Boltzmann-Pareto est la \textbf{valeur nette} $\NW = w + \text{créances} - \text{dettes} - d_0$ (et le revenu qui en découle), pas le capital brut.
+
+Les cinq éléments constitutifs, chacun adossé à un résultat d'exploration~:
+
+\begin{enumerate}
+  \item \textbf{Extraction concave} $\Pi = \alpha\sqrt{w}$ (imposée~; $\alpha \equiv 1$ homogène)~: chauffage lent, borne la croissance propre. Elle crée un point fixe autarcique commun $x_+ = (\alpha/\delta)^2$ qui est l'ennemi de la dispersion [E0] --- tout le reste du modèle sert à tenir la population loin de ce point.
+  \item \textbf{Crédit conservatif à intérêts perpétuels, contrats nominaux}~: transfert du principal = échange additif conservatif (candidat corps de Boltzmann)~; intérêts $r\cdot q$ et pertes de défaut $\propto$ encours = canal multiplicatif (queue de Pareto). L'asymétrie « le capital réel se déprécie, la dette nominale non » est l'horloge de fragilité du réseau [E1] --- reprise concentrée du montage dispersé du [WIP] (passif inné + réévaluation paresseuse).
+  \item \textbf{Condition marginale au coût effectif} $r+\delta$~: sans elle, tout entrant se sur-endette fatalement et la classe supérieure est une aristocratie figée de l'ère d'amorçage [E2, E3]~; avec elle seule, plus personne ne meurt [E4]. Ce dilemme (sur-levier mortel~/~sous-levier immortel) est le résultat central des explorations~: \textbf{la stochasticité d'appariement seule (piste n\textsuperscript{o}~2 du cahier des charges) ne suffit pas} à produire le régime.
+  \item \textbf{Choc multiplicatif commun en loi} $w \to w\cdot e^{\eta}$, $\eta \sim \mathcal N(-\sigma^2/2,\, \sigma^2)$ identique pour toutes (piste n\textsuperscript{o}~1 du cahier des charges~; le $\eta_i(t)\,W_i$ de [BM]~éq.~2). Nécessaire, mais pas suffisant~: le drift $\sqrt{w}$ domine tout bruit multiplicatif aux petits $w$, donc le bord $w=0$ est inatteignable et les chocs seuls ne tuent personne [E5].
+  \item \textbf{Bilan de naissance tendu}~: dotation $w_0$ et \textbf{dette d'amorçage nominale} $d_0$ (marge $\varepsilon_0 = w_0 - d_0 \ll w_0$~; le couple $(200, 190)$ du [WIP] en une colonne), dans la \textbf{fenêtre de naissance}
+  \[
+    \frac{1}{(\sigma+\delta)^2} \;\lesssim\; w_0 \;<\; w^*(\bar r+\delta), \qquad \varepsilon_0 \;\lesssim\; \sigma w_0
+  \]
+  (établie [E6]--[E7]~: en dessous, personne ne meurt~; au-dessus, le crédit meurt). $d_0$ fournit le \textbf{plancher d'absorption} qui rend le processus de valeur nette mortel pour toutes les entités, à tout âge [E6] --- c'est lui qui transforme $\NW$ en variable de Boltzmann~: bruit additif~+ multiplicatif, absorption en~0, réinjection à $\varepsilon_0$.
+\end{enumerate}
+
+Le bornage de la population est endogène ($N^* = \lambda\cdot\mathbb E[\text{vie}]$, vérifié [E1, E6])~; la stabilité de l'exposant de queue est attendue d'une rétroaction auto-critique levier~$\leftrightarrow$~cascades (\S\,3.4) --- c'est l'hypothèse de la thèse, testable, pas un acquis.
+
+Paramètres~: $\sim$18~$\to$~\textbf{6}, dont deux conventions d'échelle ($\delta$~= temps, $\lambda$~= taille), et quatre paramètres de forme ($k$ connectivité, $\sigma$ variance du choc commun, $w_0$ et $d_0$ bilan de naissance). Aucun n'est un « paramètre à régler pour obtenir la bonne distribution » \textbf{si et seulement si} la forme Boltzmann-Pareto est robuste sur leur domaine --- c'est le critère d'acceptation étendu (\S\,6.5)~; [BM] a le même statut~: $\mu = 1 + J/\sigma^2$ dépend de $(J,\sigma)$ mais la \emph{forme} Pareto n'exige aucun réglage.
+
+\textbf{Statut honnête} (mis à jour après le run long [E7c])~: la pile complète M2 réalise déjà, dans le prototype, \textbf{trois des quatre cibles}~: population bornée endogènement~; \textbf{queue de Pareto d'exposant stable par fenêtres} ($\alpha_{\mathrm{CSN}} = 2{,}80/2{,}86/2{,}88$ à $x_{\min}$ quasi constant, loi de puissance $\gg$ log-normale, exactement le critère que le [WIP] rate)~; \textbf{classes dynamiques et non démographiques} ($\mathrm{corr}(\text{âge}, \log w) \approx 0{,}12$ contre $0{,}88$--$0{,}95$ au [WIP]~; queue de même exposant à âge contrôlé). Le \textbf{corps exponentiel n'est pas encore acquis} (log-normale/gamma gagnent l'AIC sur le corps) --- c'est le chantier restant, désormais posé dans de bonnes conditions (le corps est peuplé par la dynamique, plus par la pyramide des âges)~: expérience X1 du \S\,8.
+
+\section{Principe directeur~: une invariance d'échelle, deux régimes, un seul réseau}
+\label{sec:principe}
+
+La forme Boltzmann-Pareto exige deux régimes statistiques ([YR] Sec.~IV.B)~:
+
+\begin{itemize}
+  \item un régime \textbf{additif}~: fluctuations de $x$ indépendantes de $x$ (drift $-A_0$, variance $2B_0$), avec plancher ($x\geq 0$). Solution stationnaire de Fokker-Planck~: $P(x) \propto e^{-x/T}$, $T = B_0/A_0$ --- le corps de Boltzmann ([YR]~éq.~7 et 24)~;
+  \item un régime \textbf{multiplicatif invariant d'échelle}~: $\Delta x \propto x$ (Gibrat), $A = a\cdot x$, $B = b\cdot x^2$. Solution~: $P(x) \propto x^{-1-\mu}$ --- la queue de Pareto. C'est l'équation de richesse [BM]~éq.~(2), solution moyen-champ [BM]~éq.~(7)~: $P(w) \propto \exp(-(\mu-1)/w)/w^{1+\mu}$, $\mu = 1 + J/\sigma^2$.
+\end{itemize}
+
+[YR]~éq.~(25) donne la forme complète quand les deux coexistent ($A = A_0 + a\cdot x$, $B = B_0 + b\cdot x^2$)~: exponentielle sous le croisement $x_0 = \sqrt{B_0/b}$, Pareto au-dessus, sans recollement ad hoc --- le croisement est l'échelle où la variance multiplicative dépasse la variance additive. \textbf{C'est le squelette analytique de M2.}
+
+Le principe directeur~: les deux régimes sortent du \textbf{même système} vu de deux positions différentes~:
+
+\begin{itemize}
+  \item pour une entité \textbf{près du plancher} (valeur nette faible, emprunteuse ou entrante), les flux qui bougent $\NW$ --- principal reçu/prêté, intérêts payés, marge de naissance $\varepsilon_0$ --- sont dimensionnés par le marché et les contreparties, pas par sa propre valeur nette $\to$ \textbf{bruit additif conservatif + absorption à 0} $\to$ corps de Boltzmann sur $\NW$~;
+  \item pour une entité \textbf{établie} (créancière, $w$ grand), le choc commun $\sigma$ agit sur tout son capital, le carnet de créances croît $\propto$ capacité de prêt, les revenus d'intérêts et les pertes de cascade sont $\propto$ encours $\to$ \textbf{fluctuations multiplicatives} $\to$ queue de Pareto par Kesten ([BM]~éq.~8-9).
+\end{itemize}
+
+L'extraction concave $\alpha\sqrt{w}$ n'est pas le générateur de la forme~: c'est le chauffage lent qui maintient le système hors équilibre (analogue du flux d'énergie externe, [YR] Sec.~II.B) et la borne qui interdit toute queue par le canal travail. La dépréciation $\delta$ est le puits. L'invariance d'échelle de la queue vient de ce que tous les flux du canal capital sont proportionnels aux encours~; ce qui doit être auto-organisé, c'est la \emph{valeur} de $\mu$ (\S\,3.4).
+
+\section{Le modèle M2~: état, équations, séquence}
+\label{sec:modele}
+
+\subsection{État}
+\label{sec:etat}
+
+\begin{itemize}
+  \item Entité $i$~: capital $w_i \geq 0$ (une colonne)~; \textbf{dette d'amorçage} $d_0$ (constante universelle de naissance, nominale, jamais remboursée ni dépréciée --- reprise du passif inné $B$ du [WIP], \texttt{models.py:79}).
+  \item Contrat de prêt~: (prêteur $l$, emprunteur $b$, principal \textbf{nominal} $q$, taux $r$), perpétuel, $q$ constant de la création à l'annulation.
+  \item Dérivés~: créances $C_i = \sum q$ ($i$~prêteur), dettes $D_i = \sum q$ ($i$~emprunteur), \textbf{valeur nette} $\NW_i = w_i + C_i - D_i - d_0$ (variable cible), revenu $y_i = \alpha\sqrt{w_i} + (\text{intérêts reçus})_i$, revenu net $= y_i - (\text{intérêts payés})_i$.
+\end{itemize}
+
+\subsection{Séquence d'un pas (7 phases, ordre fixé)}
+\label{sec:sequence}
+
+\begin{enumerate}
+  \item \textbf{Naissances}~: $n \sim \mathrm{Poisson}(\lambda)$~; dotation $w_0$, dette d'amorçage $d_0$ ($\NW$ initial $= \varepsilon_0 = w_0 - d_0 > 0$, petit). \textbf{$N(0)=0$} --- pas de cohorte fondatrice (motif~: \S\,7.2, [E2-E3]). \textbf{Fenêtre de naissance} (contrainte de cohérence quantitative, établie par [E6]-[E7])~:
+  \[
+    \frac{1}{(\sigma+\delta)^2} \;\lesssim\; w_0 \;<\; w^*(\bar r+\delta) \qquad\text{et}\qquad \varepsilon_0 \;\lesssim\; \sigma\cdot w_0
+  \]
+  Borne basse~: la diffusion doit dominer le drift $\sqrt{w}$ à la naissance ($\sigma w_0 \gtrsim \alpha\sqrt{w_0} - \delta w_0$), sinon aucun entrant ne meurt jamais [E7a]~; borne haute~: l'entrante doit naître demandeuse de crédit, sinon le marché meurt [E6]~; marge $\varepsilon_0$ de l'ordre d'un choc, sinon la mortalité infantile est négligeable [E7b]. Cette fenêtre n'est pas un réglage de la forme~: c'est la condition d'existence simultanée du crédit et de la mortalité --- la vérifier est le premier test d'implémentation.
+  \item \textbf{Choc multiplicatif commun}~: $w_i \leftarrow w_i\cdot e^{\eta_i}$, $\eta_i$ i.i.d.\ $\sim \mathcal N(-\sigma^2/2,\sigma^2)$ --- même loi pour toutes, $\mathbb E[e^\eta]=1$ (pas de drift moyen~; ne pas répéter le bug du brownien d'$\alpha$ du [WIP], \texttt{simulation.py:1320}). C'est le $\eta_i(t)W_i$ de [BM]~; il frappe le capital réel, PAS les contrats (les créances ne sont pas un refuge sans risque pour autant~: elles portent le risque de défaut --- c'est la boucle SOC \S\,3.4).
+  \item \textbf{Extraction}~: $w_i \mathrel{+}= \alpha\sqrt{w_i}$, $\alpha \equiv 1$.
+  \item \textbf{Service des intérêts}~: chaque contrat, l'emprunteur paie $r\cdot q$ au prêteur depuis $w$ (transfert conservatif). Paiement partiel possible (tout le $w$ disponible) puis \textbf{défaut} $\to$ faillite en phase~7.
+  \item \textbf{Dépréciation}~: $w_i \leftarrow (1-\delta)\cdot w_i$. Contrats et $d_0$ \textbf{non dépréciés} (asymétrie constitutive, \S\,2.4).
+  \item \textbf{Marché du crédit}~: $\lfloor N/k \rfloor$ rounds~; par round, tirage uniforme de $k$ entités vivantes~; prêteur = $w$ maximal, emprunteur = $w$ minimal (équivalent au tri par $r^* = \alpha/(2\sqrt w)$ à $\alpha$ homogène)~; taux $r = \sqrt{r^*_l\cdot r^*_b}$ (moyenne géométrique, convention symétrique sans paramètre)~; volume~:
+  \begin{align*}
+    \rho &= r+\delta && \text{coût/rendement effectif d'une unité de capital échangée}\\
+    w^*(\rho) &= \left(\frac{\alpha}{2\rho}\right)^2 && \text{cible commune de capital}\\
+    q_{\mathrm{dem}} &= \max\bigl(0,\; w^*(\rho) - w_b\bigr) && \text{demande de l'emprunteur}\\
+    q_{\mathrm{off}} &= \max\bigl(0,\; w_l - w^*(\rho)\bigr) && \text{offre du prêteur}
+  \end{align*}
+  volume~: $q = \min(q_{\mathrm{dem}}, q_{\mathrm{off}})$~; transfert conservatif $w_l \mathrel{-}= q$, $w_b \mathrel{+}= q$~; création du contrat $(l, b, q, r)$.
+
+  Une seule règle symétrique --- « viser $w^*(\rho)$~; prêter l'excédent, emprunter le manque » --- définit les deux rôles~; personne n'est prêteur ou emprunteur par nature. Répond aux notes inline du [WIP] (\texttt{simulation.py:867} rounds aléatoires, \texttt{:900} pool unique, \texttt{:870} suppression de \texttt{MAX_IDLE}).
+  \item \textbf{Faillites en cascade}~: critère $\NW_i < 0$ (ou défaut en phase~4). À la faillite de $i$~: contrats empruntés annulés (perte sèche des prêteurs $\to$ choc multiplicatif négatif $\to$ contagion)~; contrats prêtés transférés aux créanciers au prorata ([WIP] \texttt{process_single_failure} phase~2, sans réévaluation puisque nominal)~; capital résiduel $w_i$ réparti aux créanciers au prorata~; $d_0$ éteinte (personne ne la détient). Itérer jusqu'à stabilité. La mort est la seule sortie.
+\end{enumerate}
+
+Pas d'auto-investissement paramétrique (une colonne $\Rightarrow$ $\varphi \equiv 1$ structurel), pas d'amortissement, pas de reliquéfaction, pas de contrainte d'endettement paramétrique, pas de prime $\mu$, pas de seuil de participation.
+
+\subsection{Ce que chaque mécanisme porte (engagement explicite)}
+\label{sec:tableau-mecanismes}
+
+\begin{xltabular}{\linewidth}{@{}>{\raggedright\arraybackslash}p{4.1cm}X>{\raggedright\arraybackslash}p{4.6cm}@{}}
+\toprule
+Mécanisme & Rôle dans la forme cible & Preuve/statut \\
+\midrule
+\endhead
+Extraction $\alpha\sqrt{w}$ & chauffage~; anti-queue du canal travail~; fixe $x_+=(\alpha/\delta)^2$ & imposé~; [E0] montre son piège (point fixe commun) \\
+Transferts conservatifs (principal, intérêts) & bruit additif du corps de Boltzmann sur $\NW$ & hypothèse H1, test \S\,6.1 + X1 \\
+Intérêts perpétuels + pertes de défaut $\propto$ encours & canal multiplicatif $\to$ queue de Pareto (Kesten) & loi de puissance déjà favorisée [E1]~; stabilité de $\mu$ = hypothèse H2, test \S\,6.2 \\
+Choc commun $\sigma$ (piste 1) & variance multiplicative de base $2\sigma^2$ ([BM])~; anti-esquive comportementale & nécessité démontrée [E4-E5] \\
+Asymétrie nominal/réel & horloge de fragilité (défauts, cascades) & nécessité démontrée [E0] vs [E1] \\
+Dette d'amorçage $d_0$ & plancher d'absorption de $\NW$~; mortalité universelle à tout âge & nécessité démontrée [E5] vs [E6] \\
+Coût effectif $r+\delta$ & classes = états traversables (renouvellement), pas cohortes & nécessité démontrée [E2-E3] vs [E4] \\
+Faillite $\NW<0$ + cascade + naissances Poisson, $N(0)=0$ & absorption/réinjection du corps~; chocs négatifs de la queue~; bornage $N^*=\lambda\cdot\mathbb E[\text{vie}]$ & bornage vérifié [E1, E6] \\
+\bottomrule
+\end{xltabular}
+
+\subsection{Justification de l'asymétrie nominal/réel}
+\label{sec:asymetrie}
+
+\begin{enumerate}
+  \item \textbf{Nécessité} [E0]~: dette dépréciée au même taux que le capital $\Rightarrow$ le prêt est neutre, personne ne meurt, population non bornée, distribution piquée (P90/P10~=~1,1). Le [WIP] obtient sa mortalité par le même principe, dispersé sur trois dispositifs~: passif inné jamais déprécié, dépréciation du liquide face à lui, réévaluation paresseuse des créances (\texttt{simulation.py:470}, \texttt{compute_hidden_fragility} \texttt{:1034}). M2 le concentre en UNE asymétrie lisible~: la dette ne s'use pas.
+  \item \textbf{Minimalité}~: l'alternative --- un coût fixe de subsistance $c_0$ --- serait un paramètre d'échelle exogène pur ([ODE] cas~C). L'asymétrie nominal/réel crée le flux net négatif \emph{en unités des encours existants}, sans échelle nouvelle.
+  \item \textbf{Conséquence assumée}~: le coût effectif d'un emprunt est $r+\delta$ et la règle de décision doit l'utiliser (\S\,2.5), sinon artefact [E2-E3].
+\end{enumerate}
+
+\subsection{Le dilemme du levier et sa résolution (cœur de la conception)}
+\label{sec:dilemme-levier}
+
+Chaîne de résultats (détails annexe~A)~:
+
+\begin{itemize}
+  \item \textbf{Règle naïve} (coût $r$, comme \texttt{_borrower_qmax} du [WIP] \texttt{simulation.py:716} transposé au bilan une colonne)~: tout entrant s'endette jusqu'à la zone non viable ([ODE] cas~E), meurt jeune (âge médian 16-20 pas)~; la classe supérieure = entités nées avant l'existence de créanciers, survie 100~\% sur 1000~pas, zéro renouvellement [E2]~; le corps = cohorte en transit (déciles bas~: âge médian 2-16~pas, dette $\approx$ 100~\% du capital) [E3]. C'est l'artefact [DISTRIB] recréé.
+  \item \textbf{Règle corrigée} (coût $r+\delta$)~: l'emprunt devient petit et survivable\ldots et la mortalité disparaît totalement (0~faillite, population non bornée) [E4]. Le choc commun $\sigma$ ne la restaure pas~: le drift $\sqrt{w}$ domine tout bruit multiplicatif borné aux petits $w$, le bord $w=0$ est inatteignable [E5].
+  \item \textbf{Résolution}~: le plancher ne peut être ni comportemental ni sur $w$ --- il doit être sur la \textbf{valeur nette}, via une dette incompressible~: $d_0$. Avec $(w_0, d_0)$ tendus ($\varepsilon_0 \ll w_0$), chaque entité --- entrante ou établie --- meurt si son $\NW$ franchit~0 sous les chocs, les charges d'intérêts ou les pertes de créances. Mortalité universelle rétablie, population bornée [E6]. Le crédit reste actif si $w_0 < w^*(\bar r+\delta)$ (l'entrante naît demandeuse) --- contrainte de cohérence entre $w_0$ et la zone d'échange, vérifiée en [E7].
+\end{itemize}
+
+Aucun de ces trois éléments n'est un paramètre de calibration de la forme~: la règle $r+\delta$ est l'optimalité correctement écrite (zéro paramètre), $d_0$ reprend le passif inné existant du [WIP], $\sigma$ est la piste n\textsuperscript{o}~1 du cahier des charges.
+
+\section{Argument analytique}
+\label{sec:analytique}
+
+\subsection{Dynamique individuelle effective}
+\label{sec:dynamique-individuelle}
+
+Entre événements discrets ([ODE])~:
+\[
+  \frac{dw}{dt} = -\delta w + \alpha\sqrt{w} + c_{\mathrm{eff}}, \qquad
+  c_{\mathrm{eff}} = \text{intérêts reçus} - \text{payés} \pm \text{principal} \pm \text{pertes}
+\]
+
+\begin{itemize}
+  \item \textbf{Autarcie} ($c_{\mathrm{eff}}=0$)~: convergence vers $x_+ = (\alpha/\delta)^2$, commun --- le régime à détruire [E0].
+  \item \textbf{Endettée}~: cas~C de [ODE] (seuil de viabilité $x_-$) puis cas~E si les charges s'accumulent --- l'horloge de fragilité.
+  \item \textbf{Créancière}~: cas~A tant que le portefeuille paie, chocs négatifs brutaux aux défauts ($c_{\mathrm{eff}}\downarrow$ discontinu) --- le terme multiplicatif bruité demandé par le cahier des charges (« ODE + terme multiplicatif bruité issu des intérêts nets »).
+\end{itemize}
+
+En sus, phase~2~: $d(\ln w)$ reçoit $\eta - \sigma^2/2$ par pas (choc commun), et le plancher $\NW=0$ remplace le bord $w=0$ (inatteignable, [E5]).
+
+\subsection{Fokker-Planck sur la valeur nette ([YR]~éq.~23-25)}
+\label{sec:fokker-planck}
+
+Variable $X=\NW$. Moments des incréments conditionnés à $X$~:
+
+\begin{itemize}
+  \item \textbf{$X$ petit (corps)}~: les flux dominants --- marge de naissance $\varepsilon_0$, intérêts payés/reçus par contrat ($r\cdot q$ dimensionné par le marché), transferts de principal, extraction nette $\alpha\sqrt{w}-\delta w$ évaluée près de $w^*(\rho)$ --- sont \textbf{bornés et indépendants de $X$}. D'où $A(X)\approx A_0$ (drift net, tiré vers le bas par les charges nominales), $B(X)\approx B_0$ (variance additive des flux de crédit $+\ \sigma^2\cdot w^*(\rho)^2$ du choc commun à capital borné). Plancher absorbant $X=0$ (faillite)~+ réinjection à $\varepsilon_0$ (naissances) $\Rightarrow$ corps exponentiel $P(X)\propto e^{-X/T}$, $T=B_0/A_0$ \textbf{endogène} (rapport de flux mesurables). Condition de validité (leçon [E3])~: le bas de la distribution doit être peuplé par la \emph{dynamique} (établies redescendues, endettées en sursis), pas par une pyramide des âges --- garde-fou \S\,6.3.
+  \item \textbf{$X$ grand (queue)}~: l'entité est créancière, son capital réel et son carnet scalent avec $X$~: chocs communs $\sigma\cdot w$, revenus $\bar r\cdot C$, pertes de cascade $\propto C$, tous $\propto X \Rightarrow A(X)\approx a\cdot X$, $B(X)\approx b\cdot X^2 \Rightarrow P(X)\propto X^{-1-\mu}$ avec $\mu = 1+a/b$ au sens [YR]~(25).
+  \item \textbf{Croisement}~: $X_0=\sqrt{B_0/b}$ --- la frontière de classes, endogène.
+\end{itemize}
+
+\subsection{La queue comme processus de Kesten}
+\label{sec:kesten}
+
+Pour une établie~: $X(t+1) = \Lambda(t)\cdot X(t) + \beta(t)$ avec
+\[
+  \Lambda(t) = 1 + \eta(t) - \delta\cdot h(t) + \bar r\cdot c(t) - \ell(t)
+\]
+($h=w/X$ part réelle, $c=C/X$ part financiarisée, $\ell$ = pertes de défaut relatives, intermittentes~; $\beta$ = flux additifs). Queue en loi de puissance dès que $\Lambda$ fluctue avec $\mathbb E[\ln\Lambda] < 0 < P(\Lambda>1)$~; $\mu$ est la racine de $\mathbb E[\Lambda^\mu]=1$ ([BM]~éq.~8-9). Repères analytiques~:
+
+\begin{itemize}
+  \item sans crédit ($h=1$, $c=\ell=0$), $\eta$ log-normal~: $\mu \approx 1+2\delta/\sigma^2$ --- première échelle de contrôle~: $\sigma^2$ trop petit devant $\delta \Rightarrow$ queue très raide ($\mu\approx 11$ pour $\delta=0{,}05$, $\sigma=0{,}1$)~; la fenêtre intéressante commence vers $\sigma^2 \gtrsim \delta$~;
+  \item le crédit \emph{abaisse} $\mu$ pour les financiarisées ($\bar r\cdot c$ compense $\delta\cdot h$~: $\mathbb E[\Lambda]\uparrow$) et le \emph{relève} par $\ell$ (cascades). $\mu_{\mathrm{effectif}}$ sort de cette compétition --- d'où \S\,3.4.
+\end{itemize}
+
+À l'opposé de la diffusion log-normale sans rappel qui produit la fausse queue du [WIP] ([DISTRIB]~: exposant dérivant $5{,}4 \to 3{,}1$), un Kesten stationnaire a un $\mu$ constant --- critère \S\,6.2.
+
+\subsection{L'hypothèse auto-critique sur \texorpdfstring{$\mu$}{mu} (H2 --- la thèse elle-même)}
+\label{sec:soc-hyp}
+
+$\mu$ résout $\mathbb E[\Lambda^\mu]=1$, avec $\Lambda$ couplé à l'état macroscopique par une rétroaction de signe stabilisant~:
+
+\begin{itemize}
+  \item queue plus lourde ($\mu\downarrow$) $\Rightarrow$ crédit plus concentré, chaînes d'intermédiation plus profondes (bifurcation $k\geq 3$, [ÉLAGAGE]~\S\,3) $\Rightarrow$ cascades plus grandes $\Rightarrow \ell\uparrow \Rightarrow \mu\uparrow$~;
+  \item queue plus légère ($\mu\uparrow$) $\Rightarrow$ crédit dispersé, cascades amorties $\Rightarrow \ell\downarrow \Rightarrow \mu\downarrow$.
+\end{itemize}
+
+Le niveau de levier joue le rôle du paramètre de contrôle rappelé vers sa valeur critique --- c'est l'analogue exact du bornage démographique ($\mathbb E[\text{vie}]$ répond au levier). Prédictions testables~: (i)~$\mu$ stationnaire par fenêtres~; (ii)~$\mu$ insensible à $\lambda$, $w_0$, et à $k$ dans la phase SOC~; (iii)~distribution des tailles de cascade à queue lourde au voisinage du régime où $\mu$ est stable~; (iv)~si $\sigma\to 0$, le moteur multiplicatif de base s'éteint et $\mu$ doit se raidir continûment (pas de discontinuité --- le crédit maintient un canal multiplicatif résiduel).
+\textbf{Statut~: hypothèse à démontrer, pas un acquis. Le protocole \S\,6.2 est le juge.}
+
+\subsection{Le revenu}
+\label{sec:revenu}
+
+$y = \alpha\sqrt{w} + \text{intérêts reçus}$. Pour le corps ($w\approx w^*(\rho)$ borné), $y$ hérite du bruit additif $\to$ corps de $y$ exponentiel si celui de $\NW$ l'est (à vérifier séparément, [DISTRIB] rappelle qu'à $\alpha$ homogène taille et revenu ne sont PAS des tests indépendants pour la composante extraction~; l'indépendance vient des intérêts). Pour la queue, $y\approx \bar r\cdot C \propto \NW \to$ même exposant $\mu$. Mesurer les deux (\S\,6).
+
+\section{Classification des \texorpdfstring{$\sim$18}{~18} paramètres de \texttt{config.py}}
+\label{sec:parametres}
+
+Catégories~: \textbf{N} = normalisation d'unités~; \textbf{F} = fusion~; \textbf{E} = endogénéisé~; \textbf{X} = éliminé~; \textbf{T} = transformé~; \textbf{R} = résiduel justifié.
+
+\begin{xltabular}{\linewidth}{@{}>{\raggedright\arraybackslash}p{3.1cm}c>{\raggedright\arraybackslash}p{2.7cm}X@{}}
+\toprule
+Paramètre [WIP] (valeur) & Cat. & Devenir dans M2 & Justification \\
+\midrule
+\endhead
+\texttt{alpha} (1.0) & \textbf{N} & $\alpha\equiv 1$ & Unité de flux/capital ($w\to F\cdot w \iff \alpha\to\sqrt F\cdot\alpha$, [ÉLAGAGE]~\S\,10). Fixe $x_+=(\alpha/\delta)^2$. \\
+\texttt{alpha_min}, \texttt{alpha_max} (0.8, 1.2) & \textbf{X} & supprimés & Hétérogénéité innée interdite (contrainte n\textsuperscript{o}~1)~; brise-symétrie remplacé par la position dans le réseau + l'histoire des chocs communs. \\
+\texttt{alpha_sigma_brownien} (0.005) & \textbf{T} & $\to$ $\sigma$, choc commun par pas sur $w$ & Le brownien d'$\alpha$ était (a)~bugué (drift positif, \texttt{simulation.py:1320}, cause de 80~\% de runs non stationnaires [DISTRIB]) et (b)~une hétérogénéité \emph{persistante} déguisée ($\alpha_i$ dérive et se fige). Remplacé par un choc i.i.d.\ par pas, loi commune, sans mémoire~: c'est la piste n\textsuperscript{o}~1 du cahier des charges, et le $\sigma^2$ de [BM]. Nécessité démontrée [E4-E5]. \\
+\texttt{seuil_ratio_liquide_passif} (0.05) & \textbf{X} & supprimé & Plus de compartiments~; le rôle de réserve est repris par la cible $w^*(\rho)$. \\
+\texttt{theta} (0.35) & \textbf{X} & supprimé ($\theta\equiv 1$) & $\theta$ compensait le coût mal écrit ($r$ au lieu de $r+\delta$) $\to$ sur-levier structurel à brider. Avec $\rho=r+\delta$, $q_{\mathrm{dem}}$ est déjà borné [E4]. Si un $\theta<1$ se révélait de nouveau nécessaire, le déclarer comme limite (retour du paramètre à régler). \\
+\texttt{mu} prime (0.05) & \textbf{X} & supprimé & Raffinement comportemental sans rôle dans la forme. \\
+\texttt{seuil_ratio_endettement} (1) & \textbf{X} & supprimé & [ÉLAGAGE]~: peu d'effet~; [E2]~: ne mord pas quand le coût est correct. La contrainte réelle est $\NW\geq 0$. \\
+\texttt{fraction_taux_emprunteur} (0.2) & \textbf{N} & moyenne géométrique & Règles identiques $\Rightarrow$ aucune asymétrie justifiable~; $\sqrt{r^*_l\cdot r^*_b}$ est le choix symétrique invariant d'échelle. Convention à figer, pas à régler. \\
+\texttt{taux_amortissement} (0) & \textbf{X} & supprimé & Déjà nul~; refus explicite de l'auteur (\texttt{simulation.py:1228}). Prêts perpétuels. \\
+\texttt{n_entites_initiales} (100) & \textbf{X} & $N(0)=0$ & La cohorte fondatrice est la source des fausses classes ([DISTRIB]~\S\,1~; [E2-E3]). Amorçage par le flux seul, transitoire exclu des mesures. \\
+\texttt{lambda_creation} (2) & \textbf{R} échelle & $\lambda$ & Ne fixe que $N^*=\lambda\cdot\mathbb E[\text{vie}]$ (vérifié [E1]~: $\lambda=2/10/30 \Rightarrow N^*\approx 29\lambda$, formes semblables). Analogue du $N$ de [YR]. \\
+\texttt{actif_liquide_initial} (200) & \textbf{T}+\textbf{R} & dotation $w_0$ & Une colonne $\Rightarrow$ un seul montant brut. Fenêtre de naissance~: $1/(\sigma+\delta)^2 \lesssim w_0 < w^*(\bar r+\delta)$ [E6-E7] (et $w_0 \ll x_+$). Piste d'endogénéisation (X3~: $w_0$ = quantile bas des $w$ vivants --- « héritage social ») pour éliminer l'échelle. \\
+\texttt{passif_inne_initial} (190) & \textbf{T} (gardé!) & \textbf{dette d'amorçage $d_0$} & D'abord classé « à éliminer »~; les explorations [E4-E5-E6] ont montré qu'il est le \textbf{plancher d'absorption irremplaçable}~: sans lui, coût correct + chocs communs $\Rightarrow$ zéro mortalité. C'est le seul dispositif qui rende $\NW$ mortel pour toutes, à tout âge, sans règle comportementale. Paramétrer par la marge $\varepsilon_0=w_0-d_0$. \\
+\texttt{taux_depreciation_liquide}, \texttt{_endo}, \texttt{_exo} ($3\times 0.05$) & \textbf{F}+\textbf{N} & un seul $\delta$ & Déjà égaux. $\delta$ = unité de temps (temps continu~: $\delta\equiv 1$~; en discret $\delta\ll 1$ = résolution, invariance $\delta\to\delta/2$ à vérifier, X5). La dépréciation \emph{des créances} disparaît en tant que règle~: contrats nominaux (\S\,2.4), fragilité explicite au lieu de cachée. \\
+\texttt{coefficient_reliquefaction} (0.5) & \textbf{X} & supprimé & Plus de compartiments à convertir~; peu sollicité ([ÉLAGAGE]~\S\,4). \\
+\texttt{fraction_auto_investissement} (0.5) & \textbf{X} & supprimé ($\varphi\equiv 1$) & Une colonne~: le produit d'extraction est du capital productif. \\
+\texttt{n_candidats_pool} $k$ (3) & \textbf{R} contrôle SOC & $k$ & Connectivité du marché, analogue du $c$ de [BM]~éq.~16-17 ($\mu$ dépend faiblement de $c$). Transition stable~$\to$~SOC à $k\geq 3$ ([ÉLAGAGE]). La thèse exige la robustesse du régime pour $k\geq 3$ (X5) --- $k$ est un paramètre de contrôle à balayer, pas à calibrer. \\
+\texttt{max_credit_iterations} ($10^5$) & \textbf{X} & supprimé & Boucle = $\lfloor N/k \rfloor$ rounds (chaque entité échantillonnée $\sim$1~fois/pas~: définition du pas de marché, pas un paramètre). Supprime aussi \texttt{MAX_IDLE}~$= \max(20,k^2)$ caché (\texttt{simulation.py:870}). \\
+\texttt{epsilon} ($10^{-6}$) & \textbf{N} & garde numérique & Sans rôle dynamique ([ÉLAGAGE]~: $10^{-3}$ conserve le régime). \\
+\texttt{duree_simulation}, \texttt{seed}, \texttt{log_events}, \texttt{freq_snapshot} & --- & techniques & Hors modèle. \\
+\bottomrule
+\end{xltabular}
+
+\medskip
+\textbf{Liste finale des paramètres de M2 et irréductibilité~:}
+
+\begin{xltabular}{\linewidth}{@{}l>{\raggedright\arraybackslash}p{3.4cm}X@{}}
+\toprule
+Paramètre & Statut & Irréductibilité \\
+\midrule
+\endhead
+$\alpha=1$ & convention d'unité & --- \\
+$\delta$ & convention d'unité de temps & réductible en principe (X5) \\
+$\lambda$ & convention de taille $N^*$ & réductible (extensivité vérifiée [E1]) \\
+$k$ & contrôle SOC (connectivité) & structurel~; robustesse exigée pour $k\geq 3$ (X5) \\
+$\sigma$ & variance du choc commun (piste 1) & irréductible --- c'est le $\sigma^2$ de [BM]~; la forme ne doit PAS en dépendre, seulement $\mu$ (X4)~; repère~: $\sigma^2\gtrsim\delta$ \\
+$w_0, d_0$ (ou $w_0,\varepsilon_0$) & bilan de naissance & $w_0$ contraint ($<w^*(\bar r+\delta)$) avec piste d'endogénéisation (X3)~; $\varepsilon_0$ = échelle de réinjection du corps --- candidat naturel~: la forme exige seulement $\varepsilon_0\ll T$ mesurée (X3) \\
+\bottomrule
+\end{xltabular}
+
+\medskip
+Verdict sur l'objectif « zéro paramètre réglé »~: il reste $(k,\sigma,\varepsilon_0/w_0)$ comme paramètres de forme. L'objectif est atteint \textbf{au sens de [BM]} --- aucun ne doit être ajusté pour obtenir la \emph{forme} Boltzmann-Pareto, seulement les valeurs de $(T,\mu,X_0)$ --- et ce point devient un critère d'acceptation explicite (\S\,6.5). Tout écart (une forme qui n'apparaît que dans un îlot fin de $(\sigma,\varepsilon_0)$) devra être rapporté comme réfutation partielle de la thèse.
+
+\section{Garder / transformer / abandonner (par rapport au 27-04-WIP)}
+\label{sec:garder-transformer}
+
+\textbf{Gardé}
+\begin{itemize}
+  \item Extraction concave $\alpha\sqrt{P}\to\alpha\sqrt{w}$ (imposée).
+  \item Prêts perpétuels à intérêts payés chaque pas.
+  \item Passif inné $\to$ dette d'amorçage $d_0$ (rôle enfin explicité~: plancher d'absorption).
+  \item Faillite par insolvabilité + cascades + redistribution des créances au prorata (\texttt{process_single_failure} \texttt{simulation.py:1060}, simplifiée~: plus de réévaluation).
+  \item Naissances Poisson($\lambda$).
+  \item Esprit du matching local $k$ (reformulé).
+\end{itemize}
+
+\textbf{Transformé}
+\begin{itemize}
+  \item Bilan 8~postes (\texttt{models.py:72-88}) $\to$ $w$~+ contrats~+ $d_0$~; $\NW$ calculé.
+  \item Marché~: double pool trié + \texttt{MAX_IDLE} + $\theta$ + $\mu$ + seuil L/P (\texttt{credit_market_iteration} \texttt{simulation.py:854}) $\to$ $\lfloor N/k \rfloor$ rounds, tirage uniforme, règle symétrique unique « viser $w^*(r+\delta)$ ».
+  \item Fragilité~: \{passif inné + réévaluation paresseuse + dépréciations asymétriques\} $\to$ \{contrats nominaux vs capital déprécié\} + \{$d_0$\}.
+  \item Condition marginale~: coût $r \to$ coût $r+\delta$ (la transformation la plus lourde de conséquences, [E2]-[E4]).
+  \item Brownien d'$\alpha$ (hétérogénéité persistante, buguée) $\to$ choc commun i.i.d.\ par pas $\sigma$ (sans mémoire, sans drift).
+  \item Amorçage~: 100~entités à $t=0$ $\to$ $N(0)=0$.
+  \item Dotation ($L=200$, $B=190$) $\to$ $(w_0,d_0)$ avec $w_0<w^*(\bar r+\delta)$.
+\end{itemize}
+
+\textbf{Abandonné} (motivé par [ÉLAGAGE]~\S\,4, la contrainte une-colonne, ou la traque des paramètres cachés)
+\begin{itemize}
+  \item Hétérogénéité d'$\alpha$ innée (contrainte utilisateur) et brownienne persistante.
+  \item Auto-investissement paramétrique, reliquéfaction, cession de créances en paiement (\texttt{_ensure_payment_capacity} étapes~2-4), amortissement, contrainte d'endettement, prime $\mu$, seuil L/P, comptabilité endo/exo, réévaluation paresseuse, \texttt{MAX_IDLE}, $\theta$.
+\end{itemize}
+
+\section{Protocole de validation (critère d'acceptation)}
+\label{sec:protocole}
+
+Mesures sur \textbf{$\NW$, revenu ET capital $w$} ($\NW$ = variable théorique du \S\,3, revenu = variable de la thèse énoncée, $w$ = diagnostic), \textbf{$\geq 3$ seeds}, $t\geq 500$ (hors transitoire). Réutiliser \texttt{recherche/analyse_distributions_taille_revenu/scripts/} (\texttt{families.py}~: échelle AIC/BIC exponentielle/gamma/log-normale/Fisk~; \texttt{tail_test.py}~: CSN + LR contre log-normale). Le prototype \texttt{proto_m1.py} contient déjà l'outillage (fonctions \texttt{body_fits}, \texttt{analyze}, pooling par fenêtres).
+
+\subsection{Corps exponentiel (cible dure)}
+\label{sec:corps-exp}
+
+\begin{itemize}
+  \item MLE $e^{-x/T}$ sur les $\sim$95~\% inférieurs, comparé par AIC/BIC à gamma, log-normale, Fisk~: l'exponentielle gagne ou $\Delta\mathrm{AIC}\leq 2$ --- pas « une Fisk étroite fait l'affaire ».
+  \item QQ-plot exponentiel (linéarité, pas de coude).
+  \item Diagnostics rapides~: mode en~0 (histogramme décroissant dès le premier bin), med/mean du corps $\approx \ln 2 \approx 0{,}69$.
+  \item \textbf{Test mécanistique}~: $T$ mesurée $\approx B_0/A_0$ mesurés indépendamment (variance et drift des incréments de $\NW$ des entités du corps) --- vérifie que le corps vient du canal identifié et pas d'un accident de forme.
+\end{itemize}
+
+\subsection{Queue de Pareto stable (cible dure --- là où le [WIP] échoue~: $5{,}4\to 3{,}1$)}
+\label{sec:queue-pareto}
+
+\begin{itemize}
+  \item CSN ($x_{\min}$ par KS, MLE de l'exposant, LR contre log-normale) sur \textbf{pools par fenêtres}~: instantanés tous les 50~pas agrégés sur $[500,1000)$, $[1000,1500)$, $[1500,2000)$ --- jamais de pooling entre seeds ni entre régimes ([DISTRIB]~\S\,Méthode)~; les instantanés espacés de 50~pas $\gg$ vie médiane ($\sim$20-30~pas) sont quasi indépendants.
+  \item \textbf{Piège mesuré [E1]}~: l'estimateur $x_{\min}$ saute entre régimes de lecture selon la fenêtre ($\alpha=2{,}8$ à $x_{\min}=11$ vs $6{,}5$ à $x_{\min}=41$ sur les mêmes données) $\to$ imposer EN PLUS la comparaison des exposants \textbf{à $x_{\min}$ commun fixé} (médiane des $x_{\min}$ de fenêtres).
+  \item Critère~: $|\mu_i-\mu_j|$ entre fenêtres compatible avec le bootstrap des pools, sur 3~fenêtres $\times$ 3~seeds, ET LR(loi de puissance vs log-normale) $>0$ systématique. Ajouter une $4^{\text{e}}$ fenêtre ($T=3000$-4000) si le coût le permet.
+\end{itemize}
+
+\subsection{Garde-fou anti-cohorte d'âge}
+\label{sec:garde-fou-cohorte}
+
+\begin{itemize}
+  \item $\mathrm{corr}(\text{âge},\log\NW)$ nettement $<0{,}85$ ([WIP]~: $0{,}88$-$0{,}95$~; prototype naïf~: $0{,}75$ --- encore trop) et décroissante avec $T$.
+  \item \textbf{Forme à âge contrôlé}~: refaire 6.1-6.2 sur tranches d'âge fixes (p.~ex.\ $[50,150)$ et $[150,400)$) --- corps exponentiel et queue non triviale doivent subsister DANS une tranche (le prototype naïf échoue~: $\alpha_{\mathrm{CSN}}\approx 11$-14 à âge contrôlé [E1-pool]).
+  \item \textbf{Renouvellement} (sonde \texttt{probe_renewal.py})~: entre $t$ et $t+1000$, top décile de $\NW$~: fraction née dans les 1000~derniers pas $\geq \sim$20~\%, survie du top $<100$~\%, dates de naissance du top étalées (pas concentrées sur l'ère d'amorçage).
+  \item Distribution des âges~: décroissance régulière, pas de trou démographique ([DISTRIB]~fig.~cohorte).
+\end{itemize}
+
+\subsection{Diagnostics SOC (soutien de la thèse)}
+\label{sec:diagnostics-soc}
+
+\begin{itemize}
+  \item Distribution des tailles de cascade~: queue lourde pour $k\geq 3$, coupure exponentielle pour $k\leq 2$ (la transition d'[ÉLAGAGE]).
+  \item Stationnarité~: $N(t)$, $W_{\mathrm{tot}}(t)$, volume de prêts plats hors transitoire~; $N(t)$ PLAT et non affine (une pente affine = classe immortelle qui s'accumule, \S\,7.1).
+  \item Mortalité du top décile par fenêtre de 500~pas $>0$.
+\end{itemize}
+
+\subsection{Robustesse de la forme (le « sans réglage fin »)}
+\label{sec:robustesse}
+
+Grille $\sigma\in\{0{,}15;\,0{,}25;\,0{,}35\} \times \varepsilon_0/w_0\in\{0{,}05;\,0{,}25;\,0{,}5\} \times k\in\{3,6\}$, 1~seed par case + 3~seeds sur la diagonale~: la \textbf{forme} (6.1 + 6.2 + 6.3) doit passer sur toute la grille~; seuls $T$, $\mu$, $X_0$ bougent, de façon monotone et lisse. Un îlot fin de validité = réfutation partielle à rapporter.
+
+\section{Population ouverte~: bornage endogène et structure d'âge}
+\label{sec:population-ouverte}
+
+\subsection{Mécanisme de bornage}
+\label{sec:bornage}
+
+$\mathbb E[\text{vie}]$ est finie pour toutes les positions~: entrantes (marge $\varepsilon_0$ sous les chocs), endettées (horloge nominal/réel), créancières (cascades + chocs communs sur $w$). D'où $N^*=\lambda\cdot\mathbb E[\text{vie}]$ stationnaire sans capacité de charge exogène --- vérifié [E1] ($N^*\approx 29\lambda$, $\lambda\in\{2,10,30\}$) et [E6] (mortalité restaurée par $d_0$). $\lambda$ ne fixe que l'échelle~; $\mathbb E[\text{vie}]$ est la réponse endogène du système (rétroaction \S\,3.4). Symptôme à surveiller~: $N(t)$ affine = sous-population immortelle ([E4]~: $+\lambda t$ exactement quand la mortalité s'éteint). L'hypothèse utilisateur (« immortalité des originaires = artefact d'espérance de vie $\gg$ durée simulée ») est confirmée en pire dans le prototype naïf~: mortalité du top strictement nulle sur 1000~pas [E2]~; M2 doit la rendre positive (critère 6.4).
+
+\subsection{Amorçage sans cohorte fondatrice}
+\label{sec:amorcage}
+
+$N(0)=0$~; le monde démarre vide et s'amorce par le flux ([E1]~: les premières arrivées croissent en autarcie, le crédit démarre dès qu'un gradient existe). L'ère d'amorçage ($t\lesssim 100$) reste un environnement anormalement favorable $\to$ exclusion du transitoire des mesures ET garde-fou de renouvellement 6.3 (l'avantage d'époque doit s'éteindre).
+
+\subsection{Pourquoi les classes de M2 ne seraient pas des cohortes}
+\label{sec:classes-etats}
+
+L'appartenance de classe est un \textbf{état} (position par rapport à $w^*(\rho)$ et niveau de $\NW$), pas une date~: montée possible (croissance autofinancée + chance des chocs communs + carnet de créances), descente possible (cascades, suites de chocs négatifs --- [BM]~éq.~14-15~: temps de relaxation fini, « rich become poor on a finite time scale »). La différence structurelle avec le prototype naïf~: le coût $r+\delta$ rend la traversée montante survivable [E4], $d_0+\sigma$ rendent la position haute mortelle [E6]. Si 6.3 échoue malgré cela, appliquer \S\,8-X2 et rapporter la limite.
+
+\section{Incertitudes et expériences à lancer avant de coder la version définitive}
+\label{sec:incertitudes}
+
+Par priorité. X1-X2 conditionnent la conception~; X3-X6 la valident.
+
+\paragraph{X1 --- Le corps exponentiel sur \texorpdfstring{$\NW$}{NW} (LA question ouverte, cible dure).}
+Constat~: le prototype naïf donne un corps Fisk/gamma qui est une pyramide des âges [E3]~; la conception révisée déplace le corps sur $\NW$ avec plancher d'absorption réel ($d_0$) et bruit additif de crédit. Plan~:
+\begin{enumerate}
+  \item sur M2 complet ([E7] et au-delà)~: composition en âge des déciles bas de $\NW$ (\texttt{probe_body_age.py} adapté à $\NW$) --- exiger des établies redescendues~;
+  \item test 6.1 complet sur $\NW$ et revenu~; mesurer $A_0$, $B_0$ sur les incréments et vérifier $T\approx B_0/A_0$~;
+  \item si le corps reste piqué~: renforcer le canal additif à $\sigma$ constant --- churn de principal plus fréquent ($k\uparrow$ à $\text{rounds}\cdot k = N$ constant), taux plus élevés (via la borne basse~: moyenne arithmétique au lieu de géométrique)~;
+  \item si le corps sort en $\exp(-(\mu-1)/X)\cdot X^{-1-\mu}$ de [BM]~éq.~(7) (coupure basse, pas exponentielle)~: le dire explicitement et confronter les deux ajustements --- ce serait un résultat de recherche en soi (le corps [BM] contre le corps [YR]), pas un échec à maquiller.
+\end{enumerate}
+
+\paragraph{X2 --- Renouvellement des classes dans M2 complet.}
+\texttt{probe_renewal.py} sur M2 (top décile de $\NW$)~: fraction du top née dans les 1000~derniers pas $\geq \sim$20~\%, survie $<100$~\%, mortalité du top $>0$ par fenêtre. Si échec, variantes ordonnées~: (i)~annulation symétrique des créances de la faillie au lieu du transfert au prorata (vide les carnets aux cascades $\to$ redistribution brutale vers le bas)~; (ii)~$\sigma\uparrow$ (chocs plus lourds sur les établies)~; (iii)~en dernier recours, revisiter le partage prorata du capital résiduel (le donner aux créancières renforce les grosses --- variante~: destruction pure).
+
+\paragraph{X3 --- Bilan de naissance~: sensibilité et endogénéisation.}
+(i)~Sensibilité~: $(w_0,\varepsilon_0/w_0)$ sur la grille 6.5 --- la forme ne doit pas en dépendre. (ii)~Variante endogène~: $w_0(t)$ = quantile 10~\% des $w$ vivants, $d_0$ = même règle $- \varepsilon_0$\ldots attention à la boucle démographique~; flag \texttt{--w0-endo} déjà présent dans le prototype. (iii)~Vérifier la contrainte de cohérence $w_0<w^*(\bar r+\delta)$ en régime (sinon le crédit meurt, [E6]).
+
+\paragraph{X4 --- Validation complète.} Protocole \S\,6 intégral sur M2, 3~seeds $\times$ $T=2000$ (idéalement 4000), $\lambda=30$ (pools $\approx$ 8000~points/fenêtre suffisants pour CSN, [E1]).
+
+\paragraph{X5 --- Conventions d'échelle.} $\delta\to\delta/2$ à $2T$ (invariance de temps)~; $\lambda=10/30/100$ (extensivité)~; $k\in\{2,3,4,6\}$ (transition SOC + robustesse --- la démonstration « sans réglage »).
+
+\paragraph{X6 --- Diagnostics SOC.} Tailles de cascade par $k$~; corrélation concentration du crédit $\leftrightarrow$ taille de cascade (mécanisme \S\,3.4)~; réponse de $\mu$ à $\sigma$ (prédiction~iv du \S\,3.4).
+
+\paragraph{Incertitudes assumées (à reporter telles quelles dans le rapport du modèle)~:}
+\begin{enumerate}
+  \item Le corps exponentiel n'est garanti par aucun théorème ici~: l'extraction concave crée un rappel que le bruit additif doit dominer près du plancher. Si X1 aboutit à la coupure [BM] plutôt qu'à l'exponentielle [YR], la thèse est à amender honnêtement.
+  \item La stabilité de $\mu$ (H2, \S\,3.4) est plausible, non prouvée~; 6.2 est le juge.
+  \item Le choc commun $\sigma$ est une \emph{source} exogène de multiplicativité~: la thèse défendue devient « le couple SOC (crédit+faillites) \emph{stabilise et structure} en Boltzmann-Pareto une variance multiplicative donnée », pas « crée la multiplicativité ex nihilo ». Si on veut $\sigma=0$ strict, il faut que le crédit seul fournisse la variance multiplicative --- les explorations montrent que ce n'est pas suffisant dans la version naïve [E4-E5]~; à retester après X1-X2.
+  \item Conventions non testées~: moyenne géométrique des taux, max/min de l'échantillon (vs paire aléatoire), transfert prorata. À passer en variantes si un comportement inattendu apparaît.
+  \item Les valeurs numériques du prototype ($N^*\approx 29\lambda$, $\alpha_{\mathrm{CSN}}\approx 2{,}8$) ne sont pas des prédictions pour M2 complet --- preuves d'existence de régime seulement.
+\end{enumerate}
+
+\appendix
+\renewcommand{\thesection}{\Alph{section}}
+
+\section{Chaîne d'explorations numériques (preuves d'ablation)}
+\label{sec:annexe-a}
+
+Scripts et logs~: \texttt{recherche/conception_boltzmann_pareto_soc/exploration/}. Prototype \texttt{proto_m1.py} ($\sim$400~lignes, indépendant de \texttt{src/}), flags~: \texttt{--no-deprec-loans} (asymétrie nominal/réel), \texttt{--n0}, \texttt{--cost-delta} (coût $r+\delta$), \texttt{--gbm-sigma} (choc commun), \texttt{--d0} (dette d'amorçage), \texttt{--w0-endo}, \texttt{--service-cap}, \texttt{--pool_every} (pools par fenêtres). Communs~: $\alpha=1$, $\delta=0{,}05$ ($x_+=400$), $k=6$, rounds$=N/6$, taux géométrique. Les runs [E0]-[E3] utilisent en outre $\theta=0{,}35$ et offre $=w/2$ (héritages du [WIP], supprimés dans M2).
+
+\paragraph{[E0] Contrôle symétrique} (dettes dépréciées comme le capital~; $T=600$)~: 0~faillite, population $=n_0+\lambda t$ (non bornée), corps ultra-piqué vers $x_+$ (P90/P10~$=1{,}1$, med/mean~$=1{,}03$), pas de queue. $\to$ La fragilité asymétrique est constitutive.
+
+\paragraph{[E1] Asymétrie nominal/réel, règle naïve} (\texttt{--no-deprec-loans}, seeds~0/1/2, $\lambda\in\{2,10,30\}$, $T=2000$~; \texttt{run_s*.log}, \texttt{run_lam30*.log})~:
+\begin{itemize}
+  \item population bornée stationnaire $N^*\approx 29\lambda$, $W_{\mathrm{tot}}$ plat, faillites/pas $\approx\lambda$~;
+  \item deux régimes~: med/mean $\approx 0{,}63$-0,68, P90/P10 $\approx 7$-13 ($w$)~;
+  \item queue~: loi de puissance favorisée contre log-normale sur le revenu (LR jusqu'à $+1525$, $p<10^{-3}$)~; $\alpha_{\mathrm{CSN}}(\text{revenu})=2{,}76$-2,91 ($x_{\min}\approx 11$)~; à $x_{\min}\approx 41$~: 6,58 puis 6,49 sur deux fenêtres poolées ($\sim$8000~points) --- l'estimateur $x_{\min}$ saute entre régimes de lecture $\to$ protocole 6.2~;
+  \item corps~: Fisk/gamma battent l'exponentielle partout ($\Delta\mathrm{AIC}$ 40-200)~;
+  \item $\mathrm{corr}(\text{âge},\log w)\approx 0{,}75$-0,78~; à âge contrôlé $[20,100)$~: $\alpha_{\mathrm{CSN}}\approx 11$-14 $\to$ pas de queue intra-cohorte.
+\end{itemize}
+
+\paragraph{[E2] Renouvellement, règle naïve} (\texttt{probe_renewal.py}, $n_0=0$, $\lambda=10$)~: top décile de $w$ à $t=2000$ entièrement né avant $t\approx 8$~; survie du top de $t=1000$ à $t=2000$~: 100~\%~; entrées nées après $t=1000$~: 0. Le plafond de service (\texttt{--service-cap}, seuil~=~1) ne change rien (il ne mord pas). $\to$ Aristocratie figée~; la cause est le coût mal évalué, pas le sur-emprunt ponctuel.
+
+\paragraph{[E3] Composition du corps} (\texttt{probe_body_age.py}, $t=1000$, $\lambda=10$)~: déciles D1-D7 de $w$~: âge médian 2-16~pas (montée autarcique~: 254~pas), dette $\approx$ 90-100~\% du capital, créances nulles --- corps = entrants en transit sur-endettés. D8-D10~: âge $=1000$ (ère d'amorçage), créancières pures. $\to$ Les « deux classes » du prototype naïf sont deux cohortes~; fonde \S\,2.5 et le garde-fou 6.3.
+
+\paragraph{[E4] Coût corrigé $r+\delta$ seul} (\texttt{--cost-delta}, $T=400$, $\lambda=10$)~: 0~faillite, population non bornée (4069 à $t=400$), crédit actif mais petit, retour au voisinage du point fixe. $\to$ La règle rationnelle correcte TUE la mortalité~: le dilemme du levier est structurel, pas paramétrique.
+
+\paragraph{[E5] + choc commun $\sigma=0{,}1$} (\texttt{--gbm-sigma 0.1})~: toujours 0~faillite, population non bornée (4054 à $t=400$), $w_{\max}\approx 1900$ (dispersion par les chocs, sans mortalité). $\to$ Le drift $\sqrt{w}$ domine tout bruit multiplicatif aux petits $w$~: le bord $w=0$ est inatteignable~; la mort ne peut passer que par un plancher de valeur nette.
+
+\paragraph{[E6] + dette d'amorçage ($w_0=200$, $d_0=190$)}~: mortalité restaurée (1595~faillites à $t=200$), population bornée ($\sim$290-390, faillites $\approx$ naissances)\ldots mais \textbf{crédit mort} (0~prêt)~: $w_0=200 > w^*(\bar r+\delta)\approx 44$ --- personne ne demande. $\to$ Contrainte de cohérence $w_0<w^*(\bar r+\delta)$ intégrée à la conception (\S\,2.2 phase~1).
+
+\paragraph{[E7] Pile complète M2} (\texttt{--cost-delta --gbm-sigma} $\sigma$ \texttt{--no-deprec-loans --d0}, $n_0=0$, $\lambda=10$) --- trois étapes de calage de la fenêtre de naissance~:
+
+\begin{itemize}
+  \item \textbf{[E7a]} $\sigma=0{,}15$, $w_0=20$, $d_0=10$~: 0~faillite à $t=200$ (pop~2019, non bornée). Le drift $\sqrt{w}$ ($+3{,}5$/pas à $w_0=20$) écrase les chocs ($\sigma w_0=3$)~: personne ne meurt. $\to$ borne basse de la fenêtre~: $\sigma w_0\gtrsim\sqrt{w_0}-\delta w_0$, soit $w_0\gtrsim 1/(\sigma+\delta)^2$.
+  \item \textbf{[E7b]} $\sigma=0{,}25$, $w_0=20$, $d_0=10$~: mortalité restaurée mais insuffisante (144~faillites à $t=200$ contre $\sim$2000~naissances~; pop~1921, croissante)~: $\varepsilon_0=10=2\sigma w_0$ de coussin. $\to \varepsilon_0\lesssim\sigma w_0$.
+  \item \textbf{[E7c]} $\sigma=0{,}25$, $w_0=30$, $d_0=28$ ($\varepsilon_0=2<\sigma w_0=7{,}5$)~: $\sim$6~morts/pas pour 10~naissances/pas dès $t=200$ (pop~720) --- proche de l'équilibre démographique, crédit actif. Repère analytique~: $\mu_{\mathrm{base}}=1+2\delta/\sigma^2=2{,}6$ pour cette configuration (\S\,3.3), dans la gamme empirique.
+  \item \textbf{[E7c-long]} même configuration, $T=1500$, pools par fenêtres (\texttt{run_m2_final.log}, pools de 15\,871~/~17\,656~points~+ instantané final) --- \textbf{le régime cible est atteint sur 3 des 4 critères}~:
+  \begin{itemize}
+    \item population bornée~: $N^*\approx 1760$ plat de $t=800$ à 1500, $W_{\mathrm{tot}}$ plat, faillites $\approx\lambda$~;
+    \item \textbf{queue stable} (critère 6.2, là où le [WIP] fait $5{,}4\to 3{,}1$)~: $\alpha_{\mathrm{CSN}}(\text{capital})=2{,}80/2{,}86/2{,}88$ sur les fenêtres $[500,1000)$~/~$[1000,1500)$~/~$t=1500$, à $x_{\min}$ quasi constant (534-566)~; $\NW$~: $2{,}70/2{,}79/2{,}84$~; revenu~: $4{,}54/4{,}70/4{,}85$ ($x_{\min}\approx 22$-24)~; LR loi de puissance vs log-normale~: $+566$ à $+694$, $p<10^{-3}$ partout. Cohérence théorique~: exposant de pdf observé 2,8-2,9 contre 3,6 pour le GBM pur ($1+\mu_{\mathrm{base}}=3{,}6$) --- le canal crédit alourdit la queue comme prévu (\S\,3.3~: $\bar r\cdot c$ compense $\delta\cdot h$)~;
+    \item \textbf{garde-fou anti-cohorte passé} (critère 6.3)~: $\mathrm{corr}(\text{âge},\log w)=0{,}11$-0,15 (naïf~: 0,75-0,78~; [WIP]~: 0,88-0,95)~; distribution d'âges continue (q10/q50/q90~$=37/264/794$), sans trou démographique ni concentration d'époque~; \textbf{queue présente à âge contrôlé avec le même exposant} ($\alpha=3{,}19/2{,}94$ dans $[20,100)$/$[100,400)$ fenêtre~1~; $2{,}86/2{,}88$ fenêtre~2) --- les deux classes sont des états dynamiques, pas des cohortes~;
+    \item \textbf{corps~: toujours PAS exponentiel} (critère 6.1 non atteint)~: log-normale ($w$, revenu) ou gamma ($\NW$) gagnent l'AIC~; med/mean($\NW$)~$=0{,}52$-0,55 pour une cible $\sim$0,69. Mais le corps est désormais peuplé par la dynamique (âges mélangés), plus par la pyramide des âges~: la question X1 est ouverte dans de bonnes conditions --- c'est LE chantier restant.
+  \end{itemize}
+\end{itemize}
+
+Conclusion d'ensemble de [E7]~: la pile complète M2 (asymétrie nominal/réel~+ coût $r+\delta$~+ choc commun $\sigma$~+ bilan de naissance tendu dans la fenêtre) réalise simultanément bornage endogène, queue de Pareto stable et classes renouvelées~; seul le corps exponentiel reste à conquérir (X1).
+
+\section{Correspondances avec les équations des articles}
+\label{sec:annexe-b}
+
+\begin{xltabular}{\linewidth}{@{}>{\raggedright\arraybackslash}p{5.4cm}X@{}}
+\toprule
+Objet M2 & Référence \\
+\midrule
+\endhead
+Corps $P\propto e^{-x/T}$, $T=M/N$ & [YR]~éq.~(7), Sec.~II.C~; générateur~: échange additif conservatif + plancher (Sec.~II.F, symétrie de renversement du temps) \\
+Diffusion additive+multiplicative complète & [YR]~éq.~(23)-(25)~: $A=A_0+a\cdot x$, $B=B_0+b\cdot x^2$, croisement $x_0=\sqrt{B_0/b}$, corps exp + queue $x^{-1-\mu}$ \\
+Équation de richesse multiplicative, queue Pareto & [BM]~éq.~(2)~; solution moyen-champ éq.~(7)~: $\mu=1+J/\sigma^2$ \\
+Kesten discret (queue stable) & [BM]~éq.~(8)-(9)~: $(1-J\tau)^\mu\langle e^{-\mu V}\rangle = \langle e^{-V}\rangle^\mu$ \\
+Connectivité finie (analogue de $k$) & [BM]~éq.~(16)-(17)~: $\mu\simeq \ln(c/\sigma^2\tau)/\ln(c/J\tau)$ --- dépendance faible en $\sigma$, $J$ \\
+Condensation $\mu<1$ (garde~: si le crédit s'effondre) & [BM]~Fig.~2-3, $Y_2=\sum\tilde w^2$~; recodage local \texttt{recherche/analyse_articles/bouchaud_mezard_wealth_condensation/} (transition $J/\sigma^2\approx 0{,}1$-0,3 reproduite) \\
+Deux classes d'agents identiques (précédent) & Wright 2005/2009, cité [YR]~Sec.~V~; recodages locaux \texttt{wright_*/} (partition $\approx$ 70/12~\% reproduite) \\
+ODE individuelle & [ODE]~: $dx/dt=-\delta x+b\sqrt{x}+c$, $c_{\mathrm{crit}}=-b^2/(4\delta)$, cas A-E \\
+Choc commun sans drift & $\eta\sim\mathcal N(-\sigma^2/2,\sigma^2)$, $\mathbb E[e^\eta]=1$ --- correction du bug du brownien d'$\alpha$ ([WIP] \texttt{simulation.py:1320}) \\
+\bottomrule
+\end{xltabular}
+
+\end{document}

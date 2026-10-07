@@ -1,0 +1,11 @@
+L'oral dure 15 minutes, 10 de présentation et 5 de questions. Présentation de mon parcours et du sujet de thèse et 2 diapos max pour le sujet. (part belle à mon parcours)
+Mon Parcours : 
+ - Etudes, stages avant le LIED, je décortique le côté touche à tout de l'ENS (sans tomber dans une énumération), et mon amour pour les maths proba-stats. 
+ - Stage actuel au LIED, travaux et questionnements qui on menés à l'élaboration 
+
+Présentation du projet :
+ - Attaque Bottom - Up : On a des datas réelles économiques qui peuvent être expliquée par une modélisation physique statistique, ça a déjà été abordé : APS Review of Modern Physics avec Yakovenko, toute l'école de Santa Fe. Proposition d'étude nouvelle : modélisation en tant que système complexe multi-agent, avec des phénomènes d'émergences. Passage d'une quasi infinité de configurations d'états microscopique à un comportement d'ensemble macroscopique --> besoin de la physique statistique.  C'est ici que se trouvent mes métriques de réussite, je retrouve les lois de puissances/distributions réelles et/ou je ponds quelques théorèmes théoriques. Sujet très interdisciplinaire, quelle chance, je suis au LIED et je sors d'études très interdisciplinaires. 
+ - Titre du sujet : Structure Dissipatives Hors Equilibre, distributions stationnaires et flux d'énergie/matières --> Mots compliqués pour dire Organisation et dissipation dans une structure économique. ie, Organisation sous dissipation, on ressuscite Ilia PRIGOGINE, qu'il faut dépasser. C'est de la méca-stats, et il y a deux montagnes à creuser/détourner, 1 - il y a une forte interaction entre mes agents, contre peu/pas en méca stats, et 2 - on travaille sur des structures hors-équilibre. (Aller voir Galavoti-Cohen, crooks et Djerzinski). Asseoir le projet dans la biblio.  Conclusion, on a un début : Yakovenko et Santa Fe, un milieu, l'approche système auto-critique et physique stats, et une fin, que sont les objectifs de production de données issu d'un modèle, de biblio, et d'outils théoriques. Après la thèse : MCF, je crois fortement dans la puissance de l'interdisciplinarité, ou prof agrégé.
+
+Dans les diapos annexes, pour prévoir les questions, les graphiques issus des articles de yakovenko, bouchaud quant aux distributions réelles/issues de la phy-stats, et quelques graphiques issus de mon travail en stage. 
+

@@ -444,6 +444,116 @@ statistique. Mécanisme : $\gamma$ et la compensation $K_0/\Kaut(\gamma)$
 sont déjà dans le moteur --- aucune ablation de mécanisme n'est
 nécessaire pour ce résultat spécifique.
 
+\subsection*{Complément (2026-08-11) : $\hat{s}_c(\lambda)$ ré-établi à $k\equiv2$, exigé par \S5 du prompt}
+
+Limite listée en \S\ref{sec:limites} (« la coupure d'avalanche
+$\hat{s}_c(\lambda)$ n'a pas encore été ré-établie sur ce moteur ») ---
+close ici, par analyse pure sur les données déjà sur disque
+(\code{avalanches.csv} conservé pour les 18 runs D3), \textbf{aucune
+nouvelle simulation}. Le pipeline D1/D3 calculait déjà l'ajustement de
+coupure MLE en interne mais ne persistait pas sa valeur dans
+\code{analysis.json} (seul un drapeau l'était) ---
+\code{scripts/d3\_cutoff\_scaling.py} recalcule le même ajustement sur la
+même fenêtre déjà figée par le run original, vérifié bit-identique sur
+\code{branching\_ratio}/$\hat\tau$ avant d'en tirer quoi que ce soit de
+nouveau.
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lcccc}
+\toprule
+branche & $\lambda$ & $\hat{s}_c$ & graines in-range/3 & fiable ? \\
+\midrule
+baseline & 10 & $34{,}55\pm0{,}33$ & 3 & oui \\
+baseline & 30 & $106{,}40\pm1{,}70$ & 3 & oui \\
+baseline & 100 & non calculable & 1 & \textbf{non} \\
+gamma\_comp\_0.6667 & 10 & $38{,}12\pm3{,}02$ & 3 & oui \\
+gamma\_comp\_0.6667 & 30 & $108{,}89\pm3{,}15$ & 3 & oui \\
+gamma\_comp\_0.6667 & 100 & $1919{,}01\pm173{,}70$ & 3 & oui \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Convention appliquée} : $\hat s_c$ n'est moyenné sur une cellule
+que si les 3/3 graines sont in-range à la fois (unanime) --- une cellule
+partiellement hors-portée (baseline $\lambda=100$ : 1/3 seulement) n'a PAS
+de $\hat s_c$ moyen rapporté (ses graines individuelles divergent sur 6 à
+8 ordres de grandeur : $623\,142$ / $2\,401$ / $485\,163\,671$) ; moyenner
+sur le seul survivant in-range aurait été une sélection après coup
+(interdite \S6 du prompt).
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\textwidth]{figures/sc_vs_lambda.png}
+\caption{$\hat{s}_c(\lambda)$ ré-établi à $k\equiv2$ (baseline et
+gamma\_comp\_0.6667) contre le repère M4B à $k=3$ (jambe $10\to30$ seule,
+la seule mesurée par M4B). Points non fiables affichés individuellement
+(croix), pas de moyenne, pas de ligne les reliant aux points fiables.}
+\end{figure}
+
+Motif qualitativement cohérent avec M4B (« à $\lambda=100$ la coupure sort
+de la fenêtre observable ») mais pas unanime sur les 3 graines ici
+(contre 5/5 chez M4B) --- signal plus bruyant à $k=2$ qu'à $k=3$.
+
+\textbf{Pentes log-log LOCALES (jambe à jambe, pas un ajustement global
+sur 3 points qui masquerait une éventuelle convexité), uniquement entre
+cellules fiables} :
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lcc}
+\toprule
+jambe & baseline & gamma\_comp\_0.6667 \\
+\midrule
+$\lambda=10\to30$ & $\mathbf{1{,}024}$ & $\mathbf{0{,}955}$ \\
+$\lambda=30\to100$ & non calculable & $2{,}383$ \\
+repère M4B $k=3$, $10\to30$ (seule jambe mesurée) & \multicolumn{2}{c}{$\mathbf{1{,}494}$} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Sur la jambe directement comparable au repère M4B ($10\to30$, la
+seule que M4B ait mesurée, \S5 du prompt), la pente à $k=2$
+($\approx1{,}0/0{,}96$) est INFÉRIEURE à celle de M4B à $k=3$
+($\approx1{,}49$)} --- la coupure croît plus lentement avec $\lambda$ à
+$k=2$ sur cette jambe. Documenté tel quel, pas forcé à l'accord (\S5 du
+prompt). La jambe $30\to100$ (mesurable seulement côté gamma\_comp)
+montre une pente locale bien plus raide ($\approx2{,}4$) --- pas la même
+jambe que M4B a mesurée, donc pas directement comparable à 1,5, mais le
+contraste avec la jambe $10\to30$ indique une forte convexité plutôt
+qu'une pente constante sur toute la plage. Cohérent avec la réserve déjà
+explicite du rapport M4B : $k=2$ et $k=3$ ne partagent pas la même loi
+d'échelle de coupure, même si le mécanisme d'avalanche est hérité sans
+changement --- la réserve était justifiée, elle est maintenant vérifiée
+plutôt que supposée, dans le sens que M4B anticipait.
+
+\emph{(Correction du 2026-08-11, même cycle : une première version de
+cette sous-section rapportait par erreur une pente « plus forte » côté
+$k=2$, à cause d'un biais de sélection de graine dans l'agrégation ---
+trouvé et corrigé avant diffusion, détail complet dans
+\code{JOURNAL.md} \S35bis.)}
+
+\textbf{Choix méthodologique explicite} : le prompt parle de « Vuong
+tronquée-vs-pure », mais tronquée et pure sont des modèles EMBOÎTÉS (pure
+= tronquée à $\hat{s}_c\to\infty$) --- Vuong est conçu pour des modèles NON
+emboîtés. Le test statistiquement correct est le LRT avec correction de
+frontière ($0{,}5\cdot\chi^2(1)$), déjà implémenté et utilisé par tout le
+programme --- utilisé ici tel quel, aucun nouveau test écrit. $p<10^{-70}$
+sur les 18 runs, cohérent avec la méthodologie de référence citée par le
+prompt (M4B : « loi tronquée partout, LRT $p<10^{-6}$, pas de loi pure »)
+--- le drapeau hors-portée reste le bon critère opérationnel pour juger si
+la coupure est exploitable en pratique.
+
+$\hat\tau$ ajouté comme métrique de confirmation à la table D1 complète
+(\code{results/d1/d1\_verdict\_cells.csv}) et à une figure complémentaire
+(\code{figures/d1\_plan\_dagum\_c\_vs\_tau.png}) --- exigé par \S5 du
+prompt (« $b$ et l'exposant tronqué $\hat\alpha$ ... métriques
+primaires »). Sur la branche \code{gamma\_comp}, $\hat\tau$ diminue de
+façon monotone avec $\gamma$ (queue d'avalanches de plus en plus épaisse),
+même sens que $b$ croissant et $c$ décroissant : les trois métriques
+indépendantes s'accordent --- confirmation supplémentaire du verdict
+D2/D3 déjà établi, aucun changement de conclusion.
+
 \section{Décision d'ablation : jalon atteint, décision réservée à la supervision}
 \label{sec:ablation}
 
@@ -534,6 +644,7 @@ D2/D3 ni à la décision d'ablation, toujours en attente de votre
 arbitrage.
 
 \section{Limites et non testé à ce stade}
+\label{sec:limites}
 
 \begin{itemize}
 \item Statistique de queue gelée sur 3 graines par régime --- assez pour
@@ -543,8 +654,14 @@ arbitrage.
 \item La robustesse temporelle n'a été vérifiée que sur la paire
   baseline/gamma\_comp\_0.6667 à $\lambda=30$, pas sur les 28 cellules de
   D1.
-\item La coupure d'avalanche $\hat s_c(\lambda)$ n'a pas encore été
-  ré-établie sur ce moteur.
+\item \emph{La coupure d'avalanche $\hat s_c(\lambda)$ n'a pas encore été
+  ré-établie sur ce moteur} --- \textbf{close (2026-08-11)}, voir
+  \S\ref{sec:d3} complément : sur la jambe $\lambda=10\to30$ (la seule
+  mesurée par M4B), pente $\approx1{,}0/0{,}96$ à $k=2$ contre
+  $\approx1{,}49$ à $k=3$ --- plus lente, pas plus forte, documenté tel
+  quel. $\lambda=100$ non mesurable proprement côté baseline (2/3 graines
+  hors-portée) ; côté gamma\_comp, jambe $30\to100$ fiable mais bien plus
+  raide ($\approx2{,}4$) --- forte convexité, pas une pente unique.
 \item $b$ et $\hat\tau$ utilisent $s_{\min}=2$ (convention M4B/M4.2B)
   sans re-test de sensibilité à ce choix dans M4.3.
 \item Le mécanisme de reprise depuis checkpoint (testé et fonctionnel)

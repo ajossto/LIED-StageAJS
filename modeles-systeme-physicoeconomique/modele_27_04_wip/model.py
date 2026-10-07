@@ -11,8 +11,8 @@ MODEL = LegacyModuleModel(
     model_id="modele_27_04_wip",
     display_name="Modèle 27-04 WIP",
     description=(
-        "Adaptateur Simulation Lab vers modele-27-04-WIP/src. "
+        "Adaptateur Simulation Lab vers anciens_modeles/modele-27-04-WIP/src. "
         "Version optimisée de travail conservant les paramètres par défaut du WIP."
     ),
-    source_dir=str(PROJECT_ROOT / "modele-27-04-WIP" / "src"),
+    source_dir=str(PROJECT_ROOT / "anciens_modeles" / "modele-27-04-WIP" / "src"),
 )

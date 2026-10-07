@@ -1,0 +1,504 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[french]{babel}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb}
+\usepackage[margin=2.6cm]{geometry}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\hypersetup{colorlinks=true,linkcolor=blue!50!black,urlcolor=blue!50!black}
+
+\newcommand{\NW}{\mathrm{NW}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\demontre}[1]{\textbf{[démontré]}~#1}
+\newcommand{\plausible}[1]{\textbf{[plausible]}~#1}
+\newcommand{\hypothese}[1]{\textbf{[hypothèse]}~#1}
+\newcommand{\arbitraire}[1]{\textbf{[choix arbitraire]}~#1}
+\newcommand{\artefact}[1]{\textbf{[artefact possible]}~#1}
+
+\title{Lecture critique du document de conception M2\\
+\large « Conception d'un modèle à distribution Boltzmann--Pareto émergente
+par auto-organisation critique »}
+\author{Agent de réplication (workspace \texttt{m2\_fable})}
+\date{3 juillet 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Ce rapport analyse le document de conception du modèle M2 comme une
+\emph{proposition de recherche à tester}, non comme un acquis. Nous en donnons
+un résumé fidèle (\S\ref{sec:resume}), une reconstruction mathématique
+(\S\ref{sec:math}), une liste des hypothèses fortes avec leur statut
+épistémique (\S\ref{sec:hypotheses}) et une critique scientifique
+(\S\ref{sec:critique}). Conclusions principales : (i)~le modèle est
+remarquablement discipliné dans sa traque des paramètres cachés, mais trois
+conventions non testées (moyenne géométrique des taux, appariement
+max/min, transferts au prorata) et la fenêtre de naissance
+$(w_0, d_0)$ constituent des degrés de liberté réels ; (ii)~les résultats
+[E7c] présentés comme « pile complète M2 » proviennent d'un prototype qui
+\emph{dévie de la spécification M2} sur au moins deux règles (volume de prêt,
+sort des créances de la faillie) — la réplication n'est donc pas garantie ;
+(iii)~le corps exponentiel est explicitement non acquis et la fenêtre de
+naissance ressemble à un réglage fin déguisé, ce que le protocole §6.5 du
+rapport a le mérite d'exposer à la réfutation ; (iv)~le garde-fou anti-cohorte
+du rapport est nécessaire mais incomplet : nous proposons des tests
+supplémentaires.
+\end{abstract}
+
+\tableofcontents
+
+%=====================================================================
+\section{Position épistémique et sources}
+
+Le document de conception (noté ci-après [CONC]) est daté du 2 juillet 2026 et
+s'appuie sur : Bouchaud--Mézard 2000 [BM], Yakovenko--Rosser 2009 [YR], le
+modèle historique [WIP] (\texttt{modele-27-04-WIP}), une analyse de
+distributions antérieure [DISTRIB], et une chaîne d'explorations numériques
+E0--E7 exécutées sur un prototype \texttt{proto\_m1.py}.
+
+Statuts que nous distinguons systématiquement :
+\demontre{} établi par une ablation reproductible ou un calcul exact ;
+\plausible{} argumenté analytiquement mais non vérifié sur M2 ;
+\hypothese{} de travail, à tester ;
+\arbitraire{} convention de modélisation parmi d'autres possibles ;
+\artefact{} numérique ou de protocole possible.
+
+Un point de méthode s'impose d'emblée : \emph{les ablations E0--E7 portent sur
+le prototype M1, pas sur M2}. Le prototype conserve deux règles héritées du
+[WIP] que M2 supprime (volume de prêt $q = \min(w_l/2,\ \theta\, q_{\max})$
+avec $\theta = 0{,}35$, au lieu de la règle symétrique
+$q = \min(q_{\mathrm{dem}}, q_{\mathrm{off}})$), et sa règle de faillite
+\emph{annule} les contrats où la faillie est prêteuse au lieu de les
+transférer au prorata (fonction \texttt{\_fail} du prototype, commentaire
+« gain pour lui » — qui décrit d'ailleurs l'annulation des dettes des
+\emph{emprunteurs} de la faillie, un troisième écart de comptabilité).
+Les verdicts qualitatifs des ablations (nécessité de l'asymétrie
+nominal/réel, du coût $r+\delta$, de $d_0$) restent informatifs ; les valeurs
+numériques de [E7c] (queue $\alpha \approx 2{,}8$ stable, $N^* \approx 1760$)
+ne sont pas des prédictions pour M2 au sens strict — le rapport le dit
+lui-même (§8, incertitude 5), mais l'affirmation « trois des quatre cibles
+atteintes » du résumé exécutif doit être lue avec cette réserve.
+
+%=====================================================================
+\section{Résumé fidèle du modèle M2}
+\label{sec:resume}
+
+\subsection{État d'une entité}
+Une entité vivante $i$ porte :
+\begin{itemize}[nosep]
+\item un capital réel scalaire $w_i \ge 0$ (une seule colonne de bilan) ;
+\item une dette d'amorçage nominale $d_0$, constante universelle de naissance,
+  jamais remboursée, jamais dépréciée, détenue par personne ;
+\item des contrats de prêt la liant à d'autres entités.
+\end{itemize}
+
+\subsection{Contrats de prêt}
+Un contrat est un quadruplet (prêteur $\ell$, emprunteur $b$, principal
+nominal $q > 0$, taux $r$). Il est \emph{perpétuel} : jamais amorti, $q$
+constant de la création à l'annulation. Le principal est nominal : il ne se
+déprécie pas, contrairement au capital réel. Dérivés : créances
+$C_i = \sum_{\ell = i} q$, dettes $D_i = \sum_{b = i} q$.
+
+\subsection{Valeur nette et revenu}
+\begin{equation}
+\NW_i = w_i + C_i - D_i - d_0
+\end{equation}
+est la variable cible de la forme Boltzmann--Pareto. Le revenu est
+$y_i = \alpha\sqrt{w_i} + (\text{intérêts reçus})_i$, le revenu net
+$y_i - (\text{intérêts payés})_i$ ; capital brut et revenu sont mesurés à
+titre diagnostique.
+
+\subsection{Séquence d'un pas de temps (ordre fixé, 7 phases)}
+\begin{enumerate}[nosep]
+\item \textbf{Naissances} : $n \sim \mathrm{Poisson}(\lambda)$ ; dotation
+  $w_0$, dette $d_0$, donc $\NW$ initial $\varepsilon_0 = w_0 - d_0 > 0$
+  petit. $N(0) = 0$ (pas de cohorte fondatrice).
+\item \textbf{Choc multiplicatif commun en loi} :
+  $w_i \leftarrow w_i e^{\eta_i}$, $\eta_i \sim
+  \mathcal{N}(-\sigma^2/2, \sigma^2)$ i.i.d., donc $\E[e^\eta] = 1$. Frappe le
+  capital réel, pas les contrats.
+\item \textbf{Extraction} : $w_i \leftarrow w_i + \alpha\sqrt{w_i}$,
+  $\alpha \equiv 1$.
+\item \textbf{Service des intérêts} : chaque contrat, l'emprunteur paie $rq$
+  au prêteur (transfert conservatif) ; paiement partiel possible (tout le $w$
+  disponible), alors \emph{défaut} $\to$ faillite en phase 7.
+\item \textbf{Dépréciation} : $w_i \leftarrow (1-\delta) w_i$ ; contrats et
+  $d_0$ non dépréciés (asymétrie constitutive).
+\item \textbf{Marché du crédit} : $\lfloor N/k \rfloor$ rounds ; par round,
+  tirage uniforme sans remise de $k$ vivantes ; prêteur $=$ $w$ maximal,
+  emprunteur $=$ $w$ minimal ; taux $r = \sqrt{r^*_\ell\, r^*_b}$ avec
+  $r^* = \alpha/(2\sqrt{w})$ ; coût effectif $\rho = r + \delta$ ; cible
+  commune $w^*(\rho) = (\alpha/2\rho)^2$ ; demande
+  $q_{\mathrm{dem}} = \max(0, w^* - w_b)$, offre
+  $q_{\mathrm{off}} = \max(0, w_\ell - w^*)$, volume
+  $q = \min(q_{\mathrm{dem}}, q_{\mathrm{off}})$ ; si $q>0$, transfert
+  conservatif du principal et création du contrat.
+\item \textbf{Faillites en cascade} : critère $\NW_i < 0$ ou défaut en
+  phase 4. À la faillite : contrats empruntés annulés (perte sèche des
+  prêteurs) ; contrats prêtés \emph{transférés aux créanciers au prorata} ;
+  capital résiduel réparti aux créanciers au prorata ; $d_0$ éteinte. Itérer
+  jusqu'à stabilité. La mort est la seule sortie.
+\end{enumerate}
+
+\subsection{Fenêtre de naissance}
+Contrainte de cohérence quantitative établie par [E6]--[E7] :
+\begin{equation}
+\label{eq:fenetre}
+\frac{1}{(\sigma+\delta)^2} \;\lesssim\; w_0 \;<\; w^*(\bar r + \delta),
+\qquad \varepsilon_0 \lesssim \sigma w_0 .
+\end{equation}
+Borne basse : la diffusion doit dominer le drift $\sqrt{w}$ à la naissance
+(sinon aucun entrant ne meurt, [E7a]) ; borne haute : l'entrante doit naître
+demandeuse de crédit (sinon le marché meurt, [E6]) ; marge $\varepsilon_0$ de
+l'ordre d'un choc (sinon mortalité infantile négligeable, [E7b]).
+
+\subsection{Population ouverte}
+Bornage endogène attendu : $N^* = \lambda\,\E[\text{vie}]$, chaque position
+(entrante, endettée, créancière) ayant une espérance de vie finie. Symptôme
+d'échec : $N(t)$ affine $=$ sous-population immortelle.
+
+\subsection{Paramètres irréductibles}
+$\alpha = 1$ (unité de flux), $\delta$ (unité de temps), $\lambda$ (taille
+$N^*$), $k$ (connectivité, contrôle SOC), $\sigma$ (variance du choc commun),
+$(w_0, d_0)$ ou $(w_0, \varepsilon_0)$ (bilan de naissance). Critère
+d'acceptation « sans réglage fin » : la \emph{forme} Boltzmann--Pareto doit
+être robuste sur $(\sigma, \varepsilon_0/w_0, k)$, seuls $(T, \mu, X_0)$
+pouvant bouger de façon lisse.
+
+%=====================================================================
+\section{Reconstruction mathématique}
+\label{sec:math}
+
+\subsection{Dynamique individuelle}
+Entre événements de crédit, le capital suit la version discrétisée de
+\begin{equation}
+\frac{dw}{dt} = -\delta w + \alpha\sqrt{w} + c_{\mathrm{eff}},
+\qquad c_{\mathrm{eff}} = \text{intérêts reçus} - \text{payés}
+\pm \text{principal} \pm \text{pertes},
+\end{equation}
+plus le choc de la phase 2 : $\ln w$ reçoit $\eta - \sigma^2/2$ par pas.
+En autarcie ($c_{\mathrm{eff}} = 0$, $\sigma = 0$), point fixe commun
+$x_+ = (\alpha/\delta)^2$ (pour $\alpha=1$, $\delta = 0{,}05$ : $x_+ = 400$).
+Ce point fixe est « l'ennemi » : tout le modèle sert à tenir la population
+loin de lui [E0].
+
+Un calcul utile pour la suite : la composition exacte d'un pas sans crédit
+donne
+\begin{equation}
+\label{eq:map}
+w_{t+1} = (1-\delta)\left( w_t e^{\eta_t} + \alpha\sqrt{w_t e^{\eta_t}} \right),
+\end{equation}
+dont le point fixe déterministe ($\eta = 0$) est
+$\hat w = \alpha^2 (1-\delta)^2 / \delta^2$
+(résolution de $\hat w = (1-\delta)(\hat w + \sqrt{\hat w})$, soit
+$\sqrt{\hat w}\,\delta = (1-\delta)$, $\hat w = ((1-\delta)/\delta)^2 = 361$
+pour $\delta = 0{,}05$) — légèrement sous le $x_+ = 400$ du temps continu.
+L'écart n'a pas d'importance qualitative mais rappelle que \emph{les repères
+quantitatifs du rapport sont des repères de temps continu appliqués à une
+carte discrète} ; $w^*(\rho)$ relève de la même approximation.
+
+\subsection{Condition marginale et cible de capital}
+Le rendement marginal brut de l'extraction est
+$\partial_w(\alpha\sqrt{w}) = \alpha/(2\sqrt{w}) =: r^*(w)$, décroissant.
+Une unité de capital empruntée coûte $r$ d'intérêt \emph{et} $\delta$ de
+fonte (la dette, nominale, ne fond pas) : coût effectif $\rho = r+\delta$.
+L'égalisation $r^*(w) = \rho$ donne la cible commune
+\begin{equation}
+w^*(\rho) = \left(\frac{\alpha}{2\rho}\right)^2 .
+\end{equation}
+Pour $\bar r \approx 0{,}05$--$0{,}07$ et $\delta = 0{,}05$,
+$w^* \approx 17$--$25$ ; avec la convention du rapport
+($\bar r + \delta \approx 0{,}075$), $w^* \approx 44$. La règle de marché
+« viser $w^*$ » est l'optimalité myope à un pas, correctement écrite.
+Remarque critique : $\rho$ ignore le risque de défaut du côté du prêteur et
+le risque de faillite du côté de l'emprunteur — c'est une optimalité
+\emph{sans anticipation}, choix de modélisation cohérent avec le cadre
+(agents à règles fixes) mais qu'il faut nommer : le taux ne contient aucune
+prime de risque, alors que le défaut est le mécanisme central du modèle.
+
+\subsection{Fokker--Planck sur la valeur nette}
+Le squelette analytique est [YR] éq.~(23--25) : pour
+$A(X) = A_0 + aX$, $B(X) = B_0 + bX^2$,
+\begin{equation}
+P(X) \propto \frac{1}{B(X)} \exp\left( -\int^X \frac{A(X')}{B(X')} dX' \right)
+\;\Longrightarrow\;
+\begin{cases}
+P(X) \propto e^{-X/T}, & X \ll X_0, \quad T = B_0/A_0,\\[2pt]
+P(X) \propto X^{-1-\mu}, & X \gg X_0, \quad \mu = 1 + a/b,
+\end{cases}
+\end{equation}
+avec croisement $X_0 = \sqrt{B_0/b}$. L'argument du rapport : près du
+plancher, les flux qui bougent $\NW$ (marge $\varepsilon_0$, intérêts $rq$
+dimensionnés par le marché, principal, extraction nette évaluée près de
+$w^*$) sont bornés et indépendants de $X$ (régime additif) ; pour une
+créancière établie, chocs $\sigma w$, revenus $\bar r C$ et pertes de cascade
+sont $\propto X$ (régime multiplicatif).
+
+\textbf{Point faible de l'argument} (repris en \S\ref{sec:critique}) :
+l'hypothèse « $A_0 > 0$ » (drift net \emph{vers le bas} dans le corps) n'est
+pas démontrée ; et surtout l'extraction $\alpha\sqrt{w} - \delta w$ n'est pas
+un bruit mais un \emph{rappel déterministe} vers $w^*$ ou $x_+$ : un
+processus d'Ornstein--Uhlenbeck avec rappel donne un corps gaussien autour de
+la cible, pas une exponentielle. Le corps exponentiel exige que le bruit
+additif de crédit domine le rappel — le rapport le reconnaît (incertitude 1)
+mais ne quantifie pas le rapport des deux échelles. C'est, selon nous, la
+raison structurelle pour laquelle [E7c] trouve un corps gamma/log-normal
+(unimodal à mode positif) plutôt qu'exponentiel.
+
+\subsection{Queue de Kesten}
+Pour une établie : $X_{t+1} = \Lambda_t X_t + \beta_t$ avec
+\begin{equation}
+\Lambda_t = 1 + \eta_t - \delta h_t + \bar r c_t - \ell_t,
+\end{equation}
+$h = w/X$, $c = C/X$, $\ell$ pertes de défaut relatives. Queue Pareto dès que
+$\E[\ln\Lambda] < 0 < P(\Lambda > 1)$, exposant racine de
+$\E[\Lambda^\mu] = 1$ [BM éq.~8--9]. Repère sans crédit ($h=1$, $c=\ell=0$),
+$\eta$ log-normal : $\mu \approx 1 + 2\delta/\sigma^2$ (pour
+$\delta = 0{,}05$, $\sigma = 0{,}25$ : $\mu = 2{,}6$, exposant de pdf
+$3{,}6$). Le crédit \emph{abaisse} $\mu$ ($\bar r c$ compense $\delta h$), les
+cascades le \emph{relèvent} ($\ell$). Vérification de cohérence interne : la
+dérivation $\mu = 1 + 2\delta/\sigma^2$ vient de
+$\E[\Lambda^\mu] = 1$ avec $\ln\Lambda \approx \eta - \delta$,
+$\E[e^{\mu\eta}] = e^{\mu(\mu-1)\sigma^2/2}$, d'où
+$\mu(\mu-1)\sigma^2/2 = \mu\delta$ soit $\mu = 1 + 2\delta/\sigma^2$ —
+correcte.
+
+\textbf{Réserve} : pour une créancière, le choc $\eta$ ne frappe que la part
+réelle $h$ de $X$, donc la variance multiplicative effective est
+$\sigma^2 h^2 < \sigma^2$ ; le canal cascade $\ell$ est intermittent et
+corrélé entre grosses créancières (choc systémique, pas i.i.d.) — le cadre
+Kesten i.i.d. est une approximation dont la validité doit être vérifiée
+empiriquement (stationnarité de $\mu$ par fenêtres, protocole §6.2).
+
+\subsection{L'hypothèse auto-critique H2}
+La boucle proposée : queue plus lourde $\Rightarrow$ crédit plus concentré
+$\Rightarrow$ cascades plus grandes $\Rightarrow$ $\ell \uparrow$
+$\Rightarrow$ queue plus légère (et réciproquement). Prédictions testables :
+$\mu$ stationnaire par fenêtres ; $\mu$ insensible à $\lambda, w_0$ et à $k$
+dans la phase SOC ; tailles de cascade à queue lourde ; raidissement continu
+de $\mu$ quand $\sigma \to 0$. \hypothese{} — le rapport est explicite
+là-dessus ; aucun mécanisme quantitatif (gain de boucle, temps de relaxation)
+n'est donné, et rien ne garantit que le point fixe de la rétroaction soit
+dans la zone « queue lourde observable » plutôt que $\mu \gg 3$
+(indiscernable d'une log-normale sur $N \sim 10^3$).
+
+%=====================================================================
+\section{Hypothèses fortes et statuts}
+\label{sec:hypotheses}
+
+\begin{enumerate}
+\item \textbf{Émergence du corps exponentiel sur $\NW$ (H1).}
+  \hypothese{} Le rapport lui-même classe X1 comme « LA question ouverte » ;
+  [E7c] trouve gamma/log-normale devant l'exponentielle
+  ($\mathrm{med}/\mathrm{mean} = 0{,}52$--$0{,}55$ contre $0{,}69$ attendu).
+  Notre analyse (\S\ref{sec:math}) suggère une raison structurelle (rappel
+  déterministe vers $w^*$) qui ne disparaîtra pas en peuplant mieux le corps.
+  L'issue de repli du rapport (corps [BM] $\propto e^{-(\mu-1)/X} X^{-1-\mu}$)
+  est une hypothèse alternative légitime à tester en parallèle.
+\item \textbf{Stabilité auto-organisée de l'exposant de Pareto (H2).}
+  \hypothese{} Soutenue par un seul run long, un seul seed, sur le prototype
+  déviant. Trois fenêtres avec $\alpha = 2{,}80/2{,}86/2{,}88$ est un indice,
+  pas une démonstration (pas de bootstrap rapporté, dérive monotone
+  $+0{,}08$ qui pourrait être un transitoire lent).
+\item \textbf{Rôle suffisant des faillites en cascade comme régulateur.}
+  \plausible{} mais la boucle H2 n'a jamais été observée directement
+  (aucune mesure de corrélation concentration $\leftrightarrow$ cascades dans
+  les logs).
+\item \textbf{Absence d'effet cohorte.} \plausible{} sur le prototype
+  ([E7c] : $\mathrm{corr}(\text{âge}, \log w) = 0{,}11$--$0{,}15$, queue à âge
+  contrôlé). Mais mesuré sur $w$, pas sur $\NW$ ; et le renouvellement du top
+  décile (sonde X2) n'a pas été exécuté sur la pile complète — le log
+  \texttt{renewal\_*.log} concerne la règle naïve.
+\item \textbf{Robustesse sans réglage fin.} \hypothese{} La fenêtre de
+  naissance (\ref{eq:fenetre}) est étroite : [E7a] (échec), [E7b] (échec),
+  [E7c] (succès) documentent précisément un \emph{calage} de $(w_0, d_0)$.
+  Le rapport requalifie ce calage en « condition d'existence », analogue à
+  choisir une température sous le point critique ; l'argument est défendable
+  \emph{si} la forme est robuste à l'intérieur de la fenêtre — exactement ce
+  que la grille §6.5 doit établir. Tant qu'elle ne l'a pas fait, la
+  distinction condition d'existence / réglage fin est rhétorique.
+\item \textbf{Choix de $\NW$ comme variable cible.} \arbitraire{} motivé
+  (c'est la seule variable avec plancher d'absorption naturel), mais $\NW$
+  est aussi la seule variable \emph{non observable} empiriquement chez [YR]
+  (les données de revenu de [YR] concernent $y$). Si le corps exponentiel
+  n'apparaît que sur $\NW$ et pas sur $y$, la correspondance avec la
+  littérature empirique s'affaiblit.
+\item \textbf{Moyenne géométrique des taux.} \arbitraire{} assumé. Notons que
+  $r = \sqrt{r^*_\ell r^*_b} = \alpha / (2 (w_\ell w_b)^{1/4}\,\cdot)$ dépend
+  des \emph{deux} capitaux ; la moyenne arithmétique donnerait des taux plus
+  hauts (AM $\ge$ GM), donc plus de revenus d'intérêts et une queue plus
+  lourde — le rapport propose d'ailleurs ce levier en X1.3. Convention à
+  variante planifiée, correctement signalée.
+\item \textbf{Transfert prorata (créances et capital résiduel de la
+  faillie).} \arbitraire{} et \emph{potentiellement structurant} : donner les
+  créances et le capital de la faillie aux créancières \emph{renforce les
+  grosses} — un mécanisme de condensation directe qui pourrait fabriquer la
+  queue à lui seul. Le rapport le sait (X2, variante iii « destruction
+  pure ») mais ne l'a pas testé. C'est notre candidat n°1 d'explication
+  alternative pour la queue.
+\item \textbf{Population bornée endogènement.} \plausible{} sur le prototype
+  [E1, E6, E7c]. Mécanisme clair (mortalité universelle via $d_0$). Le risque
+  résiduel est une sous-population quasi immortelle à grand $w$ (mortalité du
+  top $> 0$ à vérifier, critère 6.4).
+\item \textbf{Choc commun « en loi » i.i.d. entre entités.} \arbitraire{}
+  et sémantiquement ambigu : le rapport dit « choc multiplicatif commun »
+  mais spécifie $\eta_i$ \emph{i.i.d. par entité} (le prototype tire un
+  vecteur). Il s'agit d'une loi commune, pas d'un choc agrégé commun. Un vrai
+  choc agrégé (même $\eta$ pour toutes au pas $t$) changerait complètement la
+  physique des cascades. La spécification doit figer cette lecture.
+\end{enumerate}
+
+%=====================================================================
+\section{Critique scientifique}
+\label{sec:critique}
+
+\subsection{Le modèle est-il vraiment minimal ?}
+Presque. La traque des paramètres du [WIP] (18 $\to$ 6) est rigoureuse et la
+plupart des suppressions sont justifiées par ablation. Trois réserves :
+(i)~la \emph{fenêtre de naissance} fait de $(w_0, d_0)$ un couple contraint à
+deux inégalités près — fonctionnellement, c'est un paramètre de forme calé,
+même si le rapport l'assume ; (ii)~$\lfloor N/k \rfloor$ rounds par pas est
+présenté comme « définition du pas de marché », mais l'intensité de churn
+(rounds $\times$ taille d'échantillon / $N$) est un paramètre caché que le
+rapport lui-même propose de faire varier en X1.3 — donc il en est un ;
+(iii)~la règle max/min dans l'échantillon de taille $k$ couple la sélection
+des contreparties à $k$ : l'écart inter-quantiles des extrêmes croît avec
+$k$, donc $k$ contrôle \emph{à la fois} la connectivité et l'intensité des
+gradients exploités — deux rôles pour un paramètre, ce qui compliquera
+l'interprétation du balayage en $k$.
+
+\subsection{Quels paramètres restent cachés ?}
+\begin{itemize}[nosep]
+\item la garde numérique $\epsilon$ (tolérances de faillite, de volume
+  minimal de prêt) — inoffensive d'après [ÉLAGAGE], à vérifier sur M2 ;
+\item l'\emph{ordre de service des contrats} en phase 4 quand $w$ ne couvre
+  pas tous les intérêts dus : servir dans l'ordre de création, en ordre
+  aléatoire ou au prorata change qui subit le défaut ; non spécifié ;
+\item la \emph{participation au marché} des entités déjà en défaut au même
+  pas (le prototype les exclut ; le rapport ne le dit pas) ;
+\item le seuil de viabilité d'un contrat ($q$ minimal, $r$ minimal quand
+  $w_\ell \approx w_b$) ;
+\item $T_{\mathrm{transitoire}}$ (500 pas) et la cadence de snapshot (50) —
+  paramètres de mesure, à justifier par les autocorrélations.
+\end{itemize}
+
+\subsection{Règles contestables économiquement ou mathématiquement}
+(i)~Le prêteur prête \emph{tout} son excédent au-dessus de $w^*$ à une seule
+contrepartie par round : aucune diversification, concentration maximale du
+risque — favorable aux cascades (voulu ?) mais économiquement extrême.
+(ii)~Le taux sans prime de risque face à un défaut endémique : les
+créancières ne « prix-ent » jamais le risque, ce qui entretient
+mécaniquement le sur-prêt — c'est peut-être le vrai moteur de la SOC, à
+nommer. (iii)~$d_0$ éteinte à la faillite sans créancier : de la monnaie
+nominale disparaît sans contrepartie ; la « masse de valeur nette » agrégée
+$\sum \NW = W_{\mathrm{tot}} - N d_0$ n'est conservée par aucune règle —
+acceptable (l'économie est ouverte) mais à surveiller dans les bilans.
+(iv)~Le transfert des contrats prêtés de la faillie à ses créanciers crée
+des liens entre entités qui ne se sont jamais « rencontrées », allongeant
+les chaînes d'intermédiation au fil des faillites — mécanisme intéressant
+mais dont la stationnarité n'est pas évidente (la profondeur des chaînes
+peut-elle dériver ?).
+
+\subsection{Mécanismes pouvant créer artificiellement une queue de Pareto}
+\begin{enumerate}[nosep]
+\item \emph{Condensation par prorata} : capital résiduel et créances des
+  faillies vont aux plus grosses créancières (cf. \S\ref{sec:hypotheses}.8).
+\item \emph{Effet cohorte résiduel} : l'ère d'amorçage ($t \lesssim 100$)
+  reste anormalement favorable ; contrôlé par 6.3 mais à re-vérifier sur
+  $\NW$.
+\item \emph{Pooling de fenêtres} : agréger des instantanés d'un régime non
+  stationnaire fabrique des queues (mixture de log-normales) ; le protocole
+  s'en défend (fenêtres séparées) mais l'estimateur $x_{\min}$ qui saute
+  [E1] montre que le danger est réel.
+\item \emph{Choc log-normal lui-même} : avec $\sigma = 0{,}25$, un GBM à
+  rappel faible produit des queues log-normales lourdes difficiles à
+  distinguer d'une Pareto sur 2--3 décades ; le LR de Vuong est le bon
+  outil, à condition d'être appliqué par fenêtre et par seed.
+\end{enumerate}
+
+\subsection{Mécanismes pouvant empêcher le corps exponentiel}
+Le rappel déterministe $\alpha\sqrt{w} - \delta w$ vers $w^*$ (côté $w$) ;
+la réinjection ponctuelle à $\varepsilon_0$ (le corps de [YR] exige une
+réinjection \emph{par le bas}, mais ici toutes les naissances entrent au
+même point — une masse de Dirac à $\varepsilon_0$ lissée par diffusion, pas
+un flux thermique) ; le fait que les incréments de $\NW$ des petites entités
+sont dominés par $rq$ et les chocs $\sigma w^*$, qui ont une échelle fixe
+mais un \emph{drift} qui dépend de la position dans le cycle de vie (jeune
+endettée vs établie redescendue) — le « corps » peut être une mixture de
+sous-populations dynamiques même sans être une mixture d'âges.
+
+\subsection{Les diagnostics proposés suffisent-ils ?}
+Le protocole §6 est sérieux (AIC/BIC multi-familles, CSN par fenêtres,
+$x_{\min}$ commun, anti-cohorte, renouvellement). Manques :
+\begin{itemize}[nosep]
+\item aucun test de \emph{stationnarité formelle} des séries $N(t)$,
+  $W_{\mathrm{tot}}(t)$ (une pente lente peut passer pour un plateau à
+  l'œil) ;
+\item pas de mesure des \emph{autocorrélations temporelles} justifiant
+  l'espacement de 50 pas des instantanés poolés (la vie médiane ~20--30 pas
+  est un argument, pas une mesure) ;
+\item le test mécanistique $T \approx B_0/A_0$ est excellent mais il faut
+  préciser \emph{comment} conditionner « être dans le corps » (fenêtre de
+  $\NW$ fixe, pas quantile mouvant, sinon biais de sélection) ;
+\item l'alternative corps-[BM] (éq.~7) n'est pas dans l'échelle de familles
+  d'ajustement — l'ajouter ;
+\item aucun contrôle par \emph{modèle nul} : un GBM à rappel + plancher
+  absorbant + réinjection, sans crédit, calé sur les mêmes moments — pour
+  savoir ce que le crédit ajoute réellement.
+\end{itemize}
+
+\subsection{Tests supplémentaires proposés (au-delà du §6)}
+(a)~variante « destruction pure » du résiduel et « annulation symétrique »
+des créances de la faillie (déjà en X2, à exécuter systématiquement, pas en
+recours) ; (b)~variante moyenne arithmétique des taux ; (c)~modèle nul sans
+crédit ($k$ tel que le marché est vide) à $\sigma$ égal ; (d)~traçage des
+trajectoires individuelles (rangs) pour mesurer la mobilité
+(matrice de transition entre quintiles sur 100 pas) ; (e)~bilan comptable
+par pas (conservation de $w$ total aux flux identifiés près) comme test
+d'intégrité continu.
+
+\subsection{Où le modèle risque-t-il de reproduire un artefact de cohorte ?}
+Trois endroits : l'ère d'amorçage (favorable, contrôlée par exclusion du
+transitoire — mais 500 pas suffisent-ils si $\E[\text{vie}]$ du top est
+longue ?) ; le bas de la distribution (les naissances à $\varepsilon_0$
+peuvent dominer les premiers déciles de $\NW$ — le garde-fou « établies
+redescendues » de X1.1 est le bon test) ; et \emph{la queue à âge contrôlé
+sur $\NW$} (jamais mesurée : [E7c] l'a fait sur $w$).
+
+\subsection{Capital, revenu, valeur nette : distinction bien exploitée ?}
+Oui dans la conception (NW = variable de Boltzmann, $y$ = variable de la
+thèse énoncée, $w$ = diagnostic), mais les validations [E7c] mesurent
+surtout $w$ ; l'exposant du revenu ($4{,}5$--$4{,}9$) diffère nettement de
+celui de $\NW$ ($2{,}7$--$2{,}8$), ce qui contredit la prédiction §3.5
+($y \approx \bar r C \propto \NW$ dans la queue $\Rightarrow$ même exposant).
+Le rapport ne commente pas cet écart — c'est un signal que la queue du
+revenu est portée par $\sqrt{w}$ plus longtemps que prévu, ou que la
+financiarisation $c = C/X$ des grosses est plus faible qu'attendu. À
+instrumenter ($h$, $c$, $\ell$ par décile).
+
+\subsection{Modèle de richesse, de crédit ou démographique ?}
+Structurellement, M2 est un \emph{modèle de crédit à démographie
+absorbante} : la forme du corps dépend du flux naissance/faillite
+(démographie), la queue dépend du carnet de contrats (crédit), et le
+capital réel ne sert que de substrat aux chocs et à l'extraction. La
+« richesse » est un épiphénomène comptable ($\NW$). Ce n'est pas un défaut —
+mais cela implique que les paramètres démographiques ($\lambda$,
+$\varepsilon_0$) et de crédit ($k$, règle de taux) sont les vrais leviers,
+et que la robustesse doit être démontrée d'abord contre eux.
+
+\subsection{Verdict}
+Le document est une proposition de recherche de bonne qualité : falsifiable,
+instrumentée, honnête sur ses échecs (corps non exponentiel dit trois fois).
+Ses deux points aveugles principaux : (1)~l'écart entre le prototype ayant
+produit [E7c] et la spécification M2 (volume de prêt, faillite) n'est
+signalé nulle part — le risque de non-réplication est réel et c'est la
+première chose que l'implémentation doit vérifier ; (2)~le mécanisme de
+condensation par prorata n'est pas contrôlé alors qu'il suffit peut-être à
+produire la queue. Notre implémentation traitera ces deux points comme des
+expériences de première priorité.
+
+\end{document}

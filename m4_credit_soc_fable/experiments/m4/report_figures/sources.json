@@ -1,0 +1,30 @@
+{
+  "baseline_vs_candidat_ccdf.png": [
+    "a1_lam10p0_s0",
+    "a1_lam10p0_s1",
+    "a1_lam10p0_s2",
+    "f_lam10_s0",
+    "f_lam10_s1",
+    "f_lam10_s2"
+  ],
+  "candidat_scaling_ccdf.png": [
+    "f_lam10_s0",
+    "f_lam30_s0",
+    "f_lam100_s0",
+    "f_lam300_s0"
+  ],
+  "dose_reponse_volume_b.png": [
+    "v_r6_s0",
+    "v_r6_s1",
+    "v_r6_s2",
+    "v_r3_s0",
+    "v_r3_s1",
+    "v_r3_s2",
+    "v_r2_s0",
+    "v_r2_s1",
+    "v_r2_s2",
+    "f_lam30_s0",
+    "f_lam30_s1",
+    "f_lam30_s2"
+  ]
+}

@@ -1,0 +1,406 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[french]{babel}
+\usepackage{amsmath,amssymb,booktabs,longtable,array}
+\usepackage[a4paper,margin=2.4cm]{geometry}
+\usepackage{xcolor}
+\usepackage[hidelinks]{hyperref}
+\usepackage{microtype}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.55em}
+\newcommand{\NW}{\mathrm{NW}}
+\newcommand{\dd}{\mathrm{d}}
+\newcommand{\hyp}{\textcolor{orange!70!black}{Hypothèse}}
+\newcommand{\plaus}{\textcolor{blue!65!black}{Plausible}}
+\newcommand{\obs}{\textcolor{green!45!black}{Observé}}
+\newcommand{\und}{\textcolor{red!65!black}{Non démontré}}
+
+\title{Lecture critique du modèle M2\\
+\large Distribution Boltzmann--Pareto et auto-organisation critique}
+\author{Réplication computationnelle indépendante}
+\date{3 juillet 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Le document de conception M2 propose un modèle parcimonieux de capital réel,
+crédit nominal perpétuel, chocs multiplicatifs, faillites en cascade et
+population ouverte. Sa contribution la plus solide est de transformer plusieurs
+mécanismes opaques du WIP en règles testables et d'identifier explicitement
+l'effet cohorte comme menace. En revanche, ni le corps exponentiel ni
+l'auto-organisation de l'exposant de Pareto ne sont démontrés. Les explorations
+E0--E7 constituent des ablations informatives mais non une validation
+indépendante. Plusieurs règles de faillite et de mesure restent sous-spécifiées.
+La conclusion épistémique est donc : modèle cohérent comme programme de
+recherche, mécanisme Boltzmann conjectural, queue de Pareto préliminaire, SOC non
+établie.
+\end{abstract}
+
+\tableofcontents
+
+\section{Objectifs, méthode et statut des preuves}
+
+Cette lecture reconstruit fidèlement M2, sépare faits, arguments et conjectures,
+puis transforme les ambiguïtés en exigences d'implémentation ou expériences de
+réfutation. La source principale est
+\texttt{recherche/conception\_boltzmann\_pareto\_soc/conception\_modele\_M2.md},
+lue intégralement avec ses annexes. Le prototype, les sondes et les logs E0--E7
+sont des éléments produits dans le même cycle de conception : ils soutiennent
+la plausibilité, mais ne sont ni une réplication ni une preuve analytique.
+
+\begin{longtable}{p{0.18\textwidth}p{0.31\textwidth}p{0.43\textwidth}}
+\toprule
+Statut & Contenu & Évaluation \\
+\midrule
+\endhead
+\obs & Conservation du principal à la création d'un prêt ; espérance unitaire du
+choc log-normal ; point fixe autarcique. & Conséquences algébriques des règles,
+sous réserve d'une implémentation correcte. \\
+\plaus & Population bornée dans E7c ; queue compatible avec Pareto ; faible
+corrélation âge--richesse. & Observations préliminaires sur une configuration et
+un petit nombre de traces ; à répliquer par seed et fenêtre. \\
+\hyp & Flux du corps indépendants de $\NW$ ; stabilisation de l'exposant par les
+cascades ; extensivité en $\lambda$. & Hypothèses mécanistiques falsifiables. \\
+\und & Corps exponentiel, SOC au sens critique, absence de réglage fin,
+stationnarité asymptotique. & Aucun théorème ni campagne suffisante dans le
+rapport. \\
+\bottomrule
+\end{longtable}
+
+\section{Résumé fidèle du modèle M2}
+
+\subsection{État et observables}
+
+Une entité vivante $i$ porte un capital réel scalaire $w_i\geq0$, une date de
+naissance et une dette d'amorçage nominale universelle $d_0$. Un contrat actif
+$e=(\ell,b,q,r)$ relie un prêteur $\ell$ à un emprunteur $b$, avec principal
+nominal constant $q>0$ et taux par pas $r\geq0$. Les prêts sont perpétuels : il
+n'existe ni échéance ni amortissement.
+
+En notant
+\[
+ C_i=\sum_{e:\ell(e)=i}q_e,\qquad
+ D_i=\sum_{e:b(e)=i}q_e,
+\]
+la variable cible est
+\[
+ \NW_i=w_i+C_i-D_i-d_0.
+\]
+Le capital brut $w_i$ est diagnostique. Le rapport définit le revenu brut par
+$y_i=\alpha\sqrt{w_i}+I_i^{\text{reçu}}$ et le revenu net en retranchant
+$I_i^{\text{payé}}$. Cette définition n'inclut ni plus-value de $w$, ni pertes sur
+créances, ni variation de valeur nette ; elle devra donc être nommée
+\emph{revenu de flux} pour éviter une équivalence abusive avec $\Delta\NW$.
+
+\subsection{Séquence complète d'un pas}
+
+L'ordre proposé est constitutif du modèle :
+\begin{enumerate}
+  \item naissances Poisson, chaque entrante recevant $(w_0,d_0)$ et
+  $\NW_0=\varepsilon_0=w_0-d_0>0$ ; $N(0)=0$ ;
+  \item choc multiplicatif indépendant sur chaque capital réel ;
+  \item extraction concave ajoutée au capital ;
+  \item service des intérêts contractuels et marquage des défauts ;
+  \item dépréciation du seul capital réel ;
+  \item $\lfloor N/k\rfloor$ rencontres de crédit locales ;
+  \item résolution itérative des défauts et insolvabilités jusqu'à stabilité.
+\end{enumerate}
+
+\begin{figure}[ht]
+\centering
+\fbox{\begin{minipage}{0.92\textwidth}\centering
+Naissances $\rightarrow$ choc sur $w$ $\rightarrow$ extraction
+$\rightarrow$ intérêts $\rightarrow$ dépréciation $\rightarrow$ crédit
+$\rightarrow$ cascade de faillites $\rightarrow$ mesure
+\end{minipage}}
+\caption{Ordre des événements de M2. Le modifier définit une autre dynamique
+discrète, surtout pour les nouveaux prêts et les insolvabilités temporaires.}
+\end{figure}
+
+\subsection{Population ouverte et paramètres}
+
+Les naissances suivent $n_t\sim\mathrm{Poisson}(\lambda)$ et la mort résulte
+uniquement du défaut ou de $\NW<0$. Il n'existe ni capacité de charge ni probabilité
+de décès exogène. Le bornage allégué est $N^*=\lambda\,\mathbb{E}[L]$ si la durée
+de vie $L$ a effectivement une espérance finie pour toutes les positions du
+réseau. C'est une conséquence conditionnelle, pas la preuve que cette espérance
+est finie.
+
+Les valeurs dynamiques sont $\delta,\lambda,k,\sigma,w_0,d_0$ avec $\alpha=1$
+comme convention. Dire « six paramètres » masque que $(w_0,d_0)$ représentent
+deux degrés de liberté, souvent reformulés en $(w_0,\varepsilon_0/w_0)$.
+$\delta$ et $\lambda$ ne sont des conventions d'échelle qu'après démonstration
+des invariances de temps et d'extensivité.
+
+\section{Reconstruction mathématique}
+
+\subsection{Dynamique du capital hors crédit}
+
+Pour chaque entité vivante, le choc est
+\[
+ \eta_{i,t}\sim\mathcal N(-\sigma^2/2,\sigma^2),\qquad
+ w_i\leftarrow w_i\exp(\eta_{i,t}),
+ \quad\mathbb E[\exp(\eta)]=1.
+\]
+Puis l'extraction et la dépréciation donnent successivement
+\[
+ w_i\leftarrow w_i+\alpha\sqrt{w_i},\qquad
+ w_i\leftarrow(1-\delta)w_i.
+\]
+Sans choc ni crédit, la carte exacte d'un pas n'a pas exactement le même point
+fixe que l'ODE $\dot w=\alpha\sqrt w-\delta w$, car extraction et dépréciation
+sont séquentielles. L'ODE a $w_+=(\alpha/\delta)^2$, tandis que la carte écrite
+ci-dessus satisfait
+\[
+ w=(1-\delta)(w+\alpha\sqrt w)
+ \quad\Longrightarrow\quad
+ w_+=\left(\frac{(1-\delta)\alpha}{\delta}\right)^2.
+\]
+Pour $\delta=0{,}05$, l'écart est d'environ 9,75\,\% en niveau. Employer 400
+comme point fixe exact est donc une approximation de temps continu.
+
+\subsection{Marché du crédit}
+
+Le rendement marginal de l'extraction est
+\[
+ r_i^*=\frac{\dd(\alpha\sqrt w)}{\dd w}\bigg|_{w_i}
+      =\frac{\alpha}{2\sqrt{w_i}}.
+\]
+Dans un échantillon uniforme de $k$ vivantes, $\ell$ maximise $w$ et $b$ le
+minimise. Pour $w_\ell,w_b>0$,
+\[
+ r=\sqrt{r_\ell^*r_b^*},\qquad \rho=r+\delta,
+ \qquad w^*(\rho)=\left(\frac{\alpha}{2\rho}\right)^2.
+\]
+L'offre, la demande et le volume sont
+\[
+ q_{\rm dem}=[w^*-w_b]_+,
+ \quad q_{\rm off}=[w_\ell-w^*]_+,
+ \quad q=\min(q_{\rm dem},q_{\rm off}).
+\]
+Si $q>0$, le transfert est conservatif :
+\[
+ w_\ell' = w_\ell-q,\qquad w_b'=w_b+q,
+ \qquad w_\ell'+w_b'=w_\ell+w_b,
+\]
+et un contrat $(\ell,b,q,r)$ est créé. La valeur nette de chacun est également
+inchangée à la création : le prêteur remplace $q$ de réel par une créance, et
+l'emprunteur reçoit $q$ de réel avec une dette égale.
+
+Le cas $w=0$ rend $r_i^*$ infini et n'est pas défini dans le rapport. Une limite
+analytique conduit généralement à $w^*=0$ et $q=0$, mais une régularisation
+numérique choisie autrement introduirait un paramètre caché.
+
+\subsection{Intérêts, défaut et conservation}
+
+Pour un contrat $e$, l'échéance du pas est $a_e=r_eq_e$. Un paiement isolé peut
+s'écrire
+\[
+ p_e=\min(w_b,a_e),\qquad
+ w_b\leftarrow w_b-p_e,\quad w_\ell\leftarrow w_\ell+p_e.
+\]
+Ainsi le capital total est conservé même lors d'un paiement partiel ; c'est la
+créance d'intérêt impayée qui n'est pas capitalisée. Si $p_e<a_e$, $b$ est en
+défaut et doit être liquidé en phase 7. Traiter les contrats séquentiellement
+donne une priorité au premier contrat rencontré. Sans ordre canonique ou service
+proportionnel simultané, la permutation du carnet modifie les gagnants et les
+cascades.
+
+\subsection{Faillite et cascade}
+
+Soit $i$ en défaut ou avec $\NW_i<0$. Le texte exige : annuler ses dettes
+contractuelles ; transférer les créances qu'elle détient et son capital résiduel
+à ses créanciers au prorata ; éteindre $d_0$ ; retirer $i$ ; puis recommencer
+jusqu'à ce qu'aucune vivante ne vérifie le critère.
+
+Une formalisation naturelle, mais non entièrement spécifiée, pose pour chaque
+créancier $j$ de $i$
+\[
+ s_{ji}=\frac{q_{ji}}{D_i},\qquad
+ w_j\leftarrow w_j+s_{ji}w_i,
+\]
+et remplace chaque créance $(i,h,q_{ih},r_{ih})$ par des fractions
+$(j,h,s_{ji}q_{ih},r_{ih})$. Cette règle exige de fractionner les contrats. Elle
+ne définit pas $D_i=0$, les créanciers déjà promis à la faillite, les
+auto-contrats créés par transfert, ni l'ordre entre plusieurs faillites
+simultanées. Ces cas peuvent changer la contagion et doivent être spécifiés avant
+codage.
+
+\section{Hypothèses fortes et paramètres cachés}
+
+\begin{longtable}{p{0.31\textwidth}p{0.27\textwidth}p{0.34\textwidth}}
+\toprule
+Proposition & Statut & Test discriminant \\
+\midrule
+\endhead
+Le corps de $\NW$ est exponentiel. & \und ; le rapport signale que gamma ou
+log-normale gagnent encore. & AIC/BIC sur domaine déclaré, QQ-plot, stabilité aux
+seuils de corps, $T$ contre $B_0/A_0$. \\
+L'exposant de Pareto est stabilisé par une boucle SOC. & \hyp ; stabilité
+temporelle ne prouve pas criticité. & Multi-seed, $x_{\min}$ libre et commun,
+ablation du crédit/cascades, finite-size scaling, réponse à $k$ et $\sigma$. \\
+Les cascades suffisent à renouveler les classes. & \plaus dans E7c seulement. &
+Mortalité et entrées du top décile, matrices de transition par quantile, risque
+conditionnel à âge et richesse. \\
+Les classes ne sont pas des cohortes. & \plaus, non acquis. & Distribution
+jointe âge--$\NW$, queues dans tranches d'âge, top renewal, réplication après
+transitoire long. \\
+La population est bornée endogènement. & \plaus si toute durée de vie a une
+espérance finie. & Pente de $N(t)$, équilibre naissances--décès, durée de vie
+censurée, survie du top, horizon doublé. \\
+La forme est robuste sans réglage fin. & \und ; E7 passe par une « fenêtre de
+naissance ». & Grille pré-enregistrée incluant les échecs, plusieurs seeds, cartes
+continues autour des frontières. \\
+$\NW$ est la variable cible économiquement pertinente. & Choix de modélisation.
+& Comparer $w$, $\NW$, revenu brut/net et $\Delta\NW$ ; tester la sensibilité à
+$d_0$. \\
+La moyenne géométrique du taux est neutre. & Convention arbitraire. & Ablations
+géométrique, arithmétique et négociation bornée, sans recalibrage. \\
+Le transfert prorata est neutre. & Convention arbitraire et potentiellement
+redistributive vers les gros créanciers. & Annulation, destruction, transfert
+proportionnel et enchère ; comparer concentration et cascades. \\
+\bottomrule
+\end{longtable}
+
+Les paramètres cachés comprennent aussi le pas de temps, l'ordre des phases,
+l'échantillonnage avec ou sans remise dans un round, la possibilité de participer
+plusieurs fois par pas, l'ordre du carnet lors du service, la tolérance de
+solvabilité, le nombre minimal de points de queue, le quantile de corps (95\,\%),
+la cadence des snapshots, le nombre de réplications bootstrap et le traitement
+des décès simultanés. Ce sont des choix structurels ou statistiques, pas de
+simples détails logiciels.
+
+\section{Critique scientifique structurée}
+
+\subsection{Le modèle est-il vraiment minimal ?}
+
+Il est nettement plus minimal que le WIP comptable : un stock réel, un réseau de
+contrats et un seuil de solvabilité. Il n'est toutefois pas minimal au sens
+causal. Trois mécanismes produisent déjà de la multiplicativité (GBM, intérêts
+proportionnels, pertes proportionnelles) et deux mécanismes imposent un bord
+(faillite, $d_0$). Sans ablations factorielles, on ne sait pas lequel est
+nécessaire à la queue. De plus, une dette $d_0$ sans créancier ni remboursement
+est économiquement un seuil de liquidation individuel, pas une dette au sens
+comptable. La nommer dette donne une microfondation que la règle ne possède pas.
+
+\subsection{Règles contestables}
+
+Les prêts perpétuels sans remboursement permettent des paiements d'intérêts
+cumulés arbitrairement supérieurs au principal. La cible $w^*(r+\delta)$ suppose
+qu'un taux contractuel et la dépréciation du capital s'additionnent comme coûts
+marginalement comparables, alors que l'emprunteur garde le capital et ne rembourse
+jamais le principal. Le prêteur compare par ailleurs le rendement marginal perdu
+à un taux sans intégrer explicitement risque de défaut ou valeur de récupération.
+La règle max/min parmi $k$ sélectionne mécaniquement des écarts extrêmes et peut
+fabriquer une stratification. Enfin, transférer les actifs de la faillie aux
+créanciers concentre potentiellement le réseau au lieu de le désenchevêtrer.
+
+\subsection{Mécanismes susceptibles de fabriquer une queue de Pareto}
+
+Le choc log-normal multiplicatif avec réinjection et absorption suffit souvent à
+générer un processus de Kesten. Une queue observée ne prouve donc ni le rôle du
+crédit ni la SOC. Les prêts perpétuels cumulent des créances proportionnelles à
+la taille ; le mécanisme max/min et les transferts prorata favorisent aussi les
+agents déjà riches. Enfin, optimiser $x_{\min}$ sur plusieurs seuils puis retenir
+la meilleure lecture crée un biais de sélection. Les contrôles indispensables
+sont GBM seul avec le même mécanisme démographique, crédit sans choc, faillites
+sans transfert de créances et réseau rebrassé conservant les bilans.
+
+\subsection{Mécanismes susceptibles d'empêcher le corps exponentiel}
+
+L'extraction $\sqrt w$ et la dépréciation créent un rappel vers un niveau positif,
+donc un mode intérieur plutôt qu'en zéro. Le choc sur $w$, alors que le corps est
+analysé sur $\NW=w+C-D-d_0$, n'est pas additif conditionnellement à $\NW$ si les
+compositions de bilan varient. Les entrants sont injectés en un point
+$\varepsilon_0$, non par une distribution au bord. La population stationnaire est
+un mélange d'âges et de positions de réseau. Le crédit n'est pas un échange
+aléatoire de monnaie à somme conservée : il crée simultanément deux postes de
+bilan et sélectionne les extrêmes. Aucune de ces propriétés ne garantit la
+symétrie de renversement du temps invoquée pour Boltzmann.
+
+\subsection{Les diagnostics proposés suffisent-ils ?}
+
+Non. AIC/BIC et CSN sont nécessaires mais insuffisants sur des observations
+temporellement dépendantes. Il faut des intervalles par blocs ou par trajectoire,
+des tests prédictifs hors échantillon, des courbes de sensibilité au domaine
+d'ajustement, le taux de faux positifs sur données synthétiques et des tailles
+effectives d'échantillon. Pour une revendication SOC, une loi de puissance des
+avalanches ne suffit pas : il faut au minimum vérifier absence de réglage du
+point critique, séparation des échelles de forçage et relaxation, réponse à la
+taille du système, et relations d'échelle robustes. Ici les naissances, chocs,
+marché et cascades ont lieu au même pas, ce qui affaiblit l'analogie SOC.
+
+\subsection{Tests supplémentaires requis}
+
+Outre le protocole du rapport : permutations de l'ordre des contrats ; traitement
+simultané des intérêts ; liquidation simultanée versus séquentielle ; test de
+conservation global à chaque phase ; risque de décès conditionnel à $(\text{âge},
+\NW,C/D)$ ; matrices de mobilité inter-déciles ; survie avec censure à droite ;
+autocorrélation et taille effective des pools ; stabilité quand la fréquence de
+snapshot change ; contrôle de taille en variant $\lambda$ ; ablations complètes
+des trois sources multiplicatives ; et comparaison à des données synthétiques
+log-normales connues.
+
+\subsection{Où l'artefact de cohorte peut-il réapparaître ?}
+
+$N(0)=0$ supprime une cohorte initiale explicite mais pas l'avantage des premières
+arrivées, qui rencontrent peu de créanciers et accumulent du capital avant la
+densification. Une faible corrélation linéaire globale peut masquer une petite
+élite fondatrice. Le contrôle doit porter sur les dates de naissance du top,
+leur mortalité, leur durée de résidence et une queue estimée à âge fixé. Un
+mélange d'âges peut également produire un corps apparemment exponentiel même si
+aucune distribution conditionnelle ne l'est.
+
+\subsection{Capital, revenu et valeur nette}
+
+La distinction conceptuelle est utile mais incomplètement exploitée. Le marché
+classe les agents par $w$, la faillite par $\NW$, et la revendication empirique
+porte parfois sur le revenu brut. Ces variables peuvent avoir des distributions
+différentes. Comme $d_0$ est constant, il translate $\NW$ mais déclenche aussi la
+sélection démographique ; il n'est donc pas une simple convention comptable. Le
+revenu devrait être rapporté en brut, net, réalisé et variation de richesse. Les
+pertes de créances sont une variation de patrimoine, pas un revenu négatif dans
+la définition actuelle.
+
+\subsection{Nature du modèle}
+
+M2 est d'abord un modèle de réseau de crédit et de sélection démographique, dont
+la variable de sortie est une richesse nette synthétique. Il est moins un modèle
+de revenu : aucun salaire, travail, consommation ou processus de revenu autonome
+n'est représenté. L'extraction $\sqrt w$ est une production capitalisée. La
+distribution observée résulte nécessairement de l'interaction entre bilan,
+réseau et survie ; l'interpréter comme loi universelle des revenus dépasserait
+la portée du mécanisme.
+
+\section{Résultats de la lecture, limites et prochaines expériences}
+
+Le rapport établit algébriquement la conservation lors d'un prêt, la neutralité
+moyenne du choc et la présence d'un rappel autarcique. Il documente
+préliminairement que certaines variantes ne meurent pas, que la règle naïve crée
+une aristocratie d'âge et qu'E7c peut produire simultanément renouvellement,
+population plate et queue compatible avec Pareto. Il n'établit pas le corps
+exponentiel ; il le réfute même provisoirement sur le prototype. Il n'établit pas
+non plus que la stabilité apparente de la queue provient de la rétroaction SOC.
+
+La première implémentation devra figer une sémantique de référence, tester chaque
+invariant, puis reproduire E7c sans chercher à améliorer la forme. Les premières
+expériences de réfutation seront : (1) baseline multi-seed et fenêtres séparées ;
+(2) corps de $w$, $\NW$ et revenus avec domaines alternatifs ; (3) ablations GBM,
+crédit et cascades ; (4) diagnostics anti-cohorte ; (5) variantes d'ordre de
+service et de liquidation ; (6) grille $(k,\sigma,\varepsilon_0/w_0)$ incluant
+tous les échecs.
+
+\section{Conclusion honnête}
+
+M2 est une proposition scientifique mieux falsifiable que le WIP, non un modèle
+validé. La queue de Pareto et le bornage démographique sont plausibles dans une
+zone déjà sélectionnée ; le corps exponentiel est absent des résultats rapportés
+et l'interprétation SOC reste une hypothèse. La dette d'amorçage, la règle de taux
+et la liquidation prorata sont des choix structurants. La suite doit donc viser
+une implémentation fidèle et traçable, puis rechercher activement des explications
+plus simples --- GBM avec absorption, sélection par âge ou concentration induite
+par les règles --- avant d'attribuer la forme à l'auto-organisation critique.
+
+\end{document}

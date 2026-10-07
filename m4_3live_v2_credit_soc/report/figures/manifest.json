@@ -1,0 +1,228 @@
+[
+  {
+    "nom": "f01_institution",
+    "legende": "La bande d'échanges que la règle de richesse s'interdisait.",
+    "valeurs": {
+      "lambda_star": 0.3076923076923077,
+      "seuil_bande": 0.4444444444444445
+    }
+  },
+  {
+    "nom": "f02_stationnarite",
+    "legende": "Un seuil hérité d'une autre fenêtre rejetterait le contrôle lui-même.",
+    "valeurs": {
+      "controle_hors_bande": 11,
+      "controle_graines": 12
+    }
+  },
+  {
+    "nom": "f03_horizon",
+    "legende": "Le régime nouveau ne s'éteint pas : il plafonne.",
+    "valeurs": {}
+  },
+  {
+    "nom": "f04_contrefactuel",
+    "legende": "Le compteur contrefactuel n'est pas une trajectoire, et le volume ne suit pas le nombre.",
+    "valeurs": {
+      "reversed_new_A150": 0.2366163575501157,
+      "blocked_new_A150": 0.23672836891021323,
+      "volume_new_A150": 0.18379831282258677,
+      "ecart_contrefactuel_max": 0.013836764382201494
+    }
+  },
+  {
+    "nom": "f05_survivants",
+    "legende": "Les survivantes de l'ancienne technologie vivent de l'intérêt.",
+    "valeurs": {
+      "interet_ancienne_libre": 0.9303118516124206,
+      "interet_nouvelle_libre": 0.5078740383738152
+    }
+  },
+  {
+    "nom": "f06_apparie",
+    "legende": "Le levier agit fort pendant la transition, presque plus après.",
+    "valeurs": {
+      "prod_tot": -0.05201810430489825,
+      "K_tot": -0.10105083681238343,
+      "deaths_per_pop": 0.021246393418331993,
+      "n_loans": 0.2434441876860145,
+      "nulsTransition": 1.0,
+      "totalTransition": 21.0,
+      "nulsResiduel": 14.0,
+      "totalResiduel": 21.0
+    }
+  },
+  {
+    "nom": "f07_creanciers",
+    "legende": "Sous le sens libre, ce ne sont plus les riches qui détiennent les créances.",
+    "valeurs": {
+      "corr_K_net_free": -0.1425179232344411,
+      "corr_K_net_v1": 0.14728225193521763,
+      "corr_marg_net_free": -0.02779849346718231,
+      "corr_marg_net_v1": -0.028479108811904505
+    }
+  },
+  {
+    "nom": "f08_chaine",
+    "legende": "Le surplus est un flux, le service qu'il crée est une charge perpétuelle.",
+    "valeurs": {
+      "n_loans": 0.2434441876860145,
+      "interest_paid": 0.029613262716248312,
+      "deaths_per_pop": 0.021246393418331993,
+      "destroyed_per_K": 0.07521382592945207,
+      "pop": -0.02099656113695288,
+      "K_tot": -0.10105083681238343,
+      "prod_tot": -0.05201810430489825
+    }
+  },
+  {
+    "nom": "f09_loi_en_defaut",
+    "legende": "Un cinquième levier, et la régularité ne s'y range pas.",
+    "valeurs": {
+      "rotation_new_A150": 0.158061198851552,
+      "predite_new_A150": 0.2167715027223034,
+      "mesuree_new_A150": 0.021246393418331993,
+      "rotation_new_A075": 0.1274098048329075,
+      "predite_new_A075": 0.17390614653548653,
+      "mesuree_new_A075": 0.02079121494570994,
+      "rotation_new_g060": 0.26286534089738556,
+      "predite_new_g060": 0.36620027433331215,
+      "mesuree_new_g060": 0.0943733151717262
+    }
+  },
+  {
+    "nom": "f10_service_ratio",
+    "legende": "Le levier ne peut pas mordre à cette dépréciation.",
+    "valeurs": {
+      "n_debitrices": 13447.0,
+      "minimum": 3.265138822,
+      "seuil": 1.0101010101010102
+    }
+  },
+  {
+    "nom": "f11_redistribution",
+    "legende": "Zéro défaut de plus, et pourtant des agrégats déplacés.",
+    "valeurs": {
+      "defauts_mesures": 0.0,
+      "prod_tot": -0.018384630202804658,
+      "part_redistribuee": 0.0004062219543288407
+    }
+  },
+  {
+    "nom": "f12_tension",
+    "legende": "La tension et le rapport de Jensen, calculés dans le moteur.",
+    "valeurs": {
+      "tension_controle": 13.292184106983072,
+      "jensen_controle": 0.9765133513102824
+    }
+  },
+  {
+    "nom": "f13_amplitude",
+    "legende": "L'amplitude d'un levier sur l'exposant dépend du capital.",
+    "valeurs": {
+      "m_AllA": 1.5000000000000009,
+      "naive_AllA": 1.5,
+      "keq_AllA": 1.5,
+      "p_AllA": 1.0,
+      "m_FractionA": 1.2499999999999991,
+      "naive_FractionA": 1.25,
+      "keq_FractionA": 1.25,
+      "p_FractionA": 0.19780974485922864,
+      "m_Gamma": 1.9601494501712564,
+      "naive_Gamma": 1.0,
+      "keq_Gamma": 1.9524754603063867,
+      "p_Gamma": 1.0,
+      "m_NewA": 1.4999999999999993,
+      "naive_NewA": 1.5,
+      "keq_NewA": 1.5,
+      "p_NewA": 0.005769352448959064
+    }
+  },
+  {
+    "nom": "f14_decomposition",
+    "legende": "Une identité en trois facteurs, dont deux sont pinés.",
+    "valeurs": {
+      "f1_gap": 0.09498373163157714,
+      "f2_min": 0.9943929384333536,
+      "f2_max": 0.9998922765157593
+    }
+  },
+  {
+    "nom": "f15_gini",
+    "legende": "La rotation du crédit n'est pas une grandeur de crédit : c'est une inégalité.",
+    "valeurs": {
+      "gini_richest_lends": 0.06701231462163659,
+      "gini_free": 0.07474257321870681,
+      "biais_avant": -0.1766781430341282,
+      "biais_logmean": 0.004975500642472097
+    }
+  },
+  {
+    "nom": "f16_fermeture",
+    "legende": "Un ordre de grandeur correct n'est pas une loi.",
+    "valeurs": {
+      "ecart_median": -0.19123679048285924,
+      "pente_groupee": 0.8720871796047879,
+      "r2_groupe": 0.8371484166781753
+    }
+  },
+  {
+    "nom": "f17_leviers",
+    "legende": "Le R² groupé reflète la géométrie du balayage, pas une réponse.",
+    "valeurs": {
+      "pente_rho": 0.5949121207824224,
+      "pente_K0": 1.378037220314328,
+      "pente_sigma": 1.4097499038198928,
+      "pente_lam": 0.5061944487970345,
+      "pente_delta": 8.27186329632766,
+      "pente_groupee": 0.8720871796047879
+    }
+  },
+  {
+    "nom": "f18_hetero",
+    "legende": "Une loi du régime homogène, robuste en médiane hors de lui.",
+    "valeurs": {
+      "median_free": -0.0403689858066687,
+      "median_richest_lends": -0.011919056757525581
+    }
+  },
+  {
+    "nom": "f19_mortalite_rotation",
+    "legende": "La rotation prédit la mortalité en niveau, sur tout le corpus.",
+    "valeurs": {
+      "pente": 1.2599557614659989,
+      "r2": 0.9852417025913628,
+      "n": 322,
+      "span": 5.421909000390972
+    }
+  },
+  {
+    "nom": "g01_cout",
+    "legende": "Un coût total en λT²/2, et une correction qui le rend linéaire.",
+    "valeurs": {
+      "clefs_v1": 120153.0,
+      "clefs_v2": 1023.0,
+      "croissance_v1": 1.073423245486842,
+      "croissance_v2": 0.8049863297559876,
+      "part_vide": 0.991485855534194
+    }
+  },
+  {
+    "nom": "g02_parite",
+    "legende": "L'écart n'est pas petit : il est nul, à chacun des 8000 pas.",
+    "valeurs": {
+      "pas": 8000.0,
+      "ecart_max": 0.0
+    }
+  },
+  {
+    "nom": "g03_taux",
+    "legende": "La règle de taux est symétrique, et l'alternative détruirait la parité.",
+    "valeurs": {}
+  },
+  {
+    "nom": "g04_ordre_phases",
+    "legende": "Échanger les deux phases conserve le capital et le redistribue.",
+    "valeurs": {}
+  }
+]

@@ -1,0 +1,96 @@
+{
+ "plan": "mecanisme",
+ "note": "Volet 6 : instantanés denses pour la chaîne causale (graine 1, figures activées — cellules centrales).",
+ "cells": [
+  {
+   "name": "g033_meca",
+   "parameters": {
+    "A": 1.0,
+    "lam": 30.0,
+    "delta": 0.05,
+    "sigma": 0.25,
+    "K0": 25.0,
+    "pop_max": 30000,
+    "snapshot_every": 50,
+    "individual_every": 5,
+    "figures": true,
+    "gamma": 0.3333333333333333,
+    "T": 4000
+   },
+   "n_runs": 1,
+   "base_seed": 1
+  },
+  {
+   "name": "g040_meca",
+   "parameters": {
+    "A": 1.0,
+    "lam": 30.0,
+    "delta": 0.05,
+    "sigma": 0.25,
+    "K0": 25.0,
+    "pop_max": 30000,
+    "snapshot_every": 50,
+    "individual_every": 5,
+    "figures": true,
+    "gamma": 0.4,
+    "T": 4000
+   },
+   "n_runs": 1,
+   "base_seed": 1
+  },
+  {
+   "name": "g050_meca",
+   "parameters": {
+    "A": 1.0,
+    "lam": 30.0,
+    "delta": 0.05,
+    "sigma": 0.25,
+    "K0": 25.0,
+    "pop_max": 30000,
+    "snapshot_every": 50,
+    "individual_every": 5,
+    "figures": true,
+    "gamma": 0.5,
+    "T": 4000
+   },
+   "n_runs": 1,
+   "base_seed": 1
+  },
+  {
+   "name": "g060_meca",
+   "parameters": {
+    "A": 1.0,
+    "lam": 30.0,
+    "delta": 0.05,
+    "sigma": 0.25,
+    "K0": 25.0,
+    "pop_max": 30000,
+    "snapshot_every": 50,
+    "individual_every": 5,
+    "figures": true,
+    "gamma": 0.6,
+    "T": 4000
+   },
+   "n_runs": 1,
+   "base_seed": 1
+  },
+  {
+   "name": "g067_meca",
+   "parameters": {
+    "A": 1.0,
+    "lam": 30.0,
+    "delta": 0.05,
+    "sigma": 0.25,
+    "K0": 25.0,
+    "pop_max": 30000,
+    "snapshot_every": 50,
+    "individual_every": 5,
+    "figures": true,
+    "gamma": 0.6666666666666666,
+    "T": 4000
+   },
+   "n_runs": 1,
+   "base_seed": 1
+  }
+ ]
+}

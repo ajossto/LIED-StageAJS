@@ -10,7 +10,7 @@ FIG_DIR = ROOT / "figures"
 FIG_DIR.mkdir(parents=True, exist_ok=True)
 
 REFERENCE_STATS = Path(
-    "/home/anatole/jupyter/Modèle_sans_banque_wip/src/resultats/"
+    "/home/anatole/jupyter/anciens_modeles/Modèle_sans_banque/src/resultats/"
     "simu_20260402_142017_scenario_base_d6a1d52/csv/stats_legeres.csv"
 )
 

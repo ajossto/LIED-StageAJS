@@ -1,0 +1,654 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{amsmath,amssymb,mathtools}
+\usepackage{geometry}
+\usepackage{microtype}
+\usepackage{tikz}
+\usepackage{pgfplots}
+
+\pgfplotsset{compat=1.18}
+\usetikzlibrary{arrows.meta,babel}
+
+\geometry{margin=2.6cm}
+
+\title{Analyse d'une équation de vie effective d'une entité}
+\author{Note complémentaire au modèle multi-agents}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Cette note isole une brique analytique simple du modèle multi-agents décrit dans la note de travail. On étudie l'équation différentielle
+\[
+    \frac{dx}{dt}=-\delta x+b\sqrt{x}+c,\qquad x\geq 0,
+\]
+où \(\delta>0\), \(b>0\), et \(c\in\mathbb{R}\). Elle ne prétend pas remplacer la simulation complète. Elle fournit plutôt une approximation locale, ou mésoscopique, de la trajectoire individuelle d'une entité entre des événements discrets : naissance, prêt, cession de créance, réévaluation, faillite ou redistribution. L'intérêt principal est de faire apparaître un seuil analytique de viabilité lorsque le flux net effectif \(c\) est négatif mais pas trop défavorable.
+\end{abstract}
+
+\section{Introduction}
+
+Le modèle de stage est un système multi-agents ouvert. Des entités naissent, extraient une ressource extérieure, accumulent des stocks productifs, se prêtent de l'énergie, paient des intérêts, subissent une dépréciation de leurs actifs et peuvent faire faillite. Les simulations font apparaître des trajectoires individuelles très hétérogènes et une séparation empirique entre des entités de type \emph{travailleur}, dont le revenu provient principalement de l'extraction propre, et des entités de type \emph{banque}, dont les flux sont fortement structurés par les intérêts entrants et les pertes de créances.
+
+La présente note cherche à isoler une équation analytique minimale permettant de comprendre une partie de ces trajectoires. On ne cherche pas à prouver les comportements du modèle complet. Celui-ci contient des événements discrets, un réseau de crédit orienté et pondéré, des cascades de faillites, des cessions de créances et des naissances stochastiques. L'équation étudiée est donc une réduction forte. Elle peut néanmoins servir d'approximation entre deux événements, lorsque l'environnement local d'une entité varie lentement devant sa dynamique productive.
+
+Dans cette lecture, l'extraction concave du modèle, de forme \(\Pi_i=\alpha_i\sqrt{P_i}\), est représentée par le terme \(b\sqrt{x}\). La dépréciation géométrique des stocks est représentée en temps continu par \(-\delta x\). Les effets financiers et comptables plus complexes sont résumés par un flux net constant effectif \(c\), qui peut être positif, nul ou négatif.
+
+\section{Équation étudiée et interprétation des termes}
+
+On étudie
+\begin{equation}
+    \frac{dx}{dt}=-\delta x+b\sqrt{x}+c,\qquad x\geq 0,
+    \label{eq:main}
+\end{equation}
+avec
+\[
+    \delta>0,\qquad b>0,\qquad c\in\mathbb{R}.
+\]
+La variable \(x\) est une grandeur effective. Selon le niveau d'agrégation choisi, elle peut représenter une taille productive, un passif productif simplifié, un stock de capital productif, ou une combinaison locale des postes qui déterminent l'extraction d'une entité.
+
+Les trois termes de \eqref{eq:main} ont l'interprétation suivante.
+\begin{itemize}
+    \item Le terme \(-\delta x\) représente la décote ou dépréciation exponentielle progressive. Il correspond à la perte régulière de valeur des stocks liquides, endo-investis ou exo-investis dans le modèle.
+    \item Le terme \(b\sqrt{x}\) représente une extraction concave. Il est l'analogue analytique de la loi \(\Pi_i=\alpha_i\sqrt{P_i}\), où le rendement marginal décroît avec la taille productive.
+    \item Le terme \(c\) représente un flux net constant effectif. Il n'est pas nécessairement un paramètre primitif du modèle. Il peut agréger, localement et temporairement, des intérêts entrants, des intérêts sortants, des coûts fixes, des ponctions, des injections, des pertes de créances, ou des effets de reliquéfaction.
+\end{itemize}
+
+On peut donc penser
+\[
+\begin{aligned}
+    c_{\mathrm{eff}}
+    \simeq
+\;&\text{intérêts entrants}
+    -\text{intérêts sortants}
+    +\text{injections} \\
+    &-\text{charges fixes}
+    +\text{effets nets de cession ou reliquéfaction}.
+\end{aligned}
+\]
+Cette expression n'est pas une identité comptable du modèle complet. Elle est une approximation locale destinée à résumer l'environnement financier instantané d'une entité.
+
+\section{Changement de variable}
+
+On pose
+\[
+    y=\sqrt{x},\qquad x=y^2,\qquad y\geq 0.
+\]
+Alors, lorsque \(y>0\),
+\[
+    \frac{dx}{dt}=2y\frac{dy}{dt}.
+\]
+L'équation \eqref{eq:main} devient
+\[
+    2y\frac{dy}{dt}
+    =
+    -\delta y^2+by+c.
+\]
+On introduit donc le polynôme quadratique
+\begin{equation}
+    q(y)=-\delta y^2+by+c.
+    \label{eq:q}
+\end{equation}
+Pour \(y>0\),
+\begin{equation}
+    \frac{dy}{dt}=\frac{q(y)}{2y}.
+    \label{eq:y}
+\end{equation}
+Comme le dénominateur \(2y\) est strictement positif, toute la dynamique dans \(y>0\) dépend du signe de \(q(y)\). La parabole \(q\) est tournée vers le bas, car son coefficient dominant vaut \(-\delta<0\).
+
+\section{Équilibres}
+
+Les équilibres positifs vérifient
+\[
+    q(y)=-\delta y^2+by+c=0.
+\]
+Le discriminant est
+\[
+    \Delta=b^2+4\delta c.
+\]
+Si \(\Delta\geq 0\), les racines sont
+\begin{equation}
+    y_-=\frac{b-\sqrt{\Delta}}{2\delta},
+    \qquad
+    y_+=\frac{b+\sqrt{\Delta}}{2\delta}.
+    \label{eq:roots}
+\end{equation}
+Les équilibres correspondants dans la variable \(x\) sont
+\[
+    x_-=y_-^2,\qquad x_+=y_+^2,
+\]
+mais uniquement pour les racines situées dans le domaine \(y\geq 0\).
+
+Comme \(q\) est une parabole concave, on a
+\[
+    q(y)<0 \quad \text{hors des racines},
+    \qquad
+    q(y)>0 \quad \text{entre les racines},
+\]
+lorsque deux racines réelles existent. Cette règle de signe suffit à classifier la dynamique.
+
+\section{Classification selon le flux net \(c\)}
+
+\subsection*{Cas A : \(c>0\)}
+
+On a \(\Delta>b^2\). Ainsi
+\[
+    y_-<0,\qquad y_+>0.
+\]
+Il existe un seul équilibre positif :
+\[
+    x_+
+    =
+    \left(
+        \frac{b+\sqrt{b^2+4\delta c}}{2\delta}
+    \right)^2.
+\]
+Pour tout \(x_0>0\), la trajectoire converge vers \(x_+\). En effet, \(q(y)>0\) pour \(0<y<y_+\), puis \(q(y)<0\) pour \(y>y_+\).
+
+Dans le modèle multi-agents, ce cas correspond à une entité dont le bilan local de flux est favorable. Les intérêts entrants, injections ou autres flux positifs compensent largement les charges. Il n'y a pas de seuil de survie positif : toute entité déjà strictement positive est ramenée vers une taille viable.
+
+\subsection*{Cas B : \(c=0\)}
+
+L'équation devient
+\[
+    \frac{dx}{dt}=-\delta x+b\sqrt{x}.
+\]
+Les équilibres sont
+\[
+    x=0,\qquad x_+=\left(\frac{b}{\delta}\right)^2.
+\]
+Pour tout \(x_0>0\), la trajectoire converge vers \(x_+\). Dans la variable \(y=\sqrt{x}\), on obtient
+\[
+    2y\frac{dy}{dt}
+    =
+    -\delta y^2+by
+    =
+    y(b-\delta y),
+\]
+donc, pour \(y>0\),
+\[
+    \frac{dy}{dt}
+    =
+    \frac{b-\delta y}{2}.
+\]
+La solution explicite est
+\begin{equation}
+    \sqrt{x(t)}
+    =
+    \frac{b}{\delta}
+    +
+    \left(\sqrt{x_0}-\frac{b}{\delta}\right)
+    \exp\left(-\frac{\delta t}{2}\right),
+    \label{eq:explicit_c0}
+\end{equation}
+d'où
+\[
+    x(t)
+    =
+    \left[
+    \frac{b}{\delta}
+    +
+    \left(\sqrt{x_0}-\frac{b}{\delta}\right)
+    \exp\left(-\frac{\delta t}{2}\right)
+    \right]^2.
+\]
+Le point \(x=0\) doit être interprété avec prudence : la fonction \(\sqrt{x}\) n'est pas lipschitzienne en zéro. Dans une simulation, le bord \(x=0\) est souvent remplacé par une règle numérique d'absorption, de faillite ou de seuil \(\varepsilon\).
+
+\subsection*{Cas C : \(-b^2/(4\delta)<c<0\)}
+
+Le discriminant est strictement positif et inférieur à \(b^2\). Les deux racines sont positives :
+\[
+    0<y_-<y_+.
+\]
+Il existe donc deux équilibres positifs :
+\[
+    x_-=
+    \left(
+        \frac{b-\sqrt{b^2+4\delta c}}{2\delta}
+    \right)^2,
+    \qquad
+    x_+=
+    \left(
+        \frac{b+\sqrt{b^2+4\delta c}}{2\delta}
+    \right)^2.
+\]
+Le signe de \(q\) donne
+\[
+    q(y)<0 \quad \text{sur }(0,y_-),
+    \qquad
+    q(y)>0 \quad \text{sur }(y_-,y_+),
+    \qquad
+    q(y)<0 \quad \text{sur }(y_+,\infty).
+\]
+Ainsi \(x_-\) est instable et \(x_+\) est stable. Si \(x_0<x_-\), la trajectoire décroît vers le bord. Si \(x_0>x_-\), elle converge vers \(x_+\).
+
+C'est probablement le cas le plus utile pour interpréter une partie des trajectoires hétérogènes observées dans le modèle. Un flux net défavorable ne condamne pas nécessairement l'entité : une taille suffisante permet à l'extraction concave de compenser les pertes. En revanche, sous le seuil \(x_-\), la même entité ne peut pas soutenir sa dynamique. Ce seuil peut être vu comme un seuil de viabilité.
+
+\subsection*{Cas D : \(c=-b^2/(4\delta)\)}
+
+Le discriminant est nul. Il y a une racine double
+\[
+    y_*=\frac{b}{2\delta},
+    \qquad
+    x_*=\left(\frac{b}{2\delta}\right)^2.
+\]
+On peut écrire
+\[
+    q(y)=-\delta (y-y_*)^2\leq 0.
+\]
+L'équilibre est semi-stable : il est attractif par la droite et répulsif par la gauche. Une trajectoire située au-dessus de \(x_*\) décroît vers \(x_*\), tandis qu'une trajectoire située en dessous décroît vers le bord. Ce cas est un cas critique de tangence entre la parabole \(q\) et l'axe horizontal.
+
+\subsection*{Cas E : \(c<-b^2/(4\delta)\)}
+
+Le discriminant est négatif. Il n'y a aucun équilibre positif. Comme la parabole est tournée vers le bas et ne coupe pas l'axe, on a
+\[
+    q(y)<0\qquad \text{pour tout } y\geq 0.
+\]
+Toute trajectoire décroît vers le bord. L'interprétation est directe : les coûts, ponctions ou pertes effectives sont trop forts pour qu'une taille productive positive puisse compenser les pertes.
+
+\section{Figures illustratives}
+
+Dans cette section, on choisit des valeurs numériques simples,
+\[
+    \delta=1,\qquad b=2.
+\]
+Le seuil critique vaut alors
+\[
+    c_{\mathrm{crit}}=-\frac{b^2}{4\delta}=-1.
+\]
+Ces valeurs sont uniquement illustratives.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+    width=0.88\textwidth,
+    height=6.2cm,
+    axis lines=middle,
+    xmin=0, xmax=3.1,
+    ymin=-3.0, ymax=3.2,
+    xlabel={$y=\sqrt{x}$},
+    ylabel={$q(y)$},
+    grid=both,
+    legend pos=south west,
+    samples=200,
+]
+\addplot[very thick, teal] {-x^2+2*x+1};
+\addlegendentry{$c=1$}
+\addplot[very thick, blue] {-x^2+2*x};
+\addlegendentry{$c=0$}
+\addplot[very thick, orange] {-x^2+2*x-0.5};
+\addlegendentry{$c=-0.5$}
+\addplot[black, dashed] {0};
+\addplot[only marks, mark=*, teal] coordinates {(2.414,0)};
+\addplot[only marks, mark=*, blue] coordinates {(0,0) (2,0)};
+\addplot[only marks, mark=*, orange] coordinates {(0.293,0) (1.707,0)};
+\end{axis}
+\end{tikzpicture}
+\caption{Paraboles \(q(y)=-y^2+2y+c\) pour trois valeurs de \(c\). Pour \(c>0\), une seule racine est positive. Pour \(c=0\), les racines sont \(0\) et \(2\). Pour \(-1<c<0\), les deux racines sont positives.}
+\label{fig:q_paraboles}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[x=2.0cm,y=1cm,>=Latex]
+    \draw[->] (0,0) -- (4.2,0) node[right] {$x$};
+    \foreach \x/\lab in {0/0,0.086/x_-,2.914/x_+}
+    {
+        \draw (\x,0.08) -- (\x,-0.08) node[below=4pt] {$\lab$};
+    }
+    \draw[fill=white] (0.086,0) circle (2pt);
+    \draw[fill=black] (2.914,0) circle (2pt);
+    \node[above] at (0.086,0.22) {seuil instable};
+    \node[above] at (2.914,0.22) {équilibre stable};
+    \draw[->,thick,red] (0.065,0.45) -- (0.015,0.45);
+    \node[above,red] at (0.04,0.45) {extinction};
+    \draw[->,thick,teal] (0.35,0.45) -- (1.65,0.45);
+    \draw[->,thick,teal] (2.2,0.45) -- (2.78,0.45);
+    \draw[->,thick,orange] (4.0,0.45) -- (3.12,0.45);
+    \node[below] at (1.45,-0.35) {$x_-<x<x_+$ : croissance};
+    \node[below] at (3.55,-0.35) {$x>x_+$ : retour};
+    \node[below] at (0.04,-0.35) {$0<x<x_-$};
+\end{tikzpicture}
+\caption{Champ de signe qualitatif dans le cas à seuil, ici \(\delta=1\), \(b=2\), \(c=-0.5\). On obtient \(x_-\simeq 0.086\) et \(x_+\simeq 2.914\).}
+\label{fig:phase_x}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+    width=0.88\textwidth,
+    height=6.8cm,
+    xmin=-1.25, xmax=1.4,
+    ymin=0, ymax=6.2,
+    xlabel={$c$},
+    ylabel={$x_*$},
+    grid=both,
+    legend pos=north west,
+    samples=220,
+]
+\addplot[black, dashed] coordinates {(-1,0) (-1,6.2)};
+\addlegendentry{$c_{\mathrm{crit}}=-1$}
+\addplot[very thick, teal, domain=-1:1.4] {((2+sqrt(4+4*x))/2)^2};
+\addlegendentry{branche stable \(x_+\)}
+\addplot[very thick, orange, dashed, domain=-1:0] {((2-sqrt(4+4*x))/2)^2};
+\addlegendentry{branche instable \(x_-\)}
+\addplot[only marks, mark=*, blue] coordinates {(0,0) (0,4)};
+\node[anchor=west] at (axis cs:0.03,0.25) {$x=0$};
+\node[anchor=west] at (axis cs:0.03,4.15) {$x_+=(b/\delta)^2$};
+\end{axis}
+\end{tikzpicture}
+\caption{Diagramme de bifurcation en fonction du flux net \(c\), pour \(\delta=1\), \(b=2\). La branche haute est stable. La branche basse, présente seulement pour \(c_{\mathrm{crit}}<c<0\), est instable.}
+\label{fig:bifurcation}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+    width=0.88\textwidth,
+    height=6.4cm,
+    xmin=0, xmax=10,
+    ymin=0, ymax=6.4,
+    xlabel={$t$},
+    ylabel={$x(t)$},
+    grid=both,
+    legend pos=north east,
+    samples=220,
+]
+\addplot[very thick, red, domain=0:10] {0.04*max(0,1-x/3)^2};
+\addlegendentry{$x_0<x_-$}
+\addplot[very thick, teal, domain=0:10] {2.914 - (2.914-0.12)*exp(-0.55*x)};
+\addlegendentry{$x_0>x_-$}
+\addplot[very thick, orange, domain=0:10] {2.914 + (6-2.914)*exp(-0.60*x)};
+\addlegendentry{$x_0>x_+$}
+\addplot[black, dashed] coordinates {(0,0.086) (10,0.086)};
+\addplot[black, dotted] coordinates {(0,2.914) (10,2.914)};
+\node[anchor=west] at (axis cs:7.6,0.25) {$x_-$};
+\node[anchor=west] at (axis cs:7.6,3.1) {$x_+$};
+\end{axis}
+\end{tikzpicture}
+\caption{Trajectoires qualitatives cohérentes avec le cas à seuil. Une condition initiale sous \(x_-\) décroît vers le bord, tandis que les trajectoires au-dessus de \(x_-\) convergent vers \(x_+\).}
+\label{fig:trajectories}
+\end{figure}
+
+\section{Pertinence pour le modèle multi-agents}
+
+L'équation \eqref{eq:main} est une réduction forte. Elle ignore la granularité temporelle de la simulation, les naissances, les prêts individuels, les réévaluations paresseuses des créances, les cessions, les faillites et les cascades. Elle ne décrit pas non plus le réseau de crédit, dont la structure orientée et pondérée est centrale dans le modèle. Elle ne doit donc pas être lue comme une preuve des comportements observés dans la simulation complète.
+
+Elle reste cependant utile comme modèle local de trajectoire individuelle entre événements. Dans la note de travail, chaque entité possède un passif productif \(P_i\), extrait une quantité \(\Pi_i=\alpha_i\sqrt{P_i}\), subit une dépréciation de ses stocks et échange des flux d'intérêts. Si l'on fige temporairement l'environnement financier d'une entité, alors une grandeur effective \(x\) peut être supposée suivre une dynamique composée d'une perte proportionnelle, d'une extraction concave et d'un flux net.
+
+Le terme \(c_{\mathrm{eff}}\) est alors l'objet crucial. Pour une entité de type travailleur, il peut être dominé par les charges, les intérêts sortants et l'extraction propre déjà représentée par \(b\sqrt{x}\). Pour une entité de type banque, il peut être fortement influencé par les intérêts entrants, mais aussi par les pertes de créances lorsque des emprunteurs font défaut. Une banque peut donc avoir un \(c_{\mathrm{eff}}\) élevé tant que son portefeuille paie, puis subir une chute brutale de \(c_{\mathrm{eff}}\) lorsqu'une faillite annule des flux d'intérêts ou impose un write-down.
+
+Le cas \(-b^2/(4\delta)<c_{\mathrm{eff}}<0\) fournit une lecture analytique intéressante. Il existe alors un seuil \(x_-\). Au-dessus, l'entité revient vers une taille positive stable ; en dessous, elle se dirige vers le bord. Dans le modèle complet, un événement discret peut déplacer une entité de deux manières :
+\begin{itemize}
+    \item en modifiant brutalement sa taille effective \(x\), par exemple lors d'une perte de créance, d'une reliquéfaction coûteuse ou d'une cession ;
+    \item en modifiant son flux net \(c_{\mathrm{eff}}\), par exemple lorsque des intérêts entrants disparaissent après la faillite d'un débiteur.
+\end{itemize}
+Une cascade de faillites peut alors être interprétée, au moins heuristiquement, comme une succession de déplacements d'entités sous leur seuil de viabilité. La faillite d'une entité supprime des paiements chez ses créanciers ; ces créanciers voient leur \(c_{\mathrm{eff}}\) baisser, ou leur bilan se dégrader, et peuvent franchir à leur tour leur seuil \(x_-\).
+
+Cette lecture donne aussi une hypothèse pour la séparation entre trajectoires longues et courtes observées dans la note de travail. Les entités qui atteignent assez vite le bassin \(x>x_-\) peuvent converger vers une trajectoire longue, éventuellement bancaire si les intérêts entrants dominent. Les entités nées dans un environnement financier défavorable, ou qui contractent des dettes trop tôt, peuvent rester sous le seuil et disparaître rapidement.
+
+Il faut néanmoins rester prudent. Dans la simulation, \(b\), \(c_{\mathrm{eff}}\) et même la signification de \(x\) ne sont pas constants. Ils dépendent de la productivité \(\alpha_i\), du portefeuille de prêts, de l'âge des créances, de la position dans le réseau, des tirages de marché, de la date de naissance et des cascades. L'analyse scalaire doit donc être couplée à une analyse stochastique et événementielle du réseau de crédit.
+
+\section{Conclusion}
+
+La brique analytique étudiée fait apparaître le seuil critique
+\[
+    c_{\mathrm{crit}}=-\frac{b^2}{4\delta}.
+\]
+Trois régimes principaux en découlent.
+\begin{itemize}
+    \item Si \(c_{\mathrm{eff}}\geq 0\), toute trajectoire strictement positive converge robustement vers un équilibre positif.
+    \item Si \(c_{\mathrm{crit}}<c_{\mathrm{eff}}<0\), il existe un seuil de survie \(x_-\) et un équilibre stable \(x_+\).
+    \item Si \(c_{\mathrm{eff}}\leq c_{\mathrm{crit}}\), la dynamique est critique ou orientée vers l'extinction.
+\end{itemize}
+Cette équation fournit donc une formalisation possible de la dynamique individuelle d'une entité entre événements. Elle aide à interpréter l'émergence de trajectoires longues, de trajectoires courtes et de seuils de viabilité. Elle ne suffit pas à analyser le modèle multi-agents complet, qui doit être étudié comme un système dynamique stochastique sur réseau de crédit, avec événements discrets et cascades de défaut.
+
+\appendix
+
+\section{Formule implicite}
+
+Pour \(y>0\), l'équation \eqref{eq:y} donne
+\[
+    dt=\frac{2y}{-\delta y^2+by+c}\,dy.
+\]
+Ainsi,
+\[
+    t-t_0
+    =
+    \int_{y_0}^{y(t)}
+    \frac{2y}{-\delta y^2+by+c}\,dy.
+\]
+Lorsque \(\Delta>0\), on écrit
+\[
+    q(y)=-\delta (y-y_-)(y-y_+),
+\]
+et une primitive utile est
+\begin{equation}
+    t+C
+    =
+    \frac{2}{\delta (y_+-y_-)}
+    \left[
+        y_- \ln|y-y_-|
+        -
+        y_+ \ln|y-y_+|
+    \right].
+    \label{eq:implicit}
+\end{equation}
+Cette formule n'est pas toujours la plus commode pour tracer les solutions, mais elle confirme que la dynamique est entièrement gouvernée par la position de \(y\) relativement aux racines.
+
+\section{Extension à une extraction concave générale}
+
+Le cas \(\sqrt{x}\) est particulièrement commode parce que le changement de variable \(y=\sqrt{x}\) ramène l'étude des équilibres à une équation quadratique. Dans le modèle multi-agents, l'exposant \(1/2\) est motivé par la forme utilisée pour l'extraction, mais il est utile de comprendre ce qui subsiste si l'on remplace ce terme par une fonction concave plus générale. On considère donc
+\begin{equation}
+    \frac{dx}{dt}=F(x)=-\delta x+b f(x)+c,
+    \qquad x\geq 0,
+    \label{eq:general_f}
+\end{equation}
+avec \(\delta>0\), \(b>0\), et \(f\) concave. L'idée directrice est simple : les équilibres sont les intersections entre la droite \(\delta x-c\) et la courbe \(b f(x)\), ou encore les zéros de
+\[
+    F(x)=H(x)+c,
+    \qquad
+    H(x)=b f(x)-\delta x.
+\]
+Lorsque \(f\) est concave, \(H\) est concave. Le nombre de zéros positifs de \(F\) est donc fortement contraint : sous des hypothèses naturelles, il y en a au plus deux. La classification précédente ne dépend donc pas uniquement de la racine carrée ; elle est l'exemple explicite d'un mécanisme plus général.
+
+\subsection{Racine cubique : \(f(x)=x^{1/3}\)}
+
+On commence par
+\[
+    \frac{dx}{dt}=-\delta x+b x^{1/3}+c.
+\]
+Il n'est plus nécessaire d'introduire un discriminant quadratique. On étudie plutôt
+\[
+    H(x)=b x^{1/3}-\delta x.
+\]
+Cette fonction vérifie \(H(0)=0\), \(H(x)\to -\infty\) lorsque \(x\to+\infty\), et elle possède un unique maximum intérieur. En effet,
+\[
+    H'(x)=\frac{b}{3}x^{-2/3}-\delta.
+\]
+Le maximum est atteint en
+\[
+    x_m=\left(\frac{b}{3\delta}\right)^{3/2}.
+\]
+Sa valeur est
+\[
+    M=H(x_m)
+    =
+    b x_m^{1/3}-\delta x_m.
+\]
+En utilisant la condition \( \delta x_m=(b/3)x_m^{1/3}\), on obtient
+\begin{equation}
+    M=\frac{2b}{3}
+    \left(\frac{b}{3\delta}\right)^{1/2}.
+    \label{eq:cubic_M}
+\end{equation}
+Le seuil critique devient donc
+\[
+    c_{\mathrm{crit}}=-M
+    =
+    -\frac{2b}{3}
+    \left(\frac{b}{3\delta}\right)^{1/2}.
+\]
+
+La classification est analogue à celle du cas racine carrée.
+\begin{itemize}
+    \item Si \(c>0\), alors \(F(0)>0\) et \(F(x)\to-\infty\). Il existe un unique équilibre positif stable.
+    \item Si \(c=0\), les équilibres sont \(x=0\) et
+    \[
+        x_+=\left(\frac{b}{\delta}\right)^{3/2}.
+    \]
+    Toute trajectoire strictement positive converge vers \(x_+\), sous la même réserve d'interprétation du bord.
+    \item Si \(c_{\mathrm{crit}}<c<0\), il existe deux équilibres positifs. Le plus petit est instable, le plus grand est stable.
+    \item Si \(c=c_{\mathrm{crit}}\), il existe une racine double en \(x_m\), semi-stable.
+    \item Si \(c<c_{\mathrm{crit}}\), il n'existe pas d'équilibre positif et les trajectoires décroissent vers le bord.
+\end{itemize}
+
+Le cas \(x^{1/3}\) rend le seuil de viabilité plus sévère à petite taille que le cas \(\sqrt{x}\) dans le sens suivant : l'extraction est encore concave, mais sa forme modifie la position du maximum \(x_m\), donc le niveau de flux négatif que le système peut compenser.
+
+\subsection{Puissance générale : \(f(x)=x^{1/a}\), \(a>1\)}
+
+On considère maintenant
+\[
+    \frac{dx}{dt}=-\delta x+b x^{1/a}+c,
+    \qquad a>1.
+\]
+On pose
+\[
+    p=\frac{1}{a}\in(0,1).
+\]
+La fonction nette sans flux constant est
+\[
+    H(x)=b x^p-\delta x.
+\]
+Elle est strictement concave sur \((0,+\infty)\), vérifie \(H(0)=0\), puis tend vers \(-\infty\). Son unique maximum est donné par
+\[
+    H'(x)=bp x^{p-1}-\delta=0.
+\]
+Ainsi,
+\begin{equation}
+    x_m=
+    \left(\frac{bp}{\delta}\right)^{\frac{1}{1-p}}
+    =
+    \left(\frac{b}{a\delta}\right)^{\frac{a}{a-1}}.
+    \label{eq:power_xm}
+\end{equation}
+La valeur maximale vaut
+\[
+    M=H(x_m)=b x_m^p-\delta x_m.
+\]
+Comme la condition d'optimalité donne \(\delta x_m=bp x_m^p\), on obtient
+\begin{equation}
+    M=b(1-p)x_m^p
+    =
+    b\left(1-\frac1a\right)
+    \left(\frac{b}{a\delta}\right)^{\frac{1}{a-1}}.
+    \label{eq:power_M}
+\end{equation}
+Le seuil critique généralisé est donc
+\begin{equation}
+    c_{\mathrm{crit}}(a)
+    =
+    -b\left(1-\frac1a\right)
+    \left(\frac{b}{a\delta}\right)^{\frac{1}{a-1}}.
+    \label{eq:power_ccrit}
+\end{equation}
+
+Lorsque \(c=0\), l'équilibre positif non nul est donné par
+\[
+    \delta x=b x^{1/a},
+\]
+donc
+\begin{equation}
+    x_+
+    =
+    \left(\frac{b}{\delta}\right)^{\frac{a}{a-1}}.
+    \label{eq:power_xplus_c0}
+\end{equation}
+On retrouve bien le cas racine carrée pour \(a=2\) :
+\[
+    c_{\mathrm{crit}}(2)=-\frac{b^2}{4\delta},
+    \qquad
+    x_+=\left(\frac{b}{\delta}\right)^2.
+\]
+On retrouve aussi le cas racine cubique pour \(a=3\).
+
+Pour tout \(a>1\), la classification qualitative est la même :
+\begin{itemize}
+    \item \(c>0\) : un seul équilibre positif stable ;
+    \item \(c=0\) : équilibre de bord \(x=0\) et équilibre positif stable \(x_+\) ;
+    \item \(c_{\mathrm{crit}}(a)<c<0\) : deux équilibres positifs, le plus petit instable et le plus grand stable ;
+    \item \(c=c_{\mathrm{crit}}(a)\) : racine double semi-stable en \(x_m\) ;
+    \item \(c<c_{\mathrm{crit}}(a)\) : aucun équilibre positif.
+\end{itemize}
+
+Cette famille montre que le seuil de viabilité n'est pas un accident algébrique de la racine carrée. Il provient de la compétition entre une extraction sous-linéaire \(x^p\) et une perte linéaire \(\delta x\).
+
+\subsection{Fonction concave générale}
+
+On suppose maintenant que \(f:[0,+\infty)\to[0,+\infty)\) vérifie les hypothèses suivantes :
+\begin{itemize}
+    \item \(f(0)=0\) ;
+    \item \(f\) est continue sur \([0,+\infty)\), croissante et concave ;
+    \item \(f\) est dérivable sur \((0,+\infty)\), au moins pour simplifier l'exposition ;
+    \item \(f\) est suffisamment sous-linéaire à l'infini pour que
+    \[
+        b f(x)-\delta x\longrightarrow -\infty.
+    \]
+\end{itemize}
+La dernière condition est essentielle. Sans elle, la perte linéaire \(-\delta x\) pourrait ne pas dominer asymptotiquement l'extraction.
+
+On définit
+\[
+    H(x)=b f(x)-\delta x,
+    \qquad
+    M=\sup_{x\geq 0}H(x).
+\]
+Sous les hypothèses précédentes, \(M\) est fini et atteint. Si le maximum est intérieur, il vérifie la condition
+\begin{equation}
+    b f'(x_m)=\delta.
+    \label{eq:general_condition}
+\end{equation}
+Cette relation a une interprétation économique directe : au point critique, le rendement marginal effectif de l'extraction est exactement égal au taux de dépréciation.
+
+Le seuil critique général est
+\begin{equation}
+    c_{\mathrm{crit}}=-M
+    =
+    -\max_{x\geq 0}\{b f(x)-\delta x\}.
+    \label{eq:general_ccrit}
+\end{equation}
+Les équilibres sont les solutions de
+\[
+    H(x)+c=0.
+\]
+Comme \(H\) est concave, l'ensemble \(\{x:H(x)+c\geq 0\}\) est un intervalle. Il ne peut donc pas y avoir une alternance arbitraire de régions de croissance et de décroissance. Sous stricte concavité et sous-linéarité, on retrouve la même structure que dans les cas de puissance.
+
+Plus précisément, lorsque \(H(0)=0\) et \(H\) possède un maximum strictement positif :
+\begin{itemize}
+    \item si \(c>0\), alors \(F(0)>0\) et il existe typiquement un unique équilibre positif stable ;
+    \item si \(c=0\), le bord \(x=0\) est équilibre et il peut exister un équilibre positif stable si \(H\) devient négative à grande taille ;
+    \item si \(-M<c<0\), alors il existe deux équilibres positifs \(x_-<x_+\). On a \(F<0\) avant \(x_-\), \(F>0\) entre \(x_-\) et \(x_+\), puis \(F<0\) après \(x_+\). Le premier est instable, le second stable ;
+    \item si \(c=-M\), il y a tangence au maximum, donc un équilibre semi-stable ;
+    \item si \(c<-M\), aucun équilibre positif n'existe.
+\end{itemize}
+
+Le message pour le modèle multi-agents est robuste. Dès que l'extraction est concave et que la dépréciation est asymptotiquement linéaire dominante, un flux net négatif mais modéré peut créer un seuil de viabilité. Ce seuil dépend de la forme précise de \(f\), mais son existence ne dépend pas de l'exposant \(1/2\). Le cas \(\sqrt{x}\) est simplement celui où les racines et les seuils s'écrivent avec des formules particulièrement explicites.
+
+Cette généralisation est utile si l'on souhaite tester d'autres lois d'extraction dans la simulation. Elle donne un critère analytique minimal : pour chaque forme \(f\), il faut estimer
+\[
+    \max_{x\geq 0}\{b f(x)-\delta x\}.
+\]
+Ce maximum mesure la capacité maximale d'une entité isolée à compenser un flux net négatif. Dans le modèle complet, ce flux n'est pas constant ; il dépend du réseau de crédit, des intérêts, des faillites et de l'âge des créances. Mais la quantité ci-dessus fournit une première approximation de la marge de survie individuelle.
+
+\section{Bord \(x=0\) et extinction numérique}
+
+La fonction \(\sqrt{x}\) n'est pas lipschitzienne en zéro. Le bord \(x=0\) demande donc une interprétation spécifique. Mathématiquement, l'équation continue peut admettre des subtilités d'existence ou d'unicité au voisinage du bord selon la convention choisie. Numériquement, le modèle multi-agents ne se contente pas d'une équation différentielle : il possède un seuil \(\varepsilon\), une règle de solvabilité et une règle de sortie de population. L'extinction analytique vers \(x=0\) doit donc être distinguée d'une faillite simulée, qui est un événement discret défini par le bilan complet de l'entité.
+
+\end{document}

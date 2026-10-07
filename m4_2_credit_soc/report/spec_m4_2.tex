@@ -1,0 +1,610 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[french]{babel}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb}
+\usepackage[margin=2.35cm]{geometry}
+\usepackage{booktabs,longtable,tabularx}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{microtype}
+\usepackage{hyperref}
+
+\hypersetup{colorlinks=true,linkcolor=blue!45!black,urlcolor=blue!45!black}
+\setlist{nosep}
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\NW}{\mathrm{NW}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\Kaut}{K^{*}_{\mathrm{aut}}}
+
+\title{Spécification mathématique du modèle M4.2\\
+\large société de crédit à production concave généralisée $F_\gamma(K)=A\,K^\gamma$}
+\author{Programme M4.2 --- dossier \code{m4\_2\_credit\_soc}}
+\date{27 juillet 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+M4.2 est le successeur direct de M4B : une société d'entités économiques
+échangeant une ressource unique (le joule), avec capital productif réel $K$,
+réseau de prêts nominaux perpétuels, chocs multiplicatifs individuels,
+service d'intérêts, dépréciation et faillites en cascade par perte intégrale
+des créances et destruction du capital résiduel. M4.2 généralise la
+production de M4B, $F(K)=\sqrt{K}$, en $F_\gamma(K)=A\,K^\gamma$ avec
+$0<\gamma<1$ et $A=1$ dans le modèle principal, dérive les taux d'intérêt
+des rendements marginaux correspondants, fixe le pool d'appariement à deux
+($k\equiv2$, retiré de la configuration) et nomme explicitement la fonction
+d'intensité du marché $\eta$, dont la baseline est l'identité. Ce document
+spécifie la mécanique exécutée par le moteur \code{m4\_2/model.py}
+(version \code{m4\_2-1}), démontre les identités porteuses, documente les
+tolérances numériques et établit la parité mesurée du cas $\gamma=1/2$ avec
+M4B configuré à $k=2$. Le code exécuté fait foi ; ce document le décrit.
+\end{abstract}
+
+\tableofcontents
+
+\section{Positionnement et notations}
+
+M4.2 répond à la question de recherche du cahier des charges
+(\code{prompts/PROMPT\_M4\_2.md}) : la pente $\tau$ de la distribution des
+tailles d'avalanches de faillites peut-elle devenir une propriété modulable
+par l'exposant de concavité $\gamma$, sans détruire le mécanisme endogène
+d'accumulation--relaxation hérité de M4/M4B ?
+
+Les symboles sont réservés ainsi, sans collision :
+\begin{itemize}
+\item $\gamma$ : exposant de concavité productive, $0<\gamma<1$ ;
+\item $A$ : échelle productive, $A=1$ dans le modèle principal (elle ne
+      varie que dans l'ablation de contrôle d'échelle, §\ref{sec:anorm}) ;
+\item $\eta$ : fonction d'intensité du marché (jamais le choc) ;
+\item $\xi_{i,t}$ : choc multiplicatif individuel ;
+\item $\lambda$ : intensité des naissances de Poisson ;
+\item $\delta$ : taux de dépréciation ; $\sigma$ : volatilité du choc ;
+      $K_0$ : capital de naissance ;
+\item $\tau$ : exposant statistique de la distribution des avalanches
+      (jamais utilisé pour un temps) ;
+\item $s_c$ : coupure exponentielle de taille finie ; $s_{\min}$ : seuil
+      bas des ajustements de queue.
+\end{itemize}
+Le symbole $\alpha$ n'est employé ni pour l'échelle productive ni pour
+l'exposant d'avalanche dans M4.2 (dans le code d'analyse hérité, le champ
+\code{alpha} des ajustements désigne $\tau$ ou l'exposant tronqué ; le
+rapport de campagne traduit systématiquement).
+
+\section{État du modèle}
+
+\subsection{Entités}
+
+Une entité $i$ est identifiée par un entier jamais réutilisé. Son état
+persistant est son capital productif réel $K_i \ge 0$ (en joules), son pas
+de naissance, et son statut (vivante ou morte). S'y ajoutent des mesures de
+pas remises à zéro en début de pas : production $\Pi_i$, intérêts reçus et
+payés, et l'indicateur de défaut de service du pas courant.
+
+\subsection{Contrats de prêt}
+
+Le carnet (\code{LoanBook}) contient des contrats nominaux perpétuels
+$(\ell, b, q, r)$ : la prêteuse $\ell$ détient une créance de principal $q$
+sur l'emprunteuse $b$ au taux $r$ ; l'intérêt dû à chaque pas est $r\,q$,
+sans échéance de remboursement du principal. Il existe au plus un contrat
+par paire orientée $(\ell,b)$ : un nouveau prêt entre la même paire
+\emph{fusionne} avec l'existant (principal additionné, taux moyen pondéré
+par les principaux, §\ref{sec:merge}). Trois agrégats par entité sont
+maintenus incrémentalement : créances $C_i=\sum_{b} q_{i\to b}$, dettes
+$D_i=\sum_{\ell} q_{\ell\to i}$, et service dû
+$S_i=\sum_{\ell} r_{\ell\to i}\,q_{\ell\to i}$.
+
+La valeur nette est
+\begin{equation}
+\NW_i \;=\; K_i + C_i - D_i .
+\label{eq:nw}
+\end{equation}
+Il n'existe ni dette d'amorçage, ni récupération, ni transfert de créances
+lors d'une faillite.
+
+\subsection{Configuration}
+
+La configuration scientifique sérialisée (\code{Config}, dataclass gelée)
+contient exactement : $\gamma$ (défaut $0{,}5$), $A$ (défaut $1{,}0$),
+$\lambda$ (défaut $30$), $\delta$ (défaut $0{,}05$), $\sigma$ (défaut
+$0{,}25$), $K_0$ (défaut $25$), la graine, l'horizon $T$ (défaut $2000$) et
+le garde-fou de population \code{pop\_max} (défaut $30\,000$). Validation :
+$0<\gamma<1$, $A>0$, $\lambda\ge0$, $0\le\delta<1$, $\sigma\ge0$, $K_0>0$,
+$T\ge0$, $\code{pop\_max}\ge1$.
+
+Les choix constitutifs, retirés de la configuration pour ne pas faire
+passer des constantes pour des leviers scientifiques, sont des constantes
+de module : le pool d'appariement $\code{POOL\_SIZE}=2$ ($k\equiv2$), les
+tolérances numériques (§\ref{sec:tol}), et les règles institutionnelles
+(moyenne géométrique, fusion, cancel+destroy, ordre des phases),
+enregistrées dans \code{config.json} sous \code{fixed\_rules}.
+
+\section{Chronologie exacte d'un pas}
+
+L'ordre des huit phases est constitutif et identique à M4B :
+naissances, choc, production, service des intérêts, dépréciation, marché du
+crédit, faillites en cascade, mesures. Le générateur pseudo-aléatoire est
+un \code{numpy.random.default\_rng(seed)} unique ; l'ordre de consommation
+(Poisson des naissances, puis vecteur normal des chocs, puis tirages du
+marché) est un invariant de reproductibilité.
+
+\subsection{Phase 1 : naissances}
+
+$B_t \sim \mathrm{Poisson}(\lambda)$ entités naissent avec $K=K_0$.
+Avant les naissances, les mesures de pas de toutes les vivantes
+(production, intérêts, indicateur de défaut) sont remises à zéro.
+L'injection du pas vaut $B_t\,K_0$.
+
+\subsection{Phase 2 : choc multiplicatif $\xi$}
+
+Si $\sigma>0$, chaque vivante $i$ (dans l'ordre croissant des
+identifiants) reçoit
+\begin{equation}
+\xi_{i,t}\sim\mathcal N\!\Bigl(-\tfrac{\sigma^2}{2},\,\sigma^2\Bigr),
+\qquad K_i \leftarrow K_i\,e^{\xi_{i,t}},
+\qquad \E\bigl[e^{\xi_{i,t}}\bigr]=1 .
+\end{equation}
+Le gain de choc agrégé (positif ou négatif) est mesuré pour le bilan.
+
+\subsection{Phase 3 : production concave}
+\label{sec:prod}
+
+\begin{equation}
+\Pi_i = F_\gamma(K_i) = A\,K_i^{\gamma},
+\qquad K_i \leftarrow K_i + \Pi_i ,
+\qquad 0<\gamma<1 .
+\end{equation}
+La production est entièrement retenue dans le capital. Le cas $\gamma=1/2$,
+$A=1$ retrouve exactement la production $\sqrt{K}$ de M4B. À $K=0$,
+$F_\gamma(0)=0$ sans garde particulière ($0^\gamma=0$ pour $\gamma>0$).
+
+Le rendement marginal productif est
+\begin{equation}
+m_\gamma(K) = F_\gamma'(K) = A\,\gamma\,K^{\gamma-1},
+\label{eq:marginal}
+\end{equation}
+décroissant en $K$ (concavité). Il n'est évalué que dans la phase de marché,
+avec le plancher numérique de §\ref{sec:tol}.
+
+\subsection{Phase 4 : service des intérêts}
+
+Les emprunteuses sont parcourues dans l'ordre historique d'insertion de
+leurs clés dans le carnet (invariant de reproductibilité hérité de M4B).
+Pour l'emprunteuse $b$ de service dû $S_b$ et de capital disponible $K_b$ :
+\begin{equation}
+\varphi_b=\min\!\Bigl(1,\tfrac{K_b}{S_b}\Bigr),\qquad
+K_b \leftarrow K_b - \varphi_b\,S_b ,
+\end{equation}
+et chaque prêteuse $\ell$ reçoit $\varphi_b\,r_{\ell b}\,q_{\ell b}$,
+ajouté immédiatement à son capital (les paiements reçus avant son propre
+tour de service sont donc disponibles pour payer). Si $\varphi_b<1$
+(cas $S_b=0$ avec $K_b<0$ impossible ; le cas $S_b=0$ donne $\varphi_b=0$
+uniquement si des contrats de service nul existaient, ce que la validation
+du carnet exclut), l'entité est marquée en \emph{défaut de service} :
+$K_b$ est mis à zéro, le paiement est réparti proportionnellement, et le
+défaut la condamne en phase 7 même si sa valeur nette reste positive. Le
+défaut n'annule ni le principal ni le service futur.
+
+\subsection{Phase 5 : dépréciation}
+
+$K_i \leftarrow (1-\delta)K_i$ pour toutes les vivantes ; un capital
+inférieur à $10^{-12}$ (\code{ZERO\_TOL}) est arrondi à zéro. Les principaux
+et taux nominaux sont inchangés (la dépréciation est réelle, pas nominale).
+
+\subsection{Phase 6 : marché du crédit}
+\label{sec:market}
+
+\paragraph{Pool admissible et intensité $\eta$.}
+Le pool admissible du pas $t$ est
+\begin{equation}
+N^{\mathrm{mkt}}_t=\#\{\text{vivantes n'ayant pas fait défaut au service
+du pas courant}\},
+\end{equation}
+figé pendant toute la phase. Le nombre de tentatives d'appariement
+(\emph{rounds}) est
+\begin{equation}
+R_t=
+\begin{cases}
+\bigl\lfloor \eta\bigl(N^{\mathrm{mkt}}_t\bigr)\bigr\rfloor
+& \text{si } N^{\mathrm{mkt}}_t\ge2,\\[2pt]
+0 & \text{sinon,}
+\end{cases}
+\qquad\boxed{\eta(N)=N}\ \text{(baseline M4.2)} .
+\end{equation}
+$\eta$ est implémentée comme une fonction nommée unique
+(\code{model.eta}). Le cas $N^{\mathrm{mkt}}_t<2$ lève une ambiguïté
+interne du cahier des charges (la formule $\lfloor\eta(N)\rfloor$
+donnerait un round à $N=1$, mais la prose impose \og aucun round si le
+pool contient moins de deux entités \fg) : le code suit la prose. M4B
+exécutait à $N=1$ des rounds stériles via \code{permutation(1)}, qui ne
+consomme aucun état RNG (vérifié à l'audit du 27 juillet 2026) : les deux
+conventions sont donc \emph{équivalentes en dynamique et en flux
+aléatoire} ; seule la valeur du compteur \code{mkt\_rounds} (absent de
+M4B) diffère.
+
+\paragraph{Formation d'une paire.}
+Chaque round tire uniformément \emph{deux} identifiants distincts du pool,
+sans remise à l'intérieur de la paire ($k\equiv2$). Le tirage préserve la
+séquence RNG de M4B (\code{\_sample}) : permutation partielle si
+$2\times8\ge N$, sinon tirages avec rejet. Les rounds sont indépendants et
+une entité peut participer à plusieurs rounds. Si les deux capitaux
+diffèrent, la plus riche devient prêteuse $\ell$, la plus pauvre
+emprunteuse $b$ ; si $K_\ell\le K_b$ (égalité), le round est stérile.
+
+\paragraph{Taux d'intérêt issu de la concavité.}
+Les deux rendements marginaux sont évalués par \eqref{eq:marginal} (avec
+plancher $K\mapsto\max(K,\code{K\_FLOOR})$, §\ref{sec:tol}) :
+$m_\ell=A\gamma K_\ell^{\gamma-1}$, $m_b=A\gamma K_b^{\gamma-1}$, avec
+$m_\ell<m_b$ puisque $K_\ell>K_b$ et $\gamma<1$. Le taux contractuel est la
+\emph{moyenne géométrique}, institution de négociation explicite (et non
+conséquence de la concavité) :
+\begin{equation}
+r_{\ell b}=\sqrt{m_\ell\,m_b}
+= A\,\gamma\,(K_\ell K_b)^{(\gamma-1)/2}.
+\label{eq:rate}
+\end{equation}
+Elle est symétrique, multiplicativement invariante, et égalise les
+distances relatives : $r_{\ell b}/m_\ell=m_b/r_{\ell b}$ — c'est le milieu
+de l'intervalle $[m_\ell,m_b]$ dans l'espace logarithmique.
+
+\paragraph{Cible productive et principal.}
+Le capital qui égalise rendement marginal et taux contractuel est
+\begin{equation}
+K^{*}(r_{\ell b})=\Bigl(\frac{A\gamma}{r_{\ell b}}\Bigr)^{1/(1-\gamma)} .
+\label{eq:target}
+\end{equation}
+
+\begin{quote}
+\textbf{Identité (cible géométrique).} Avec le taux \eqref{eq:rate},
+$K^{*}(r_{\ell b})=\sqrt{K_\ell K_b}$ pour tout $0<\gamma<1$ et tout $A>0$.
+
+\emph{Démonstration.} En substituant \eqref{eq:rate} dans
+\eqref{eq:target} :
+\[
+K^{*}
+=\Bigl(\frac{A\gamma}{A\gamma\,(K_\ell K_b)^{(\gamma-1)/2}}\Bigr)^{1/(1-\gamma)}
+=\Bigl((K_\ell K_b)^{(1-\gamma)/2}\Bigr)^{1/(1-\gamma)}
+=(K_\ell K_b)^{1/2}. \qquad\square
+\]
+\end{quote}
+
+Conséquence à garder à l'esprit dans l'analyse : à capitaux donnés, la
+cible instantanée $\sqrt{K_\ell K_b}$ ne dépend pas de $\gamma$ ; $\gamma$
+agit sur la production, les taux \eqref{eq:rate} et, indirectement, sur les
+capitaux et le réseau au cours du temps. L'identité est testée
+numériquement à $10^{-12}$ relatif sur une grille de capitaux, de $\gamma$
+et de $A$ (\code{tests/test\_engine.py}).
+
+Le principal transféré est
+\begin{equation}
+q=\min\bigl(K_\ell-K^{*},\ \max(0,\,K^{*}-K_b)\bigr) ;
+\end{equation}
+si $q<\code{MIN\_LOAN}=10^{-9}$ le round est abandonné. Sinon
+$K_\ell\leftarrow K_\ell-q$, $K_b\leftarrow K_b+q$, et le contrat
+$(\ell,b,q,r_{\ell b})$ est créé ou fusionné. Comme $K_\ell>K^{*}>K_b$
+(moyenne géométrique de deux valeurs distinctes), on a $q>0$ au sens réel ;
+le transfert conserve le capital réel total et la valeur nette de chacune
+des deux parties (testé).
+
+\paragraph{Fusion des contrats.}
+\label{sec:merge}
+Si la paire orientée $(\ell,b)$ possède déjà un contrat $(q_0,r_0)$, le
+nouveau prêt $(q_1,r_1)$ fusionne en
+\begin{equation}
+q\leftarrow q_0+q_1,\qquad
+r\leftarrow \frac{q_0 r_0+q_1 r_1}{q_0+q_1},
+\end{equation}
+ce qui préserve exactement le flux d'intérêts total $r\,q=q_0r_0+q_1r_1$
+(testé à $10^{-12}$). La paire inverse $(b,\ell)$ reste un contrat
+distinct.
+
+\paragraph{Compteurs de fonctionnement de $\eta$.}
+La phase de marché enregistre séparément, par pas :
+$N^{\mathrm{mkt}}_t$ (\code{mkt\_pool}), $R_t$ (\code{mkt\_rounds},
+égal au nombre de rounds \emph{exécutés} — zéro si $N^{\mathrm{mkt}}_t<2$),
+le nombre de transactions réussies (\code{new\_loans}, sémantique M4B), le
+nombre de nouvelles arêtes contractuelles (\code{mkt\_new\_edges}), le
+nombre de fusions (\code{mkt\_merges}) et le volume de principal échangé
+(\code{loan\_volume}), avec l'invariant
+$\code{new\_loans}=\code{mkt\_new\_edges}+\code{mkt\_merges}$ (testé).
+
+\subsection{Phase 7 : faillites et cascades}
+
+Règle M4B conservée sans modification de principe. La file initiale
+(\emph{racines}) contient les vivantes en défaut de service du pas
+(\code{liquidity}), de valeur nette $\NW_i<-\code{INSOLVENCY\_TOL}$
+(\code{insolvency}), ou les deux (\code{both}), triées par identifiant.
+Chaque itération (\emph{génération}) tue toutes les entités de la file :
+\begin{itemize}
+\item chaque prêteuse de la morte perd \emph{intégralement} son principal
+      (perte de créance ; une arête de perte morte$\to$prêteuse est
+      enregistrée) ;
+\item les créances portées par la morte sont annulées (gain net pour ses
+      emprunteuses, dont la dette disparaît) ;
+\item le capital résiduel de la morte est détruit ;
+\end{itemize}
+puis la file suivante est reconstituée : vivantes avec
+$\NW<-\code{INSOLVENCY\_TOL}$ (triées par identifiant). La résolution
+itère jusqu'au point fixe (plus aucune insolvable), avec un garde-fou à
+$n_{\mathrm{vivantes}}+1$ itérations (inatteignable : toute itération non
+vide tue au moins une entité).
+
+Conventions de résolution, héritées de M4B et explicitées à l'audit :
+\begin{itemize}
+\item une entité en file au début d'une génération meurt
+\emph{inconditionnellement}, même si la mort d'une co-listée annule une
+de ses dettes au cours de la même génération et l'aurait sauvée ; seul le
+soulagement issu d'une génération \emph{antérieure} propage (le résultat
+est indépendant de l'ordre des identifiants) ;
+\item un défaut de service tue en génération 1 (cause \code{liquidity})
+même si la valeur nette reste positive ;
+\item la mort d'une \emph{prêteuse} n'enregistre aucune perte :
+l'annulation de ses créances efface la dette de ses emprunteuses sans
+flux (aucune partie vivante ne perd) ; \code{claim\_losses} ne compte que
+le principal perdu par les prêteuses d'une \emph{emprunteuse} morte, et
+$\sum_{\text{avalanches du pas}}V=\code{claim\_losses}$ du pas (vérifié à
+$9{\cdot}10^{-12}$ près) ;
+\item les nouveau-nées du pas subissent choc, production et dépréciation
+dès leur pas de naissance.
+\end{itemize}
+
+\paragraph{Avalanches causales.}
+Une avalanche est une composante faiblement connexe du graphe des arêtes de
+perte \emph{restreint aux entités mortes pendant la même résolution}
+(union--find). Par avalanche sont enregistrés : taille $s$ (nombre de
+membres), profondeur (génération maximale de décès), nombre de racines,
+causes, membres, et volume
+\begin{equation}
+V=\sum_{\text{arêtes de perte dont la source est membre}} q ,
+\end{equation}
+qui inclut les pertes infligées à des prêteuses survivantes (l'origine du
+lien affecte la perte à la cascade qui l'a provoquée). La définition est
+identique à M4B et ne change pas pendant l'étude.
+
+\subsection{Phase 8 : mesures}
+
+Aucun tirage aléatoire. La ligne de série du pas contient les 23 colonnes
+M4B (démographie, capital, production, crédit, intérêts, racines par
+cause, itérations de cascade, avalanches, pertes, injection, dépréciation,
+gain de choc) plus les quatre compteurs de marché
+(§\ref{sec:market}). Le statut passe à \code{extinction} si la population
+est nulle, à \code{explosion} si elle dépasse \code{pop\_max} (ce qui
+arrête le run mais ne constitue pas, en soi, un diagnostic d'explosion —
+voir le protocole).
+
+\section{Tolérances numériques}
+\label{sec:tol}
+
+Toutes héritées de M4B, à l'exception du plancher nommé :
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+Constante & Valeur & Rôle\\
+\midrule
+\code{INSOLVENCY\_TOL} & $10^{-9}$ & seuil d'insolvabilité sur $\NW$\\
+\code{MIN\_LOAN} & $10^{-9}$ & principal minimal d'un prêt\\
+\code{ZERO\_TOL} & $10^{-12}$ & arrondi à zéro du capital après dépréciation\\
+\code{K\_FLOOR} & $10^{-9}$ & plancher de $K$ dans $m_\gamma(K)$\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\code{K\_FLOOR} est la même valeur que le $\max(K,10^{-9})$ écrit en dur
+dans \code{\_pair\_terms} de M4B ; M4.2 le nomme parce que son poids croît
+quand $\gamma$ décroît : au plancher, le rendement marginal vaut
+$A\gamma\,10^{9(1-\gamma)}$ (environ $3{\cdot}10^{5}$ à $\gamma=1/3$ contre
+$1{,}6{\cdot}10^{4}$ à $\gamma=1/2$). La cible $K^*=\sqrt{K_\ell K_b}$
+(avec capitaux planchonnés) reste bornée par les capitaux réels et $q$ est
+plafonné par $K_\ell-K^{*}$ : aucun débordement flottant n'est possible en
+double précision. Le comportement au plancher est testé
+(\code{test\_k\_floor\_is\_applied\_and\_finite}).
+
+$\gamma=1$ est une singularité de \eqref{eq:target} ($1/(1-\gamma)$) et de
+\eqref{eq:fixedpoint} : la validation de la configuration impose
+$\gamma<1$ strictement, sans garde supplémentaire dans le code.
+
+\paragraph{Fuites d'arrondi héritées, mesurées à l'audit du 27 juillet
+2026.} Deux imprécisions structurelles, identiques dans M4B et conservées
+pour la parité, sont documentées comme tolérances :
+\begin{itemize}
+\item \emph{puits de dépréciation} : quand $(1-\delta)K\le\code{ZERO\_TOL}$,
+le capital est planché à zéro et le reliquat ($\le10^{-12}$ par entité
+planchée) n'est pas ajouté à la dépréciation mesurée ; zéro déclenchement
+observé en régime normal (run d'audit $\gamma=0{,}6$, $T=300$) ;
+\item \emph{dérive du service agrégé} : le débit utilise le cache
+incrémental $S_b$ tandis que les crédits recalculent $\sum q\,r$ ; écart
+mesuré $\le5{,}5\cdot10^{-13}$ par pas, cumul $\sim10^{-11}$ sur 300 pas.
+\end{itemize}
+Résidu de bilan mesuré : $1{,}3\cdot10^{-11}$ max par pas (seuil de test
+$10^{-6}$). Les dictionnaires d'agrégats conservent une clé par entité
+née (jamais purgée, héritage M4B) : coût mémoire $O(\text{naissances})$,
+sans effet sur les valeurs (résidus $\le1{,}5\cdot10^{-12}$, contrôlés par
+\code{consistency\_errors} au seuil $10^{-6}$).
+
+\section{Point fixe autarcique discret et analyse dimensionnelle}
+\label{sec:fixedpoint}
+
+Sans choc, sans crédit et sans naissance, la mise à jour exécutée d'un pas
+est $K\mapsto(1-\delta)\bigl(K+A K^\gamma\bigr)$ (la production
+\emph{précède} la dépréciation). Le point fixe exact de cette relation
+\emph{discrète} — à ne pas remplacer par son approximation continue —
+satisfait $K=(1-\delta)(K+AK^\gamma)$, d'où
+\begin{equation}
+\Kaut(\gamma)=\Bigl(\frac{(1-\delta)\,A}{\delta}\Bigr)^{1/(1-\gamma)} .
+\label{eq:fixedpoint}
+\end{equation}
+À la configuration centrale ($\delta=0{,}05$, $A=1$), la base vaut $19$ :
+\begin{center}
+\begin{tabular}{lccccc}
+\toprule
+$\gamma$ & $1/3$ & $0{,}4$ & $1/2$ & $0{,}6$ & $2/3$\\
+$\Kaut$ (J) & $82{,}8$ & $135{,}3$ & $361$ & $1573{,}6$ & $6859$\\
+\bottomrule
+\end{tabular}
+\end{center}
+La convergence locale est géométrique de raison
+$1-\delta(1-\gamma)$ : lente à grand $\gamma$ (raison $0{,}983$ à
+$\gamma=2/3$), ce qui gouverne les transitoires ($K_0=25\ll\Kaut$). Le
+moteur atteint \eqref{eq:fixedpoint} à $10^{-9}$ relatif pour
+$\gamma\in\{1/3,1/2,2/3\}$ (\code{test\_autarkic\_fixed\_point}).
+
+Deux identités dimensionnelles guident les prédictions de campagne :
+\begin{equation}
+\frac{F_\gamma(\Kaut)}{\Kaut}=\frac{\delta}{1-\delta}
+\quad\text{(invariante en $\gamma$)},\qquad
+m_\gamma(\Kaut)=\gamma\,\frac{\delta}{1-\delta}
+\quad\text{(linéaire en $\gamma$)} .
+\label{eq:dimensional}
+\end{equation}
+À l'échelle stationnaire, le taux d'intérêt typique croît donc comme
+$\gamma$ tandis que la production par unité de capital est fixe : la charge
+d'intérêts d'une emprunteuse au levier $D/K$, rapportée à sa production,
+vaut environ $\gamma\,(D/K)$. Prédictions testables (exploratoires) :
+$\gamma$ élevé $\Rightarrow$ service relativement plus lourd, davantage de
+racines de liquidité, vies plus courtes ; $\gamma$ faible $\Rightarrow$
+crédit bon marché, moins d'avalanches (risque d'identifiabilité) ; l'échelle
+$\Kaut$ varie de deux décades sur la grille pilote, d'où le contrôle
+d'échelle apparié ci-dessous.
+
+\section{Contrôle d'échelle apparié $A_{\mathrm{norm}}$}
+\label{sec:anorm}
+
+Faire varier $\gamma$ à $A=1$ change simultanément la courbure et l'échelle
+\eqref{eq:fixedpoint}. L'ablation pré-enregistrée fixe un capital de
+référence $K_{\mathrm{ref}}=\Kaut(1/2)=361$ J et utilise, uniquement dans
+ce bras,
+\begin{equation}
+A_{\mathrm{norm}}(\gamma)=\frac{\delta}{1-\delta}\,
+K_{\mathrm{ref}}^{\,1-\gamma}=19^{\,1-2\gamma}
+\qquad(\delta=0{,}05),
+\end{equation}
+qui impose $\Kaut(\gamma; A_{\mathrm{norm}})=K_{\mathrm{ref}}$ pour tout
+$\gamma$ (sanité : $A_{\mathrm{norm}}(1/2)=1$ ; $A_{\mathrm{norm}}(1/3)
+= 19^{1/3}\approx2{,}668$ ; $A_{\mathrm{norm}}(2/3)=19^{-1/3}\approx
+0{,}375$). $A$ est un champ de configuration tracé précisément pour que ce
+bras ne soit pas un second modèle silencieux ; le protocole fige $A=1$
+partout ailleurs.
+
+\paragraph{Invariance d'échelle exacte (propriété structurelle, vérifiée
+empiriquement le 27 juillet 2026).} À $(\gamma,\delta,\sigma,\lambda)$
+fixés, la transformation
+\begin{equation}
+K_i \mapsto c\,K_i\ \ (\forall i),\qquad K_0\mapsto c\,K_0,\qquad
+A\mapsto c^{\,1-\gamma}A,\qquad c>0,
+\end{equation}
+laisse \emph{exactement} invariante toute l'histoire discrète du modèle
+pour une même suite de tirages aléatoires : naissances, chocs
+$\xi_{i,t}$ (multiplicatifs, insensibles à $c$), comparaisons
+prêteuse/emprunteuse (préservées par toute mise à l'échelle positive),
+défauts de service (le ratio $\varphi_b=K_b/S_b$ est invariant car $K_b$
+et le service dû $S_b$ scalent tous deux par $c$ --- le taux
+$r_{\ell b}=A\gamma(K_\ell K_b)^{(\gamma-1)/2}$ est lui-même
+\emph{inchangé} sous cette transformation, comme il se doit pour une
+grandeur de dimension $1/\text{temps}$), insolvabilité, composition des
+cascades. Seules les grandeurs \emph{extensives} (capitaux, principaux,
+volumes) sont multipliées par $c$ ; toutes les grandeurs \emph{discrètes
+ou sans dimension} (identités des mortes, tailles et profondeurs
+d'avalanches, $\hat\tau$, $b$, $N/\lambda$) sont rigoureusement
+identiques. Vérifié numériquement sur $\gamma\in\{1/3,1/2,0{,}6,2/3\}$
+et $c\in\{0{,}1;4;7;19\}$ : écart relatif maximal
+$1{,}2\cdot10^{-11}$, entièrement attribuable aux tolérances numériques
+absolues (\code{K\_FLOOR}, \code{ZERO\_TOL}, \code{INSOLVENCY\_TOL}),
+dix ordres de grandeur sous les capitaux en jeu dans la plage testée.
+
+Puisque $\Kaut(\gamma,A)$ scale lui-même exactement par $c$ sous cette
+transformation (immédiat depuis \eqref{eq:fixedpoint} avec
+$A\to c^{1-\gamma}A$), le rapport adimensionnel $K_0/\Kaut(\gamma,A)$
+est \emph{invariant}. Conséquence directe : à
+$(\gamma,\delta,\sigma,\lambda)$ fixés, toute statistique sans dimension
+du modèle (en particulier $\hat\tau$) ne peut dépendre de $A$ et $K_0$
+\emph{qu'à travers} ce rapport --- ce n'est pas seulement un motif
+empirique observé dans l'ablation, mais une conséquence nécessaire de
+cette symétrie exacte de la dynamique. L'ablation à $A_{\mathrm{norm}}$
+mesure donc, par construction, l'effet résiduel \emph{pur} de la
+courbure $\gamma$ à rapport $K_0/\Kaut$ constant.
+
+\section{Invariants et contrôles}
+
+\begin{itemize}
+\item \textbf{Bilan réel du pas} : en notant $I$ l'injection, $G$ le gain
+de choc, $\Pi$ la production totale, $\Delta$ la dépréciation et $X$ le
+capital détruit aux faillites,
+$\;\Delta K_{\mathrm{tot}}=I+G+\Pi-\Delta-X$, vérifié à $10^{-6}$ relatif
+par pas (les intérêts et transferts de principal sont des flux internes de
+somme nulle). Testé à $\gamma=0{,}4$ et $0{,}65$.
+\item \textbf{Créances $=$ dettes} : chaque contrat compte une fois de
+chaque côté ; $\sum_i C_i=\sum_i D_i$ structurellement.
+\item \textbf{Cohérence du carnet} : \code{consistency\_errors} reconstruit
+$C$, $D$, $S$ depuis les contrats (tolérance $10^{-6}$ relative), vérifie
+qu'aucun contrat n'implique une morte ni n'est dégénéré ; appelé hors
+boucle (jamais dans \code{step()}), notamment dans le résumé de run.
+\item \textbf{Reproductibilité} : même configuration $\Rightarrow$ mêmes
+octets dans les tables (testé) ; les options d'enregistrement
+(\code{snapshot\_every}, \code{individual\_every}) ne modifient pas les
+trajectoires (testé).
+\end{itemize}
+
+\section{Parité mesurée avec M4B à $k=2$}
+\label{sec:parity}
+
+Le cas $\gamma=1/2$, $A=1$ doit retrouver M4B configuré à $k=2$, mêmes
+paramètres et mêmes graines. Les formes génériques
+$A\gamma K^{\gamma-1}$ et $(A\gamma/r)^{1/(1-\gamma)}$ peuvent différer
+d'un ULP des formes M4B $1/(2\sqrt K)$ et $(1/(2r))^2$ ; conformément au
+cahier des charges, aucune branche de compatibilité ne fabrique l'égalité
+bit à bit : l'écart est mesuré et borné.
+
+\textbf{Faits observés} (\code{tests/test\_parity\_m4b.py}, exécuté le
+27 juillet 2026, moteur \code{m4\_2-1}) :
+\begin{itemize}
+\item régimes de \emph{gating} (graine 0, $\lambda=10$, $\sigma=0{,}25$,
+120 pas ; graine 7, $\lambda=18$, $\sigma=0{,}31$, 90 pas) : tout le
+discret est identique pas à pas (naissances, morts et leurs causes,
+contrats et paires orientées, défauts, itérations de cascade, tailles,
+profondeurs, racines et membres des avalanches, compteurs entiers des
+séries) ; écart flottant relatif maximal $5{,}7\cdot10^{-13}$ et
+$3{,}0\cdot10^{-13}$ (tolérance $10^{-9}$) sur capitaux, agrégats du
+carnet, contrats et colonnes flottantes ;
+\item sonde longue non bloquante (graine 1, $\lambda=30$, $T=1000$) :
+\emph{aucune divergence discrète en 1000 pas} ; écart flottant relatif
+maximal des séries $3{,}1\cdot10^{-12}$.
+\end{itemize}
+\textbf{Inférence} : les écarts d'arrondi entre les deux écritures ne
+s'amplifient pas en bifurcation discrète sur ces horizons ; la parité est
+établie au sens du cahier des charges (égalité logique exacte, égalité
+numérique bornée par $\sim10^{-12}$ sur $10^3$ pas). L'unique écart de
+règle (aucun round de marché si le pool $<2$, §\ref{sec:market}) n'a pas
+été exercé dans ces runs (population toujours $\ge2$ au marché).
+
+\section{Données enregistrées}
+
+Par run : \code{config.json} (version du moteur, paramètres — dont
+$\gamma$ et $A$ —, règles fixes, options d'enregistrement) ;
+\code{series.csv} (27 colonnes : les 23 de M4B $+$ \code{mkt\_pool},
+\code{mkt\_rounds}, \code{mkt\_new\_edges}, \code{mkt\_merges}) ;
+\code{avalanches.csv} (identifiant, pas, taille, profondeur, racines,
+volume en joules, causes) ; \code{avalanche\_members.csv} (appartenance,
+racine, génération) ; \code{deaths.csv} (état terminal complet de chaque
+morte) ; \code{entities.csv} (état civil) ; \code{final\_loans.csv}
+(carnet final) ; \code{individual\_series.csv.gz} (trajectoires
+longitudinales, fréquence réglable) ; \code{snapshots/entities\_t*.npz} et
+\code{network\_t*.npz} (instantanés) ; \code{summary.json} (statut,
+comptages, rapport de branchement, erreurs de carnet). Le schéma M4B est
+conservé à l'identique (colonnes ajoutées en fin uniquement), condition de
+réutilisation des recettes de figures Simulation Lab.
+
+\section{Traçabilité}
+
+Moteur : \code{m4\_2\_credit\_soc/m4\_2/model.py} et \code{io.py}, version
+\code{m4\_2-1}, copie adaptée ligne à ligne de
+\code{m4b\_credit\_soc\_mini/m4b/} (version \code{m4b-mini-3}, lecture
+seule). Tests : \code{tests/test\_engine.py} (18 tests, points 1--13 du
+cahier des charges), \code{tests/test\_parity\_m4b.py} (parité et sonde),
+\code{tests/test\_stats.py} (point 14, estimateurs sur données
+synthétiques). Les condensats du moteur sont inscrits dans les manifestes
+de campagne. En cas de contradiction entre ce document et le code, le code
+exécuté fait foi et l'écart doit être documenté.
+
+\end{document}

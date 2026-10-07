@@ -82,6 +82,9 @@ def main() -> int:
     rotation = load_json("rotation_summary.json")
     cost = load_csv("cost_profile_summary.csv")
     survivors = load_csv("survivors.csv")
+    amplitude = load_csv("amplitude.csv")
+    stationarity = load_csv("stationarity_runs.csv")
+    entities = load_csv("survivors_entities.csv")
 
     # -- protocole ---------------------------------------------------------
     seeds = dig(lot_d_res, "arms", "new_A150", "n_seeds_free", default=None)
@@ -116,6 +119,7 @@ def main() -> int:
                                  ("corr_marg_net", "CorrMarg"),
                                  ("K_tot", "Ktot"), ("n_loans", "NLoans"),
                                  ("destroyed", "Destroyed"),
+                                 ("destroyed_per_K", "DestroyedPerK"),
                                  ("mkt_surplus", "Surplus"),
                                  ("tension", "Tension"),
                                  ("tech0_alive", "TechZero")):
@@ -332,6 +336,176 @@ def main() -> int:
             macros[f"surv{tag}{name}Age"] = integer(
                 sum(float(r["age_median"]) for r in rows) / len(rows))
 
+
+    # -- de combien le contrefactuel s'écarte des prêts effectivement conclus
+    #
+    # Les deux comptent presque la même chose — une paire que l'ancienne règle
+    # refuserait conclut ici un prêt à contre-sens — mais pas exactement : une
+    # paire peut être écartée pour une autre raison. Le rapport le dit « à N
+    # centièmes de point près » ; N est mesuré, pas estimé à l'œil.
+    worst_gap = 0.0
+    for arm in ("new_A150", "new_A075", "new_g060"):
+        levels = dig(lot_d_tr, "arms", arm, "levels_free", default={})
+        blocked = dig(levels, "blocked_share", "mean", default=float("nan"))
+        reversed_ = dig(levels, "reversed_share", "mean", default=float("nan"))
+        if blocked == blocked and reversed_ == reversed_:
+            worst_gap = max(worst_gap, abs(100 * (blocked - reversed_)))
+    macros["ecartContrefactuelMax"] = french(worst_gap, 3) if worst_gap else MISSING
+
+    # -- combien d'écarts appariés sont indistinguables de zéro ------------
+    #
+    # C'est l'argument des deux fenêtres, rendu comptable : sur les mêmes
+    # sept observables et les mêmes trois bras, presque aucun écart n'est nul
+    # pendant la transition et les deux tiers le sont ensuite.
+    OBSERVES = ("prod_tot", "K_tot", "pop", "deaths_per_pop", "n_loans",
+                "rotation", "interest_paid")
+    for label_, payload in (("Transition", lot_d_tr), ("Residuel", lot_d_res)):
+        total = crossing = 0
+        largest = 0.0
+        for arm in ("new_A150", "new_A075", "new_g060"):
+            entry = dig(payload, "arms", arm, "paired_free_vs_v1", default={})
+            for column in OBSERVES:
+                node = entry.get(column)
+                if not node or node.get("t") != node.get("t"):
+                    continue
+                total += 1
+                if abs(node["t"]) < (node.get("t_crit_5pct") or 2.201):
+                    crossing += 1
+                largest = max(largest, abs(node["mean"]))
+        macros[f"nEcarts{label_}"] = integer(total) if total else MISSING
+        macros[f"nEcartsNuls{label_}"] = integer(crossing) if total else MISSING
+        macros[f"ecartMax{label_}"] = french(100 * largest, 1) if total else MISSING
+
+    # -- les figures elles-mêmes : combien, et combien de valeurs contrôlées -
+    #
+    # Le manifeste est écrit par `make_figures.py` et relu par
+    # `tests/test_figures.py`, qui vérifie qu'AUCUNE valeur annotée n'est hors
+    # du garde-fou. Les deux comptes coïncident donc par construction, et le
+    # rapport peut citer celui-ci sans le recopier de la table du test.
+    manifest_path = ROOT / "report" / "figures" / "manifest.json"
+    if manifest_path.exists():
+        entries = json.loads(manifest_path.read_text(encoding="utf-8"))
+        macros["nombreFigures"] = integer(len(entries))
+        macros["nombreValeursControlees"] = integer(
+            sum(len(entry["valeurs"]) for entry in entries))
+    else:
+        macros["nombreFigures"] = MISSING
+        macros["nombreValeursControlees"] = MISSING
+
+    # -- parité : l'écart maximal, LU dans le CSV des déviations -----------
+    deviations = load_csv("parity_deviations_8000.csv")
+    if deviations:
+        worst = max(abs(float(row["ecart_max_toutes_colonnes"]))
+                    for row in deviations)
+        macros["parityEcartMax"] = french(worst, 0)
+        macros["parityNPas"] = integer(len(deviations))
+    else:
+        macros["parityEcartMax"] = MISSING
+        macros["parityNPas"] = MISSING
+
+    # -- corrélations : les NIVEAUX, pas leur écart relatif ----------------
+    #
+    # Un écart relatif sur une grandeur SIGNÉE est trompeur : passer de −0,232
+    # à −0,378 s'écrit « +62,9 % » alors que la corrélation BAISSE, et un
+    # écart qui traverse zéro s'écrit « −196,8 % », ce qui ne veut rien dire.
+    # Les deux corrélations de diagnostic sont donc citées en niveau, sous
+    # chaque règle, et c'est la figure qui montre la trajectoire.
+    for label_, payload in (("Transition", lot_d_tr), ("Residuel", lot_d_res)):
+        for column, name in (("corr_K_net", "CorrK"), ("corr_marg_net", "CorrMarg")):
+            for side, tag in (("levels_free", "Free"), ("levels_v1", "Vone")):
+                value = dig(payload, "arms", "new_A150", side, column, "mean",
+                            default=float("nan"))
+                macros[f"niveau{name}{tag}{label_}"] = french(value, 3, sign=True)
+
+    # -- amplitude des quatre leviers, mesurée par scripts/amplitude.py -----
+    #
+    # Ces nombres étaient recopiés à la main depuis la sortie d'un test. Ils
+    # viennent maintenant d'un CSV, comme tout le reste.
+    short_names = {("A", "all"): "AllA", ("A", "fraction"): "FractionA",
+                   ("gamma", "all"): "Gamma", ("A", "new"): "NewA"}
+    for row in amplitude:
+        tag = short_names.get((row["param"], row["portee"]))
+        if tag is None:
+            continue
+        measured = float(row["m_exact"])
+        naive = float(row["m_naif_capital_unite"])
+        by_keq = float(row["m_naif_K_eq"])
+        macros[f"ampl{tag}M"] = french(measured, 6)
+        macros[f"ampl{tag}Mlong"] = f"{measured:.16g}".replace(".", ",")
+        macros[f"ampl{tag}Naive"] = french(naive, 6)
+        macros[f"ampl{tag}Keq"] = french(by_keq, 6)
+        macros[f"ampl{tag}P"] = french(float(row["p_ex_ante"]), 6)
+        macros[f"ampl{tag}N"] = integer(float(row["n_traitees"]))
+        macros[f"ampl{tag}Ecart"] = french(100 * (by_keq / measured - 1.0), 2, sign=True)
+        macros[f"ampl{tag}NaiveEcart"] = french(100 * (naive / measured - 1.0), 1, sign=True)
+        # E vaut 1 PAR ALGÈBRE ; son écart à 1 ne mesure que la propreté de
+        # l'aller-retour flottant. Quand il est nul, écrire « 0 » et non une
+        # puissance de dix : « $0 \\cdot 10^{-0}$ » serait absurde.
+        gap = abs(float(row["identite_E"]) - 1.0)
+        if gap == 0.0:
+            macros[f"ampl{tag}E"] = "0"
+        else:
+            mantissa, exponent = f"{gap:.0e}".split("e")
+            macros[f"ampl{tag}E"] = f"{mantissa}\\cdot 10^{{{int(exponent)}}}"
+
+    # -- ce qu'une bande fixe ferait au CONTRÔLE (§ stationnarité) ----------
+    #
+    # Le rapport affirme qu'une bande [0,99 ; 1,01] rejetterait onze des douze
+    # graines d'un bras dont on SAIT qu'il est stationnaire. L'affirmation
+    # était écrite à la main ; elle est maintenant comptée.
+    LOW, HIGH = 0.99, 1.01
+    for window, label in (("residuel", "Residuel"), ("transition", "Transition")):
+        control = [r for r in stationarity
+                   if r["fenetre"] == window and r["bras"] == "control"]
+        if not control:
+            macros[f"nControleGraines{label}"] = MISSING
+            macros[f"nControleHorsBande{label}"] = MISSING
+            continue
+        outside = [r for r in control if not (LOW <= float(r["K_tot"]) <= HIGH)]
+        macros[f"nControleGraines{label}"] = integer(len(control))
+        macros[f"nControleHorsBande{label}"] = integer(len(outside))
+
+    # -- inégalité des capitaux : le Gini que le §7 identifie à f_3 ---------
+    #
+    # Lu sur l'état final entité par entité, pas sur un agrégat : c'est la
+    # seule source du dépôt qui porte des capitaux individuels.
+    def _gini(values) -> float:
+        values = sorted(v for v in values if v == v and v > 0)
+        n = len(values)
+        total = sum(values)
+        if n == 0 or total == 0:
+            return float("nan")
+        weighted = sum((i + 1) * v for i, v in enumerate(values))
+        return 2 * weighted / (n * total) - (n + 1) / n
+
+    for direction, tag in (("free", "Free"), ("richest_lends", "Vone")):
+        capitals = [float(r["K"]) for r in entities
+                    if r["direction"] == direction and int(r["seed"]) == 0]
+        macros[f"giniK{tag}"] = french(_gini(capitals), 4) if capitals else MISSING
+        macros[f"nEntites{tag}"] = integer(len(capitals)) if capitals else MISSING
+
+    # -- l'institution, en régime mixte : la bande que v1 s'interdisait -----
+    #
+    # ALGÈBRE, pas mesure : pour deux exposants γ égaux, la part optimale de
+    # l'entité 1 vaut λ* = A_1^{1/(1-γ)} / (A_1^{1/(1-γ)} + A_2^{1/(1-γ)}),
+    # soit A_1^2/(A_1^2+A_2^2) à γ = 1/2. Elle cède dès que K_1 > λ* C,
+    # c'est-à-dire K_1 > [λ*/(1-λ*)] K_2. C'est cette borne, comparée à 1,
+    # qui définit la bande où v1 refusait un échange que l'optimum voulait.
+    A_OLD, A_NEW, GAMMA = 1.0, 1.5, 0.5
+    exponent = 1.0 / (1.0 - GAMMA)
+    lambda_star = A_OLD ** exponent / (A_OLD ** exponent + A_NEW ** exponent)
+    macros["lambdaStarOld"] = french(lambda_star, 3)
+    macros["seuilBandeOld"] = french(lambda_star / (1.0 - lambda_star), 3)
+
+    # -- niveaux de tension, pour la figure d'instrumentation ---------------
+    for label, payload in (("Transition", lot_d_tr), ("Residuel", lot_d_res)):
+        for arm, short in (("control", "Controle"), ("new_A150", "AhcentCinquante")):
+            levels = dig(payload, "arms", arm, "levels_free", default={})
+            macros[f"tension{short}{label}"] = french(
+                dig(levels, "tension", "mean", default=float("nan")), 1)
+            macros[f"jensen{short}{label}"] = french(
+                dig(levels, "jensen", "mean", default=float("nan")), 4)
+
     # -- parité : lue dans les journaux des deux passes -------------------
     import re
 
@@ -348,6 +522,9 @@ def main() -> int:
         calls = re.search(r"([\d\s\u202f]+) appels au noyau", text)
         seconds = re.search(r";\s*(\d+) s", text)
         steps = re.search(r"^\s*(\d+) pas ×", text, re.MULTILINE)
+        columns = re.search(r"pas × (\d+) colonnes", text)
+        macros[f"parity{name}Columns"] = (
+            columns.group(1) if columns else MISSING)
         macros[f"parity{name}Calls"] = (
             calls.group(1).strip().replace(" ", "\\,").replace("\u202f", "\\,")
             if calls else MISSING)

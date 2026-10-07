@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 
 from simulation_lab.models.discovery import ModelRegistry
 from simulation_lab.runs.executor import execute_batch, execute_single, generate_seeds
@@ -53,6 +54,8 @@ def main() -> None:
     parser = build_parser()
     args = parser.parse_args()
     registry = ModelRegistry()
+    for source, error in registry.load_errors.items():
+        print(f"[modèle ignoré] {source} : {error}", file=sys.stderr)
     storage = RunStorage()
 
     if args.command == "list-models":

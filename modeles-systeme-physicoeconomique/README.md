@@ -6,10 +6,10 @@ exposant soit :
 - `MODEL`, instance de `BaseSimulationModel`
 - ou `get_model()`, retournant cette instance
 
-Les modèles prioritaires actuellement branchés sont :
+Le seul modèle actif et lançable est désormais :
 
-- `modele_sans_banque_wip`
-- `claude3_v2`
+- `m4b_credit_soc_mini`
 
-Les exemples fournis servent de référence minimale, mais l’interface et le CLI sont
-désormais préparés d’abord pour ces deux modèles.
+Les autres adaptateurs sont conservés pour nommer et consulter les simulations
+historiques. Simulation Lab les expose comme modèles archivés et refuse tout nouveau
+lancement avec ceux-ci.

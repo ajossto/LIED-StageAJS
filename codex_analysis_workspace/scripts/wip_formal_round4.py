@@ -9,7 +9,7 @@ from pathlib import Path
 ROOT = Path("/home/anatole/jupyter/codex_analysis_workspace/data/round4")
 FIG_DIR = ROOT / "figures"
 ROUND3_ROOT = Path("/home/anatole/jupyter/codex_analysis_workspace/data/round3")
-SRC = Path("/home/anatole/jupyter/Modèle_sans_banque_wip/src")
+SRC = Path("/home/anatole/jupyter/anciens_modeles/Modèle_sans_banque/src")
 
 ROOT.mkdir(parents=True, exist_ok=True)
 FIG_DIR.mkdir(parents=True, exist_ok=True)

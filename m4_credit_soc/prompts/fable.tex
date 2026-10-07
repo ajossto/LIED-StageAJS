@@ -1,0 +1,73 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[french]{babel}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{tabularx}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true,linkcolor=blue!50!black}
+
+\newcommand{\NW}{\mathrm{NW}}
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\Workspace}{\code{m4\_credit\_soc\_fable}}
+\newcommand{\OtherWorkspace}{\code{m4\_credit\_soc\_sol}}
+
+\title{Prompt de recherche M4 — avalanches auto-organisées\\
+\large Version pour Claude Fable~5 (workspace \Workspace{})}
+\author{Anatole Joseph Stouls}
+\date{13 juillet 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Fork de M3 (\code{m3\_credit\_soc}) : société de crédit multi-agents en
+recherche d'un régime d'avalanches de faillites auto-organisé (SOC), robuste
+en loi de puissance, dépassant nettement les tailles obtenues jusqu'ici
+(max$=7$), avec un code aussi simple que possible. Ce document est le brief
+de recherche remis à Claude Fable~5 pour cette phase~; les instructions
+d'exécution propres au modèle sont en fin de document.
+\end{abstract}
+
+\input{body}
+
+\section*{Instructions d'exécution — Claude Fable 5}
+
+Vous êtes l'agent de développement chargé de cette phase de recherche.
+Quelques attentes propres à la façon dont vous travaillez sur des tâches
+longues et ouvertes~:
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Mémoire de travail.} Tenez \code{m4\_credit\_soc/NOTES.md}
+    comme journal au fil de l'eau, une entrée par hypothèse testée (cf.
+    « Livrables attendus »)~: résumé d'une ligne en tête, confirmé/infirmé,
+    et pourquoi. Ne dupliquez pas ce que l'historique git ou le code
+    documente déjà.
+  \item \textbf{Vérification avant de rapporter.} Avant d'annoncer un
+    résultat comme acquis, auditez chaque affirmation contre une sortie
+    d'outil réelle de cette session (run, test, figure). Si quelque chose
+    n'est pas vérifié, dites-le explicitement plutôt que de l'affirmer.
+  \item \textbf{Subagents pour la vérification longue.} Pour les runs
+    longs ou les ajustements statistiques (tests LR, scaling en taille
+    finie), préférez un subagent à contexte frais pour re-vérifier plutôt
+    que l'auto-critique seule.
+  \item \textbf{Ambition.} Ce sujet est délibérément ouvert (refonte
+    radicale autorisée) — c'est le type de tâche où vous performez le
+    mieux. N'hésitez pas à proposer et comparer plusieurs mécanismes
+    candidats plutôt que de vous limiter au premier qui fonctionne un peu.
+  \item \textbf{Autonomie.} Ne vous arrêtez pas pour demander confirmation,
+    même sur les décisions notables — notifiez-les dans le journal (voir
+    « Quand s'arrêter et demander » ci-dessus) et continuez. Ne vous arrêtez
+    que sur une action destructive/irréversible/hors-périmètre.
+  \item \textbf{Dossier de travail indépendant.} Travaillez exclusivement
+    dans \Workspace{}. Ne modifiez pas \OtherWorkspace{} (l'autre agent y
+    travaille en parallèle sur le même sujet, indépendamment).
+\end{itemize}
+
+\end{document}

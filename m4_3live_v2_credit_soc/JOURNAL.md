@@ -469,3 +469,121 @@ distribution capital/dû en a une désormais (`figures/service_ratio.png`), et
 c'est la plus parlante du chapitre — la fenêtre de bascule y est un cheveu à
 gauche d'une distribution qui commence à 3,27. Celui des amplitudes est réduit
 à quatre colonnes, les deux retirées tenant en une phrase.
+
+---
+
+## 25 août 2026 — les deux rapports étaient sous-illustrés
+
+Consigne de l'utilisateur : « il n'y a pas du tout assez de figures dans les
+rapports. Je veux impérativement des figures, graphiques, histogrammes,
+courbes, régression, etc. qui viennent illustrer les calculs que tu fais et
+les résultats que tu obtiens. C'est extrêmement important. »
+
+**L'état de départ** : neuf figures PNG pour les deux rapports, produites par
+quatre fonctions de dessin dispersées dans `analyse.py`, `rotation.py`,
+`survivors.py` et `cost_profile.py`. Des résultats centraux n'en avaient
+aucune : la loi mortalité ∼ rotation sur 322 runs, la chaîne causale du §4.5,
+le contrôle par levier qui invalide la fermeture, la tension, l'amplitude, la
+parité, la bande d'échanges que l'ancienne règle s'interdisait.
+
+**L'état d'arrivée** : 23 figures, 26 inclusions, toutes engendrées par un seul
+script (`scripts/make_figures.py`) depuis `results/`, sur le modèle de M4.4.
+Aucun run neuf n'a été nécessaire — tout était déjà sur disque et n'était pas
+tracé.
+
+### Ce que la fabrique impose, et qui a fait apparaître trois défauts
+
+Le dispositif n'est pas seulement esthétique : `save()` enregistre les valeurs
+**annotées** sur chaque figure dans `report/figures/manifest.json`, et
+`tests/test_figures.py` les confronte aux macros de `numbers.tex`. Une figure
+ne peut donc afficher que des nombres qui ont une source. Trois défauts en sont
+sortis.
+
+1. **Le tableau d'amplitude portait quatre nombres recopiés à la main.** Ils
+   venaient de la sortie imprimée de `tests/test_amplitude.py` — un test
+   affiche ses valeurs, il ne les persiste pas. `scripts/amplitude.py` les
+   mesure et les écrit dans `results/analysis/amplitude.csv` (102 s). Les
+   valeurs recopiées étaient exactes ; rien ne les rattachait à leur source.
+2. **Les deux corrélations de diagnostic étaient citées en écart relatif.**
+   Tracer leur trajectoire a montré que c'était intenable : `corr_K_net` passe
+   de −0,232 à −0,378, ce qui s'écrivait « +62,9 % » alors que la corrélation
+   *baisse*, et l'écart de la fenêtre résiduelle traverse zéro et s'écrivait
+   « −196,8 % ». Elles sont désormais citées en **niveau** :
+   `corr_K_net` vaut +0,147 sous la règle ancienne et −0,143 sous le sens
+   libre en régime résiduel — un **changement de signe**, énoncé plus fort que
+   celui qui figurait. Et la corrélation au *rendement marginal*, elle, ne
+   distingue pas les deux règles en régime résiduel : la phrase qui en faisait
+   le diagnostic du chantier est retirée et remplacée par ce constat.
+3. **Le maillon « capital détruit » de la chaîne causale a le mauvais signe en
+   flux brut.** `destroyed` baisse de 3,35 % sous le sens libre, ce qui
+   contredirait la chaîne — mais le stock dont ce flux est tiré baisse de
+   10,11 %. La colonne dérivée `destroyed_per_K` est ajoutée à `analyse.py` :
+   elle monte de **+7,52 %** (t = 19,2). La figure de la chaîne l'affiche, et
+   la légende dit pourquoi le flux brut inverserait la conclusion.
+
+### Une affirmation requalifiée
+
+Le §7.2 affirmait que « la décroissance du Gini pendant la phase de marché est
+bien exponentielle en le numéro de ronde, et c'est cela qui est mesuré ». Le
+moteur n'enregistre que **deux extrémités**, avant et après la phase. Que leur
+moyenne logarithmique recolle `f₃` à un demi-pour-cent près est *cohérent*
+avec une décroissance exponentielle — ce n'en est pas une mesure. Requalifié en
+`\incertitude{}`, avec le coût de trancher (instrumenter le Gini ronde par
+ronde, donc toucher au moteur et relancer le balayage de 33 runs).
+
+### Coûts et vérifications
+
+- `scripts/amplitude.py` : 102 s. `scripts/make_figures.py` : 26 s.
+- `analyse.py` et `rotation.py analyse` relancés après restructuration :
+  **les 499 macros d'origine sont inchangées**, 87 s'y ajoutent.
+- Le dessin est sorti des quatre scripts d'analyse. Piège évité au passage :
+  `rotation.py:figure_hetero` *retournait* la statistique du régime hétérogène
+  consommée par `make_numbers.py` ; déplacer la fonction telle quelle aurait
+  fait disparaître cinq macros sans erreur. Elle est scindée en
+  `hetero_statistics()` (qui persiste `results/analysis/hetero_gap.csv`) et une
+  figure qui relit ce fichier.
+- `tests/test_figures.py` : 26 inclusions résolues, aucune orpheline, 86
+  valeurs annotées conformes aux macros, aucune valeur annotée hors du
+  garde-fou.
+- Les deux PDF passent de 28 à 36 pages et de 23 à 26 pages, sans avertissement
+  LaTeX.
+
+### Quatre points relevés à la relecture, et corrigés
+
+1. **Dix figures ne déposaient pas leur série alors que les deux rapports
+   affirmaient qu'elles le faisaient.** Elles lisent `results/analysis/`, qui
+   est ignoré par git au même titre que le reste de `results/`. Les dépôts
+   sont ajoutés — et surtout, `test_figures.py` les **exige** désormais :
+   toute figure incluse doit avoir un `report/figures/data/<nom>.csv`, sauf
+   celles d'une liste explicite de figures purement analytiques (une seule,
+   `g04_ordre_phases`). Sans ce test la règle se serait périmée à la
+   prochaine figure ajoutée.
+2. **`survivors.py` et `cost_profile.py` avaient été amputés de leur fonction
+   de dessin sans être relancés.** `py_compile` ne dit rien d'un `NameError`
+   qui attend dans `main()`, et aucun test ne couvre ces deux scripts.
+   Relancés : `survivors.py` (172 s) reproduit `survivors_entities.csv` à
+   l'identique sur les 5105 lignes et les 16 colonnes autres que
+   `wall_seconds` ; `cost_profile.py` passe en fumée à 30 pas, les CSV de
+   4000 pas étant mis de côté puis restaurés — les relancer pour de bon aurait
+   réécrit `costVoneKeys` et `costEmptyShare` avec des valeurs de 30 pas.
+3. **Une légende disait « à un centième de point près » pour trois bras dont
+   un est à 0,014.** Le nombre est devenu une macro (`\ecartContrefactuelMax`,
+   mesurée sur les moyennes brutes) et la légende note que soustraire les deux
+   étiquettes arrondies donne jusqu'à deux centièmes alors que l'écart mesuré
+   est plus petit.
+4. **Le tableau du lot E affichait « --- % » pour deux hausses relatives.**
+   Le dénominateur est nul dans les deux bras : la hausse relative n'existe
+   pas, et « --- % » se lit comme une donnée manquante. Le tableau écrit
+   maintenant « *non définie* (0/0) », et la figure correspondante porte le
+   même constat plutôt qu'une barre absente.
+
+### Ce qui reste à faire, et qui n'a pas été touché
+
+`README.md` est resté une copie de celui de v1 : son arborescence nomme
+`m4_3live/` au lieu de `m4_3live_v2/`, il documente sept scripts qui n'existent
+pas dans ce dossier (`ablation_k0.py`, `scaling_gamma.py`,
+`conception_evidence.py`, `protocol_figures.py`, `verification_figures.py`,
+`make_report_tables.py`, `bench_kernel.py`) et sa section de résultats décrit
+la campagne de v1, portée `fraction` comprise, qui est hors périmètre ici. Une
+section sur la fabrique des figures y a été ajoutée ; le reste demande une
+réécriture qui n'était pas l'objet de cette session.

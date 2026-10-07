@@ -1,0 +1,1128 @@
+\documentclass[aspectratio=169]{beamer}
+
+% ── Thème ────────────────────────────────────────────────────────────────
+\usetheme{Singapore}
+\setbeamercovered{invisible}
+
+% ── Encodage et langue ────────────────────────────────────────────────────
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+
+% ── Packages ─────────────────────────────────────────────────────────────
+\usepackage{amsmath, amssymb}
+\usepackage{graphicx}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning, shadows}
+\usepackage{xcolor}
+\usepackage[normalem]{ulem}   % \sout pour le titre barré
+
+% ── Cellules visuelles réutilisables ────────────────────────────────────────
+% \badgecell[taille]{couleur}{texte}  — carré coloré avec texte centré
+\newcommand{\badgecell}[3][1.1cm]{%
+	{\setlength{\fboxsep}{0pt}%
+		\colorbox{#2}{\begin{minipage}[c][#1][c]{#1}%
+				\centering\tiny\color{white}\textbf{#3}%
+\end{minipage}}}}
+
+% \imgcell[taille]{fichier}  — image carrée (largeur = hauteur = taille)
+% Toutes les images placed_images/Miniature*.png sont paddées en 1:1 par PIL.
+\newcommand{\imgcell}[2][1.1cm]{%
+	{\setlength{\fboxsep}{0pt}%
+		\includegraphics[width=#1,height=#1]{#2}}}
+
+% ── Mini graphe orienté réutilisable (SOC — analogies) ───────────────────
+\newcommand{\minigraph}{%
+	\begin{tikzpicture}[scale=0.55,
+		ent/.style={circle,draw=mainred,fill=red!15,
+			minimum size=0.16cm,inner sep=0.5pt}]
+		\node[ent](m1) at (-1.3, 0.7) {};
+		\node[ent](m2) at ( 0.0, 0.9) {};
+		\node[ent](m3) at ( 1.1, 0.5) {};
+		\node[ent](m4) at (-0.8,-0.6) {};
+		\node[ent](m5) at ( 0.8,-0.7) {};
+		\draw[->,mainred,thick](m1)--(m2);
+		\draw[->,mainred,thick](m2)--(m3);
+		\draw[->,mainred,thick](m3)--(m5);
+		\draw[->,mainred,thick](m4)--(m1);
+\end{tikzpicture}}
+
+% ── Numéro de page absolu en bas à gauche ─────────────────────────────────
+\addtobeamertemplate{footline}{}{%
+	\begin{tikzpicture}[remember picture,overlay]
+		\node[anchor=south west,xshift=3mm,yshift=1.5mm]
+		at (current page.south west)
+		{\tiny\color{gray!70}\insertpagenumber};
+\end{tikzpicture}}
+
+% ── Couleurs dominante rouge ──────────────────────────────────────────────
+\definecolor{mainred}{RGB}{165,15,15}
+\definecolor{darkred}{RGB}{100,5,5}
+
+\setbeamercolor{structure}{fg=mainred}
+\setbeamercolor{frametitle}{fg=darkred, bg=red!10}
+\setbeamercolor{block title}{bg=mainred, fg=white}
+\setbeamercolor{block body}{bg=red!5, fg=black}
+\setbeamercolor{alerted text}{fg=darkred}
+\setbeamercolor{section in head/foot}{bg=darkred, fg=white}
+\setbeamercolor{subsection in head/foot}{bg=mainred!70, fg=white}
+\setbeamercolor{title}{fg=darkred}
+\setbeamercolor{author}{fg=darkred!80}
+
+% ── Métadonnées ───────────────────────────────────────────────────────────
+\title[Parcours \& Thèse]{%
+	Présentation de mon parcours\\[0.2em]
+	et de mon projet de thèse}
+\author{Anatole \textsc{Joseph-Stouls}}
+\institute{ENS Rennes $\cdot$ LIED — Candidature EDPIF\\[0.2em]
+	% BALISE_LOGO : logos ENS Rennes, LIED, CNRS, Université Paris Cité
+}
+\date{2026}
+
+% ══════════════════════════════════════════════════════════════════════════
+\begin{document}
+	
+	% ══════════════════════════════════════════════════════════════════════════
+	% SLIDE 1 — Titre
+	% ══════════════════════════════════════════════════════════════════════════
+	\begin{frame}
+		\titlepage
+	\end{frame}
+	
+	
+	
+	% ══════════════════════════════════════════════════════════════════════════
+	\section{Parcours}
+	
+	% ══════════════════════════════════════════════════════════════════════════
+	% FRAME "Parcours"  SLIDES 2–26  (25 overlays — overlay N = slide N+1)
+	% shrink=45 (réel ~49 %)
+	% ══════════════════════════════════════════════════════════════════════════
+	\begin{frame}[t,shrink=45]{Parcours}
+		\vspace{0.2em}
+		% ── Frise (slides 2–26 : frise_0X change à chaque groupe d'overlays) ────
+		\begin{center}%
+			\only<1>{\includegraphics[width=0.75\linewidth]{frise/frisee1}}%  % slide 2
+			\only<2>{\includegraphics[width=0.75\linewidth]{frise/frisee2}}%  % slide 3
+			\only<3>{\includegraphics[width=0.75\linewidth]{frise/frisee3}}%  % slide 4
+			\only<4-11>{\includegraphics[width=0.75\linewidth]{frise/frisee4}}% % slides 5–12
+			\only<12>{\includegraphics[width=0.75\linewidth]{frise/frisee5}}%  % slide 13
+			\only<13-16>{\includegraphics[width=0.75\linewidth]{frise/frisee6}}% % slides 14–17
+			\only<17->{\includegraphics[width=0.75\linewidth]{frise/frisee7}}%  % slides 18–
+		\end{center}%
+		%
+		% ── Diplôme ENS — slide 18 (overlay 17) ──────────────────────────────────
+		\only<17>{%
+			\begin{center}%
+				{\textit{Diplôme de l'ENS — parcours Recherche aux Interfaces \\ 2 Masters}}%
+			\end{center}}%
+		%
+		% ── ENS — 3 images sujets  slides 6–8  (overlays 5–7) ────────────────────
+		\only<5-7>{%
+			\vspace{0.2em}%
+			\begin{center}%
+				\only<5->{\imgcell[3.5cm]{placed_images/mecanique}}%
+				\only<6->{\quad\imgcell[3.5cm]{placed_images/electrique}}%
+				\only<7->{\quad\imgcell[3.5cm]{placed_images/informatique}}%
+		\end{center}}%
+		%
+		% ── ENS — liste de cours  slides 9–12  (overlays 8–11) ───────────────────
+		\only<8-11>{%
+			\vspace{0.4em}%
+			\begin{columns}[T]
+				\begin{column}{0.45\textwidth}
+					\centering\Large
+					\begin{itemize}\setlength\itemsep{6pt}%
+						\item<8-> Traitement du signal%
+						\item<9-> Mécanique des fluides%
+					\end{itemize}%
+				\end{column}
+				\begin{column}{0.45\textwidth}
+					\centering\Large
+					\begin{itemize}\setlength\itemsep{6pt}%
+						\item<10-> Thermodynamique%
+						\item<11-> Électrotechnique {\scriptsize(micro\,$\to$\,macro)}%
+					\end{itemize}%
+				\end{column}
+		\end{columns}}%
+		%
+		% ── Maths — liste  slides 14–17  (overlays 13–16) ───────────────────────
+		\only<13-16>{%
+			\vspace{0.4em}%
+			\begin{columns}[T]
+				\begin{column}{0.45\textwidth}
+					\centering\Large
+					\begin{itemize}\setlength\itemsep{6pt}%
+						\item<13-> Probabilités — Statistiques%
+						\item<14-> Chaînes de Markov%
+					\end{itemize}%
+				\end{column}
+				\begin{column}{0.45\textwidth}
+					\centering\Large
+					\begin{itemize}\setlength\itemsep{6pt}%
+						\item<15-> Théorème ergodique%
+						\item<16-> Rigueur et formalisme%
+					\end{itemize}%
+				\end{column}
+		\end{columns}}%
+		%
+		% ── Temps libre — images  slides 19–22  (overlays 18–21) ────────────────
+		\only<18-21>{%
+			\vspace{0.2em}%
+			\begin{center}%
+				\only<18->{\imgcell[3cm]{placed_images/temps_monnaie}}%
+				\only<19->{\hspace{4pt}\imgcell[3cm]{placed_images/temps_sociologie}}%
+				\only<20->{\hspace{4pt}\imgcell[3cm]{placed_images/temps_geopo}}%
+				\only<21->{\hspace{4pt}\imgcell[3cm]{placed_images/temps_societe}}%
+		\end{center}}%
+		%
+		% ── Stages — images  slides 23–27  (overlays 22–26) ─────────────────────
+		% overlay 25 = slide 26 : stage LIED taille normale
+		% overlay 26 = slide 27 : stage LIED zoomé 6cm (dernière slide Parcours)
+		\only<22->{%
+			\vspace{0.1em}%
+			\begin{center}%
+				\only<22->{\imgcell[3cm]{placed_images/stage_prof}}%
+				\only<23->{\hspace{4pt}\imgcell[3cm]{placed_images/stage_cao}}%
+				\only<24->{\hspace{4pt}\imgcell[3cm]{placed_images/stage_rd}}%
+				\only<25>{\hspace{4pt}\imgcell[3cm]{placed_images/stage_lied}}%
+				\only<26->{\hspace{4pt}\imgcell[6cm]{placed_images/stage_lied}}%
+		\end{center}}%
+	\end{frame}
+	
+	% ══════════════════════════════════════════════════════════════════════════
+	\section{Recherche au LIED}
+	
+	% ══════════════════════════════════════════════════════════════════════════
+	% FRAME 4A  SLIDES 27–39  (13 overlays — overlay N = slide 26+N)
+	% PAS de shrink — bandereau INLINE (positionné dans le flot normal)
+	% overlay 1=27 | 2=28 | 3=29 | 4=30 | 5=31 | 6=32 | 7=33 | 8=34
+	% overlay 9=35 | 10=36 | 11=37 | 12=38 | 13=39
+	% ══════════════════════════════════════════════════════════════════════════
+	\begin{frame}[t]{Stage LIED : Effet Rebond — Métabolisme Urbain}
+
+		% ── Bandereau INLINE (slides 33–39 = overlays 7–13) ──────────────────────
+		% Approche INLINE : le bandereau est dans le flot du texte, juste
+		% sous le frametitle.  Miniature1 dès overlay 7, Miniature2 dès overlay 12.
+		% PAS de TikZ overlay ici — contrairement à Frame 4B.
+		\only<7->{%
+			\noindent%
+			\imgcell[2cm]{placed_images/Miniature1}
+			\only<12->{\hspace{2pt}\imgcell[2cm]{placed_images/Miniature2}}%
+			\par\vspace{0.3em}}%
+		
+		% ── Grille 2×2 moteurs / voitures  slides 28–32  (overlays 2–6) ────────
+		\only<2-6>{%
+			\begin{center}%
+				\begin{tikzpicture}
+					\node at (-1.25, 1.25) {\begin{minipage}[c][2.2cm][c]{2.2cm}\centering
+							\only<2->{\imgcell[2.2cm]{placed_images/moteur_ancien}}%
+					\end{minipage}};
+					\node at ( 1.25, 1.25) {\begin{minipage}[c][2.2cm][c]{2.2cm}\centering
+							\only<3->{\imgcell[2.2cm]{placed_images/moteur_recent}}%
+					\end{minipage}};
+					\node (n2cv) at (-1.25,-1.25) {\begin{minipage}[c][2.2cm][c]{2.2cm}\centering
+							\only<4->{\imgcell[2.2cm]{placed_images/voiture_2cv}}%
+					\end{minipage}};
+					\node (nclio) at ( 1.25,-1.25) {\begin{minipage}[c][2.2cm][c]{2.2cm}\centering
+							\only<5->{\imgcell[2.2cm]{placed_images/voiture_clio5}}%
+					\end{minipage}};
+					\only<6->{
+						\node[font=\large\bfseries, text=mainred,
+						drop shadow={shadow xshift=1.5pt, shadow yshift=-1.5pt, opacity=0.5},
+						above=4pt of n2cv] {5\,L/100\,km};
+						\node[font=\large\bfseries, text=mainred,
+						drop shadow={shadow xshift=1.5pt, shadow yshift=-1.5pt, opacity=0.5},
+						above=4pt of nclio] {5\,L/100\,km};
+					}
+				\end{tikzpicture}%
+		\end{center}}%
+		
+		% ── Publications éconophysique  slides 34–37  (overlays 8–11) ───────────
+		\only<8-11>{%
+			\begin{columns}[T]
+				\begin{column}{0.60\textwidth}
+					\scriptsize
+					\begin{itemize}\setlength\itemsep{3pt}%
+						\item<8-> \textbf{V.M. Yakovenko} \& J.B. Rosser (Univ. Maryland)\\[-2pt]%
+						{\scriptsize\textit{``Statistical mechanics of money, wealth, and income''}\\%
+							\emph{Rev. Mod. Phys.}\ \textbf{81}, 1703 (2009) —
+							\texttt{10.1103/RevModPhys.81.1703}}%
+						\item<9-> Santa Fe Institute, Écono-physique%
+						\item<10-> \textbf{J.-P. Bouchaud \& M. Mézard} (CEA-Saclay / ENS Paris)\\[-2pt]%
+						{\scriptsize\textit{``Wealth condensation in a simple model of economy''}\\%
+							\emph{Physica A}\ \textbf{282}, 536 (2000) —
+							\texttt{10.1016/S0378-4371(00)00205-3}}%
+						\item<11-> \textbf{M. Hendrick, A. Rinaldo \& G. Manoli}\\[-2pt]%
+						{\scriptsize\textit{``A stochastic theory of urban metabolism''}\\%
+							\emph{PNAS}\ \textbf{122}(33), e2501224122 (2025) —
+							\texttt{10.1073/pnas.2501224122}}%
+					\end{itemize}%
+				\end{column}
+				\begin{column}{0.38\textwidth}
+					\centering
+					\vspace*{-7em}
+					\only<8->{%
+						\begin{minipage}{0.22\linewidth}
+							\centering
+							\imgcell[1.5cm]{placed_images/yakovenko_portrait}\\[-0.1em]
+							{}
+						\end{minipage}\hfill
+						\begin{minipage}{0.75\linewidth}
+							\centering
+							\includegraphics[width=\linewidth,height=1\linewidth,keepaspectratio]{placed_images/yakovenko_distrib_full}
+					\end{minipage}}%
+					\only<9->{\\[0.25em]\imgcell[1.5cm]{placed_images/sfi}}%
+					\only<10->{\\[0.25em]\imgcell[1.5cm]{placed_images/bouchaud}\hspace{4pt}\imgcell[1.5cm]{placed_images/mezard}}%
+				\end{column}
+		\end{columns}}%
+		
+		% ── SOC texte  slide 39  (overlay 13 — parenthèse avalanche suit) ───────
+		\only<13>{%
+			\vspace{1.8em}%
+			\begin{center}%
+				\Large\textbf{Système Auto-Critique}\\[0.4em]%
+				\normalsize\textit{Self-Organized Criticality} (SOC)%
+		\end{center}}%
+		
+	\end{frame}
+
+	% ══════════════════════════════════════════════════════════════════════════
+	% FRAME "SOC définition"  SLIDE 41
+	% ══════════════════════════════════════════════════════════════════════════
+	\begin{frame}[t]{Système Auto-Critique — Définition}
+		\vspace{1.2em}
+		\begin{block}{}
+			\normalsize
+			Un \textbf{système auto-critique} est un système dynamique qui évolue
+			spontanément vers un \textbf{état critique} où de petites perturbations
+			peuvent provoquer des événements de \textbf{toutes tailles}, souvent
+			distribués en \textbf{loi de puissance} — peu dépendantes des paramètres
+			exogènes.
+		\end{block}
+		\vspace{0.9em}
+		\begin{center}
+			{\normalsize\textit{Self-Organized Criticality} (SOC) — Bak, Tang \& Wiesenfeld (1987)}
+		\end{center}
+	\end{frame}
+
+	% ══════════════════════════════════════════════════════════════════════════
+	% FRAME "SOC avalanche"  SLIDES 42–46
+	% ══════════════════════════════════════════════════════════════════════════
+	\begin{frame}[t,shrink=8]{Système auto-critique — L'avalanche de sable}
+		\begin{columns}[T]
+			\begin{column}{0.50\textwidth}
+				\only<1>{\includegraphics[width=\linewidth,height=0.60\textheight,keepaspectratio]{figures_avalanche/state1_vide}}%
+				\only<2>{\includegraphics[width=\linewidth,height=0.60\textheight,keepaspectratio]{figures_avalanche/state2_sparse}}%
+				\only<3>{\includegraphics[width=\linewidth,height=0.60\textheight,keepaspectratio]{figures_avalanche/state3_accumulation}}%
+				\only<4>{\includegraphics[width=\linewidth,height=0.60\textheight,keepaspectratio]{figures_avalanche/state4_seuil}}%
+				\only<5>{\includegraphics[width=\linewidth,height=0.60\textheight,keepaspectratio]{figures_avalanche/state5_apres_topple}}%
+			%	\only<7>{\includegraphics[width=\linewidth,height=0.60\textheight,keepaspectratio]{figures_avalanche/state7_declenchement}}%
+			%	\only<8->{\includegraphics[width=\linewidth,height=0.60\textheight,keepaspectratio]{figures_avalanche/state8_apres_avalanche}}%
+			\end{column}
+			\begin{column}{0.45\textwidth}
+				\footnotesize
+				\begin{itemize}\setlength\itemsep{4pt}
+					\item<1-> Grains déposés aléatoirement — seuil critique : \textbf{4}
+					\item<4-> Colonne $\geq 4$ : \alert{\textbf{topple\,!}} — redistribution
+					aux 4 voisins
+%					\item<7-> Cascade si un voisin atteint le seuil : \textbf{avalanche}
+%					\item<8-> État critique : avalanches de \textbf{toutes tailles}
+				\end{itemize}
+			\end{column}
+		\end{columns}
+	\end{frame}
+	
+	% ══════════════════════════════════════════════════════════════════════════
+	% FRAME "Avalanche petite/grande"  SLIDES 46–54  (9 overlays — overlay N = slide 45+N)
+	% ══════════════════════════════════════════════════════════════════════════
+	\begin{frame}[t,shrink=20]{Avalanche de sable — petite et grande}
+		\only<1-8>{%
+			\begin{columns}[T]
+				\begin{column}{0.48\textwidth}
+					\centering
+					{\footnotesize\color{mainred}\textbf{Petite avalanche}}\\[0.2em]
+					\only<1>{\includegraphics[width=\linewidth,height=0.75\textheight,keepaspectratio]{figures_avalanche/small_A0_avant}}%
+					\only<2>{\includegraphics[width=\linewidth,height=0.75\textheight,keepaspectratio]{figures_avalanche/small_A1_depot}}%
+					\only<3>{\includegraphics[width=\linewidth,height=0.75\textheight,keepaspectratio]{figures_avalanche/small_A2_topple}}%
+					\only<4>{\includegraphics[width=\linewidth,height=0.75\textheight,keepaspectratio]{figures_avalanche/small_A3_topple}}%
+					\only<5-8>{\includegraphics[width=\linewidth,height=0.75\textheight,keepaspectratio]{figures_avalanche/small_Afinal_stable}}%
+				\end{column}
+				\begin{column}{0.48\textwidth}
+					\centering
+					{\footnotesize\color{mainred}\textbf{Grande avalanche}}\\[0.2em]
+					\only<1>{\includegraphics[width=\linewidth,height=0.75\textheight,keepaspectratio]{figures_avalanche/large_B0_avant}}%
+					\only<2>{\includegraphics[width=\linewidth,height=0.75\textheight,keepaspectratio]{figures_avalanche/large_B1_depot}}%
+					\only<3>{\includegraphics[width=\linewidth,height=0.75\textheight,keepaspectratio]{figures_avalanche/large_B2_wave}}%
+					\only<4>{\includegraphics[width=\linewidth,height=0.75\textheight,keepaspectratio]{figures_avalanche/large_B3_wave}}%
+					\only<5>{\includegraphics[width=\linewidth,height=0.75\textheight,keepaspectratio]{figures_avalanche/large_B4_wave}}%
+					\only<6>{\includegraphics[width=\linewidth,height=0.75\textheight,keepaspectratio]{figures_avalanche/large_B5_wave}}%
+					\only<7>{\includegraphics[width=\linewidth,height=0.75\textheight,keepaspectratio]{figures_avalanche/large_B6_wave}}%
+					\only<8>{\includegraphics[width=\linewidth,height=0.75\textheight,keepaspectratio]{figures_avalanche/large_B7_wave}}%
+				\end{column}
+		\end{columns}}%
+		\only<9->{%
+			\vspace{0.3em}
+			\begin{center}
+				\includegraphics[width=0.85\textwidth,height=0.75\textheight,keepaspectratio]{figures_avalanche/powerlaw}\\[0.3em]
+				{\small\alert{\textbf{Loi de puissance}} $P(s)\sim s^{-1}$ —
+					insensible aux paramètres exogènes.}
+		\end{center}}
+	\end{frame}
+	
+	% ══════════════════════════════════════════════════════════════════════════
+	% FRAME 4B  SLIDES 55–87  (33 overlays — overlay N = slide 54+N)
+	% shrink=20  (réel ~20 %, sauf slide 84 ≈ 36 % et slide 87 ≈ 30 %)
+	%
+	%  overlay  1 = slide 55   overlay 12 = slide 66   overlay 23 = slide 77
+	%  overlay  2 = slide 56   overlay 13 = slide 67   overlay 24 = slide 78
+	%  overlay  3 = slide 57   overlay 14 = slide 68   overlay 25 = slide 79
+	%  overlay  4 = slide 58   overlay 15 = slide 69   overlay 26 = slide 80
+	%  overlay  5 = slide 59   overlay 16 = slide 70   overlay 27 = slide 81
+	%  overlay  6 = slide 60   overlay 17 = slide 71   overlay 28 = slide 82
+	%  overlay  7 = slide 61   overlay 18 = slide 72   overlay 29 = slide 83
+	%  overlay  8 = slide 62   overlay 19 = slide 73   overlay 30 = slide 84
+	%  overlay  9 = slide 63   overlay 20 = slide 74   overlay 31 = slide 85
+	%  overlay 10 = slide 64   overlay 21 = slide 75   overlay 32 = slide 86
+	%  overlay 11 = slide 65   overlay 22 = slide 76   overlay 33 = slide 87
+	% ══════════════════════════════════════════════════════════════════════════
+	\begin{frame}[t,shrink=20]{Stage LIED : Effet Rebond — Métabolisme Urbain}
+
+		% ── BANDEREAU  slides 55–87  (toujours présent dans ce frame) ───────────
+		% Approche INLINE (identique à frame 4A) : dans le flot normal,
+		% juste sous le frametitle.  Affiché sur tous les overlays.
+		% Miniature1–4 : toujours | Miniature5 : dès overlay 7 | Miniature6 : dès overlay 23
+		\noindent%
+		\imgcell[2cm]{placed_images/Miniature1}%
+		\hspace{2pt}\imgcell[2cm]{placed_images/Miniature2}%
+		\hspace{2pt}\imgcell[2cm]{placed_images/Miniature3}%
+		\hspace{2pt}\imgcell[2cm]{placed_images/Miniature4}%
+		\only<7->{\hspace{2pt}\imgcell[2cm]{placed_images/Miniature5}}%
+		\only<23->{\hspace{2pt}\imgcell[2cm]{placed_images/Miniature6}}%
+		\par\vspace{0.3em}
+		
+		% ── SOC texte  slide 55  (overlay 1) ────────────────────────────────────
+		\only<1>{%
+			\vspace{1.8em}%
+			\begin{center}%
+				\Large\textbf{Système Auto-Critique}\\[0.4em]%
+				\normalsize\textit{Self-Organized Criticality} (SOC)%
+		\end{center}}%
+		
+		% ── SOC compact + analogies  slides 56–59  (overlays 2–5) ───────────────
+		\only<2-5>{%
+			\vspace{0.4em}%
+			\begin{center}\small\textbf{Système Auto-Critique (SOC)}\end{center}%
+			\vspace{0.2em}}%
+		
+		\only<2-4>{%
+			\begin{center}%
+				\begin{tikzpicture}
+					\node at (-4.2,0) {\begin{minipage}[c][2.2cm][c]{2.2cm}\centering
+							\only<2->{\imgcell[2.2cm]{placed_images/ville}}%
+					\end{minipage}};
+					\only<3->{\node at (-2.1,0) {\large$\approx$};}
+					\node at (0,0) {\begin{minipage}[c][2.2cm][c]{2.2cm}\centering
+							\only<3->{\imgcell[2.2cm]{placed_images/etre_vivant}}%
+					\end{minipage}};
+					\only<4->{\node at (2.1,0) {\large$\approx$};}
+					\node at (4.2,0) {\begin{minipage}[c][2.2cm][c]{2.2cm}\centering
+							\only<4->{\imgcell[2.2cm]{placed_images/bacterie}}%
+					\end{minipage}};
+				\end{tikzpicture}%
+		\end{center}}%
+		
+		% ── Trois graphes orientés  slide 59  (overlay 5) ───────────────────────
+		\only<5>{%
+			\begin{center}%
+				\scalebox{1.9}{\minigraph}\quad\large$\approx$\quad%
+				\scalebox{1.9}{\minigraph}\quad\large$\approx$\quad%
+				\scalebox{1.9}{\minigraph}%
+		\end{center}}%
+		
+		% ── Environnement + entités + résultats  slides 60–76  (overlays 6–22) ──────
+		% Approche INLINE : schéma colonne gauche, contenu colonne droite.
+		% overlay 6=60 : boîte vide | 7–9=61–63 : e1/e2/e3 apparaissent
+		% overlay 10=64 : flèches extraction | 11=65 : e1 grossit
+		% overlay 12=66 : dissipation | 13=67 : -5% | 14=68 : -10%
+		% overlay 15=69 : retour | 16=70 : prêt | 17=71 : blink | 18=72 : rente
+		% overlays 19–22=slides 73–76 : images résultats
+		\only<6-22>{%
+			\begin{columns}[T]
+				% ── Colonne gauche : schéma SOC environnement (overlays 6–22) ────────
+				\begin{column}{0.56\textwidth}
+					\centering\vspace{0.3em}%
+					\scalebox{1.5}{%
+						\begin{tikzpicture}[
+							ent/.style    ={circle,draw=mainred,fill=red!15,
+								minimum size=0.60cm,font=\tiny\bfseries},
+							entlg/.style  ={circle,draw=mainred,fill=red!25,
+								minimum size=0.90cm,font=\scriptsize\bfseries},
+							entlg95/.style={circle,draw=mainred,fill=red!22,
+								minimum size=0.85cm,font=\scriptsize\bfseries},
+							entlg90/.style={circle,draw=mainred,fill=red!20,
+								minimum size=0.76cm,font=\scriptsize\bfseries},
+							entsm95/.style={circle,draw=mainred,fill=red!15,
+								minimum size=0.57cm,font=\tiny\bfseries},
+							entsm90/.style={circle,draw=mainred,fill=red!15,
+								minimum size=0.54cm,font=\tiny\bfseries},
+							entgain/.style={circle,draw=mainred,fill=red!30,
+								minimum size=0.78cm,font=\scriptsize\bfseries}]
+							\useasboundingbox (-2.3,-1.4) rectangle (2.3,1.55);
+							\draw[mainred!25,fill=blue!4,rounded corners=4pt]
+							(-2.3,-1.4) rectangle (2.3,1.55);
+							\node[font=\scriptsize,mainred!60] at (0,-1.18) {Environnement};
+							\only<7-10>        {\node[ent]    (e1) at (0, 0.7) {};}
+							\only<11-12,15-16> {\node[entlg]  (e1) at (0, 0.7) {};}
+							\only<13>          {\node[entlg95](e1) at (0, 0.7) {};}
+							\only<14>          {\node[entlg90](e1) at (0, 0.7) {};}
+							\only<17-22>       {\node[entlg95](e1) at (0, 0.7) {};}
+							\only<8-12,15-22>  {\node[ent]    (e2) at (-0.9,-0.4) {};}
+							\only<13>          {\node[entsm95](e2) at (-0.9,-0.4) {};}
+							\only<14>          {\node[entsm90](e2) at (-0.9,-0.4) {};}
+							\only<9-12,15-16>  {\node[ent]    (e3) at ( 0.9,-0.4) {};}
+							\only<13>          {\node[entsm95](e3) at ( 0.9,-0.4) {};}
+							\only<14>          {\node[entsm90](e3) at ( 0.9,-0.4) {};}
+							\only<17-22>       {\node[entgain](e3) at ( 0.9,-0.4) {};}
+							\only<7-> {\node[font=\tiny] at (0, 0.7) {$e_1$};}
+							\only<8-> {\node[font=\tiny] at (-0.9,-0.4) {$e_2$};}
+							\only<9-> {\node[font=\tiny] at ( 0.9,-0.4) {$e_3$};}
+							\only<10>   {\draw[->,mainred!70,thick]
+								(-2.3,0.7)--(e1.west) node[midway,above,font=\tiny]{$\Pi$};}
+							\only<11-16>{\draw[->,mainred,line width=2.2pt]
+								(-2.3,0.7)--(e1.west) node[midway,above,font=\tiny]{$\Pi$};}
+							\only<17->  {\draw[->,mainred,line width=1.6pt]
+								(-2.3,0.7)--(e1.west) node[midway,above,font=\tiny]{$\Pi$};}
+							\only<10->  {\draw[->,mainred!70,thick](-2.3,-0.4)--(e2.west);}
+							\only<10-16>{\draw[->,mainred!70,thick]( 2.3,-0.4)--(e3.east);}
+							\only<17->  {\draw[->,mainred,line width=1.8pt]( 2.3,-0.4)--(e3.east);}
+							\only<12->  {\draw[->,orange!80,thin](e1.north east)--+(0.28,0.30)
+								node[above right,font=\tiny]{1\,\%};}
+							\only<12->  {\draw[->,orange!80,thin](e2.south west)--+(-0.28,-0.25)
+								node[below left,font=\tiny]{1\,\%};}
+							\only<12->  {\draw[->,orange!80,thin](e3.south east)--+(0.28,-0.25)
+								node[below right,font=\tiny]{1\,\%};}
+							\only<16-17>{\draw[->,darkred,line width=2pt,bend right=30](e1)to(e3);}
+							\only<18->  {\draw[->,darkred,dashed,bend right=30](e3)to(e1);}
+						\end{tikzpicture}}%
+				\end{column}
+				% ── Colonne droite : items (overlays 7–18) ou images (overlays 19–22) ─
+				\begin{column}{0.40\textwidth}
+					% items overlays 7–18 (slides 61–72)
+					\only<7-18>{%
+						\footnotesize
+						\begin{itemize}\setlength\itemsep{5pt}
+							\item<7-> Entités apparaissent continuellement
+							\item<10-> Extraction de l'énergie de l'environnement
+							\item<11-> Puissance\,$\propto f_\text{concave}(\text{taille})$
+							\item<12-> Dissipation exponentielle de l'énergie
+							\item<16-> Prêt d'énergie entre entités
+							\item<18-> Rente permanente (\textit{charge})
+						\end{itemize}}%
+					% images résultats overlays 19–22 (slides 73–76)
+					\only<19-22>{%
+						\centering\vspace{-0.5em}%
+						\only<19->{\includegraphics[width=\linewidth,height=0.43\textheight,keepaspectratio]{informations/images/macro_overview}\\[0.25em]}%
+						\only<20->{\includegraphics[width=\linewidth,height=0.43\textheight,keepaspectratio]{placed_images/ps_distribution_full}}%
+					}%
+				\end{column}
+			\end{columns}}%
+
+		% ── Flèche ⇒ symbolique  slide 75  (overlay 21) ────────────────────────────
+		% \resizebox force width/height → symbole ⇒ étiré, noir, décalé à droite.
+		\only<21>{%
+			\begin{tikzpicture}[remember picture, overlay]
+				\node[opacity=0.80] at ([xshift=28mm,yshift=-55mm]current page.north) {%
+					\textcolor{black}{\resizebox{0.44\paperwidth}{1.5cm}{$\Rightarrow$}}%
+				};
+			\end{tikzpicture}}%
+
+		% ── Graphe centré tailles variables  slides 78–80, 82–83  (overlays 24–26,28–29)
+		% overlay 24=78, 25=79, 26=80 | overlay 27=81 logo EDPIF | overlay 28=82, 29=83
+		\only<24-26,28-29>{%
+			\begin{center}
+				\begin{tikzpicture}[scale=0.95,
+					entn/.style ={circle,draw=mainred,fill=red!15,minimum size=0.55cm,font=\tiny\bfseries},
+					entlg/.style={circle,draw=mainred,fill=red!28,minimum size=0.90cm,font=\tiny\bfseries},
+					entsm/.style={circle,draw=mainred,fill=red!8, minimum size=0.30cm,font=\tiny\bfseries}]
+					\only<24,29>{%
+						\node[entn](n1) at (-1.3, 0.7){$e_1$};
+						\node[entn](n2) at ( 0.0, 0.9){$e_2$};
+						\node[entn](n3) at ( 1.1, 0.5){$e_3$};
+						\node[entn](n4) at (-0.8,-0.6){$e_4$};
+						\node[entn](n5) at ( 0.8,-0.7){$e_5$};
+						\draw[->,mainred,thick](n1)--(n2);
+						\draw[->,mainred,thick](n2)--(n3);
+						\draw[->,mainred,thick](n3)--(n5);
+						\draw[->,mainred!70](n4)--(n1);}%
+					\only<25>{%
+						\node[entlg](n1) at (-1.3, 0.7){$e_1$};
+						\node[entsm](n2) at ( 0.0, 0.9){};
+						\node[entlg](n3) at ( 1.1, 0.5){$e_3$};
+						\node[entsm](n4) at (-0.8,-0.6){};
+						\node[entsm](n5) at ( 0.8,-0.7){};
+						\draw[->,mainred,thick](n1)--(n2);
+						\draw[->,mainred,thick](n2)--(n3);
+						\draw[->,mainred,thick](n3)--(n5);
+						\draw[->,mainred!70](n4)--(n1);}%
+					\only<26>{%
+						\node[entlg](n3) at ( 0.0, 0.0){$e_3$};
+						\node[entsm](n1) at (-1.0, 0.8){};
+						\node[entsm](n2) at ( 1.0, 0.8){};
+						\node[entsm](n4) at (-1.0,-0.8){};
+						\node[entsm](n5) at ( 1.0,-0.8){};
+						\draw[->,mainred,thick](n3)to[bend left=15](n1);
+						\draw[->,mainred,thick](n3)to[bend right=15](n2);
+						\draw[->,mainred!70](n4)--(n3);
+						\draw[->,mainred!70](n5)--(n3);}%
+					\only<28>{%
+						\node[entlg](n2) at ( 0.0, 0.9){$e_2$};
+						\node[entsm](n1) at (-1.3, 0.5){};
+						\node[entsm](n3) at ( 1.2, 0.4){};
+						\node[entn](n4) at (-0.5,-0.6){$e_4$};
+						\node[entsm](n5) at ( 0.9,-0.7){};
+						\draw[->,mainred,thick](n2)--(n1);
+						\draw[->,mainred,thick](n2)--(n3);
+						\draw[->,mainred!70](n4)--(n2);
+						\draw[->,mainred!70](n5)--(n4);}%
+				\end{tikzpicture}
+			\end{center}%
+		}%
+
+		% ── Graphe + résultats côte à côte  slide 84  (overlay 30) ─────────────
+		\only<30>{%
+			\begin{columns}[T]
+				\begin{column}{0.46\textwidth}
+					\centering\vspace{0.3em}%
+					\begin{tikzpicture}[scale=0.80,
+						entn/.style ={circle,draw=mainred,fill=red!15,minimum size=0.55cm,font=\tiny\bfseries},
+						entlg/.style={circle,draw=mainred,fill=red!28,minimum size=0.90cm,font=\tiny\bfseries},
+						entsm/.style={circle,draw=mainred,fill=red!8, minimum size=0.30cm,font=\tiny\bfseries}]
+						\node[entn](n1) at (-1.3, 0.7){$e_1$};
+						\node[entn](n2) at ( 0.0, 0.9){$e_2$};
+						\node[entn](n3) at ( 1.1, 0.5){$e_3$};
+						\node[entn](n4) at (-0.8,-0.6){$e_4$};
+						\node[entn](n5) at ( 0.8,-0.7){$e_5$};
+						\draw[->,mainred,thick](n1)--(n2);
+						\draw[->,mainred,thick](n2)--(n3);
+						\draw[->,mainred,thick](n3)--(n5);
+						\draw[->,mainred!70](n4)--(n1);%
+					\end{tikzpicture}
+				\end{column}
+				\begin{column}{0.50\textwidth}
+					\centering\vspace{0.3em}%
+					\includegraphics[width=\linewidth,height=0.36\textheight,keepaspectratio]{informations/images/macro_overview}\\[0.3em]%
+					\includegraphics[width=\linewidth,height=0.36\textheight,keepaspectratio]{placed_images/ps_distribution_full}%
+				\end{column}
+			\end{columns}%
+		}%
+		
+		% ── Logo EDPIF  slide 81  (overlay 27) ──────────────────────────────────
+		\only<27>{%
+			\vspace{1.5em}%
+			\begin{center}%
+				\includegraphics[width=0.15\linewidth,keepaspectratio]{informations/logo-edpif}%
+		\end{center}}%
+		
+		% ── Graphe + labels Micro/Macro  slide 85  (overlay 31) ─────────────────
+		\only<31>{%
+			\begin{columns}[T]
+				\begin{column}{0.70\textwidth}
+					\centering
+					\begin{tikzpicture}[scale=0.95,
+						entn/.style={circle,draw=mainred,fill=red!15,minimum size=0.55cm,font=\tiny\bfseries}]
+						\node[entn](n1) at (-1.3, 0.7){$e_1$};
+						\node[entn](n2) at ( 0.0, 0.9){$e_2$};
+						\node[entn](n3) at ( 1.1, 0.5){$e_3$};
+						\node[entn](n4) at (-0.8,-0.6){$e_4$};
+						\node[entn](n5) at ( 0.8,-0.7){$e_5$};
+						\draw[->,mainred,thick](n1)--(n2);
+						\draw[->,mainred,thick](n2)--(n3);
+						\draw[->,mainred,thick](n3)--(n5);
+						\draw[->,mainred!70](n4)--(n1);
+					\end{tikzpicture}\\[0.5em]
+					\includegraphics[width=0.48\linewidth,height=0.46\textheight,keepaspectratio]{informations/images/macro_overview}%
+					\hspace{2em}%
+					\includegraphics[width=0.48\linewidth,height=0.46\textheight,keepaspectratio]{placed_images/ps_distribution_full}%
+				\end{column}
+				\begin{column}{0.25\textwidth}
+					\raggedright\vspace{0.6em}%
+					\large\textbf{Micro-états}\\[4.2em]%
+					\large\textbf{Macro-états}%
+				\end{column}
+		\end{columns}}%
+		
+		% ── Physique Statistique  slide 86  (overlay 32) ─────────────────────────
+		\only<32>{%
+			\begin{center}
+				\Large\textbf{Physique Statistique}
+			\end{center}}%
+		
+	\end{frame}
+	
+	% ══════════════════════════════════════════════════════════════════════════
+	\section{Sujet de thèse}
+	
+	
+	% ─────────────────────────────────────────────────────────────────────────
+	% SLIDE 4c — Thèse : titre → barré → nouveau + objets + montagnes
+	% 1 : titre ancien | 2 : graphe gauche | 3 : polymères (PH) | 4 : Ising (PH)
+	% 5 : titre barré | 6 : nouveau titre (non barré) | 7 : vide au centre
+	% 8 : deux montagnes (PH) | 9 : "interactions fortes" | 10 : "hors équilibre"
+	% ─────────────────────────────────────────────────────────────────────────
+	\begin{frame}[t]
+		\frametitle{%
+			\only<1-4>{Thèse : organisation et dissipation dans une structure économique}%
+			\only<5>{\sout{Thèse : organisation et dissipation dans une structure économique}}%
+			\only<6->{{\small Structures dissipatives hors équilibre,
+					distributions stationnaires et flux d'énergies/matières}}}
+		
+		% ── Graphe interaction + polymères / Ising (overlays 2–6) ────────────────
+		\only<2-6>{%
+			\vspace{0.3em}
+			\begin{columns}[T]
+				\begin{column}{0.50\textwidth}
+					\centering
+					\begin{tikzpicture}[scale=0.88,
+						ent/.style={circle,draw=mainred,fill=red!15,
+							minimum size=0.55cm,font=\tiny\bfseries}]
+						\node[ent](n1) at (-1.3, 0.7){$e_1$};
+						\node[ent](n2) at ( 0.0, 0.9){$e_2$};
+						\node[ent](n3) at ( 1.1, 0.5){$e_3$};
+						\node[ent](n4) at (-0.8,-0.6){$e_4$};
+						\node[ent](n5) at ( 0.8,-0.7){$e_5$};
+						\draw[->,mainred,thick](n1)--(n2);
+						\draw[->,mainred,thick](n2)--(n3);
+						\draw[->,mainred,thick](n3)--(n5);
+						\draw[->,mainred!70](n4)--(n1);
+					\end{tikzpicture}
+				\end{column}
+				\begin{column}{0.45\textwidth}
+					\centering\vspace{0.2em}
+					\only<3->{\imgcell[1.9cm]{placed_images/polymeres}\\[0.4em]}%
+					\only<4->{\imgcell[1.9cm]{placed_images/ising}}
+				\end{column}
+		\end{columns}}%
+		
+		% ── Deux montagnes côte à côte + étiquettes (overlays 8–10) ──────────────
+		\only<8->{%
+			\vspace{0.6em}
+			\begin{center}
+				\begin{tikzpicture}
+					\node at (-2.8,0) {\begin{minipage}[c][2.4cm][c]{3.6cm}
+							\centering
+							\imgcell[2.1cm]{placed_images/montagne_1}\\[0.25em]
+							\only<9->{\small\bfseries interactions fortes}
+					\end{minipage}};
+					\node at ( 2.8,0) {\begin{minipage}[c][2.4cm][c]{3.6cm}
+							\centering
+							\imgcell[2.1cm]{placed_images/montagne_2}\\[0.25em]
+							\only<10->{\small\bfseries hors équilibre}
+					\end{minipage}};
+				\end{tikzpicture}
+		\end{center}}%
+		
+		% ── Deux objectifs : texte + deux images + labels (overlays 11–13) ─────────
+		\only<11->{%
+			\vspace{0.5em}%
+			\noindent\textbf{Deux objectifs :}%
+			\only<12->{\quad%
+				\begin{minipage}[t]{2.8cm}\centering
+					\imgcell[2.1cm]{placed_images/objectif_1}\\[0.3em]
+					{\scriptsize Formalisation mathématique}
+				\end{minipage}}%
+			\only<13->{\hspace{0.4em}%
+				\begin{minipage}[t]{2.8cm}\centering
+					\imgcell[2.1cm]{placed_images/objectif_2}\\[0.3em]
+					{\scriptsize Modélisation aux données réalistes}
+				\end{minipage}}%
+		}%
+		
+	\end{frame}
+	
+	% ─────────────────────────────────────────────────────────────────────────
+	% SLIDE 4d — Objectifs de la thèse
+	% 1 : logo LIED
+	% 2 : + Herbert (photo, titre, spécialités)
+	% 3 : + Giraud côte à côte (photo, titre, spécialités)
+	% 4 : + ENS logo (gauche) + Maths logo (droite) [petits]
+	% 5 : + Phys. Stat. (centre, plus grand)
+	% 6 : + cercle rouge autour Phys. Stat.
+	% 7 : remplace logos/phys.stat. → Goupil (dir.) + JP-Bruneton (co-dir.) côte à côte
+	% 8 : "Ce projet a un début, un milieu, et une fin."
+	% 9 : + Début | 10 : + Milieu | 11 : + Fin
+	% ─────────────────────────────────────────────────────────────────────────
+	\begin{frame}[t,shrink=8]{Objectifs de la thèse}
+
+		% ── 4 personnes : apparition progressive, puis toutes ensemble (overlays 1–7) ─
+		% overlay 1 : LIED | 2 : +Herbert | 3 : +Giraud | 4 : +Goupil+Bruneton (5 colonnes)
+		\only<1->{%
+			\begin{columns}[T]
+				\begin{column}{0.10\textwidth}
+					\centering\vspace{0.3em}%
+					\imgcell[1.5cm]{placed_images/lied}%
+				\end{column}
+				\begin{column}{0.21\textwidth}
+					\only<2->{%
+						\centering
+						\imgcell[1.4cm]{placed_images/herbert}\\[-0.1em]%
+						{\small\textbf{Éric Herbert}}\\[0.1em]%
+						{\scriptsize MCF, LIED}\\[0.15em]%
+						{\scriptsize Thermo.\ à temps fini\\Systèmes adaptatifs}%
+					}%
+				\end{column}
+				\begin{column}{0.21\textwidth}
+					\only<2->{%
+						\centering
+						\imgcell[1.4cm]{placed_images/giraud}\\[-0.1em]%
+						{\small\textbf{Gaël Giraud}}\\[0.1em]%
+						{\scriptsize DR CNRS, LIED}\\[0.15em]%
+						{\scriptsize Économie mathématique\\Finance verte}%
+					}%
+				\end{column}
+				\begin{column}{0.21\textwidth}
+					\only<2->{%
+						\centering
+						\imgcell[1.4cm]{placed_images/goupil}\\[-0.1em]%
+						{\small\textbf{Chr. Goupil}}\\[0.05em]%
+						{\scriptsize Prof., Dir.-adj. LIED}\\[0.1em]%
+						{\scriptsize Thermoélectricité\\Thermo.\ hors-équilibre}\\[0.15em]%
+						{\footnotesize\textit{directeur}}%
+					}%
+				\end{column}
+				\begin{column}{0.21\textwidth}
+					\only<3->{%
+						\centering
+						\imgcell[1.4cm]{placed_images/bruneton}\\[-0.1em]%
+						{\small\textbf{J.-P.\ Bruneton}}\\[0.05em]%
+						{\scriptsize MCF, LIED}\\[0.1em]%
+						{\scriptsize Gravitation\\Théories scalaire-tenseur}\\[0.15em]%
+						{\footnotesize\textit{co-directeur}}%
+					}%
+				\end{column}
+		\end{columns}}%
+
+		% ── Logos ENS + Phys.Stat. + Maths, puis cercle (overlays 4–6) ───────────
+		\only<4-6>{%
+			\vspace{0.4em}%
+			\begin{center}
+				\begin{tikzpicture}
+					\node at (-2.3, 0) {\imgcell[1.0cm]{placed_images/ens_rennes}};
+					\only<5->{\node (pstat) at (0, 0)
+						{\imgcell[1.5cm]{placed_images/logo_phys_stat}};}
+					\node at ( 2.3, 0) {\imgcell[1.0cm]{placed_images/logo_maths}};
+					\only<6>{\draw[mainred, line width=2.5pt] (0,0) circle (1.1cm);}
+				\end{tikzpicture}
+		\end{center}}%
+
+	\end{frame}
+	
+	% Slides avalanche déplacées — voir entre frame 4A et frame 4B
+	
+	% ══════════════════════════════════════════════════════════════════════════
+	\section{Conclusion}
+	
+	% ─────────────────────────────────────────────────────────────────────────
+	% SLIDE Conclusion — début/milieu/fin + citation Boltzmann
+	% 1 : header + 3 blocs | 2 : + citation Boltzmann + photo
+	% ─────────────────────────────────────────────────────────────────────────
+	\begin{frame}[t]{Conclusion}
+		\vspace{-0.3em}%
+		% ── Header + 3 blocs ──────────────────────────────────────────────────────
+		\begin{block}{}
+			\centering\small
+			Ce projet a un \textbf{début}, un \textbf{milieu}, et une \textbf{fin}.
+		\end{block}
+		\vspace{0.1em}%
+		\begin{columns}[T]
+			\begin{column}{0.31\textwidth}
+				\begin{block}{\centering Début}
+					\footnotesize\centering
+					Travaux existants\\[0.2em]
+					Yakovenko, Bouchaud,\\
+					Institut Santa Fe,\\
+				\end{block}
+			\end{column}
+			\begin{column}{0.31\textwidth}
+				\begin{block}{\centering Milieu}
+					\footnotesize\centering
+					\textbf{Cette recherche}\\[0.2em]
+					Structures dissipatives\\
+					hors-équilibre,\\
+					distributions stationnaires,\\
+					flux énergie-matière
+				\end{block}
+			\end{column}
+			\begin{column}{0.31\textwidth}
+				\begin{block}{\centering Fin}
+					\footnotesize\centering
+					Modèle physico-économique\\
+					robuste\\[0.2em]
+					Données réelles +\\
+					outils théoriques +\\
+					bibliographie
+				\end{block}
+			\end{column}
+		\end{columns}%
+		
+		% ── Citation Boltzmann + photo (overlay 2) ─────────────────────────────────
+		\only<2->{%
+			\vspace{0.3em}%
+			\begin{columns}[T]
+				\begin{column}{0.72\textwidth}
+					\small\itshape
+					``Ceci ouvre de nombreuses perspectives, pour peu que l'on\\
+					ne limite pas notre réflexion aux objets mécaniques.\\
+					Considérons les applications de ces méthodes statistiques\\
+					aux êtres vivants, à la société, à la sociologie etc.''\\[0.6em]
+					\normalfont\normalsize\hfill
+					--- \textbf{L.~Boltzmann},
+					\textit{Populäre Schriften} (1905)
+				\end{column}
+				\begin{column}{0.24\textwidth}
+					\centering\vspace{0.3em}%
+					\imgcell[2.4cm]{placed_images/boltzmann}%
+				\end{column}
+		\end{columns}}%
+		
+	\end{frame}
+	
+	
+	% ─────────────────────────────────────────────────────────────────────────
+	% SLIDE 13 — Merci
+	% ─────────────────────────────────────────────────────────────────────────
+	\begin{frame}[plain]
+		\begin{center}
+			\vspace{2.5em}
+			{\Large\color{mainred}\textbf{Je vous remercie de votre attention}}\\[1.5em]
+			{\large Questions ?}\\[1.5em]
+			\textcolor{mainred!50}{\rule{0.55\textwidth}{0.5pt}}\\[0.8em]
+			\small
+			\textbf{Anatole Joseph-Stouls}\\[0.3em]
+			\texttt{anatole.joseph-stouls@ens-rennes.fr}
+		\end{center}
+	\end{frame}
+	
+	% ══════════════════════════════════════════════════════════════════════════
+	% ANNEXES
+	% ══════════════════════════════════════════════════════════════════════════
+	\appendix
+	
+	% ─────────────────────────────────────────────────────────────────────────
+	% Annexe — Corrélations énergie/PIB et blé/pétrole
+	% ─────────────────────────────────────────────────────────────────────────
+	\begin{frame}{Annexe — Corrélations}
+		\begin{columns}[c]
+			\begin{column}{0.48\textwidth}
+				\centering
+				\includegraphics[width=\linewidth,height=0.82\textheight,keepaspectratio]{informations/images/correlation_energie_pib}
+			\end{column}
+			\begin{column}{0.48\textwidth}
+				\centering
+				\includegraphics[width=\linewidth,height=0.82\textheight,keepaspectratio]{informations/images/corelation_ble_petrole}
+			\end{column}
+		\end{columns}
+	\end{frame}
+
+	% ─────────────────────────────────────────────────────────────────────────
+	% SLIDE 14 — Bibliographie
+	% ─────────────────────────────────────────────────────────────────────────
+	\begin{frame}{Bibliographie}
+		\footnotesize
+		\begin{enumerate}\setlength\itemsep{4pt}
+			\item \textbf{Yakovenko \& Rosser} — Statistical mechanics of money,
+			wealth, and income. \emph{Rev.\ Mod.\ Phys.} \textbf{81}, 1703 (2009).
+			\item \textbf{Drăgulescu \& Yakovenko} — Statistical mechanics of money.
+			\emph{Eur.\ Phys.\ J.\ B} \textbf{17}, 723 (2000).
+			\item \textbf{Bouchaud \& Mézard} — Wealth condensation in a simple
+			model of economy. \emph{Physica A} \textbf{282}, 536 (2000).
+			\item \textbf{Herbert, Giraud, Louis-Napoléon, Goupil} — Macroeconomic
+			dynamics in a finite world based on thermodynamic potential.
+			\emph{Sci.\ Reports} \textbf{13}, 18020 (2023).
+			\item \textbf{Touchette} — The large deviation approach to statistical
+			mechanics. \emph{Phys.\ Rep.} \textbf{478}, 1 (2009).
+			\item Thèse Polytechnique, 2022 — \emph{Grandes fluctuations
+				macroéconomiques : criticité auto-organisée dans les réseaux
+				d'entreprises, modèles à agents et matrices aléatoires.}
+		\end{enumerate}
+	\end{frame}
+	
+	% ─────────────────────────────────────────────────────────────────────────
+	% SLIDE 15a — Annexe ENS, 1ère année
+	% ─────────────────────────────────────────────────────────────────────────
+	\begin{frame}[t,shrink=8]{Annexe — Formation ENS Rennes, 1\textsuperscript{ère} année}
+		\begin{columns}[T]
+			\begin{column}{0.32\textwidth}
+				\begin{block}{Électronique}
+					\tiny\begin{itemize}\setlength\itemsep{1pt}\setlength\parsep{0pt}
+						\item \textbf{Complément de formation en électrotechnique}
+						\item \textbf{Electronique de puissance}
+						\item \textbf{Systèmes analogiques}
+						\item \textbf{Electronique analogique et numérique}
+						\item \textbf{Habilitation électrique}
+					\end{itemize}
+				\end{block}
+			\end{column}
+			\begin{column}{0.36\textwidth}
+				\begin{block}{Matériaux \& Fabrication}
+					\tiny\begin{itemize}\setlength\itemsep{1pt}\setlength\parsep{0pt}
+						\item \textbf{Science des Matériaux}
+						\item \textbf{Comportement mécanique des matériaux}
+						\item \textbf{Résistance des matériaux}
+						\item \textbf{Procédés de mise en forme}
+						\item \textbf{Conception, Qualité, Contrôle}
+					\end{itemize}
+				\end{block}
+				\vspace{0.2em}
+				\begin{block}{Mécanique}
+					\tiny\begin{itemize}\setlength\itemsep{1pt}\setlength\parsep{0pt}
+						\item \textbf{Technologie}
+						\item \textbf{Robotique}
+						\item \textbf{Mécanique analytique}
+						\item \textbf{Mécanique des milieux continus}
+						\item \textbf{Mécanique des fluides}
+					\end{itemize}
+				\end{block}
+			\end{column}
+			\begin{column}{0.28\textwidth}
+				\begin{block}{Informatique}
+					\tiny\begin{itemize}\setlength\itemsep{1pt}\setlength\parsep{0pt}
+						\item \textbf{Introduction aux réseaux informatiques}
+						\item \textbf{Introduction à l'informatique et au C}
+						\item \textbf{Outils numériques}
+					\end{itemize}
+				\end{block}
+				\vspace{0.2em}
+				\begin{block}{Transversal}
+					\tiny\begin{itemize}\setlength\itemsep{1pt}\setlength\parsep{0pt}
+						\item \textbf{Analyse de documents scientifiques}
+						\item \textbf{Analyse d'un système mécatronique}
+						\item \textbf{Conception d'un système mécatronique} (projet)
+						\item \textbf{Mathématiques}
+						\item \textbf{Anglais}
+					\end{itemize}
+				\end{block}
+			\end{column}
+		\end{columns}
+	\end{frame}
+	
+	% ─────────────────────────────────────────────────────────────────────────
+	% SLIDE 15b — Annexe ENS, 2ème année
+	% ─────────────────────────────────────────────────────────────────────────
+	\begin{frame}[t,shrink=8]{Annexe — Formation ENS Rennes, 2\textsuperscript{ème} année }
+		\begin{columns}[T]
+			\begin{column}{0.32\textwidth}
+				\begin{block}{Électronique \& Automatique}
+					\tiny\begin{itemize}\setlength\itemsep{1pt}\setlength\parsep{0pt}
+						\item \textbf{Electronique de puissance}
+						\item \textbf{Conversion d'énergie}
+						\item \textbf{Entrainements électriques}
+						\item \textbf{Electronique analogique}
+						\item \textbf{Filtrage analogique}
+						\item \textbf{Electronique numérique}
+						\item \textbf{Asservissement échantillonné}
+					\end{itemize}
+				\end{block}
+			\end{column}
+			\begin{column}{0.38\textwidth}
+				\begin{block}{Mécanique \& Physique}
+					\tiny\begin{itemize}\setlength\itemsep{1pt}\setlength\parsep{0pt}
+						\item \textbf{Elasto-visco plasticité}
+						\item \textbf{Introduction à l'écoconception}
+						\item \textbf{Technologie}
+						\item \textbf{Transmission de puissance}
+						\item \textbf{Dynamique des structures}
+						\item \textbf{Simulation des systèmes de solides rigides polyarticulés}
+						\item \textbf{Mécanique des fluides}
+						\item \textbf{Thermodynamique et phénomènes de transport}
+						\item \textbf{Modélisation multi-physiques}
+					\end{itemize}
+				\end{block}
+			\end{column}
+			\begin{column}{0.26\textwidth}
+				\begin{block}{Informatique}
+					\tiny\begin{itemize}\setlength\itemsep{1pt}\setlength\parsep{0pt}
+						\item \textbf{Vision assistée par ordinateur}
+						\item \textbf{Architecture et réseau}
+						\item \textbf{Algorithmique}
+					\end{itemize}
+				\end{block}
+				\vspace{0.2em}
+				\begin{block}{Transversal}
+					\tiny\begin{itemize}\setlength\itemsep{1pt}\setlength\parsep{0pt}
+						\item \textbf{Mathématiques}
+						\item \textbf{Didactique}
+						\item \textbf{Anglais}
+					\end{itemize}
+				\end{block}
+			\end{column}
+		\end{columns}
+	\end{frame}
+	
+	% ─────────────────────────────────────────────────────────────────────────
+	% SLIDES Annexe Simulation — images legacy_output
+	% ─────────────────────────────────────────────────────────────────────────
+	
+	\begin{frame}{Annexe — Vue générale de la simulation}
+		\begin{center}
+			\includegraphics[width=\linewidth,height=0.82\textheight,keepaspectratio]{simu_figs/macro_overview}
+		\end{center}
+	\end{frame}
+	
+	\begin{frame}{Annexe — Distribution de taille des entités}
+		\begin{center}
+			\includegraphics[width=\linewidth,height=0.82\textheight,keepaspectratio]{simu_figs/entity_size_histos}
+		\end{center}
+	\end{frame}
+	
+	\begin{frame}{Annexe — Vies des entités}
+		\begin{center}
+			\includegraphics[width=\linewidth,height=0.82\textheight,keepaspectratio]{simu_figs/entity_lives_overview}
+		\end{center}
+	\end{frame}
+	
+	\begin{frame}{Annexe — Inégalité (Gini/Lorenz)}
+		\begin{columns}[c]
+			\begin{column}{0.64\textwidth}
+				\centering
+				\includegraphics[width=\linewidth,height=0.82\textheight,keepaspectratio]{simu_figs/gini_lorenz_snapshots}
+			\end{column}
+			\begin{column}{0.33\textwidth}
+				\centering
+				\includegraphics[width=\linewidth,height=0.82\textheight,keepaspectratio]{informations/Courbe_Lorenz_France_2010}\\[0.3em]
+				{\scriptsize France 2010 (INSEE)}
+			\end{column}
+		\end{columns}
+	\end{frame}
+	
+	\begin{frame}{Annexe — Évolution de l'indice de Gini}
+		\begin{center}
+			\includegraphics[width=\linewidth,height=0.82\textheight,keepaspectratio]{simu_figs/gini_evolution}
+		\end{center}
+	\end{frame}
+	
+	\begin{frame}{Annexe — Réseau de prêts}
+		\begin{center}
+			\includegraphics[width=\linewidth,height=0.82\textheight,keepaspectratio]{simu_figs/loan_network_final}
+		\end{center}
+	\end{frame}
+	
+	\begin{frame}{Annexe — Taux internes}
+		\begin{center}
+			\includegraphics[width=\linewidth,height=0.82\textheight,keepaspectratio]{simu_figs/internal_rate_evolution}
+		\end{center}
+	\end{frame}
+	
+	\begin{frame}{Annexe — Durée de vie des entités}
+		\begin{center}
+			\includegraphics[width=\linewidth,height=0.82\textheight,keepaspectratio]{simu_figs/lifespan_analysis}
+		\end{center}
+	\end{frame}
+	
+	\begin{frame}{Annexe — Distribution des revenus (pas 2950)}
+		\begin{center}
+			\includegraphics[width=\linewidth,height=0.82\textheight,keepaspectratio]{simu_figs/revenue_dist_pas2950}
+		\end{center}
+	\end{frame}
+	
+\end{document}

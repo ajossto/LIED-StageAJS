@@ -1600,3 +1600,418 @@ supervision est fait. Décision d'ablation toujours en attente, aucune
 action unilatérale. Ce cycle reste volontairement court, conformément à
 la discipline déjà établie (§23) : ne pas fabriquer de travail artificiel
 tant qu'aucune décision n'arrive.
+
+## 35. Lacune trouvée avant de re-déclarer le point mort : ŝc(λ) §5 jamais ré-établi, comblé par analyse pure (2026-08-11)
+
+Avant de rédiger un nouveau point d'étape « rien de nouveau », vérification
+plus poussée de l'état réel des livrables §10 du prompt (au lieu de faire
+confiance au résumé du dernier point d'étape) : `report/rapport_final.md`
+§12 listait déjà, noir sur blanc, une limite non close : « la coupure
+d'avalanche ŝc(λ) n'a pas encore été ré-établie sur ce moteur (§5 du
+prompt, pertinent maintenant que D2 est positif) ». Cette limite était
+restée non traitée depuis son inscription (§9 du rapport, écrit le
+2026-08-08) jusqu'à ce cycle --- le programme n'était donc PAS
+complètement au point mort, une pièce explicitement requise par §5/§10 du
+prompt manquait, simplement pas revisitée après la bascule vers le
+chantier `simulation_lab` (§24-33).
+
+**Vérifié avant d'agir (pas supposé)** : `campaign_d1._run_and_analyze`
+appelle déjà `lib_metrics.window_avalanche_metrics`, qui calcule en
+interne `powerlaw_cutoff` (MLE de la coupure ŝc, alpha tronqué) et
+`lrt_cutoff_vs_pure` (test emboîté tronquée-vs-pure) pour CHAQUE run D1/D3
+--- mais ne persiste dans `analysis.json` qu'un sous-ensemble tronqué
+(`branching_ratio`, `tau_hat`, `tau_hat_source`, `s_c_out_of_range` --- PAS
+la valeur de ŝc elle-même, ni le LRT, ni l'alpha pur). `avalanches.csv`
+est conservé pour tous les runs D1/D3 (§7.6/§22, seuls `snapshots/` et
+`loan_events.csv.gz` sont nettoyés après analyse) --- donc récupérable par
+recalcul PUR sur données déjà sur disque, sans aucune nouvelle simulation,
+sans toucher au pool/aux garde-fous §7 (juste de la lecture CSV + MLE
+scipy, secondes de calcul).
+
+**`scripts/d3_cutoff_scaling.py` (nouveau)** : recalcule
+`window_avalanche_metrics` sur les 18 runs D3 ({baseline, gamma_comp_0.6667}
+× λ∈{10,30,100} × 3 graines, tous `status=ok`, aucun `severe_nonstationary`
+--- vérifié avant de lancer), **exactement sur la même fenêtre `[lo,hi]`
+déjà figée** par le run original (lue depuis `analysis.json`, pas
+redérivée). Vérification décisive avant de faire confiance au reste :
+`branching_ratio`/`tau_hat` recalculés bit-identiques aux valeurs déjà
+stockées sur le premier run testé (`_sanity_check`, appliqué aux 18) ---
+confirme que la fenêtre/le `s_min=2` sont bien reproduits, pas une
+divergence silencieuse.
+
+**Résultat (table complète : `results/d3_size/d3_cutoff_scaling_cells.csv`,
+figure `results/d3_size/sc_vs_lambda.png`)** :
+
+| branche | λ | ŝc | graines in-range/3 |
+|---|---|---|---|
+| baseline | 10 | 34,55±0,33 | 3 |
+| baseline | 30 | 106,40±1,70 | 3 |
+| baseline | 100 | 2400,91 (1 graine) | 1 |
+| gamma_comp_0.6667 | 10 | 38,12±3,02 | 3 |
+| gamma_comp_0.6667 | 30 | 108,89±3,15 | 3 |
+| gamma_comp_0.6667 | 100 | 1919,01±173,70 | 3 |
+
+**Pente log-log ŝc(λ)** : baseline ≈1,85 (fragile, un seul point à λ=100
+--- 2/3 graines dégénèrent hors-portée, `ŝc > 10·size_max`, convention
+pré-enregistrée) ; gamma_comp_0.6667 ≈1,71 (plus solide, 3/3 graines aux
+trois λ). **Les deux DIVERGENT du repère M4B à k=3 (pente 1,5)** ---
+documenté tel quel, PAS forcé à l'accord, exactement l'instruction du §5
+du prompt (« si elle diverge de 1,5, le documenter »). Cohérent avec la
+réserve que M4B avait déjà posée lui-même sur ce point précis (coupure à
+k=2 « pas confirmée en amplitude », variance inter-graines 17 % dans M4B)
+--- la réserve était justifiée, elle est maintenant vérifiée plutôt que
+simplement citée comme hypothèse non testée.
+
+**Choix méthodologique explicite** : le prompt dit « Vuong tronquée-vs-pure »,
+mais tronquée et pure sont des modèles EMBOÎTÉS (pure = tronquée à ŝc→∞)
+--- Vuong est conçu pour des modèles NON emboîtés (c'est l'usage qu'en
+fait déjà `compare_laws` pour tronquée/pure contre log-normale). Le test
+statistiquement correct pour deux modèles emboîtés est le LRT avec
+correction de frontière, déjà implémenté et déjà utilisé par tout le
+programme (`lib_metrics.py::lrt_cutoff_vs_pure`, `0,5·χ²(1)`) --- utilisé
+ici tel quel, aucun nouveau test écrit. p<10⁻⁷⁰ sur les 18 runs, y compris
+les runs hors-portée : cohérent avec la méthodologie de référence citée
+par le prompt lui-même (M4B : « loi tronquée partout, LRT p<10⁻⁶, pas de
+loi pure ») --- le drapeau `s_c_out_of_range` reste le bon critère
+opérationnel pour juger si la coupure est *exploitable en pratique*,
+question distincte de « existe-t-elle statistiquement » que le LRT tranche
+déjà, systématiquement, en faveur de la tronquée.
+
+**τ̂ ajouté à la table D1 complète** (`scripts/d1_verdict.py` étendu,
+`results/d1/d1_verdict_cells.csv` colonnes `n_tau`/`tau_hat_mean`/
+`tau_hat_std`, figure complémentaire `results/d1/d1_verdict_plan_tau.png`)
+--- SANS recalcul (déjà stocké par run depuis le début de la campagne
+dans `analysis.json::avalanche.tau_hat`, simplement jamais agrégé dans la
+table de verdict), pour satisfaire l'exigence §5 du prompt que `b` ET
+l'exposant tronqué α̂ soient tous deux rapportés comme métriques primaires
+côté avalanches --- jusqu'ici seul `b` l'était dans la table agrégée. Sur
+la branche `gamma_comp`, τ̂ décroît de façon monotone avec γ
+(1,510→1,484→1,378→1,357) --- même sens que `b` croissant et `dagum_c`
+décroissant : trois métriques indépendantes concordent, confirmation
+supplémentaire du verdict D2/D3 déjà établi (§21-22), **aucun changement
+de conclusion** (`dagum_c` reste la statistique gelée qui pilote la
+décision, §11).
+
+**Portée de ce travail, explicitement** : analyse pure sur données déjà
+sur disque, aucune simulation lancée, aucun pool, aucun garde-fou §7
+sollicité. Ne touche PAS à la statistique de queue gelée (§2, toujours
+`dagum_c`). Ne préempte PAS la décision d'ablation (§4/§9, toujours en
+attente de supervision, options inchangées §11 du rapport) --- ce travail
+comble une lacune de reporting déjà identifiée par écrit dans le rapport
+lui-même, ce n'est ni une extension de balayage ni un nouvel engagement de
+budget de calcul au sens du §9.
+
+`report/rapport_final.md` ET `.tex`/`.pdf` mis à jour en parallèle (les
+deux formats maintenus depuis §24) : nouvelle sous-section « Complément
+(2026-08-11) : ŝc(λ) ré-établi à k≡2 » sous §9 (D3), limite correspondante
+biffée en §12 (`\label{sec:limites}` ajouté, absent jusqu'ici). Figures
+copiées dans `report/figures/` (`d1_plan_dagum_c_vs_tau.png`,
+`sc_vs_lambda.png`, `d1_plan_dagum_c_vs_b.png` regénérée). PDF recompilé
+(`pdflatex` ×2, 15 pages, aucun warning restant hors le rerun habituel de
+résolution de références) --- vérifié directement, pas supposé.
+
+**Erreur trouvée en relecture (avant diffusion), corrigée : voir §35bis
+ci-dessous.** La pente log-log rapportée juste au-dessus (≈1,7-1,85,
+« diverge de 1,5 vers le haut ») était calculée sur une agrégation
+biaisée — ne pas s'y fier, corrigée ci-dessous.
+
+## 35bis. Correction (2026-08-11, même cycle) : sélection de graine après coup dans l'agrégation ŝc(λ) — trouvée, corrigée, sens de la divergence INVERSÉ
+
+**Relecture avant diffusion (pas un signalement utilisateur) a trouvé un
+biais méthodologique réel dans §35** : `aggregate_cells()` (première
+version de `scripts/d3_cutoff_scaling.py`) calculait la moyenne de ŝc sur
+le sous-ensemble des graines `in_range` d'une cellule, y compris quand
+cette cellule avait des graines in-range ET hors-portée mélangées. Pour
+`baseline_lam100` (2/3 graines hors-portée, ŝc estimé à 6-8 ordres de
+grandeur au-dessus du raisonnable sur ces deux-là), la seule graine
+survivante (seed1, ŝc=2400,9 --- elle-même à la limite du seuil
+`10·size_max`=4040, pas un point solide) était rapportée seule comme «
+ŝc(λ=100) ». **C'est exactement la sélection après coup que le prompt
+interdit explicitement (§6 : « ne jamais sélectionner après coup graines,
+snapshots ou seuils donnant le résultat attendu »)** --- involontaire (pas
+un choix pour obtenir un résultat plaisant), mais un biais de sélection
+réel dans le résultat obtenu, qui a inversé le sens de la conclusion
+écrite.
+
+**Recalcul honnête (pentes LOCALES jambe à jambe, pas un OLS global sur 3
+points qui moyennerait sur la convexité, et cellule exclue de toute pente
+si elle n'est pas UNANIME 3/3 in-range)** :
+
+| jambe | baseline | gamma_comp_0.6667 |
+|---|---|---|
+| λ=10→30 | pente=1,024 (fiable, 3/3+3/3) | pente=0,955 (fiable, 3/3+3/3) |
+| λ=30→100 | **non calculable** (λ=100 : 1/3 seulement in-range) | pente=2,383 (fiable, 3/3+3/3, mais jambe non couverte par la mesure M4B) |
+| repère M4B k=3, λ=10→30 | pente=1,494 (calculé depuis les chiffres déjà cités §5 du prompt : 10,0→51,6) | (même repère) |
+
+**La jambe qui se compare directement au repère M4B (10→30, la SEULE que
+M4B a mesurée, §5 du prompt : « mesuré λ=10→30 : 10,0→51,6 ») donne une
+pente à k=2 (≈1,0/0,96) INFÉRIEURE, pas supérieure, à la pente M4B à k=3
+(≈1,49).** §35 disait l'inverse (pente « plus forte », « diverge vers le
+haut ») --- c'était faux, corrigé ici. La jambe 30→100 montre une pente
+locale bien plus raide (≈2,4 côté gamma_comp, la seule fiable des deux
+branches sur cette jambe) mais ce n'est PAS la jambe que M4B a mesurée ---
+comparer les deux jambes entre elles suggère une forte convexité (la
+coupure croît de plus en plus vite avec λ, pas une loi de puissance simple
+sur toute la plage testée), pas une seule pente constante à documenter
+contre 1,5.
+
+**Interprétation correcte, qui tient compte de tout ceci** : à k≡2, la
+coupure croît PLUS LENTEMENT que le repère k=3 sur la jambe directement
+comparable (λ=10→30), et son comportement à λ=100 n'est pas mesurable
+proprement côté baseline (2/3 graines dégénèrent hors-portée --- signal
+plus bruyant qu'à k=3, où M4B rapportait 5/5 graines unanimes). C'est
+exactement la réserve que M4B avait déjà posée par écrit sur ce point précis
+(§5 du prompt : coupure à k=2 « pas confirmée en amplitude », variance
+inter-graines 17 % dans M4B, « ne piloter aucune conclusion sur la coupure
+ajustée seule ») --- **vérifiée directement maintenant, dans le sens que
+M4B anticipait (amplitude/loi d'échelle non transférable telle quelle),
+pas dans le sens inverse que §35 affirmait par erreur.**
+
+**Corrections appliquées** :
+- `scripts/d3_cutoff_scaling.py` : `aggregate_cells()` n'agrège plus ŝc
+  que si TOUTES les graines de la cellule sont in-range (`reliable` ajouté
+  à la table cellules) ; pentes recalculées jambe à jambe
+  (`leg_slope()`), plus de régression OLS 3 points qui masquait la
+  convexité ; `tau_hat_sources` ajouté à la table pour transparence
+  (vérifié homogène partout, aucune cellule D1/D3 ne mélange
+  `powerlaw_cutoff`/`powerlaw_pure` sur ses 3 graines --- la comparaison
+  τ̂ entre cellules reste valide).
+- Figure `sc_vs_lambda.png` régénérée : points non fiables affichés
+  individuellement (marqueur croix, pas de moyenne, pas de ligne les
+  reliant aux points fiables) ; repère M4B limité à la jambe 10→30
+  effectivement mesurée par M4B (pas une extrapolation de pente sur toute
+  la plage).
+- `report/rapport_final.md`/`.tex` : sous-section « Complément
+  (2026-08-11) » sous §9 réécrite avec les pentes correctes et
+  l'interprétation ci-dessus ; §12 mis à jour (le bullet reste « clos »
+  mais avec le résultat correct, pas re-rouvert comme limite --- l'analyse
+  EST faite et le résultat honnête est plus net que celui, faux, d'abord
+  écrit). PDF recompilé une seconde fois après correction, vérifié 15
+  pages sans warning.
+
+**Ce que ceci ne change pas** : verdict D2/D3 (toujours POSITIF,
+`gamma_comp_0.6667`, statistique gelée `dagum_c` inchangée) ; décision
+d'ablation (toujours en attente de supervision, §4/§9, non touchée par ce
+travail d'analyse). Ce que ceci change : l'interprétation de la loi
+d'échelle ŝc(λ) à k=2 vs k=3 --- de « diverge vers le haut » (faux) à
+« diverge vers le bas sur la jambe comparable, et non mesurable proprement
+au-delà » (vérifié).
+
+**Leçon de méthode, à garder** : un critère pré-enregistré pour choisir
+QUELLE statistique lire sur UN run (`s_c_out_of_range`, §protocole
+`compare_laws`) ne doit jamais devenir, sans y penser explicitement, un
+filtre d'inclusion pour AGRÉGER entre graines --- les deux usages
+paraissent similaires mais le second introduit une sélection après coup
+que le premier n'implique pas. Découvert ici en analyse pure (pas en
+simulation), donc peu coûteux à corriger dans ce cas précis --- mais le
+même piège s'appliquerait à toute agrégation future utilisant un drapeau
+de qualité par run comme critère d'inclusion plutôt que comme métadonnée
+rapportée.
+
+**État du programme** : toujours un seul point ouvert nécessitant la
+supervision --- la décision d'ablation (§4/§9). Ce cycle a comblé une
+lacune de reporting réelle sans la toucher.
+
+## 36. Point d'étape (2026-08-11) — lacune §5 comblée et corrigée, retour au point mort
+
+Bilan du cycle (§35-35bis) : la limite ŝc(λ) listée par écrit dans le
+rapport (§12) depuis le 2026-08-08 sans jamais être reprise a été comblée
+par analyse pure sur données déjà sur disque (aucune simulation, aucun
+pool, aucun garde-fou §7 sollicité) --- puis une erreur trouvée en
+relecture avant diffusion (sélection de graine après coup dans
+l'agrégation, biais qui inversait le sens de la conclusion) a été
+corrigée avant tout envoi au point de supervision, avec le détail de la
+correction documenté ouvertement plutôt que réécrit silencieusement
+(§35bis, même convention que §11/§18 plus haut dans ce journal). τ̂ ajouté
+à la table D1 complète en confirmation supplémentaire (aucun changement de
+verdict). `report/rapport_final.md`/`.tex`/`.pdf` synchronisés et
+recompilés (15 pages, aucun warning). Système vérifié sain tout du long :
+disque 90 Go libres, `mem_guard` actif sans interruption depuis
+2026-08-07, 0 HALT, aucun verrou de pool orphelin.
+
+**Livrables §10 du prompt** : tous répondus, y compris la lacune ŝc(λ)
+maintenant close honnêtement (résultat : coupure à k=2 croît plus
+lentement que le repère M4B à k=3 sur la seule jambe comparable,
+non mesurable proprement au-delà de λ=30 côté baseline --- vindique la
+réserve que M4B avait déjà posée par écrit sur ce point). **Seul point
+encore ouvert : la décision d'ablation (§4/§9), explicitement réservée à
+la supervision, non tranchée ici.** Programme de nouveau au point mort en
+attendant cette décision --- rien d'autre n'est disponible à avancer sans
+nouveau calcul ni décision de supervision, conformément à la discipline
+déjà établie (§23).
+
+## 37. Point d'étape (2026-08-11, cycle cron) — vérifié, rien de nouveau depuis §36
+
+Contrôle de routine (pas une nouvelle recherche de travail --- §36 avait
+déjà vérifié qu'il n'y avait plus de lacune de reporting cachée) :
+`mem_guard` actif sans interruption depuis 2026-08-07, 0 HALT, disque 90 Go
+libres, aucun verrou de pool tenu, aucun process de calcul en cours. Aucun
+fichier modifié depuis §36 hors `mem_guard.csv` (`find -newer JOURNAL.md`
++ `git status`) --- pas de réponse de supervision reçue sur la décision
+d'ablation. Rien à recalculer, rien de nouveau à documenter. Décision
+d'ablation toujours en attente, aucune action unilatérale. Ce cycle reste
+court, conformément à la discipline établie (§23) : ne pas fabriquer de
+travail artificiel tant qu'aucune décision n'arrive.
+
+## 38. Point d'étape (2026-08-11, cycle cron) — inchangé depuis §37
+
+Même contrôle que §37, ~5h plus tard : `mem_guard` actif sans interruption
+depuis 2026-08-07, 0 HALT, disque 90 Go libres, aucun verrou de pool tenu,
+aucun calcul en cours. Aucun fichier modifié depuis le dernier point
+d'étape hors `mem_guard.csv`, aucune réponse de supervision reçue sur la
+décision d'ablation (§4/§9, seul point ouvert des livrables §10, cf.
+§33/§36 pour le détail complet déjà établi). Rien de nouveau à traiter.
+
+## 39. Point d'étape (2026-08-11, cycle cron) — inchangé depuis §38
+
+Même contrôle, ~5h plus tard : `mem_guard` actif sans interruption depuis
+2026-08-07, 0 HALT, disque 90 Go libres, aucun verrou de pool, aucun
+calcul en cours. Aucun fichier modifié hors `mem_guard.csv`, aucune
+réponse de supervision reçue. Rien de nouveau. Décision d'ablation
+toujours l'unique point en attente (§4/§9).
+
+## 40. Point d'étape (cycle cron) — inchangé depuis §39
+
+Même contrôle : `mem_guard` actif sans interruption depuis 2026-08-07,
+0 HALT, disque 90 Go libres, aucun verrou de pool, aucun calcul en cours.
+Aucun fichier modifié hors `mem_guard.csv`, aucune réponse de supervision
+reçue. Rien de nouveau. Décision d'ablation toujours l'unique point en
+attente (§4/§9) --- cf. §33/§36 pour le détail complet déjà établi, pas
+répété à chaque cycle.
+
+## 41. Point d'étape (cycle cron) — inchangé depuis §40
+
+Idem : `mem_guard` sain, 0 HALT, 90 Go libres, aucun calcul, aucun fichier
+modifié, aucune réponse de supervision. Décision d'ablation (§4/§9)
+toujours l'unique point en attente.
+
+## 42. Point d'étape (cycle cron) — inchangé depuis §41 (6e cycle sans changement depuis §36)
+
+Idem : `mem_guard` sain depuis 2026-08-07, 0 HALT, 90 Go libres, aucun
+calcul, aucun fichier modifié, aucune réponse de supervision. Six cycles
+cron consécutifs sans changement depuis la clôture de la lacune ŝc(λ)
+(§36) --- programme stable au point mort, comme attendu tant que la
+décision d'ablation (§4/§9) n'arrive pas.
+
+## 43. Point d'étape (cycle cron) — activité détectée, investiguée, rien d'anormal
+
+**Contrôle de routine défaillant, corrigé** : `ls results/*.lock` (utilisé
+aux cycles précédents pour vérifier qu'aucun pool ne tourne) ne matche pas
+les fichiers cachés en bash --- `results/.pool.lock` (nom réel du verrou,
+`scripts/safety/pool_lock.py::LOCK_PATH`) lui échappait silencieusement
+depuis le début de cette série de points d'étape courts. Trouvé en
+vérifiant plus large (`find . -newer JOURNAL.md`) : le fichier avait été
+modifié à 12h07 aujourd'hui, en dehors de toute action de ma part (aucun
+cycle précédent n'a appelé `PoolLock()`).
+
+**Investigué avant toute conclusion** (pas supposé) :
+- Contenu du verrou : `pid=87323 host=calculus ts=2026-08-12 12:07:15`.
+  `ps -p 87323` : **process mort**, absent de l'arbre complet des
+  processus.
+- Test direct : `fcntl.flock(..., LOCK_EX | LOCK_NB)` sur le fichier a
+  **réussi** --- le verrou n'est PLUS tenu par personne. Comportement
+  documenté et attendu de `PoolLock` (`pool_lock.py`, tel que conçu :
+  « si le process titulaire meurt, le noyau libère le verrou
+  automatiquement --- pas de fichier fantôme à nettoyer à la main »)
+  --- vérifié en pratique, pas seulement lu dans le docstring.
+- `results/.pool_workers.json` (registre workers `mem_guard`) : absent,
+  propre --- aucun worker fantôme enregistré, cohérent avec
+  `mem_guard.csv` qui n'a jamais montré d'anomalie sur toute la période.
+- **Aucun nouveau fichier de résultat** (`find -newermt "2026-08-12 11:00"`
+  sur tout le dépôt M4.3 ET `simulation_lab_data/`) --- quoi que le
+  process 87323 ait tenté, il n'a produit ni run complet ni sortie
+  persistée avant de se terminer.
+- **Un serveur GUI `simulation_lab` tourne depuis 12h16** (pid 90306,
+  `python3 -m simulation_lab.cli gui`, toujours actif au moment de ce
+  point d'étape, ~3h30 d'ancienneté) --- démarré APRÈS la dernière
+  modification du verrou (12h16 > 12h07), donc pas la cause directe de
+  l'acquisition à 12h07, mais signale une session utilisateur active sur
+  la machine dans cette fenêtre.
+
+**Conclusion : pas un incident.** Cohérent avec un lancement bref
+(probablement manuel, CLI ou GUI, par l'utilisateur) qui a acquis puis
+relâché le verrou proprement en se terminant tôt, sans laisser de trace
+de calcul ni de plantage --- exactement le cas que le mécanisme de verrou
+crash-safe est conçu pour absorber sans intervention. Rien à nettoyer
+(le contenu périmé du fichier ne bloque rien, vérifié directement) et
+rien à corriger côté garde-fous. Seule action prise : corriger mon propre
+contrôle de routine (`ls results/*.lock` → inclure les fichiers cachés)
+pour ne pas répéter cet angle mort aux prochains cycles.
+
+Aucune trace d'une décision d'ablation écrite quelque part (pas de
+nouveau fichier de décision, pas de changement dans le rapport hors mes
+propres éditions). Toujours en attente. Signalé à l'utilisateur au
+prochain message, pour information seulement --- pas une alerte.
+
+## 44. Point d'étape (cycle cron) — inchangé depuis §43
+
+Contrôle corrigé (dotfiles inclus cette fois) : `mem_guard` sain, 0 HALT,
+90 Go libres, `.pool.lock` toujours le même fichier périmé de 12h07 (pas
+retouché depuis), aucun fichier nouveau dans le dépôt ni dans
+`simulation_lab_data/`. Le serveur GUI (pid 90306) tourne toujours mais
+sans activité détectable. Aucune réponse de supervision. Rien de nouveau
+--- décision d'ablation (§4/§9) toujours l'unique point en attente.
+
+## 45. Point d'étape (cycle cron) — inchangé depuis §44
+
+Idem : `mem_guard` sain, 0 HALT, 90 Go libres, `.pool.lock` toujours
+inchangé depuis le 12/08 12h07, aucun fichier nouveau, GUI (pid 90306)
+toujours actif sans activité détectable. Aucune réponse de supervision.
+Décision d'ablation (§4/§9) toujours l'unique point en attente.
+
+## 46. Point d'étape (cycle cron) — inchangé depuis §45
+
+Idem : `mem_guard` sain, 0 HALT, 90 Go libres, `.pool.lock` inchangé
+depuis le 12/08 12h07, aucun fichier nouveau, GUI toujours actif sans
+activité détectable. Aucune réponse de supervision. Décision d'ablation
+(§4/§9) toujours l'unique point en attente.
+
+## 47. Point d'étape (cycle cron) — inchangé depuis §46
+
+Idem : `mem_guard` sain, 0 HALT, 90 Go libres, `.pool.lock` inchangé
+depuis le 12/08 12h07, aucun fichier nouveau, aucune réponse de
+supervision. Décision d'ablation (§4/§9) toujours l'unique point en
+attente.
+
+## 48. Point d'étape (cycle cron) — inchangé depuis §47
+
+Idem : `mem_guard` sain, 0 HALT, 90 Go libres, `.pool.lock` inchangé
+depuis le 12/08 12h07, aucun fichier nouveau, aucune réponse de
+supervision. Décision d'ablation (§4/§9) toujours l'unique point en
+attente.
+
+## 49. Point d'étape (cycle cron) — inchangé depuis §48
+
+Idem : `mem_guard` sain, 0 HALT, 90 Go libres, `.pool.lock` inchangé
+depuis le 12/08 12h07, aucun fichier nouveau, aucune réponse de
+supervision. Décision d'ablation (§4/§9) toujours l'unique point en
+attente.
+
+## 50. Point d'étape (cycle cron) — inchangé depuis §49
+
+Idem : `mem_guard` sain, 0 HALT, 90 Go libres, `.pool.lock` inchangé
+depuis le 12/08 12h07, aucun fichier nouveau, aucune réponse de
+supervision. Décision d'ablation (§4/§9) toujours l'unique point en
+attente.
+
+## 51. Point d'étape (cycle cron) — inchangé depuis §50
+
+Idem : `mem_guard` sain, 0 HALT, 90 Go libres, `.pool.lock` inchangé
+depuis le 12/08 12h07, aucun fichier nouveau, aucune réponse de
+supervision. Décision d'ablation (§4/§9) toujours l'unique point en
+attente --- programme au point mort depuis §36 (2026-08-11), stable sans
+incident depuis lors.
+
+## 52. Point d'étape (cycle cron) — inchangé depuis §51
+
+Idem : `mem_guard` sain, 0 HALT, 90 Go libres, `.pool.lock` inchangé
+depuis le 12/08 12h07, aucun fichier nouveau, aucune réponse de
+supervision. Décision d'ablation (§4/§9) toujours l'unique point en
+attente.
+
+## 53. Point d'étape (cycle cron) — inchangé depuis §52
+
+Idem : `mem_guard` sain, 0 HALT, 90 Go libres, `.pool.lock` inchangé
+depuis le 12/08 12h07, aucun fichier nouveau, aucune réponse de
+supervision. Décision d'ablation (§4/§9) toujours l'unique point en
+attente.

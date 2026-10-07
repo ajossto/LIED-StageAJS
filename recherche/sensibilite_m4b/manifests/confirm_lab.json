@@ -1,0 +1,426 @@
+{
+  "created_at": "2026-07-18T03:44:15+0200",
+  "cells": [
+    {
+      "cell": "ref_lam10",
+      "parameters": {
+        "delta": 0.05,
+        "sigma": 0.25,
+        "K0": 25.0,
+        "k": 3,
+        "T": 4000,
+        "pop_max": 30000,
+        "snapshot_every": 100,
+        "individual_every": 0,
+        "lam": 10.0
+      },
+      "n_runs": 5,
+      "base_seed": 11,
+      "label": "Sensibilité M4B — confirmation ref_lam10",
+      "batch_id": "20260718_012407_e7f6e6f2",
+      "run_ids": [
+        "20260718_012407_ac9d6f87",
+        "20260718_012407_633178d4",
+        "20260718_012407_111d30b2",
+        "20260718_012407_c51b1249",
+        "20260718_012407_65fcd46e"
+      ],
+      "duration_seconds": 253.1
+    },
+    {
+      "cell": "centre_lam30",
+      "parameters": {
+        "delta": 0.05,
+        "sigma": 0.25,
+        "K0": 25.0,
+        "k": 3,
+        "T": 4000,
+        "pop_max": 30000,
+        "snapshot_every": 100,
+        "individual_every": 0,
+        "lam": 30.0
+      },
+      "n_runs": 5,
+      "base_seed": 11,
+      "label": "Sensibilité M4B — confirmation centre_lam30",
+      "batch_id": "20260718_012820_ed85f396",
+      "run_ids": [
+        "20260718_012820_3a2e041c",
+        "20260718_012820_8832c88c",
+        "20260718_012820_9e1b2711",
+        "20260718_012820_5296e7ec",
+        "20260718_012820_ec1bf58b"
+      ],
+      "duration_seconds": 460.2
+    },
+    {
+      "cell": "lam100",
+      "parameters": {
+        "delta": 0.05,
+        "sigma": 0.25,
+        "K0": 25.0,
+        "k": 3,
+        "T": 4000,
+        "pop_max": 30000,
+        "snapshot_every": 100,
+        "individual_every": 0,
+        "lam": 100.0
+      },
+      "n_runs": 5,
+      "base_seed": 11,
+      "label": "Sensibilité M4B — confirmation lam100",
+      "batch_id": "20260718_013600_801ab376",
+      "run_ids": [
+        "20260718_013600_a1629f9d",
+        "20260718_013600_0c034297",
+        "20260718_013600_820de633",
+        "20260718_013600_608ddec7",
+        "20260718_013600_2872dd7a"
+      ],
+      "duration_seconds": 1178.1
+    },
+    {
+      "cell": "sigma0",
+      "parameters": {
+        "delta": 0.05,
+        "sigma": 0.0,
+        "K0": 25.0,
+        "k": 3,
+        "T": 4000,
+        "pop_max": 30000,
+        "snapshot_every": 100,
+        "individual_every": 0,
+        "lam": 30.0
+      },
+      "n_runs": 5,
+      "base_seed": 11,
+      "label": "Sensibilité M4B — confirmation sigma0",
+      "batch_id": "20260718_015538_89cf9005",
+      "run_ids": [
+        "20260718_015538_b445041f",
+        "20260718_015538_c37570f1",
+        "20260718_015538_407eedc6",
+        "20260718_015538_1246e806",
+        "20260718_015538_eeaf61df"
+      ],
+      "duration_seconds": 676.1
+    },
+    {
+      "cell": "sigma010",
+      "parameters": {
+        "delta": 0.05,
+        "sigma": 0.1,
+        "K0": 25.0,
+        "k": 3,
+        "T": 4000,
+        "pop_max": 30000,
+        "snapshot_every": 100,
+        "individual_every": 0,
+        "lam": 30.0
+      },
+      "n_runs": 5,
+      "base_seed": 11,
+      "label": "Sensibilité M4B — confirmation sigma010",
+      "batch_id": "20260718_020654_bfddbdf4",
+      "run_ids": [
+        "20260718_020654_ff587c1d",
+        "20260718_020654_be9ab2aa",
+        "20260718_020654_aa110800",
+        "20260718_020654_769f9a6b",
+        "20260718_020654_1ddb4670"
+      ],
+      "duration_seconds": 623.5
+    },
+    {
+      "cell": "sigma050",
+      "parameters": {
+        "delta": 0.05,
+        "sigma": 0.5,
+        "K0": 25.0,
+        "k": 3,
+        "T": 4000,
+        "pop_max": 30000,
+        "snapshot_every": 100,
+        "individual_every": 0,
+        "lam": 30.0
+      },
+      "n_runs": 5,
+      "base_seed": 11,
+      "label": "Sensibilité M4B — confirmation sigma050",
+      "batch_id": "20260718_021718_776272ee",
+      "run_ids": [
+        "20260718_021718_50834365",
+        "20260718_021718_3d3a450b",
+        "20260718_021718_3092f138",
+        "20260718_021718_445486d0",
+        "20260718_021718_00c4e3c7"
+      ],
+      "duration_seconds": 364.5
+    },
+    {
+      "cell": "delta002",
+      "parameters": {
+        "delta": 0.02,
+        "sigma": 0.25,
+        "K0": 25.0,
+        "k": 3,
+        "T": 4000,
+        "pop_max": 30000,
+        "snapshot_every": 100,
+        "individual_every": 0,
+        "lam": 30.0
+      },
+      "n_runs": 5,
+      "base_seed": 11,
+      "label": "Sensibilité M4B — confirmation delta002",
+      "batch_id": "20260718_022322_803fc91f",
+      "run_ids": [
+        "20260718_022322_d2b18b62",
+        "20260718_022322_21ce8ab6",
+        "20260718_022322_585c5efa",
+        "20260718_022322_9c57b9ed",
+        "20260718_022322_ab5d8d56"
+      ],
+      "duration_seconds": 482.1
+    },
+    {
+      "cell": "delta010",
+      "parameters": {
+        "delta": 0.1,
+        "sigma": 0.25,
+        "K0": 25.0,
+        "k": 3,
+        "T": 4000,
+        "pop_max": 30000,
+        "snapshot_every": 100,
+        "individual_every": 0,
+        "lam": 30.0
+      },
+      "n_runs": 5,
+      "base_seed": 11,
+      "label": "Sensibilité M4B — confirmation delta010",
+      "batch_id": "20260718_023124_90e88e73",
+      "run_ids": [
+        "20260718_023124_c213f2d6",
+        "20260718_023124_dbd7ff96",
+        "20260718_023124_885c994e",
+        "20260718_023124_da400058",
+        "20260718_023124_f5d61721"
+      ],
+      "duration_seconds": 486.3
+    },
+    {
+      "cell": "K0_5",
+      "parameters": {
+        "delta": 0.05,
+        "sigma": 0.25,
+        "K0": 5.0,
+        "k": 3,
+        "T": 4000,
+        "pop_max": 30000,
+        "snapshot_every": 100,
+        "individual_every": 0,
+        "lam": 30.0
+      },
+      "n_runs": 5,
+      "base_seed": 11,
+      "label": "Sensibilité M4B — confirmation K0_5",
+      "batch_id": "20260718_023931_0b808096",
+      "run_ids": [
+        "20260718_023931_ed103b7a",
+        "20260718_023931_c0f76e71",
+        "20260718_023931_ed6e1feb",
+        "20260718_023931_723aad46",
+        "20260718_023931_b5cb5948"
+      ],
+      "duration_seconds": 403.5
+    },
+    {
+      "cell": "K0_100",
+      "parameters": {
+        "delta": 0.05,
+        "sigma": 0.25,
+        "K0": 100.0,
+        "k": 3,
+        "T": 4000,
+        "pop_max": 30000,
+        "snapshot_every": 100,
+        "individual_every": 0,
+        "lam": 30.0
+      },
+      "n_runs": 5,
+      "base_seed": 11,
+      "label": "Sensibilité M4B — confirmation K0_100",
+      "batch_id": "20260718_024614_2918899e",
+      "run_ids": [
+        "20260718_024614_c3a4293a",
+        "20260718_024614_39e7a329",
+        "20260718_024614_3c783675",
+        "20260718_024614_9701ba29",
+        "20260718_024614_3715cbb8"
+      ],
+      "duration_seconds": 529.1
+    },
+    {
+      "cell": "k2",
+      "parameters": {
+        "delta": 0.05,
+        "sigma": 0.25,
+        "K0": 25.0,
+        "k": 2,
+        "T": 4000,
+        "pop_max": 30000,
+        "snapshot_every": 100,
+        "individual_every": 0,
+        "lam": 30.0
+      },
+      "n_runs": 5,
+      "base_seed": 11,
+      "label": "Sensibilité M4B — confirmation k2",
+      "batch_id": "20260718_025503_b6a90767",
+      "run_ids": [
+        "20260718_025503_3862692b",
+        "20260718_025503_37d195a2",
+        "20260718_025503_bf1d335e",
+        "20260718_025503_0fcc7157",
+        "20260718_025503_fe28383e"
+      ],
+      "duration_seconds": 504.4
+    },
+    {
+      "cell": "k10",
+      "parameters": {
+        "delta": 0.05,
+        "sigma": 0.25,
+        "K0": 25.0,
+        "k": 10,
+        "T": 4000,
+        "pop_max": 30000,
+        "snapshot_every": 100,
+        "individual_every": 0,
+        "lam": 30.0
+      },
+      "n_runs": 5,
+      "base_seed": 11,
+      "label": "Sensibilité M4B — confirmation k10",
+      "batch_id": "20260718_030328_9e651537",
+      "run_ids": [
+        "20260718_030328_a3bba74b",
+        "20260718_030328_8a34ab92",
+        "20260718_030328_279ab4f2",
+        "20260718_030328_9afb8688",
+        "20260718_030328_c6769118"
+      ],
+      "duration_seconds": 488.4
+    },
+    {
+      "cell": "lam2_ext",
+      "parameters": {
+        "delta": 0.05,
+        "sigma": 0.25,
+        "K0": 25.0,
+        "k": 3,
+        "T": 2000,
+        "pop_max": 30000,
+        "snapshot_every": 100,
+        "individual_every": 0,
+        "lam": 2.0
+      },
+      "n_runs": 10,
+      "base_seed": 11,
+      "label": "Sensibilité M4B — confirmation lam2_ext",
+      "batch_id": "20260718_031136_a1c3255d",
+      "run_ids": [
+        "20260718_031136_1c4d688d",
+        "20260718_031136_d205cfd2",
+        "20260718_031136_f4454b48",
+        "20260718_031136_44439083",
+        "20260718_031136_fecfd4f1",
+        "20260718_031136_88e41185",
+        "20260718_031136_76399278",
+        "20260718_031136_b70b61f5",
+        "20260718_031136_59388b5a",
+        "20260718_031136_01f70d43"
+      ],
+      "duration_seconds": 225.2
+    },
+    {
+      "cell": "sigma005_k2",
+      "parameters": {
+        "delta": 0.05,
+        "sigma": 0.05,
+        "K0": 25.0,
+        "k": 2,
+        "T": 4000,
+        "pop_max": 30000,
+        "snapshot_every": 100,
+        "individual_every": 0,
+        "lam": 30.0
+      },
+      "n_runs": 5,
+      "base_seed": 11,
+      "label": "Sensibilité M4B — confirmation sigma005_k2",
+      "batch_id": "20260718_031521_963d44e1",
+      "run_ids": [
+        "20260718_031521_02557c9e",
+        "20260718_031521_b335d0a0",
+        "20260718_031521_46cd6ff6",
+        "20260718_031521_6bb4fea3",
+        "20260718_031521_5dd7c320"
+      ],
+      "duration_seconds": 703.7
+    },
+    {
+      "cell": "sigma005_delta010",
+      "parameters": {
+        "delta": 0.1,
+        "sigma": 0.05,
+        "K0": 25.0,
+        "k": 3,
+        "T": 4000,
+        "pop_max": 30000,
+        "snapshot_every": 100,
+        "individual_every": 0,
+        "lam": 30.0
+      },
+      "n_runs": 5,
+      "base_seed": 11,
+      "label": "Sensibilité M4B — confirmation sigma005_delta010",
+      "batch_id": "20260718_032705_b5cb7516",
+      "run_ids": [
+        "20260718_032705_5d2abcf5",
+        "20260718_032705_3908efd9",
+        "20260718_032705_c380294d",
+        "20260718_032705_bafde58e",
+        "20260718_032705_60c2f663"
+      ],
+      "duration_seconds": 641.2
+    },
+    {
+      "cell": "sigma050_k2",
+      "parameters": {
+        "delta": 0.05,
+        "sigma": 0.5,
+        "K0": 25.0,
+        "k": 2,
+        "T": 4000,
+        "pop_max": 30000,
+        "snapshot_every": 100,
+        "individual_every": 0,
+        "lam": 30.0
+      },
+      "n_runs": 5,
+      "base_seed": 11,
+      "label": "Sensibilité M4B — confirmation sigma050_k2",
+      "batch_id": "20260718_033746_cead9e2a",
+      "run_ids": [
+        "20260718_033746_49d4bb01",
+        "20260718_033746_2a3853b4",
+        "20260718_033746_f575a111",
+        "20260718_033746_8b0c5acb",
+        "20260718_033746_442ba0ad"
+      ],
+      "duration_seconds": 390.1
+    }
+  ]
+}

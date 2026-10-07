@@ -1,0 +1,102 @@
+\subsection{Three protocols, samples not merged}
+\begin{small}
+\begin{longtable}{@{}p{.18\linewidth}p{.75\linewidth}@{}}
+\toprule Family & Configuration and data \\\midrule\endhead
+M4B central & $A=1$, $\gamma=1/2$, $\lambda=30$, $\delta=0.05$,
+$\sigma=0.25$, $K^\circ=25$, $k=3$, geometric target. Five seeds
+11--15; contractions on $1000<t\le4000$, Gini on the final state.
+Simulation Lab identifiers are in the episode and confirmation
+exports. The Gini sweep shown varies $\sigma$ only. \\
+Live-v1 recalibration & Reference $A=1$, $\gamma=1/2$, $\lambda=30$,
+$\delta=\sigma=0.01$, $K^\circ=25$, $\rho=1$; seeds 0--2,
+empty start. Window $1200<t_{\rm old}\le2000$.
+The fine-depreciation arm uses its own reference $\delta=0.002$.
+The folders are named in \texttt{temps\_graines.csv}. \\
+M4.4 main & Same physical reference as Live-v1; arithmetic target
+in the homogeneous regime, free loan direction, marginal rule. Twelve seeds
+0--11, intervention at step 2001, window $3000<t\le4000$.
+Compensated endowment: $K^\circ=56.25$ for new entrants
+after the intervention; existing stocks unchanged. \\
+M4.4 sharing & $p\in\{0;0.25;0.5;0.75;1\}$ or marginal rule;
+twelve seeds, same window. Ratios to the $p=0$ arm are paired.
+Load diagnostic: marginal rule only, $3000<t\le3990$,
+ten-step death horizon. \\
+M4.4 encounters & $\rho\in\{0.5;1;1.5;2;3\}$; twelve seeds
+per value. Balance-sheet Ginis are recomputed on the panels of
+$3000<t\le4000$, like the windows of the other measurements. \\
+\bottomrule
+\end{longtable}
+\end{small}
+
+\subsection{Each figure and its data-point files}
+The CSV files with no prefix and \chemin{diagnostic_chaine.json} are
+relative to \chemin{data_article/}. The TeX files and paths
+starting with \chemin{data_revision/} are relative to the LaTeX folder.
+The manifest links the exports to the original
+sources and their checksums; it does not turn an aggregated export
+into complete microdata.
+\begin{footnotesize}
+\begin{longtable}{@{}p{.09\linewidth}p{.48\linewidth}p{.36\linewidth}@{}}
+\toprule Fig. & Data / local file & Nature of the calculation \\
+\midrule\endhead
+\ref{fig:exemple} & \chemin{exemple_article.tex} & Four fictitious entities,
+real loan and nominal recording; no simulated measurement. \\
+\ref{fig:art_technologie} & \chemin{technologie_points.csv},
+\chemin{technologie_courbes_v2.csv} & Analytical technologies
+$2K^{1/4}$ and $K^{1/2}$; no regression. \\
+\ref{fig:cascade} & \chemin{cascade_article.tex} & Fictitious five-entity
+balance sheet; four-bankruptcy tree checked separately. \\
+\ref{fig:art_avalanches} & \chemin{avalanches_counts.csv},
+\chemin{avalanches_fits.csv}, \chemin{avalanches_points.csv} & Integer
+sizes in the avalanche CSVs; fits and cross-seed CIs. \\
+\ref{fig:art_cycles} & \chemin{cycles_fits.csv}, \chemin{cycles_points.csv};
+episodes in \chemin{data_revision/rev_cycles_episodes.csv} & Five
+M4B runs; exponential coefficient from the mean duration. \\
+\ref{fig:art_lorenz} & \chemin{lorenz_points.csv}, \chemin{lorenz_ginis.csv} &
+Control panels; exact dates 2010, 3000, 4000. \\
+\ref{fig:art_sensibilite} & \chemin{m4b_sensibilite_points.csv},
+\chemin{m4b_nw_confirmation.csv} & NW Gini on five independent final
+snapshots per cell. \\
+\ref{fig:art_rho} & \chemin{rho_points.csv}, \chemin{rho_fits.csv},
+\chemin{rho_nw_graines.csv} & Three estimators from the campaign table,
+plus recomputed NW Gini; per-seed regressions. \\
+\ref{fig:art_temps} & \chemin{temps_graines.csv}, \chemin{temps_points.csv} &
+Live-v1 series rescaled to a common duration and a common flow per
+old step. \\
+\ref{fig:art_reponse} & \chemin{elasticites_graines.csv}; curves in
+\chemin{data_revision/rev_reponse_courbes.csv} & Elasticities recomputed
+from the series; centered 101-step smoothing kept for the curves. \\
+\ref{fig:chaine} & \chemin{corps_article.tex}; diagnostics
+\chemin{diagnostic_chaine.json} & Interpretive diagram,
+not a causal graph identified by intervention on each mediator. \\
+\ref{fig:art_quantiles} & \chemin{data_revision/rev_quantiles_graines.csv} &
+Per-seed ratios kept; abscissa transformed to logit. \\
+\ref{fig:art_deciles} & \chemin{deciles_v2_points.csv},
+\chemin{deciles_v2_graines.csv} & Shares of production, interest and NW;
+ranked by capital at each snapshot. \\
+\ref{fig:art_institutions} & \chemin{institutions_points.csv},
+\chemin{institutions_fits.csv}, \chemin{institutions_references.csv} &
+Ratios to $p=0$ and descriptive linear regressions. \\
+\ref{fig:art_charge} & \chemin{charge_graines.csv}, \chemin{charge_points.csv},
+\chemin{charge_resume.csv} & Interest paid / gross income; deaths
+observable throughout the horizon. \\
+\ref{fig:rev_stock_trajectoire} &
+\chemin{data_revision/rev_stock_trajectoire_points.csv} &
+Raw M4B excerpt; figure kept. \\
+\bottomrule
+\end{longtable}
+\end{footnotesize}
+
+The new age-composition checks are in
+\chemin{ages_graines.csv}. The ranking conventions are
+explicit in the script; ties are broken by stable order. The revision
+plan and the decision register are outside the LaTeX folder, in
+\chemin{../revision_2026-09-15/}, to keep the corrections to be
+reported in the internship report separate.
+
+The supplement on instantaneous median ages is computed by
+\chemin{../scripts/ages_v2.py}. Its per-seed values, its averaging
+convention and the checksums of the source panels are kept in
+\chemin{../revision_2026-09-17/ages_v2_graines.csv} and
+\chemin{../revision_2026-09-17/ages_v2.json}. It runs no
+simulation and modifies no figure generator.

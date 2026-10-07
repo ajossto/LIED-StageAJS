@@ -1,0 +1,687 @@
+                                                                                         04:23 PM claude-sonnet-4-6
+● Now I have the complete picture. Let me run targeted experiments to understand what kills creditless entities.
+
+● Bash(cd /home/anatole/jupyter/claude3-v3-27-mars && python3 -c "
+      import sys
+      sys.path.insert(0, 'src')
+      from config import SimulationConfig
+      from simulation import Simulation
+      import math
+
+      # Expérience 4 : tracer la vie de nouvelles entités jusqu'à leur mort
+      # Observer précisément ce qui tue les entités 'sans crédit'
+
+      cfg = SimulationConfig(
+          n_entites_initiales=2,
+          lambda_creation=0.5,  # peu de nouvelles entités pour mieux tracer
+          duree_simulation=50,
+          seed=99,
+          log_events=False,
+      )
+      sim = Simulation(cfg)
+
+      deaths = []
+
+      for step in range(50):
+          # Avant le pas, noter l'état de toutes les entités vivantes
+          pre_state = {}
+          for eid, e in sim.entities.items():
+              if e.alive:
+                  pre_state[eid] = {
+                      'L': e.actif_liquide,
+                      'K_endo': e.actif_endoinvesti,
+                      'P_endo': e.passif_endoinvesti,
+                      'K_exo': e.actif_exoinvesti,
+                      'P_exo': e.passif_exoinvesti,
+                      'K_prete': e.actif_prete,
+                      'C': e.passif_credit_detenu,
+                      'B': e.passif_inne,
+                      'NW': e.actif_liquide - e.passif_inne,  # simplifié
+                  }
+
+          # Lancer le pas
+          sim.run_step()
+
+          # Détecter les nouvelles morts
+          for eid, e in sim.entities.items():
+              if not e.alive and e.death_step == step:
+                  pre = pre_state.get(eid, {})
+                  # Prêts actifs avant mort
+                  loans_before = [(l.lender_id, l.borrower_id, l.principal, l.rate)
+                                 for l in sim.loans.values()
+                                 if l.lender_id == eid or l.borrower_id == eid]
+                  deaths.append({
+                      'eid': eid, 'step': step,
+                      'pre_L': pre.get('L', '?'),
+                      'pre_Kendo': pre.get('K_endo', '?'),
+                      'pre_Pendo': pre.get('P_endo', '?'),
+                      'pre_Kexo': pre.get('K_exo', '?'),
+                      'pre_Pexo': pre.get('P_exo', '?'),
+                      'pre_Kprete': pre.get('K_prete', '?'),
+                      'pre_C': pre.get('C', '?'),
+                      'pre_B': pre.get('B', '?'),
+                      'n_loans': len(loans_before),
+                  })
+
+      print(f'Pas simulés: 50, Entités totales: {len(sim.entities)}, Morts: {sum(1 for e in sim.entities.values() if not
+      e.alive)}')
+      print()
+      print(f'Détail des {len(deaths)} morts:')
+      for d in deaths[:25]:
+          n = d[\"n_loans\"]
+          L = d[\"pre_L\"]
+          B = d[\"pre_B\"]
+          Ke = d[\"pre_Kendo\"]
+          Pe = d[\"pre_Pendo\"]
+          Kx = d[\"pre_Kexo\"]
+          Px = d[\"pre_Pexo\"]
+          at = L + Ke + Kx
+          pb = B + Pe + Px + d[\"pre_C\"]
+          print(f'  Ent {d[\"eid\"]:3d} (step {d[\"step\"]:2d}) | L={L:.3f} B={B:.2f} | Ke={Ke:.3f} Pe={Pe:.3f} |
+      Kx={Kx:.3f} Px={Px:.3f} | A={at:.3f} PB={pb:.3f} | prêts={n}')
+      " 2>&1 | head -60
+      )
+  ⎿  Pas simulés: 50, Entités totales: 35, Morts: 26
+
+     Détail des 26 morts:
+       Ent   2 (step 14) | L=6.790 B=5.00 | Ke=34.403 Pe=34.403 | Kx=0.000 Px=0.000 | A=41.192 PB=39.403 | prêts=1
+       Ent   1 (step 15) | L=7.938 B=5.00 | Ke=40.534 Pe=40.534 | Kx=0.000 Px=0.000 | A=48.472 PB=45.534 | prêts=1
+       Ent   3 (step 18) | L=8.118 B=5.00 | Ke=40.876 Pe=40.876 | Kx=0.000 Px=0.000 | A=48.994 PB=53.702 | prêts=2
+       Ent   4 (step 18) | L=7.938 B=5.00 | Ke=41.410 Pe=41.410 | Kx=0.000 Px=0.000 | A=49.349 PB=46.410 | prêts=1
+       Ent   6 (step 20) | L=6.071 B=5.00 | Ke=31.096 Pe=31.096 | Kx=0.000 Px=0.000 | A=37.166 PB=36.096 | prêts=1
+       Ent   5 (step 22) | L=10.690 B=5.00 | Ke=58.784 Pe=58.784 | Kx=0.000 Px=0.000 | A=69.474 PB=63.784 | prêts=1
+       Ent   8 (step 27) | L=7.193 B=5.00 | Ke=36.214 Pe=36.214 | Kx=0.000 Px=0.000 | A=43.406 PB=41.214 | prêts=2
+       Ent   7 (step 28) | L=8.058 B=5.00 | Ke=41.062 Pe=41.062 | Kx=0.000 Px=0.000 | A=49.121 PB=46.062 | prêts=2
+       Ent  14 (step 28) | L=5.938 B=5.00 | Ke=28.209 Pe=28.209 | Kx=0.000 Px=0.000 | A=34.146 PB=33.209 | prêts=1
+       Ent  11 (step 29) | L=9.000 B=5.00 | Ke=44.276 Pe=44.276 | Kx=0.000 Px=0.000 | A=53.276 PB=49.276 | prêts=1
+       Ent  16 (step 29) | L=5.529 B=5.00 | Ke=25.728 Pe=25.728 | Kx=0.000 Px=0.000 | A=31.257 PB=30.728 | prêts=1
+       Ent  15 (step 31) | L=6.185 B=5.00 | Ke=30.091 Pe=30.091 | Kx=0.000 Px=0.000 | A=36.275 PB=35.091 | prêts=1
+       Ent  12 (step 33) | L=9.674 B=5.00 | Ke=51.082 Pe=51.082 | Kx=0.000 Px=0.000 | A=60.757 PB=56.082 | prêts=2
+       Ent   9 (step 34) | L=11.836 B=5.00 | Ke=63.682 Pe=63.682 | Kx=0.000 Px=0.000 | A=75.518 PB=68.682 | prêts=3
+       Ent  13 (step 34) | L=9.790 B=5.00 | Ke=52.427 Pe=52.427 | Kx=0.000 Px=0.000 | A=62.218 PB=57.427 | prêts=2
+       Ent  19 (step 37) | L=6.598 B=5.00 | Ke=33.476 Pe=33.476 | Kx=0.000 Px=0.000 | A=40.074 PB=38.476 | prêts=1
+       Ent  21 (step 37) | L=6.263 B=5.00 | Ke=31.156 Pe=31.156 | Kx=0.000 Px=0.000 | A=37.418 PB=36.156 | prêts=1
+       Ent  10 (step 39) | L=12.419 B=5.00 | Ke=63.934 Pe=63.934 | Kx=0.000 Px=0.000 | A=76.353 PB=88.635 | prêts=4
+       Ent  17 (step 40) | L=11.867 B=5.00 | Ke=64.892 Pe=64.892 | Kx=0.000 Px=0.000 | A=76.760 PB=69.892 | prêts=3
+       Ent  22 (step 40) | L=6.553 B=5.00 | Ke=34.087 Pe=34.087 | Kx=0.000 Px=0.000 | A=40.640 PB=39.087 | prêts=1
+       Ent  23 (step 40) | L=6.503 B=5.00 | Ke=33.621 Pe=33.621 | Kx=0.000 Px=0.000 | A=40.123 PB=38.621 | prêts=1
+       Ent  18 (step 41) | L=9.211 B=5.00 | Ke=45.980 Pe=45.980 | Kx=0.000 Px=0.000 | A=55.191 PB=60.331 | prêts=2
+       Ent  20 (step 43) | L=8.762 B=5.00 | Ke=47.845 Pe=47.845 | Kx=0.000 Px=0.000 | A=56.607 PB=52.845 | prêts=2
+       Ent  25 (step 43) | L=7.126 B=5.00 | Ke=35.062 Pe=35.062 | Kx=0.000 Px=0.000 | A=42.187 PB=40.062 | prêts=3
+       Ent  24 (step 44) | L=11.379 B=5.00 | Ke=59.004 Pe=59.004 | Kx=0.000 Px=0.000 | A=70.383 PB=64.004 | prêts=8
+
+● Bash(python3 -c "
+      import sys
+      sys.path.insert(0, 'src')
+      from config import SimulationConfig
+      from simulation import Simulation
+      import math
+
+      # Expérience 5 : tracer POURQUOI les entités meurent
+      # Observer leurs prêts ACTIFS (pas historiques) juste avant la mort
+
+      cfg = SimulationConfig(
+          n_entites_initiales=2,
+          lambda_creation=0.5,
+          duree_simulation=50,
+          seed=99,
+          log_events=False,
+      )
+      sim = Simulation(cfg)
+
+      deaths = []
+
+      for step in range(50):
+          # Avant le pas : état pré-step complet
+          pre_state = {}
+          pre_active_loans = {}
+          for eid, e in sim.entities.items():
+              if e.alive:
+                  pre_state[eid] = {
+                      'L': e.actif_liquide,
+                      'K_endo': e.actif_endoinvesti,
+                      'P_endo': e.passif_endoinvesti,
+                      'K_exo': e.actif_exoinvesti,
+                      'P_exo': e.passif_exoinvesti,
+                      'K_prete': e.actif_prete,
+                      'C': e.passif_credit_detenu,
+                      'B': e.passif_inne,
+                      'alpha': e.alpha,
+                  }
+                  pre_active_loans[eid] = [
+                      (l.loan_id, l.lender_id, l.borrower_id, l.principal, l.rate)
+                      for l in sim.loans.values()
+                      if l.active and (l.lender_id == eid or l.borrower_id == eid)
+                  ]
+
+          sim.run_step()
+
+          for eid, e in sim.entities.items():
+              if not e.alive and e.death_step == step:
+                  pre = pre_state.get(eid, {})
+                  loans = pre_active_loans.get(eid, [])
+                  L = pre.get('L', 0)
+                  B = pre.get('B', 5)
+                  Ke = pre.get('K_endo', 0)
+                  Pe = pre.get('P_endo', 0)
+                  Kx = pre.get('K_exo', 0)
+                  Px = pre.get('P_exo', 0)
+                  Kp = pre.get('K_prete', 0)
+                  C = pre.get('C', 0)
+                  alpha = pre.get('alpha', 1)
+
+                  A = L + Ke + Kx + Kp
+                  PB = B + Pe + Px + C
+                  P_total = B + Pe + Px
+                  extraction_est = alpha * math.sqrt(max(P_total, 0))
+
+                  # Classer le type de prêt
+                  as_lender = [l for l in loans if l[1] == eid]
+                  as_borrower = [l for l in loans if l[2] == eid]
+
+                  deaths.append({
+                      'eid': eid, 'step': step, 'L': L, 'B': B, 'Ke': Ke, 'Pe': Pe,
+                      'Kx': Kx, 'Px': Px, 'Kp': Kp, 'C': C, 'alpha': alpha,
+                      'A': A, 'PB': PB, 'NW': L-B, 'P': P_total,
+                      'extraction': extraction_est,
+                      'n_as_lender': len(as_lender),
+                      'n_as_borrower': len(as_borrower),
+                  })
+
+      print(f'Morts: {len(deaths)}/50 pas')
+      print()
+      print('eid | step | L    | B  | Ke   | Pe   | Kp   | C    | A    | PB   | NW   | extr | L→B | role')
+      print('-' * 110)
+      for d in deaths[:30]:
+          # Simuler what happens during step: extraction + depreciation
+          L_after_extr = d['L'] + d['extraction']
+          L_after_dep = L_after_extr * (1 - 0.01)
+          Ke_after = d['Ke'] * 0.9
+          Pe_after = d['Pe'] * 0.9
+
+          # Vérifier si L_after_dep < B
+          check = 'KILL' if L_after_dep < d['B'] else 'ok'
+
+          role = []
+          if d['n_as_lender'] > 0: role.append(f'Lend({d[\"n_as_lender\"]})')
+          if d['n_as_borrower'] > 0: role.append(f'Borr({d[\"n_as_borrower\"]})')
+          if not role: role = ['NONE']
+
+          print(f'{d[\"eid\"]:3d} | {d[\"step\"]:4d} | {d[\"L\"]:5.2f} | {d[\"B\"]:4.1f} | {d[\"Ke\"]:5.2f} |
+      {d[\"Pe\"]:5.2f} | {d[\"Kp\"]:5.2f} | {d[\"C\"]:5.2f} | {d[\"A\"]:6.2f} | {d[\"PB\"]:6.2f} | {d[\"NW\"]:+5.2f} |
+      {d[\"extraction\"]:5.3f} | {check:4s} | {\" \".join(role)}')
+      " 2>&1
+      )
+  ⎿  Morts: 26/50 pas
+
+     eid | step | L    | B  | Ke   | Pe   | Kp   | C    | A    | PB   | NW   | extr | L→B | role
+     --------------------------------------------------------------------------------------------------------------
+       2 |   14 |  6.79 |  5.0 | 34.40 | 34.40 |  0.00 |  0.00 |  41.19 |  39.40 | +1.79 | 5.531 | ok   | NONE
+       1 |   15 |  7.94 |  5.0 | 40.53 | 40.53 |  0.00 |  0.00 |  48.47 |  45.53 | +2.94 | 6.517 | ok   | NONE
+       3 |   18 |  8.12 |  5.0 | 40.88 | 40.88 |  7.83 |  7.83 |  56.82 |  53.70 | +3.12 | 6.453 | ok   | Lend(1)
+       4 |   18 |  7.94 |  5.0 | 41.41 | 41.41 |  0.00 |  0.00 |  49.35 |  46.41 | +2.94 | 6.440 | ok   | NONE
+       6 |   20 |  6.07 |  5.0 | 31.10 | 31.10 |  0.00 |  0.00 |  37.17 |  36.10 | +1.07 | 4.893 | ok   | NONE
+       5 |   22 | 10.69 |  5.0 | 58.78 | 58.78 |  0.00 |  0.00 |  69.47 |  63.78 | +5.69 | 8.474 | ok   | NONE
+       8 |   27 |  7.19 |  5.0 | 36.21 | 36.21 |  0.00 |  0.00 |  43.41 |  41.21 | +2.19 | 5.917 | ok   | NONE
+       7 |   28 |  8.06 |  5.0 | 41.06 | 41.06 |  0.00 |  0.00 |  49.12 |  46.06 | +3.06 | 6.600 | ok   | NONE
+      14 |   28 |  5.94 |  5.0 | 28.21 | 28.21 |  0.00 |  0.00 |  34.15 |  33.21 | +0.94 | 4.995 | ok   | NONE
+      11 |   29 |  9.00 |  5.0 | 44.28 | 44.28 |  0.00 |  0.00 |  53.28 |  49.28 | +4.00 | 7.612 | ok   | NONE
+      16 |   29 |  5.53 |  5.0 | 25.73 | 25.73 |  0.00 |  0.00 |  31.26 |  30.73 | +0.53 | 4.671 | ok   | NONE
+      15 |   31 |  6.18 |  5.0 | 30.09 | 30.09 |  0.00 |  0.00 |  36.28 |  35.09 | +1.18 | 5.142 | ok   | NONE
+      12 |   33 |  9.67 |  5.0 | 51.08 | 51.08 |  0.00 |  0.00 |  60.76 |  56.08 | +4.67 | 7.822 | ok   | NONE
+       9 |   34 | 11.84 |  5.0 | 63.68 | 63.68 |  0.00 |  0.00 |  75.52 |  68.68 | +6.84 | 9.561 | ok   | NONE
+      13 |   34 |  9.79 |  5.0 | 52.43 | 52.43 |  0.00 |  0.00 |  62.22 |  57.43 | +4.79 | 7.893 | ok   | NONE
+      19 |   37 |  6.60 |  5.0 | 33.48 | 33.48 |  0.00 |  0.00 |  40.07 |  38.48 | +1.60 | 5.378 | ok   | NONE
+      21 |   37 |  6.26 |  5.0 | 31.16 | 31.16 |  0.00 |  0.00 |  37.42 |  36.16 | +1.26 | 5.148 | ok   | NONE
+      10 |   39 | 12.42 |  5.0 | 63.93 | 63.93 | 19.70 | 19.70 |  96.05 |  88.64 | +7.42 | 9.464 | ok   | Lend(2)
+      17 |   40 | 11.87 |  5.0 | 64.89 | 64.89 |  0.00 |  0.00 |  76.76 |  69.89 | +6.87 | 9.490 | ok   | NONE
+      22 |   40 |  6.55 |  5.0 | 34.09 | 34.09 |  0.00 |  0.00 |  40.64 |  39.09 | +1.55 | 5.263 | ok   | NONE
+      23 |   40 |  6.50 |  5.0 | 33.62 | 33.62 |  0.00 |  0.00 |  40.12 |  38.62 | +1.50 | 5.245 | ok   | NONE
+      18 |   41 |  9.21 |  5.0 | 45.98 | 45.98 |  9.35 |  9.35 |  64.54 |  60.33 | +4.21 | 6.887 | ok   | Lend(1)
+      20 |   43 |  8.76 |  5.0 | 47.85 | 47.85 |  0.00 |  0.00 |  56.61 |  52.85 | +3.76 | 6.943 | ok   | NONE
+      25 |   43 |  7.13 |  5.0 | 35.06 | 35.06 |  0.00 |  0.00 |  42.19 |  40.06 | +2.13 | 5.948 | ok   | NONE
+      24 |   44 | 11.38 |  5.0 | 59.00 | 59.00 |  0.00 |  0.00 |  70.38 |  64.00 | +6.38 | 9.426 | ok   | NONE
+      26 |   46 |  9.09 |  5.0 | 44.86 | 44.86 |  0.00 |  0.00 |  53.95 |  49.86 | +4.09 | 7.672 | ok   | NONE
+
+● Bash(python3 -c "
+      import sys
+      sys.path.insert(0, 'src')
+      from config import SimulationConfig
+      from simulation import Simulation
+      import math
+
+      # Expérience 6 : instrumenter le credit_market pour observer les prêts menant à la mort
+      # On recherche : est-ce que les entités meurent parce qu'elles ont PRÊTÉ dans le crédit market
+      # pendant le même pas où elles meurent ?
+
+      cfg = SimulationConfig(
+          n_entites_initiales=10,
+          lambda_creation=1,
+          duree_simulation=30,
+          seed=42,
+          log_events=False,
+          max_credit_iterations=100000,
+      )
+      sim = Simulation(cfg)
+
+      death_causes = {'lending': 0, 'borrowing': 0, 'contagion': 0, 'pure_depreciation': 0, 'unknown': 0}
+
+      for step in range(30):
+          # Avant le crédit market: état post-depreciation (ce qui compte pour le crédit)
+          # On instrumente avant credit_market_iteration
+
+          # 1. Alphas
+          sim._update_alphas()
+          sim.spawn_new_entities()
+          sim.extract_from_nature()
+          sim.pay_interest_phase()
+          sim.pay_amortization_phase()
+          sim.apply_depreciation()
+
+          # État post-depreciation : vérifier qui peut mourir en prêtant
+          post_dep_state = {}
+          for eid, e in sim.entities.items():
+              if not e.alive:
+                  continue
+              P = e.passif_total
+              s_P = sim.config.seuil_ratio_liquide_passif * P
+              # Si l'entité prête toute son offre, L devient s*P
+              offer = max(0, e.actif_liquide - s_P)
+              L_after_full_lend = e.actif_liquide - offer  # = s*P
+              would_die_if_lend_all = L_after_full_lend < e.passif_inne  # L_post < B
+              post_dep_state[eid] = {
+                  'L': e.actif_liquide, 'P': P, 's_P': s_P,
+                  'offer': offer,
+                  'L_after_full_lend': L_after_full_lend,
+                  'would_die_if_lend_all': would_die_if_lend_all,
+                  'B': e.passif_inne,
+              }
+
+          # Crédit market
+          sim.credit_market_iteration()
+
+          # État post-crédit : qui a perdu du liquid et est maintenant L < B ?
+          post_credit_kills = []
+          for eid, e in sim.entities.items():
+              if not e.alive:
+                  continue
+              if e.actif_liquide < e.passif_inne:
+                  # Mort imminente au cascade
+                  prev = post_dep_state.get(eid, {})
+                  L_was = prev.get('L', 0)
+                  L_now = e.actif_liquide
+
+                  # Déterminer la cause
+                  lent_amount = L_was - L_now + (sum(l.rate * l.principal for l in sim.loans.values()
+                                                     if l.active and l.borrower_id == eid
+                                                     and sim.loans.get(l.loan_id))  or 0)
+                  # Plus simple: juste noter si L a baissé ou monté depuis post_dep
+                  delta_L = L_now - L_was
+                  post_credit_kills.append({
+                      'eid': eid, 'step': step, 'L_prev': L_was, 'L_now': L_now,
+                      'delta_L': delta_L, 'B': e.passif_inne,
+                      'K_prete': e.actif_prete,
+                      'would_die_if_lend_all': prev.get('would_die_if_lend_all', False),
+                  })
+
+          # Cascades
+          cascade_totals, cascade_event = sim.resolve_cascades()
+
+          # Compter les morts par cause
+          for info in post_credit_kills:
+              if info['delta_L'] < -0.01:  # L a baissé → a prêté
+                  death_causes['lending'] += 1
+              elif info['delta_L'] > 0.01:  # L a augmenté → a reçu paiement (contagion via cascade?)
+                  death_causes['contagion'] += 1
+              else:
+                  death_causes['pure_depreciation'] += 1
+
+          sim.auto_invest_end_of_turn()
+          sim._collect_light_stats(0, 0, 0, 0, 0, 0, cascade_totals)
+          sim.collector.record_step(sim, cascade_event, sim._step_flows)
+          sim.current_step += 1
+
+      total_deaths = sum(1 for e in sim.entities.values() if not e.alive)
+      print(f'Total morts: {total_deaths}')
+      print(f'Causes:')
+      for cause, count in death_causes.items():
+          print(f'  {cause}: {count}')
+      print()
+      # Vérification: proportion d'entités vulnérables au prêt (s*P < B)
+      final_alive = [e for e in sim.entities.values() if e.alive]
+      n_vuln = sum(1 for e in final_alive if sim.config.seuil_ratio_liquide_passif * e.passif_total < e.passif_inne)
+      print(f'Entités vivantes: {len(final_alive)}, dont vulnérables (s*P < B): {n_vuln}
+      ({100*n_vuln/max(1,len(final_alive)):.0f}%)')
+      " 2>&1
+      )
+  ⎿  Total morts: 17
+     Causes:
+       lending: 17
+       borrowing: 0
+       contagion: 0
+       pure_depreciation: 0
+       unknown: 0
+
+     Entités vivantes: 21, dont vulnérables (s*P < B): 21 (100%)
+
+                                                                                         04:31 PM claude-sonnet-4-6
+● The experiment is definitive. Let me run one final targeted test to confirm the exact mechanism:
+
+● Bash(python3 -c "
+      import sys
+      sys.path.insert(0, 'src')
+      from config import SimulationConfig
+      from simulation import Simulation
+      import math
+
+      # Expérience 7 : vérification analytique de la condition létale
+      # Montrer que offre = L - s*P > L - B quand P < B/s
+
+      cfg = SimulationConfig()
+
+      # Paramètres clés
+      s = cfg.seuil_ratio_liquide_passif  # 0.05
+      B = cfg.passif_inne_initial          # 5.0
+
+      P_critique = B / s  # = 100 : seuil critique
+
+      print(f'Paramètres: s={s}, B={B}')
+      print(f'P_critique = B/s = {P_critique}')
+      print()
+      print('Pour P < P_critique, l\\'offre max (L - s*P) > L - B → l\\'entité peut prêter sous B')
+      print()
+      print('P     | s*P   | Offre si L=B+1 | L_restant | Mort?')
+      print('-' * 60)
+      for P in [5, 10, 20, 50, 80, 100, 120]:
+          s_P = s * P
+          L = B + 1  # juste au-dessus de B
+          offre = max(0, L - s_P)
+          L_restant = L - offre
+          mort = 'OUI!' if L_restant < B else 'non'
+          print(f'{P:5.0f} | {s_P:5.2f} | {offre:14.3f} | {L_restant:9.3f} | {mort}')
+
+      print()
+      print('=== Résumé méchanisme ===')
+      print(f'Un prêteur avec P < {P_critique:.0f} peut prêter son surplus entier et')
+      print(f'se retrouver avec L = s*P < B = {B} → faillite immédiate.')
+      print()
+
+      # Simulation: combien d'entités atteignent P > 100 SANS mourir?
+      cfg2 = SimulationConfig(
+          n_entites_initiales=10,
+          lambda_creation=1,
+          duree_simulation=200,
+          seed=42,
+      )
+      sim2 = Simulation(cfg2)
+      sim2.run(200, verbose=False)
+
+      # Analyser les survivants
+      alive = sim2.active_entities()
+      n_safe = sum(1 for e in alive if e.passif_total >= P_critique)
+      n_total = len(alive)
+      n_vuln = n_total - n_safe
+
+      total_births = len(sim2.entities)
+      total_deaths = total_births - n_total
+
+      print(f'=== Après 200 pas ===')
+      print(f'Naissances totales: {total_births}, Morts: {total_deaths}, Vivants: {n_total}')
+      print(f'Vivants avec P >= {P_critique:.0f} (sûrs): {n_safe} ({100*n_safe/max(1,n_total):.1f}%)')
+      print(f'Vivants avec P < {P_critique:.0f} (vulnérables): {n_vuln} ({100*n_vuln/max(1,n_total):.1f}%)')
+      if alive:
+          P_vals = sorted(e.passif_total for e in alive)
+          print(f'Distribution P (vivants): min={P_vals[0]:.1f} median={P_vals[len(P_vals)//2]:.1f} max={P_vals[-1]:.1f}')
+          print(f'Prêts actifs: {len(sim2.active_loans())}')
+          n_lenders = len(set(l.lender_id for l in sim2.active_loans()))
+          n_borrowers = len(set(l.borrower_id for l in sim2.active_loans()))
+          print(f'Prêteurs actifs dans le réseau: {n_lenders}, Emprunteurs: {n_borrowers}')
+      " 2>&1
+      )
+  ⎿  Paramètres: s=0.05, B=5.0
+     P_critique = B/s = 100.0
+
+     Pour P < P_critique, l'offre max (L - s*P) > L - B → l'entité peut prêter sous B
+
+     P     | s*P   | Offre si L=B+1 | L_restant | Mort?
+     ------------------------------------------------------------
+         5 |  0.25 |          5.750 |     0.250 | OUI!
+        10 |  0.50 |          5.500 |     0.500 | OUI!
+        20 |  1.00 |          5.000 |     1.000 | OUI!
+        50 |  2.50 |          3.500 |     2.500 | OUI!
+        80 |  4.00 |          2.000 |     4.000 | OUI!
+       100 |  5.00 |          1.000 |     5.000 | non
+       120 |  6.00 |          0.000 |     6.000 | non
+
+     === Résumé méchanisme ===
+     Un prêteur avec P < 100 peut prêter son surplus entier et
+     se retrouver avec L = s*P < B = 5.0 → faillite immédiate.
+
+     === Après 200 pas ===
+     Naissances totales: 201, Morts: 179, Vivants: 22
+     Vivants avec P >= 100 (sûrs): 0 (0.0%)
+     Vivants avec P < 100 (vulnérables): 22 (100.0%)
+     Distribution P (vivants): min=15.1 median=44.6 max=75.7
+     Prêts actifs: 1
+     Prêteurs actifs dans le réseau: 1, Emprunteurs: 1
+
+                                                                                         04:32 PM claude-sonnet-4-6
+● Now I have the complete analysis. Let me write it up as a proper research document:
+
+● Bash(python3 -c "
+      import sys
+      sys.path.insert(0, 'src')
+      from config import SimulationConfig
+      from simulation import Simulation
+      import math
+
+      # Expérience 8 : test du correctif - offre = max(0, L - max(s*P, B))
+      # Vérifier si les entités survivent plus longtemps et forment des réseaux
+
+      class PatchedSimulation(Simulation):
+          def _lender_offer(self, lender):
+              # Correctif: réserve = max(s*P, B_innée) au lieu de s*P seul
+              B_reserve = max(
+                  self.config.seuil_ratio_liquide_passif * lender.passif_total,
+                  lender.passif_inne
+              )
+              return max(0.0, lender.actif_liquide - B_reserve)
+
+      cfg = SimulationConfig(
+          n_entites_initiales=10,
+          lambda_creation=1,
+          duree_simulation=200,
+          seed=42,
+      )
+      sim_patched = PatchedSimulation(cfg)
+      sim_patched.run(200, verbose=False)
+
+      alive = sim_patched.active_entities()
+      P_critique = cfg.passif_inne_initial / cfg.seuil_ratio_liquide_passif  # 100
+
+      n_safe = sum(1 for e in alive if e.passif_total >= P_critique)
+      total_births = len(sim_patched.entities)
+      total_deaths = total_births - len(alive)
+
+      P_vals = sorted(e.passif_total for e in alive) if alive else []
+      active_loans = sim_patched.active_loans()
+
+      print('=== SIMULATION CORRIGÉE (offre = max(0, L - max(s*P, B))) ===')
+      print(f'Naissances: {total_births}, Morts: {total_deaths} ({100*total_deaths/total_births:.1f}%), Vivants:
+      {len(alive)}')
+      print(f'Survivants avec P >= 100: {n_safe} ({100*n_safe/max(1,len(alive)):.1f}%)')
+      if P_vals:
+          print(f'Distribution P: min={P_vals[0]:.1f}, p25={P_vals[len(P_vals)//4]:.1f}, med={P_vals[len(P_vals)//2]:.1f},
+      p75={P_vals[3*len(P_vals)//4]:.1f}, max={P_vals[-1]:.1f}')
+      print(f'Prêts actifs: {len(active_loans)}, Volume: {sum(l.principal for l in active_loans):.1f}')
+      n_lenders = len(set(l.lender_id for l in active_loans))
+      n_borrowers = len(set(l.borrower_id for l in active_loans))
+      print(f'Prêteurs dans réseau: {n_lenders}, Emprunteurs: {n_borrowers}')
+      print()
+
+      # Comparer avec simulation originale
+      cfg2 = SimulationConfig(n_entites_initiales=10, lambda_creation=1, duree_simulation=200, seed=42)
+      sim_orig = Simulation(cfg2)
+      sim_orig.run(200, verbose=False)
+      alive2 = sim_orig.active_entities()
+      active_loans2 = sim_orig.active_loans()
+      print('=== SIMULATION ORIGINALE ===')
+      print(f'Naissances: {len(sim_orig.entities)}, Morts: {len(sim_orig.entities)-len(alive2)}
+      ({100*(len(sim_orig.entities)-len(alive2))/len(sim_orig.entities):.1f}%), Vivants: {len(alive2)}')
+      print(f'Prêts actifs: {len(active_loans2)}, Volume: {sum(l.principal for l in active_loans2):.1f}')
+      n_l2 = len(set(l.lender_id for l in active_loans2))
+      n_b2 = len(set(l.borrower_id for l in active_loans2))
+      print(f'Prêteurs dans réseau: {n_l2}, Emprunteurs: {n_b2}')
+      " 2>&1
+      )
+  ⎿  === SIMULATION CORRIGÉE (offre = max(0, L - max(s*P, B))) ===
+     Naissances: 198, Morts: 24 (12.1%), Vivants: 174
+     Survivants avec P >= 100: 49 (28.2%)
+     Distribution P: min=10.8, p25=62.1, med=81.6, p75=102.7, max=392.3
+     Prêts actifs: 75, Volume: 1524.5
+     Prêteurs dans réseau: 8, Emprunteurs: 60
+
+     === SIMULATION ORIGINALE ===
+     Naissances: 201, Morts: 179 (89.1%), Vivants: 22
+     Prêts actifs: 1, Volume: 11.9
+     Prêteurs dans réseau: 1, Emprunteurs: 1
+
+                                                                                         04:33 PM claude-sonnet-4-6
+● La correction réduit la mortalité de 89% à 12% et fait passer le réseau de 1 prêt à 75. Le diagnostic est confirmé. Voici
+   l'analyse complète :
+
+  ---
+  Analyse théorique : pourquoi les entités meurent et le réseau ne se forme pas
+
+  I. Invariant fondamental du modèle
+
+  Pour toute entité à tout instant, la valeur nette est :
+
+  NW = L − B
+
+  Cette identité est exacte car :
+  - K^endo = P^endo (auto-invest toujours symétrique)
+  - K^exo = P^exo (dépréciation symétrique)
+  - K^prête = C (passif_credit_detenu — chaque prêt incrémente les deux de ±Q)
+
+  Corollaire : la faillite se réduit à L < B. La condition actif_total < passif_bilan est strictement équivalente à L < B =
+   5.
+
+  ---
+  II. Le mécanisme de mort : l'égorgement du prêteur
+
+  Expérience 6 (30 pas, 10+30 entités) :
+  Cause de mort "prêt" : 17/17 (100%)
+  Cause de mort "intérêts" : 0
+  Cause de mort "dépréciation" : 0
+
+  Le mécanisme :
+
+  L'offre de prêt est offer = max(0, L − s·P). Après avoir prêté son offre entière, le prêteur dispose de L_restant = s·P.
+
+  La condition de solvabilité est L > B. Or s·P < B ⟺ P < B/s = 5/0,05 = 100.
+
+  Seuil critique P = B/s = 100.* Pour tout prêteur avec P < 100 :
+
+  s*P   | L_restant après prêt | mort?
+  0.25  (P=5)  → 0.25 < B=5    → OUI
+  0.50  (P=10) → 0.50 < B=5    → OUI
+  4.00  (P=80) → 4.00 < B=5    → OUI
+  5.00  (P=100)→ 5.00 = B=5    → limite
+  6.00  (P=120)→ 6.00 > B=5    → sain
+
+  Le marché du crédit sélectionne comme prêteur l'entité au r le plus faible* (r* = α/2√P), c'est-à-dire celle qui a la
+  plus grande P. Ce sont précisément les entités qui ont accumulé le plus de capital endogène — les plus "productives" —
+  qui sont condamnées au rôle de prêteur et mourent.
+
+  Syndrome de la grande perche : les entités les plus développées (fort P, faible r*) sont préférentiellement sélectionnées
+   comme prêteurs et se suicident.
+
+  ---
+  III. Dynamique du réseau
+
+  Après 200 pas (simulation originale) :
+  - 179/201 morts (89%)
+  - P_max des survivants : 75.7 (jamais atteint le seuil de 100)
+  - 1 seul prêt actif
+
+  Raison de la non-émergence des réseaux : toute entité susceptible d'être stable prêteuse (P en croissance) est tuée avant
+   d'atteindre P = 100. Le réseau ne peut pas s'auto-entretenir car aucune entité ne survit assez longtemps pour devenir
+  prêteuse durable.
+
+  Trajectoire théorique vers l'équilibre : sans crédit, une entité isolée converge vers P* ≈ 110 en ~30 pas (via
+  auto-invest). Mais le marché du crédit s'engage à chaque pas et tue les entités avant qu'elles atteignent P = 100.
+
+  ---
+  IV. Attracteur et seuil critique
+
+  L'équilibre de P^endo sans crédit (auto-invest = dépréciation) satisfait :
+
+  δ_endo · P^endo* = α√P*
+  P* = B + P^endo*
+  → u² − 10αu − B = 0   (u = √P*)
+  → P* = (5α + √(25α² + B))² ≈ 110   (α=1, B=5)
+
+  L'attracteur P* ≈ 110 est juste au-dessus du seuil létal P_critique = 100. La marge est de 10 unités, soit ~10%. Cette
+  proximité rend la convergence très risquée dans un marché concurrentiel.
+
+  ---
+  V. Cause de la rareté des réseaux
+
+  1. Phase dangereuse : toute entité entre 0 < P < 100 peut être sélectionnée prêteuse et mourir
+  2. Durée de la phase : ~30 pas pour passer de P=5 à P=100
+  3. Probabilité d'être sélectionné : croît avec P (les plus avancées = plus faible r* = choisies en premier)
+  4. Résultat : quasi aucune entité n'atteint P = 100, le réseau ne se forme jamais
+
+  ---
+  VI. Correctif proposé
+
+  Modifier _lender_offer() dans simulation.py :
+
+  # Actuel :
+  offer = max(0.0, L − s·P)
+
+  # Proposé :
+  reserve = max(s·P, entity.passif_inne)  # max(s·P, B)
+  offer = max(0.0, L − reserve)
+
+  Effet : pour P < 100, la réserve est B = 5 (et non s·P < 5). Après un prêt complet, L = max(s·P, B) ≥ B → le prêteur
+  reste solvable.
+
+  Résultats après correction (200 pas) :
+
+  ┌──────────────────────┬──────────┬──────────┐
+  │      Indicateur      │ Original │ Corrigé  │
+  ├──────────────────────┼──────────┼──────────┤
+  │ Taux de mortalité    │ 89%      │ 12%      │
+  ├──────────────────────┼──────────┼──────────┤
+  │ Prêts actifs         │ 1        │ 75       │
+  ├──────────────────────┼──────────┼──────────┤
+  │ Volume de crédit     │ 11.9     │ 1524     │
+  ├──────────────────────┼──────────┼──────────┤
+  │ Prêteurs actifs      │ 1        │ 8        │
+  ├──────────────────────┼──────────┼──────────┤
+  │ Emprunteurs actifs   │ 1        │ 60       │
+  ├──────────────────────┼──────────┼──────────┤
+  │ Entités avec P ≥ 100 │ 0        │ 49 (28%) │
+  └──────────────────────┴──────────┴──────────┘
+
+  Le correctif transforme le modèle : les entités survivent, atteignent P > 100, deviennent prêteuses stables et forment un
+   réseau crédit-emprunteur à structure cœur-périphérie : une minorité d'entités établies (P > 100, r* faible) prête à une
+  majorité de jeunes entités (P < 100, r* élevé).
+
+  ---
+  VII. Bilan : problème mal posé au départ
+
+  L'hypothèse initiale était que la mort vient du crédit (prêts défaillants, contagion). C'est l'inverse : les entités
+  meurent en prêtant, pas en empruntant. Le mécanisme de contagion (redistribution des créances) n'est presque jamais
+  déclenché — les prêteurs meurent avant d'avoir le temps d'accumuler un portefeuille. La question n'est pas "le crédit
+  tue-t-il les emprunteurs" mais "le marché du crédit tue-t-il les prêteurs en les forçant à vider leur trésorerie".
+
+  La clé est l'inégalité s·P < B pour P < 100 : l'offre de prêt utilise comme réserve le seuil de liquidité (s·P) là où le
+  seuil de solvabilité (B) est contraignant. La correction aligne les deux.
+
+  ---
+  Veux-tu que j'implémente le correctif dans le code (une ligne dans _lender_offer) et que je mette à jour le changelog ?
+
+

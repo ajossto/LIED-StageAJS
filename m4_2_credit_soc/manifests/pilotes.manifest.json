@@ -1,0 +1,189 @@
+{
+ "plan": "pilotes",
+ "cells": [
+  {
+   "cell": "g040",
+   "cell_id": "bbb50f3ba18a",
+   "plan": "pilotes",
+   "parameters": {
+    "A": 1.0,
+    "lam": 30.0,
+    "delta": 0.05,
+    "sigma": 0.25,
+    "K0": 25.0,
+    "pop_max": 30000,
+    "snapshot_every": 0,
+    "individual_every": 0,
+    "figures": false,
+    "gamma": 0.4,
+    "T": 4000
+   },
+   "n_runs": 3,
+   "base_seed": 1,
+   "label": "M4.2 — pilotes — g040",
+   "keep": false,
+   "engine_hash": "932e58643e522d7b",
+   "batch_id": "20260727_161533_4b625b8e",
+   "run_ids": [
+    "20260727_161533_9b2ab740",
+    "20260727_161533_dfa5f765",
+    "20260727_161533_7ccc4ceb"
+   ],
+   "duration_seconds": 337.2,
+   "launched_at": "2026-07-27T16:21:10+0200"
+  },
+  {
+   "cell": "g033",
+   "cell_id": "b4eb0a832692",
+   "plan": "pilotes",
+   "parameters": {
+    "A": 1.0,
+    "lam": 30.0,
+    "delta": 0.05,
+    "sigma": 0.25,
+    "K0": 25.0,
+    "pop_max": 30000,
+    "snapshot_every": 0,
+    "individual_every": 0,
+    "figures": false,
+    "gamma": 0.3333333333333333,
+    "T": 4000
+   },
+   "n_runs": 3,
+   "base_seed": 1,
+   "label": "M4.2 — pilotes — g033",
+   "keep": false,
+   "engine_hash": "932e58643e522d7b",
+   "batch_id": "20260727_161533_3ee6daeb",
+   "run_ids": [
+    "20260727_161533_be4cd8c8",
+    "20260727_161533_128eec20",
+    "20260727_161533_986a783a"
+   ],
+   "duration_seconds": 359.6,
+   "launched_at": "2026-07-27T16:21:32+0200"
+  },
+  {
+   "cell": "g060",
+   "cell_id": "ef1c58b3c9d2",
+   "plan": "pilotes",
+   "parameters": {
+    "A": 1.0,
+    "lam": 30.0,
+    "delta": 0.05,
+    "sigma": 0.25,
+    "K0": 25.0,
+    "pop_max": 30000,
+    "snapshot_every": 0,
+    "individual_every": 0,
+    "figures": false,
+    "gamma": 0.6,
+    "T": 4000
+   },
+   "n_runs": 3,
+   "base_seed": 1,
+   "label": "M4.2 — pilotes — g060",
+   "keep": false,
+   "engine_hash": "932e58643e522d7b",
+   "batch_id": "20260727_162133_d1cfd933",
+   "run_ids": [
+    "20260727_162133_2a12e894",
+    "20260727_162133_bed8a893",
+    "20260727_162133_73b818c9"
+   ],
+   "duration_seconds": 238.5,
+   "launched_at": "2026-07-27T16:25:30+0200"
+  },
+  {
+   "cell": "g050",
+   "cell_id": "dfc1d0ff55ec",
+   "plan": "pilotes",
+   "parameters": {
+    "A": 1.0,
+    "lam": 30.0,
+    "delta": 0.05,
+    "sigma": 0.25,
+    "K0": 25.0,
+    "pop_max": 30000,
+    "snapshot_every": 0,
+    "individual_every": 0,
+    "figures": false,
+    "gamma": 0.5,
+    "T": 4000
+   },
+   "n_runs": 3,
+   "base_seed": 1,
+   "label": "M4.2 — pilotes — g050",
+   "keep": false,
+   "engine_hash": "932e58643e522d7b",
+   "batch_id": "20260727_162110_5ec153b4",
+   "run_ids": [
+    "20260727_162110_0f51704c",
+    "20260727_162110_7bedce89",
+    "20260727_162110_9eee0426"
+   ],
+   "duration_seconds": 292.2,
+   "launched_at": "2026-07-27T16:26:02+0200"
+  },
+  {
+   "cell": "g075_sonde",
+   "cell_id": "93552ba10598",
+   "plan": "pilotes",
+   "parameters": {
+    "A": 1.0,
+    "lam": 30.0,
+    "delta": 0.05,
+    "sigma": 0.25,
+    "K0": 25.0,
+    "pop_max": 30000,
+    "snapshot_every": 0,
+    "individual_every": 0,
+    "figures": false,
+    "gamma": 0.75,
+    "T": 4000
+   },
+   "n_runs": 1,
+   "base_seed": 1,
+   "label": "M4.2 — pilotes — g075_sonde",
+   "keep": false,
+   "engine_hash": "932e58643e522d7b",
+   "batch_id": "20260727_162603_a403bcfe",
+   "run_ids": [
+    "20260727_162603_57b6df9a"
+   ],
+   "duration_seconds": 168.8,
+   "launched_at": "2026-07-27T16:28:51+0200"
+  },
+  {
+   "cell": "g067",
+   "cell_id": "4cef0a961193",
+   "plan": "pilotes",
+   "parameters": {
+    "A": 1.0,
+    "lam": 30.0,
+    "delta": 0.05,
+    "sigma": 0.25,
+    "K0": 25.0,
+    "pop_max": 30000,
+    "snapshot_every": 0,
+    "individual_every": 0,
+    "figures": false,
+    "gamma": 0.6666666666666666,
+    "T": 4000
+   },
+   "n_runs": 3,
+   "base_seed": 1,
+   "label": "M4.2 — pilotes — g067",
+   "keep": false,
+   "engine_hash": "932e58643e522d7b",
+   "batch_id": "20260727_162531_e96e4dbf",
+   "run_ids": [
+    "20260727_162531_d36bad55",
+    "20260727_162531_04dfd5f8",
+    "20260727_162531_09d69b7e"
+   ],
+   "duration_seconds": 213.4,
+   "launched_at": "2026-07-27T16:29:04+0200"
+  }
+ ]
+}

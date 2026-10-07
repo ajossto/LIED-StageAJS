@@ -1,0 +1,407 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[french]{babel}
+\usepackage{amsmath,amssymb,booktabs,longtable,array}
+\usepackage[a4paper,margin=2.35cm]{geometry}
+\usepackage[hidelinks]{hyperref}
+\usepackage{microtype}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.5em}
+\newcommand{\NW}{\mathrm{NW}}
+\newcommand{\code}[1]{\texttt{#1}}
+
+\title{Spécification technique du modèle M2\\
+\large Sémantique, invariants et protocole de validation}
+\author{Réplication computationnelle indépendante}
+\date{3 juillet 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Ce document fige la sémantique de l'implémentation de référence avant son
+écriture. Le noyau sera autonome sous \code{m2\_codex/}, sans modification des
+lignées WIP. Les décisions visent une dynamique déterministe conditionnellement
+au seed, une comptabilité vérifiable phase par phase et des sorties permettant
+de réfuter les hypothèses Boltzmann, Pareto, cohorte et SOC. Les ambiguïtés du
+rapport ne sont pas dissimulées : service de plusieurs dettes, liquidation sans
+créancier et ordre des faillites deviennent des conventions nommées et des
+ablations.
+\end{abstract}
+
+\tableofcontents
+
+\section{Objectifs et périmètre}
+
+Le premier objectif est la fidélité aux sept phases M2. Le second est la
+traçabilité : toute quantité publiée doit être reconstructible à partir de la
+configuration, du seed, des séries et snapshots. Le troisième est la prudence
+scientifique : le code ne doit contenir aucun mécanisme destiné implicitement à
+améliorer un ajustement statistique.
+
+À la demande de séparation avec un autre agent, tous les nouveaux fichiers sont
+placés sous \code{m2\_codex/}. L'arborescence proposée est conservée relativement
+à ce dossier :
+\begin{verbatim}
+anciens_modeles/m2_codex/
+  src/m2/              noyau, mesures, analyses, figures
+  experiments/m2/      baseline, validation, grille, ablations
+  tests/                tests unitaires et de cohérence
+  outputs/              exécutions régénérables, une par run
+  reports/              sources LaTeX, PDF, figures et synthèses
+\end{verbatim}
+Le répertoire de travail isolé est la seule adaptation à l'arborescence demandée.
+
+\section{Architecture et structures de données}
+
+\subsection{Modules}
+
+\begin{longtable}{p{0.23\textwidth}p{0.69\textwidth}}
+\toprule
+Module & Responsabilité unique \\
+\midrule
+\endhead
+\code{config.py} & Dataclass immuable \code{M2Config}, validation des domaines,
+sérialisation et variantes structurelles nommées. \\
+\code{entities.py} & \code{Entity} : identifiant, capital, dette d'amorçage,
+naissance, état vivant/défaut et flux du dernier pas. \\
+\code{contracts.py} & \code{LoanContract} nominal et \code{ContractBook} indexé
+par prêteur/emprunteur ; création, suppression, fractionnement et contrôles. \\
+\code{market.py} & Taux marginaux, cible $w^*$ et rounds de marché ; aucun effet
+de faillite. \\
+\code{bankruptcy.py} & Détection, liquidation unitaire, cascade et événements de
+récupération/destruction. \\
+\code{simulation.py} & État global, RNG NumPy local, sept phases, orchestration
+et vérification optionnelle des invariants. \\
+\code{metrics.py} & Séries temporelles, snapshots individuels, mobilité,
+concentration du crédit et diagnostics anti-cohorte. \\
+\code{analysis.py} & Ajustements du corps, CSN, comparaison log-normale,
+bootstrap par blocs et estimation des incréments. \\
+\code{plots.py} & Figures à partir de fichiers de résultats, sans relancer la
+simulation ni modifier les données. \\
+\bottomrule
+\end{longtable}
+
+\subsection{Entité}
+
+La structure minimale est :
+\begin{verbatim}
+Entity(id: int, w: float, d0: float, birth_step: int,
+       alive: bool, defaulted: bool,
+       extraction: float, interest_received: float,
+       interest_paid: float)
+\end{verbatim}
+Les créances et dettes ne sont pas des caches modifiables dans l'entité : elles
+sont calculées par le carnet ou maintenues dans des index contrôlés. Cela évite
+la divergence entre contrat et bilan. L'âge au snapshot $t$ vaut
+$t-\text{birth\_step}$. La valeur nette est une propriété dérivée
+\[
+\NW_i=w_i+C_i-D_i-d_{0,i}.
+\]
+
+\subsection{Contrat et carnet}
+
+\begin{verbatim}
+LoanContract(id: int, lender_id: int, borrower_id: int,
+             principal: float, rate: float, creation_step: int,
+             parent_id: int | None)
+\end{verbatim}
+Un contrat présent dans le carnet est actif ; aucune double notion
+actif/inactif. Les index \code{by\_lender} et \code{by\_borrower} contiennent des
+ensembles d'identifiants. Les identifiants ne sont jamais recyclés. Un transfert
+de créance supprime le parent et crée des enfants dont \code{parent\_id} permet
+l'audit.
+
+\subsection{État de simulation}
+
+\code{M2Simulation} contient la configuration, le pas courant, un générateur
+\code{numpy.random.Generator}, le dictionnaire d'entités, le carnet, les compteurs
+d'identifiants, les métriques et les événements. Aucune variable aléatoire
+globale n'est utilisée. Un même couple configuration--seed doit produire des
+fichiers de contenu identique, hors métadonnées temporelles explicitement
+exclues.
+
+\section{Sémantique exacte d'un pas}
+
+\subsection{Conventions de temps et unités}
+
+Un pas est une unité discrète indivisible : taux $r$, dépréciation $\delta$ et
+écart-type $\sigma$ sont par pas. $\alpha=1$ fixe l'unité conjointe de capital et
+de flux ; il reste configurable seulement pour tester l'homogénéité, sans être
+balayé dans la baseline. Les valeurs de capital, principaux, intérêts et $d_0$
+partagent la même unité nominale. Un taux n'a pas cette unité.
+
+Le snapshot $t$ est pris après la cascade du pas $t$ ; les naissances du pas ont
+alors un âge nul si le compteur n'est incrémenté qu'après écriture, convention à
+tester. Les fenêtres $[a,b)$ incluent les snapshots tels que $a\leq t<b$.
+
+\subsection{Phases}
+
+\begin{enumerate}
+  \item Tirer $n\sim\mathrm{Poisson}(\lambda)$ et créer $n$ entités à
+  $(w_0,d_0)$.
+  \item Pour chaque vivante, tirer
+  $\eta\sim\mathcal N(-\sigma^2/2,\sigma^2)$ et poser
+  $w\leftarrow w\exp\eta$. Aucun clipping silencieux : une valeur non finie
+  arrête le run avec diagnostic.
+  \item Calculer $g_i=\alpha\sqrt{w_i}$, enregistrer l'extraction et poser
+  $w_i\leftarrow w_i+g_i$.
+  \item Grouper les intérêts dus par emprunteur. Si le capital couvre la somme,
+  payer chaque $rq$. Sinon, partager tout le capital disponible entre les
+  créanciers au prorata des montants dus et marquer l'emprunteur en défaut. Ce
+  choix simultané évite qu'un ordre de dictionnaire crée une priorité. Une
+  variante \code{sequential\_contract\_id} sera disponible pour l'ablation.
+  \item Poser $w_i\leftarrow(1-\delta)w_i$ pour les vivantes. Contrats et $d_0$
+  sont inchangés.
+  \item Former l'ensemble des vivantes non marquées en défaut. Effectuer
+  $\lfloor N/k\rfloor$ rounds indépendants ; échantillon sans remise au sein
+  d'un round, mais participation répétée possible entre rounds. En cas d'égalité,
+  le plus petit identifiant départage le max/min pour la reproductibilité. Si
+  $w_b=0$ ou $w_\ell=0$, la limite est définie comme absence de prêt. Transférer
+  strictement $q>0$ et créer le contrat.
+  \item Construire la file des défauts puis des $\NW<0$, triée par identifiant.
+  Liquider une entité à la fois, rescanner les insolvabilités, et continuer
+  jusqu'à stabilité.
+\end{enumerate}
+
+L'exclusion des entités en défaut du marché n'est pas explicitée dans le rapport,
+mais elle évite de créer un prêt destiné à être annulé dans la même phase. Ce
+choix est journalisé comme convention structurelle.
+
+\subsection{Liquidation de référence}
+
+Avant toute suppression, agréger les contrats où la faillie est emprunteuse et
+calculer les poids de ses créanciers vivants. Pour chaque contrat où elle est
+prêteuse : supprimer le contrat parent, exclure comme repreneur l'emprunteur de
+ce contrat afin d'éviter une auto-créance, renormaliser les poids admissibles,
+puis créer les fractions nominales. Sans repreneur admissible, annuler le
+contrat : l'emprunteur est libéré et la créance est détruite.
+
+Distribuer ensuite le capital résiduel aux créanciers vivants, selon les poids
+renormalisés. En l'absence de créancier vivant, le résiduel est détruit et
+comptabilisé. Enfin annuler les dettes de la faillie, éteindre son $d_0$, poser
+$w=0$ et la marquer morte. Une entité morte ne peut apparaître dans aucun contrat.
+
+Cette règle suit l'intention du rapport et la logique du WIP, mais l'ordre
+séquentiel peut influer sur une vague. Une variante de liquidation simultanée
+fera partie des tests de sensibilité, pas de la baseline.
+
+\section{Configuration et paramètres}
+
+\begin{longtable}{p{0.24\textwidth}p{0.16\textwidth}p{0.50\textwidth}}
+\toprule
+Champ & Baseline & Validation \\
+\midrule
+\endhead
+\code{alpha} & 1 & strictement positif ; convention \\
+\code{delta} & 0,05 & $0\leq\delta<1$ \\
+\code{k} & 6 & entier $\geq2$ \\
+\code{sigma} & 0,25 & $\geq0$ \\
+\code{birth\_rate} & 10 & $\geq0$ \\
+\code{w0}, \code{d0} & 30, 28 & $w_0\geq d_0\geq0$ ; baseline exige $>$ \\
+\code{seed} & explicite & entier non négatif \\
+\code{steps} & 2000 & entier non négatif \\
+\code{snapshot\_interval} & 50 & entier positif \\
+\code{interest\_service} & prorata & variante nommée seulement \\
+\code{bankruptcy\_transfer} & prorata & variantes annulation/destruction \\
+\code{check\_invariants} & vrai & technique, sans effet dynamique \\
+\bottomrule
+\end{longtable}
+
+La fréquence des snapshots ne doit pas affecter le RNG ni la dynamique. Les
+tolérances flottantes sont centralisées et réservées aux assertions ; elles ne
+suppriment pas de contrats positifs et ne changent pas le critère scientifique
+$\NW<0$.
+
+\section{Invariants et audits de conservation}
+
+Les invariants sont vérifiés après chaque phase en mode test et périodiquement
+dans les campagnes :
+\begin{enumerate}
+  \item toute entité vivante a un $w$ fini et $w\geq0$ ;
+  \item tout contrat actif a $q>0$, $r\geq0$, deux extrémités vivantes et
+  distinctes ;
+  \item chaque contrat apparaît exactement une fois dans chacun des deux index ;
+  \item $\sum_i C_i=\sum_i D_i=\sum_e q_e$ à l'erreur d'arrondi près ;
+  \item la création d'un prêt conserve $\sum_iw_i$ et chaque $\NW_i$ concernée ;
+  \item le service des intérêts conserve $\sum_iw_i$, y compris en paiement
+  partiel ; l'impayé n'est ni capitalisé ni créé ailleurs ;
+  \item les principaux, taux et $d_0$ ne changent pas à la dépréciation ;
+  \item toute entité avec $\NW<0$ ou en défaut est retirée par la cascade ;
+  \item à la fin d'une cascade, aucune vivante n'est défaillante ou insolvable ;
+  \item après liquidation, aucun contrat orphelin ne subsiste ;
+  \item il n'existe aucune borne, capacité ou suppression dépendant directement
+  de $N$ ; $\lfloor N/k\rfloor$ ne règle que l'intensité du marché.
+\end{enumerate}
+
+Un audit de phase écrit les variations observées de capital réel. Naissances,
+choc, extraction, dépréciation et destruction en liquidation sont les seules
+sources/puits ; principal et intérêts doivent avoir une variation globale nulle.
+
+\section{Tests avant simulations longues}
+
+La suite utilisera le module standard \code{unittest}, disponible sans dépendance,
+avec commande unique
+\code{PYTHONPATH=src python -m unittest discover -s tests -v}. Le venv actuel ne
+contient pas \code{pytest}; l'ajouter n'est pas nécessaire à la validité des tests.
+
+\begin{longtable}{p{0.31\textwidth}p{0.60\textwidth}}
+\toprule
+Famille & Cas exigés \\
+\midrule
+\endhead
+Entités et bilans & naissance, âge, $\NW$, $w=0$, dette d'amorçage. \\
+Contrats & création/suppression, index, $q=0$ refusé, principal positif,
+absence d'orphelin. \\
+Conservation & transfert du principal, intérêt complet, intérêt partiel prorata,
+dépréciation nominale nulle. \\
+Défaut & marquage, faillite simple avec/sans créancier, récupération, extinction
+de $d_0$. \\
+Cascade & perte de créance rendant un prêteur insolvable, itération jusqu'à
+stabilité, transfert fractionné sans auto-contrat. \\
+Marché & $N=0$, $N<k$, égalités, $w=0$, $q=0$, volume et taux connus. \\
+Reproductibilité & mêmes seed/configuration identiques ; seeds distincts non
+identiques ; snapshots sans effet sur trajectoire. \\
+Numérique & aucun capital négatif, aucune valeur non finie, longue séquence
+smoke-test avec invariants. \\
+Statistique & ajustement exponentiel synthétique, Pareto synthétique, rejet ou
+prudence sur échantillon trop petit, fenêtres non mélangées. \\
+\bottomrule
+\end{longtable}
+
+Aucune simulation de 2000 pas ne sera lancée tant que ces tests de base ne sont
+pas tous verts.
+
+\section{Risques numériques et performance}
+
+Les principaux risques sont : overflow de $\exp(\eta)$ ; perte de précision dans
+les longues sommes de contrats ; explosion du nombre de petits contrats après
+fractionnements ; comparaison de $\NW$ près de zéro ; et complexité du rescannage
+des cascades. Aucune troncature de richesse ni fusion de contrats ne sera ajoutée
+à la baseline, car elle changerait la dynamique. Les sommes d'audit utiliseront
+\code{math.fsum}. Les non-finis provoquent un échec explicite. Les index limitent
+les opérations de carnet au voisinage de l'entité ; le rescannage $O(N)$ après
+chaque vague est accepté d'abord pour sa clarté, puis profilé.
+
+\section{Sorties, logs, snapshots et figures}
+
+Chaque run a un identifiant fondé sur scénario, seed et horodatage humain, dans
+un dossier contenant :
+\begin{itemize}
+  \item \code{run.json} : version de schéma, configuration complète, seed,
+  commande, versions Python/NumPy/SciPy, statut et résumé ;
+  \item \code{timeseries.csv} : une ligne par pas, avec population, naissances,
+  décès, taille maximale de cascade, capital total, volumes et nombre de prêts,
+  contrats, intérêts, destructions et concentration du crédit ;
+  \item \code{snapshots/snapshot\_TTTTTT.csv} :
+  \code{step,entity\_id,birth\_step,age,w,claims,debts,d0,nw,extraction,
+  interest\_received,interest\_paid,income\_gross,income\_net} ;
+  \item \code{events.jsonl} : événements optionnels de prêt, défaut et faillite,
+  avec identifiants et montants ;
+  \item \code{analysis.json} et \code{tables/*.csv} : estimations, domaines,
+  effectifs, incertitudes et verdicts ;
+  \item \code{figures/*.png} et \code{*.pdf} : mêmes données, noms stables,
+  légende incluant scénario, seed et fenêtre.
+\end{itemize}
+
+Les figures attendues couvrent macro-séries, distributions et CCDF log--log,
+QQ exponentiels, âge par décile, mobilité du top, cascades, concentration du
+crédit et cartes de grille. Une figure ne doit jamais agréger des seeds sans
+montrer la dispersion inter-seed.
+
+\section{Protocole de validation}
+
+\subsection{Baseline et stationnarité}
+
+Lancer d'abord un smoke-test court, puis la baseline
+$(\alpha,\delta,k,\sigma,\lambda,w_0,d_0)=(1,0{,}05,6,0{,}25,10,30,28)$ sur
+2000 pas. Répliquer au moins trois seeds si le coût est acceptable. Diagnostiquer
+la pente de population et de capital sur $[1000,2000)$ avec incertitude HAC ou
+par blocs, le bilan naissances--décès, la survie censurée et la mortalité du top.
+Un plateau visuel seul ne suffit pas.
+
+\subsection{Corps}
+
+Pour $w$, $\NW>0$, revenu brut et net, définir le corps par plusieurs quantiles
+(90, 95 et 97,5\,\%), sans choisir après inspection. Ajuster exponentielle à
+origine fixée, gamma, log-normale et Fisk par maximum de vraisemblance ; rapporter
+AIC, BIC, effectif, paramètres et sensibilité au domaine. Produire QQ-plot et
+ratio médiane/moyenne. Sur les survivantes présentes à deux snapshots successifs,
+estimer dans le corps initial
+\[
+ \widehat A_0=-\mathbb E[\Delta\NW],\qquad
+ \widehat B_0=\tfrac12\operatorname{Var}(\Delta\NW),
+\]
+et comparer $T_{\rm exp}$ à $\widehat B_0/\widehat A_0$ seulement si
+$\widehat A_0>0$. Rapporter le biais de sélection dû aux morts exclues.
+
+\subsection{Queue}
+
+Pour chaque seed séparément, pooler uniquement des snapshots espacés de 50 pas
+dans $[500,1000)$, $[1000,1500)$ et $[1500,2000)$. Estimer $x_{\min}$ et
+l'exposant par MLE--KS de type CSN, puis comparer Pareto et log-normale sur le
+même domaine. Répéter à $x_{\min}$ commun, médiane des seuils des trois fenêtres.
+Le bootstrap rééchantillonne des blocs temporels/snapshots, non des lignes
+individuelles supposées indépendantes. Une queue de moins de 100 observations est
+déclarée fragile même si un estimateur existe.
+
+\subsection{Anti-cohorte}
+
+Mesurer corrélations Pearson et Spearman âge--$\log\NW$ sur $\NW>0$, âges par
+décile, formes dans les tranches d'âge $[50,150)$ et $[150,400)$, part récente du
+top décile, mortalité du top et Jaccard/turnover du top entre fenêtres. Ajouter
+une régression ou stratification du risque de décès par âge et décile : une faible
+corrélation marginale ne suffit pas.
+
+\subsection{SOC, grilles et ablations}
+
+Balayer $k\in\{2,3,4,6\}$, $\sigma\in\{0{,}15,0{,}25,0{,}35\}$ et
+$\varepsilon_0/w_0\in\{0{,}05,0{,}25,0{,}5\}$, sans pooling entre cases. Mesurer
+distribution des cascades, concentration de crédit, corrélation concentration
+pré-cascade--taille et exposant de richesse. Les ablations minimales sont : sans
+crédit, sans choc, sans transfert de créances, service séquentiel et liquidation
+simultanée. Pour parler de SOC, rechercher aussi sensibilité à la taille via
+$\lambda$, coupures de cascade et séparation des échelles ; une simple droite
+log--log n'est pas une preuve.
+
+\section{Résultats de spécification, limites et décisions ouvertes}
+
+Le résultat de cette phase est une sémantique testable et non encore un résultat
+scientifique. Les choix prorata et ordre par identifiant rendent la référence
+reproductible, mais peuvent affecter les cascades. Le format CSV privilégie
+l'audit au volume ; il pourra devenir compressé sans changer le schéma. La
+comparaison Pareto--log-normale existante du dépôt n'utilise pas une log-normale
+correctement tronquée au même $x_{\min}$ ; elle devra être corrigée localement
+avant toute conclusion. L'absence de \code{pytest} dans le venv est contournée
+par \code{unittest}, non par installation implicite d'une dépendance.
+
+Les prochaines étapes sont : implémenter d'abord les dataclasses et le carnet,
+écrire les tests de conservation, ajouter les sept phases, exécuter tous les
+tests, puis seulement lancer baseline et validations. Toute divergence entre
+spécification et code devra être consignée dans le journal.
+
+\section{Conclusion}
+
+Cette spécification rend visibles les hypothèses logicielles capables de devenir
+des résultats économiques. La fidélité sera évaluée par les invariants et non par
+la ressemblance des graphes au prototype. La validation statistique sépare seeds,
+fenêtres et variables, inclut des réfutations et interdit le réglage après coup.
+Elle fournit ainsi une base falsifiable pour décider si M2 produit réellement un
+corps exponentiel, une queue stable, des classes dynamiques et une population
+bornée sans capacité artificielle.
+
+\subsection*{Amendement après le premier run long}
+
+Le run de référence a révélé une explosion purement représentationnelle des
+fractions de contrats : 3\,482 arêtes à $t=1200$, 25\,243 à $t=1300$, 74\,807 à
+$t=1400$ et 142\,766 à $t=1414$. Le carnet fusionne donc désormais tous les
+contrats d'une même paire prêteur--emprunteur, avec principal total et taux moyen
+pondéré. Cette compression conserve exactement principal, intérêt total futur,
+créance, dette et poids prorata, puisque les contrats sont nominaux, perpétuels,
+sans maturité ni dépréciation. Elle perd une partie de la lignée individuelle des
+fragments, remplacée par un compteur de composantes. Il s'agit d'une correction
+de représentation documentée, non d'une règle économique ni d'un seuil de
+troncature.
+
+\end{document}

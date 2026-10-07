@@ -1,0 +1,137 @@
+{
+ "plan": "confirm",
+ "cells": [
+  {
+   "cell": "g033_confirm",
+   "cell_id": "90e6eaeb10ba",
+   "plan": "confirm",
+   "parameters": {
+    "A": 1.0,
+    "lam": 30.0,
+    "delta": 0.05,
+    "sigma": 0.25,
+    "K0": 25.0,
+    "pop_max": 30000,
+    "snapshot_every": 100,
+    "individual_every": 0,
+    "figures": true,
+    "gamma": 0.3333333333333333,
+    "T": 4000
+   },
+   "n_runs": 5,
+   "base_seed": 11,
+   "label": "M4.2 — confirm — g033_confirm",
+   "keep": true,
+   "engine_hash": "932e58643e522d7b",
+   "batch_id": "20260727_175504_42e7cf62",
+   "run_ids": [
+    "20260727_175504_85dee157",
+    "20260727_175504_da86412e",
+    "20260727_175504_5bc07338",
+    "20260727_175504_a6f95655",
+    "20260727_175504_05396f59"
+   ],
+   "duration_seconds": 652.0,
+   "launched_at": "2026-07-27T18:05:56+0200"
+  },
+  {
+   "cell": "g050_confirm",
+   "cell_id": "3ceb503b40ce",
+   "plan": "confirm",
+   "parameters": {
+    "A": 1.0,
+    "lam": 30.0,
+    "delta": 0.05,
+    "sigma": 0.25,
+    "K0": 25.0,
+    "pop_max": 30000,
+    "snapshot_every": 100,
+    "individual_every": 0,
+    "figures": true,
+    "gamma": 0.5,
+    "T": 4000
+   },
+   "n_runs": 5,
+   "base_seed": 11,
+   "label": "M4.2 — confirm — g050_confirm",
+   "keep": true,
+   "engine_hash": "932e58643e522d7b",
+   "batch_id": "20260727_180556_742699bb",
+   "run_ids": [
+    "20260727_180556_fc9cc56c",
+    "20260727_180556_3b538fea",
+    "20260727_180556_ffc1e03b",
+    "20260727_180556_bed0e50b",
+    "20260727_180556_d0c58064"
+   ],
+   "duration_seconds": 580.1,
+   "launched_at": "2026-07-27T18:15:36+0200"
+  },
+  {
+   "cell": "g060_confirm",
+   "cell_id": "973af93fee61",
+   "plan": "confirm",
+   "parameters": {
+    "A": 1.0,
+    "lam": 30.0,
+    "delta": 0.05,
+    "sigma": 0.25,
+    "K0": 25.0,
+    "pop_max": 30000,
+    "snapshot_every": 100,
+    "individual_every": 0,
+    "figures": true,
+    "gamma": 0.6,
+    "T": 4000
+   },
+   "n_runs": 5,
+   "base_seed": 11,
+   "label": "M4.2 — confirm — g060_confirm",
+   "keep": true,
+   "engine_hash": "932e58643e522d7b",
+   "batch_id": "20260727_181536_8bcca008",
+   "run_ids": [
+    "20260727_181536_0fb74787",
+    "20260727_181536_0f37e2cb",
+    "20260727_181536_14a294b8",
+    "20260727_181536_aa4e0c09",
+    "20260727_181536_d787f683"
+   ],
+   "duration_seconds": 505.1,
+   "launched_at": "2026-07-27T18:24:01+0200"
+  },
+  {
+   "cell": "g067_confirm",
+   "cell_id": "885b1b2cc4bd",
+   "plan": "confirm",
+   "parameters": {
+    "A": 1.0,
+    "lam": 30.0,
+    "delta": 0.05,
+    "sigma": 0.25,
+    "K0": 25.0,
+    "pop_max": 30000,
+    "snapshot_every": 100,
+    "individual_every": 0,
+    "figures": true,
+    "gamma": 0.6666666666666666,
+    "T": 4000
+   },
+   "n_runs": 5,
+   "base_seed": 11,
+   "label": "M4.2 — confirm — g067_confirm",
+   "keep": true,
+   "engine_hash": "932e58643e522d7b",
+   "batch_id": "20260727_182401_7c721a21",
+   "run_ids": [
+    "20260727_182401_5542d4b4",
+    "20260727_182402_8574a621",
+    "20260727_182402_dcc5afba",
+    "20260727_182402_1c5fe2b8",
+    "20260727_182402_2b851ed1"
+   ],
+   "duration_seconds": 481.9,
+   "launched_at": "2026-07-27T18:32:03+0200"
+  }
+ ]
+}

@@ -1,0 +1,78 @@
+{
+ "plan": "confirm",
+ "note": "Volet 4 : graines confirmatoires 11-15, figures et keep (exécuter run_campaign --plan confirm --keep --cell-workers 5 --parallel-cells 1).",
+ "cells": [
+  {
+   "name": "g033_confirm",
+   "parameters": {
+    "A": 1.0,
+    "lam": 30.0,
+    "delta": 0.05,
+    "sigma": 0.25,
+    "K0": 25.0,
+    "pop_max": 30000,
+    "snapshot_every": 100,
+    "individual_every": 0,
+    "figures": true,
+    "gamma": 0.3333333333333333,
+    "T": 4000
+   },
+   "n_runs": 5,
+   "base_seed": 11
+  },
+  {
+   "name": "g050_confirm",
+   "parameters": {
+    "A": 1.0,
+    "lam": 30.0,
+    "delta": 0.05,
+    "sigma": 0.25,
+    "K0": 25.0,
+    "pop_max": 30000,
+    "snapshot_every": 100,
+    "individual_every": 0,
+    "figures": true,
+    "gamma": 0.5,
+    "T": 4000
+   },
+   "n_runs": 5,
+   "base_seed": 11
+  },
+  {
+   "name": "g060_confirm",
+   "parameters": {
+    "A": 1.0,
+    "lam": 30.0,
+    "delta": 0.05,
+    "sigma": 0.25,
+    "K0": 25.0,
+    "pop_max": 30000,
+    "snapshot_every": 100,
+    "individual_every": 0,
+    "figures": true,
+    "gamma": 0.6,
+    "T": 4000
+   },
+   "n_runs": 5,
+   "base_seed": 11
+  },
+  {
+   "name": "g067_confirm",
+   "parameters": {
+    "A": 1.0,
+    "lam": 30.0,
+    "delta": 0.05,
+    "sigma": 0.25,
+    "K0": 25.0,
+    "pop_max": 30000,
+    "snapshot_every": 100,
+    "individual_every": 0,
+    "figures": true,
+    "gamma": 0.6666666666666666,
+    "T": 4000
+   },
+   "n_runs": 5,
+   "base_seed": 11
+  }
+ ]
+}

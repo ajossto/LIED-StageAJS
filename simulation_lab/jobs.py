@@ -17,6 +17,9 @@ from simulation_lab.runs.executor import execute_batch, _effective_parameters, _
 from simulation_lab.runs.storage import RunStorage, _select_preview_artifact
 
 
+MAX_FINISHED_JOBS = 50
+
+
 def _utc_now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
@@ -136,7 +139,9 @@ class JobManager:
         return job.to_dict()
 
     def submit_single(self, *, model_id: str, parameters: dict[str, Any], seed: int, label: str = "") -> dict[str, Any]:
-        self.registry.get_launchable(model_id)
+        # Validation synchrone : une erreur de paramètre doit revenir en 400
+        # plutôt que tuer le thread du job et le laisser « running » à jamais.
+        self.registry.get_launchable(model_id).validate_parameters(parameters)
         job = JobState(
             job_id=self._new_job_id(),
             job_type="single",
@@ -146,8 +151,7 @@ class JobManager:
             label=label,
             message="En attente",
         )
-        with self._lock:
-            self._jobs[job.job_id] = job
+        self._register_job(job)
         thread = threading.Thread(
             target=self._run_single_job,
             args=(job.job_id, model_id, parameters, seed, label),
@@ -166,7 +170,9 @@ class JobManager:
         base_seed: int | None,
         label: str = "",
     ) -> dict[str, Any]:
-        self.registry.get_launchable(model_id)
+        if run_count < 1:
+            raise ValueError("run_count doit être >= 1")
+        self.registry.get_launchable(model_id).validate_parameters(parameters)
         job = JobState(
             job_id=self._new_job_id(),
             job_type="batch",
@@ -176,8 +182,7 @@ class JobManager:
             label=label,
             message="En attente",
         )
-        with self._lock:
-            self._jobs[job.job_id] = job
+        self._register_job(job)
         thread = threading.Thread(
             target=self._run_batch_job,
             args=(job.job_id, model_id, parameters, run_count, max_workers, base_seed, label),
@@ -194,11 +199,22 @@ class JobManager:
             progress=2.0,
             started_at=_utc_now(),
         )
-        model = self.registry.get_launchable(model_id)
-        validated = model.validate_parameters(parameters)
-        effective_parameters = _effective_parameters(model, validated, seed)
-        metadata = self.storage.create_run(model_id=model_id, parameters=effective_parameters, seed=seed, label=label)
-        self.storage.mark_running(metadata["run_id"])
+        try:
+            model = self.registry.get_launchable(model_id)
+            validated = model.validate_parameters(parameters)
+            effective_parameters = _effective_parameters(model, validated, seed)
+            metadata = self.storage.create_run(model_id=model_id, parameters=effective_parameters, seed=seed, label=label)
+            self.storage.mark_running(metadata["run_id"])
+        except Exception as exc:
+            self._append_log(job_id, str(exc))
+            self._update_job(
+                job_id,
+                status="failed",
+                error=str(exc),
+                message="Échec de la préparation",
+                finished_at=_utc_now(),
+            )
+            return
         self._update_job(job_id, run_id=metadata["run_id"], message="Simulation en cours", progress=5.0)
 
         progress_queue: Queue = Queue()
@@ -237,9 +253,14 @@ class JobManager:
                 try:
                     item = progress_queue.get(timeout=0.25)
                 except Empty:
-                    if not process.is_alive():
+                    if process.is_alive():
+                        continue
+                    # Le processus a pu écrire son résultat puis se terminer
+                    # entre le délai d'attente et ce test : dernière lecture.
+                    try:
+                        item = progress_queue.get(timeout=1.0)
+                    except Empty:
                         break
-                    continue
 
                 item_type = item.get("type")
                 if item_type == "progress":
@@ -397,6 +418,25 @@ class JobManager:
                 message="Échec du batch",
                 finished_at=_utc_now(),
             )
+
+    def _register_job(self, job: JobState) -> None:
+        """Ajoute un job et oublie les plus anciens jobs terminés au-delà de la limite.
+
+        Les jobs vivent en mémoire pour la durée du serveur ; sans limite, la
+        liste croît sans fin. Seul l'état en mémoire est oublié : les runs
+        restent sur disque. Les jobs actifs ne sont jamais retirés.
+        """
+        with self._lock:
+            self._jobs[job.job_id] = job
+            finished = [
+                item for item in self._jobs.values()
+                if item.status not in {"queued", "running"}
+            ]
+            excess = len(finished) - MAX_FINISHED_JOBS
+            if excess > 0:
+                finished.sort(key=lambda item: item.created_at)
+                for item in finished[:excess]:
+                    del self._jobs[item.job_id]
 
     def _new_job_id(self) -> str:
         return datetime.now().strftime("%Y%m%d_%H%M%S") + "_" + uuid4().hex[:8]

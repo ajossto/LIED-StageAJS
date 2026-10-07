@@ -101,10 +101,13 @@ def main():
             "latest_committed_model": "HEAD:claude3-v3-27-mars",
             "current_wip": "Modèle_sans_banque_wip",
         },
-        "v2_simulation_1000": simulate_model(repo / "claude3-v2" / "src", steps=1000),
+        "v2_simulation_1000": simulate_model(
+            repo / "anciens_modeles" / "claude3-v2" / "src", steps=1000
+        ),
         "wip_existing_run_1000": compute_existing_run_metrics(
             repo
-            / "Modèle_sans_banque_wip"
+            / "anciens_modeles"
+            / "Modèle_sans_banque"
             / "resultats"
             / "simu_20260403_103200_scenario_base_d6a1d52"
             / "csv"

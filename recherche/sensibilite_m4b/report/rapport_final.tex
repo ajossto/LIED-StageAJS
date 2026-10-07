@@ -1,0 +1,1058 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage{fontspec}
+\usepackage[french]{babel}
+\usepackage{amsmath,amssymb}
+\usepackage[margin=2.3cm]{geometry}
+\usepackage{booktabs,longtable,tabularx,array}
+\usepackage{graphicx}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{microtype}
+\usepackage{url}
+\usepackage{hyperref}
+
+\hypersetup{colorlinks=true,linkcolor=blue!45!black,urlcolor=blue!45!black}
+\setlist{nosep}
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\NW}{\mathrm{NW}}
+\newcommand{\E}{\mathbb{E}}
+\graphicspath{{../figures/}}
+
+\title{Étude de sensibilité du modèle de société de crédit M4B\\
+\large Rapport final : cartographie des paramètres, robustesse des
+signatures, recommandations de réduction et feuille de route M5}
+\author{Campagne \code{recherche/sensibilite\_m4b}}
+\date{18 juillet 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Nous cartographions la sensibilité du modèle multi-agents de société de
+crédit M4B à ses cinq paramètres publics — intensité des naissances
+$\lambda$, dépréciation $\delta$, volatilité $\sigma$, capital de
+naissance $K_0$, taille d'échantillon du marché $k$ — sur 594
+simulations tracées (exploration à trois graines, confirmation
+indépendante à cinq graines et horizon doublé). Trois résultats
+structurent la carte. (1)~\emph{Un seul régime} : dans tout l'espace
+exploré ($\delta\in[0{,}01;0{,}10]$, $\sigma\in[0;1]$,
+$K_0\in[2;200]$, $k\in[2;10]$, $\lambda\in[1;100]$), la dynamique est
+stationnaire ; l'extinction n'existe que comme échec d'amorçage de
+probabilité $e^{-\lambda}$ au premier pas, et le garde-fou de
+population n'a jamais été atteint. (2)~\emph{Partage net des rôles} :
+$\sigma$ gouverne la démographie et l'exposition ; $k$ gouverne les
+inégalités et la statistique fine des avalanches ; $K_0$ est un levier
+démographique log-linéaire ; $\delta$ agit essentiellement comme
+l'échelle du capital, sauf dans le régime faiblement bruité
+$\sigma<0{,}15$ où il module la propagation ; $\lambda$ est un pur axe
+de taille finie (grandeurs intensives stables à $\pm1$--$2\,\%$).
+(3)~\emph{Signatures robustes} : les tailles d'avalanches suivent
+partout une loi de puissance tronquée (rapport de vraisemblance
+$p\approx0$ contre la loi pure, log-normale battue à
+$\lambda=100$) dont la coupure croît avec la taille du système
+($\hat s_c\propto\lambda^{1{,}5}$ entre $\lambda=10$ et $30$, hors de
+portée à $\lambda=100$) et dont l'exposant tronqué converge vers
+$\alpha\simeq2{,}31$ ; le rapport de branchement reste épinglé à
+$b\simeq0{,}30$ hors de la zone de transition $\sigma\lesssim0{,}2$,
+qui relie continûment ce plateau au régime corrélé sans choc
+($b=0{,}647$, $\alpha=1{,}80$). L'examen dédié de la valeur nette
+$\NW=K+C-D$ — variable d'état de la mortalité — montre que
+l'inégalité du modèle réside dans les bilans et non dans le capital
+(Gini de $\NW$ $0{,}44$ contre $0{,}07$ au centre, avec des réponses
+paramétriques opposées), que la position nette de crédit suit un cycle
+de vie débiteur$\to$créancier, que la profondeur du trou
+d'insolvabilité au décès, rapportée au capital par tête, est invariante
+($-8{,}6\,\%$) le long de tous les axes d'échelle et ne dépend que de
+$\sigma$, et que le canal de défaut de service est silencieux dans
+toutes les plages étudiées : M4B y est une contagion de bilan pure.
+L'analyse des cycles de l'activité
+agrégée (production totale) montre des phases courtes, jamais plus
+longues que le hasard (durées sous la référence géométrique, maxima de
+10--13 pas), une volatilité de croissance en $\lambda^{-0{,}50}$ avec
+un minimum intérieur vers $\sigma\simeq0{,}1$ séparant bruit endogène
+(avalanches) et exogène (chocs), une asymétrie de krach — récessions
+plus courtes et plus raides, skewness toujours négative, maximale dans
+le régime corrélé — vivant à l'échelle des cascades, et un temps de
+mémoire de l'activité verrouillé sur la durée de vie démographique
+(corrélation de rang $0{,}93$).
+Sur 168 contrastes testés en
+confirmation, 141 sont confirmés, 19 sont des effets nuls cohérents,
+3 gardent leur signe avec une amplitude décalée et 5 ne sont pas
+confirmés — tous documentés (plus 182 contrastes d'extensions
+post-audit — bilans et cycles — aux bilans détaillés dans les sections
+correspondantes). Nous en déduisons des
+recommandations prudentes de réduction pour le successeur M5 et une
+feuille de route pour son étude analytique et la future mesure d'un
+effet rebond.
+\end{abstract}
+
+\tableofcontents
+
+\section{Introduction}
+
+M4B est la réduction minimale validée du modèle de société de crédit
+M4 : un moteur multi-agents où des entités naissent avec un capital
+productif, subissent des chocs multiplicatifs, produisent de façon
+concave, se prêtent un capital réel contre des créances nominales
+perpétuelles, et meurent par défaut de service ou insolvabilité, en
+propageant leurs pertes à leurs prêteuses (cascades). La présente étude
+répond à quatre questions : quels paramètres contrôlent le régime
+démographique, le réseau de crédit, les cascades et les distributions
+individuelles ; où sont les non-linéarités et interactions ; quelles
+signatures sont robustes aux graines, durées et fenêtres ; et quels
+paramètres pourraient être réduits dans le successeur M5.
+
+Le protocole complet (dictionnaire des métriques, plans, règles de
+confirmation) a été figé avant les runs de production
+(\code{protocole.pdf}, 17 juillet 2026) ; l'exploration est décrite
+dans \code{rapport\_preliminaire.pdf}. Le présent rapport reprend
+l'essentiel pour rester autonome, ajoute la phase confirmatoire et
+conclut. Sauf mention contraire, chaque valeur est donnée avec sa
+moyenne et son écart-type inter-graines, et provient de la phase
+confirmatoire (cinq graines $\{11,\dots,15\}$, horizon $T=4000$,
+fenêtre $[T/4,T]$).
+
+\subsection{Le modèle en bref}
+\label{sec:modele}
+
+Chaque entité $i$ possède un capital réel $K_i\ge0$ (en joules).
+Un pas de temps enchaîne : naissances
+($B_t\sim\mathrm{Poisson}(\lambda)$, capital initial $K_0$) ; choc
+multiplicatif i.i.d. $K_i\!\leftarrow\!K_ie^{\eta_i}$,
+$\eta_i\sim\mathcal N(-\sigma^2/2,\sigma^2)$ (moyenne un) ; production
+concave $K_i\!\leftarrow\!K_i+\sqrt{K_i}$ ; service des intérêts des
+prêts perpétuels (défaut si le capital ne couvre pas le service dû) ;
+dépréciation $K_i\!\leftarrow\!(1-\delta)K_i$ ; marché local du crédit
+(un round par entité vivante : parmi $k$ entités tirées au hasard, la
+plus riche prête à la plus pauvre vers la cible
+$K^\ast=\sqrt{K_\ell K_b}$, au taux $r=\sqrt{r_\ell r_b}$ avec
+$r_x=1/(2\sqrt{K_x})$) ; faillites en cascade (une morte annule ses
+contrats, ses prêteuses perdent tout le principal exposé, son capital
+résiduel est détruit ; les survivantes rendues insolvables meurent à la
+génération suivante) ; mesures. Une \emph{avalanche} est une composante
+connexe du graphe des pertes restreint aux mortes d'un même pas ; sa
+taille $s$ est son nombre de mortes ; ses racines sont les faillites
+initiales ; le rapport de branchement empirique est
+$b=1-\sum_aR_a/\sum_aS_a$. La valeur nette est
+$\NW_i=K_i+C_i-D_i$ (capital, créances, dettes).
+
+\subsection{Campagne exécutée}
+
+\begin{table}[tbh]
+\centering
+\begin{tabular}{@{}lrrrl@{}}
+\toprule
+Phase & Runs & Graines & $T$ & Rôle \\
+\midrule
+Benchmark & 6 & 0 & 2000 & coût, neutralité des mesures \\
+Pilotes & 30 & 1--2 & 2000--8000 & audit des plages, contrôle temporel \\
+Sondes de frontière & 16 & 1--2 & 2000 & $\sigma$ jusqu'à 1, $\delta=0{,}01$, $K_0\in\{2,200\}$ \\
+OAT & 54$^{\ast}$ & 1--3 & 2000 & courbes par axe \\
+Carte d'extinction & 42$^{\ast}$ & 1--3 & 2000 & $\lambda\in[1;10]\times\sigma\in\{0{,}25;0{,}5;1\}$ \\
+Plan LHS & 192 & 1--3 & 2000 & screening global 64 points \\
+Coupes 2D & 169$^{\ast}$ & 1--3 & 2000 & $\sigma\times k$, $\sigma\times\delta$ \\
+Confirmation (lab) & 85 & 11--15/20 & 4000$^{\dagger}$ & 16 cellules, indépendante \\
+\midrule
+Total & 594 & & & 0 échec, 0 censure \\
+\bottomrule
+\end{tabular}
+\caption{Campagne exécutée. $^{\ast}$après déduplication par
+identifiant (une cellule partagée entre plans n'est simulée qu'une
+fois) ; $^{\dagger}$2000 pour la cellule d'extinction $\lambda=2$.
+Coût total $\approx22$\,h CPU, $8{,}6$\,Go. Moteur \code{m4b-mini-3},
+condensat \code{f3a7ce02cd9185c7} ; parité M4/M4B vérifiée champ par
+champ (unique recours à M4). Intégrité : résidu comptable relatif
+maximal $6{,}8\cdot10^{-16}$, zéro erreur de carnet sur les 594 runs.}
+\label{tab:campagne}
+\end{table}
+
+La table~\ref{tab:campagne} résume la campagne. Trois contrôles de
+probité méritent mention : les options d'enregistrement ne changent pas
+les trajectoires (séries bit à bit identiques sur deux contrôles) ; le
+choix du burn-in ($T/8$, $T/4$ ou $T/2$) déplace la population moyenne
+d'au plus $0{,}8\,\%$ en exploration ($4\,\%$ au pire sur les cellules
+confirmatoires, atteint sur la petite population $\lambda=2$),
+l'exposant $\hat\alpha$ d'au plus $0{,}08$ et $b$ d'au plus $0{,}011$ ;
+et l'allongement de l'horizon ($T=4000$, et $8000$ sur le coin lent)
+reproduit les valeurs de $T=2000$. Toutes les analyses fenêtrées
+utilisent le burn-in $T/4$.
+
+\section{Carte des régimes : un régime unique, deux artefacts évités}
+\label{sec:regimes}
+
+\paragraph{Fait central.} Aucune des 594 simulations n'a atteint le
+garde-fou \code{pop\_max} ($30\,000$ entités) ni ne s'est éteinte après
+s'être établie. Le diagnostic de censure exigé par le protocole est
+donc \emph{sans objet} : aucune trajectoire n'a été censurée, et le mot
+« explosion » du vocabulaire du moteur n'a jamais été employé pour
+classer un run. Dans tout l'espace exploré —
+$\delta\in[0{,}01;0{,}10]$, $\sigma\in[0;1]$, $K_0\in[2;200]$,
+$k\in\{2,\dots,10\}$, $\lambda\in[1;100]$ — la population est
+stationnaire (dérives relatives $\le4\,\%$ par fenêtre, demi-fenêtres
+cohérentes) et les réponses varient continûment.
+
+\paragraph{L'extinction est un artefact d'amorçage.} La population
+initiale étant vide, une simulation meurt si et seulement si le premier
+tirage de Poisson est nul, événement de probabilité $e^{-\lambda}$.
+Faits : sur la carte $\lambda\in\{1,2,3,5,10\}\times\sigma\in
+\{0{,}25;0{,}5;1\}$ (45 runs d'exploration), les seules extinctions
+(9 runs : deux graines sur trois à $\lambda=1$ et une sur trois à
+$\lambda=2$, identiques pour chaque $\sigma$ puisque l'événement ne
+dépend que du premier tirage de Poisson) surviennent au pas $t=1$ ; la cellule confirmatoire $\lambda=2$ (10 graines) donne 1
+extinction sur 10, toutes à $t=1$ (intervalle de Jeffreys à 95\,\% :
+$[0{,}01;0{,}38]$, compatible avec $e^{-2}=0{,}135$). Aucune extinction
+tardive n'a jamais été observée, même à $\lambda=1$, $\sigma=1$
+($\bar N\simeq4$ entités). Interprétation : les naissances de Poisson
+sont un flux entrant inconditionnel qui rend l'état vide inaccessible
+depuis tout état peuplé aux horizons étudiés.
+
+\paragraph{Pas de frontière d'effondrement.} En poussant $\sigma$
+jusqu'à $1$ (sondes de frontière), la durée de vie moyenne décroît
+continûment ($N/\lambda$ : $32{,}1\to3{,}5$ de $\sigma=0{,}05$ à $1$,
+au centre microscopique) sans transition brutale. La « carte des régimes »
+extinction/stationnaire/croissance demandée par le protocole se réduit
+donc, dans les plages explorées, à un unique régime stationnaire — un
+résultat négatif au sens du protocole, que nous considérons comme l'un
+des faits les plus importants de l'étude.
+
+\paragraph{Loi de Little vérifiée partout.} Dans les 594 runs, la
+population normalisée $\bar N/\lambda$ coïncide avec l'âge moyen au
+décès à mieux de $1\,\%$ (p.~ex. au centre : $14{,}75\pm0{,}02$ contre
+$14{,}77\pm0{,}02$ pas). La démographie se résume donc à une seule
+quantité : l'espérance de durée de vie, fixée par les paramètres
+microscopiques.
+
+\section{Le point de référence}
+\label{sec:reference}
+
+La table~\ref{tab:centre} donne l'état du centre de campagne
+($\lambda=30$, $\delta=0{,}05$, $\sigma=0{,}25$, $K_0=25$, $k=3$),
+utile comme baseline chiffrée pour M5. On note la hiérarchie des
+inégalités : le revenu (production plus intérêts reçus) est nettement
+plus inégalitaire (Gini $0{,}226$) que le capital ($0{,}074$), la
+quasi-totalité des entités étant simultanément endettées
+($99{,}6\,\%$) dans un réseau dense ($8{,}9$ prêts par tête).
+
+\begin{table}[tbh]
+\centering
+\begin{tabular}{@{}lr@{}}
+\toprule
+Grandeur (fenêtre $[1000,4000]$, 5 graines) & Valeur \\
+\midrule
+Population / $\lambda$ ($=$ durée de vie moyenne, pas) & $14{,}75\pm0{,}02$ \\
+Taux de mortalité (par tête et par pas) & $0{,}0677\pm0{,}0000$ \\
+Capital par tête (J) & $98{,}8\pm0{,}3$ \\
+Prêts par tête & $8{,}88\pm0{,}03$ \\
+Dette / capital & $1{,}39\pm0{,}05$ \\
+Part d'entités endettées & $0{,}996\pm0{,}002$ \\
+Taux d'intérêt moyen du carnet (par pas) & $0{,}0511\pm0{,}0004$ \\
+Gini du capital / du revenu & $0{,}074\pm0{,}004$ / $0{,}226\pm0{,}006$ \\
+Avalanches par pas (toutes tailles) & $15{,}03\pm0{,}05$ \\
+Rapport de branchement $b$ & $0{,}2968\pm0{,}0017$ \\
+Exposant pur $\hat\alpha$ ($s\ge2$) & $2{,}248\pm0{,}003$ \\
+Exposant tronqué / coupure $\hat s_c$ & $2{,}041\pm0{,}009$ / $51{,}6\pm1{,}8$ \\
+Susceptibilité $\langle s^2\rangle/\langle s\rangle$ & $7{,}70\pm0{,}07$ \\
+Taille maximale d'avalanche & $54\pm2$ \\
+Profondeur maximale de cascade & $10{,}4\pm1{,}1$ \\
+\bottomrule
+\end{tabular}
+\caption{Le centre de campagne, mesuré sur les cinq graines
+confirmatoires. Les incertitudes sont des écarts-types inter-graines.}
+\label{tab:centre}
+\end{table}
+
+\section{Sensibilité par paramètre}
+\label{sec:sensibilite}
+
+Nos conclusions croisent trois lectures exploratoires — courbes OAT
+appariées (graines 1--3), screening global sur hypercube latin
+(64 points $\times$ 3 graines, figure~\ref{fig:prcc}), surfaces de
+réponse quadratiques validées hors échantillon
+($R^2_{\mathrm{CV}}=0{,}84$--$1{,}00$ sauf profondeur maximale) — puis
+une confirmation indépendante (graines 11--15, $T=4000$) par
+contrastes appariés cellule$-$centre : sur 168 contrastes testés,
+\textbf{141 confirmés} (signe et ordre de grandeur reproduits,
+intervalle à 95\,\% excluant zéro), \textbf{19 effets nuls cohérents},
+\textbf{3 de signe reproduit mais d'amplitude décalée} et
+\textbf{5 non confirmés} (section~\ref{sec:negatifs}). La part de
+variance imputable aux graines est $\le9\,\%$ pour 13 métriques sur 16
+($\le0{,}2\,\%$ en démographie) ; elle atteint $17\,\%$ pour la
+coupure et $72\,\%$ pour la profondeur maximale, seules métriques
+réellement bruitées.
+
+\begin{figure}[tbh]
+\centering
+\includegraphics[width=0.72\textwidth]{lhs_prcc.png}
+\caption{Corrélations de rang partielles (PRCC) sur le plan LHS
+($\lambda=30$, $T=2000$, graines 1--3, 192 runs) : effet de chaque
+paramètre, les autres étant tenus fixes. Lecture par colonne :
+$\sigma$ domine la démographie et l'exposition ; $k$ domine le Gini du
+capital et la statistique des avalanches ; $K_0$ est le second levier
+démographique ; $\delta$ pèse surtout sur l'échelle du capital.}
+\label{fig:prcc}
+\end{figure}
+
+\subsection{$\sigma$ : le levier dominant, et une transition douce}
+\label{sec:sigma}
+
+\begin{figure}[tbh]
+\centering
+\includegraphics[width=\textwidth]{oat_sigma.png}
+\caption{Courbes OAT le long de $\sigma$ (12 métriques ; points bleus :
+graines ; carrés : moyenne $\pm$ écart-type). Toute la non-linéarité de
+la propagation se concentre dans $\sigma\in[0,0{,}2]$ ; la dette/capital
+est non monotone (maximum vers $\sigma\simeq0{,}15$--$0{,}2$).}
+\label{fig:oat-sigma}
+\end{figure}
+
+Faits confirmés (contrastes vs centre, $T=4000$) : passer de
+$\sigma=0{,}25$ à $0{,}10$ ajoute $+10{,}96\pm0{,}16$ pas de durée de
+vie ($N/\lambda$), $+0{,}086\pm0{,}003$ de rapport de branchement et
+$+0{,}149\pm0{,}084$ de dette/capital ; passer à $\sigma=0{,}50$
+retire $7{,}49\pm0{,}05$ pas, $0{,}48\pm0{,}13$ de dette/capital, et
+ajoute $+0{,}065\pm0{,}028$ de Gini. La figure~\ref{fig:oat-sigma}
+montre la structure : mortalité convexe croissante, ralentissement des
+courbes au-delà de $\sigma\simeq0{,}2$, et \emph{crête d'exposition} —
+la dette rapportée au capital culmine ($\simeq1{,}53$) là où les vies
+sont assez longues pour accumuler du carnet mais les écarts de capital
+déjà assez grands pour motiver de gros prêts.
+
+La zone $\sigma\in[0,0{,}2]$ est une \emph{transition douce mais
+rapide} entre deux comportements de cascade : au contrôle $\sigma=0$
+(confirmé sur 5 graines), $b=0{,}647\pm0{,}001$ et
+$\hat\alpha=1{,}801\pm0{,}007$ — cascades très propagatives dans une
+population homogène structurée par l'âge ($N/\lambda=37{,}0$, Gini
+$0{,}035$) — tandis que pour $\sigma\gtrsim0{,}2$, $b$ s'épingle sur un
+plateau $0{,}28$--$0{,}31$ et $\hat\alpha$ sur $2{,}2$--$2{,}3$,
+indépendamment de $\sigma$. Fait notable : le régime sans choc reste
+mortel et stationnaire — l'hétérogénéité d'âge suffit à alimenter
+défauts, insolvabilités et cascades. Aucune discontinuité n'a été
+détectée le long de cette transition (courbes continûment déformées,
+figures~\ref{fig:cut-k} et \ref{fig:cut-delta}).
+
+\subsection{$k$ : l'égalisateur, et le réglage fin des cascades}
+\label{sec:k}
+
+La démographie est quasi insensible à $k$ ($N/\lambda$ :
+$+0{,}69\pm0{,}06$ à $k=2$, $-0{,}27\pm0{,}07$ à $k=10$, contre une
+gamme de $\pm11$ pour $\sigma$), mais $k$ est le premier déterminant des
+inégalités et de la statistique fine : contrastes confirmés
+$\Delta\mathrm{Gini}(K)=+0{,}065\pm0{,}006$ ($k=2$) et
+$-0{,}064\pm0{,}005$ ($k=10$) ; $\Delta b=-0{,}060\pm0{,}003$ et
+$\Delta\hat\alpha=+0{,}178\pm0{,}012$ à $k=10$. Interprétation
+(hypothèse mécanique) : un échantillon plus grand sélectionne des
+paires riche--pauvre plus contrastées et tire les deux parties vers la
+cible commune $K^\ast=\sqrt{K_\ell K_b}$ ; le marché devient un
+égalisateur de capital (Gini $0{,}010$ à $k=10$), ce qui fragmente les
+expositions, raccourcit les cascades ($b$ plus faible) et raidit la
+queue ($\hat\alpha$ plus grand).
+
+\subsection{$K_0$ : protection log-linéaire des jeunes}
+
+$N/\lambda$ croît quasi linéairement en $\log K_0$ ($10{,}7$ à
+$K_0=5$, $19{,}9$ à $K_0=100$ ; contrastes confirmés
+$-4{,}17\pm0{,}04$ et $+4{,}97\pm0{,}07$). Le rapport de branchement
+est remarquablement insensible ($\pm0{,}012$ au plus), l'exposant
+$\hat\alpha$ décroît modérément avec $K_0$ ($+0{,}072$ à $K_0=5$,
+$-0{,}106$ à $K_0=100$). $K_0$ est donc un levier démographique quasi
+pur : il fixe la vulnérabilité de l'enfance des entités sans
+restructurer la propagation.
+
+\subsection{$\delta$ : une échelle du capital, avec une réserve}
+\label{sec:delta}
+
+$\delta$ contrôle fortement l'échelle du capital individuel
+($K$ par tête : $159$~J à $\delta=0{,}02$, $51$~J à $0{,}10$ ;
+PRCC $-0{,}89$) et l'exposition (dette/capital $-0{,}23\pm0{,}10$ à
+$\delta=0{,}10$), mais faiblement le reste : les contrastes confirmés
+sur $b$ et $\hat\alpha$ restent $\le0{,}006$ et $\le0{,}05$ en valeur
+absolue. Effet contre-intuitif confirmé : la durée de vie
+\emph{augmente} avec la dépréciation ($\Delta N/\lambda=
+-1{,}32\pm0{,}06$ à $\delta=0{,}02$, $+2{,}18\pm0{,}07$ à
+$\delta=0{,}10$). Hypothèse d'interprétation, à trancher par l'étude
+analytique de M5 : $\delta$ élevé rapproche les capitaux du point fixe
+individuel $K^\ast=(1/\delta)^2$ plus bas, augmente le produit marginal
+$1/(2\sqrt K)$ et le rendement de la production concave relativement au
+stock, ce qui raccourcit la convalescence des jeunes emprunteuses ; la
+dette nominale héritée pèse aussi moins longtemps puisque le carnet est
+plus petit devant les flux.
+
+\emph{Réserve importante} (coupe $\sigma\times\delta$,
+figure~\ref{fig:cut-delta}) : cette lecture « échelle » vaut pour
+$\sigma\ge0{,}2$, où les courbes de propagation ($b$, susceptibilité,
+Gini) s'effondrent sur une courbe maîtresse indépendante de $\delta$.
+Dans le régime faiblement bruité, $\delta$ module la propagation
+($b$ à $\sigma=0{,}05$ : $0{,}50$ pour $\delta\le0{,}05$ contre
+$0{,}43$ pour $\delta=0{,}10$ ; contraste confirmé de la cellule
+d'interaction $(\sigma{=}0{,}05,\delta{=}0{,}10)$ :
+$\Delta b=+0{,}134\pm0{,}003$ contre $+0{,}217\pm0{,}002$ pour
+$(\sigma{=}0{,}05,k{=}2)$).
+
+\subsection{$\lambda$ : un pur axe de taille finie}
+\label{sec:lambda}
+
+Les grandeurs intensives — $N/\lambda$, âge au décès, capital par
+tête, Gini, dette/capital, $b$ — sont stables à $\pm2\,\%$ de
+$\lambda=10$ à $100$ (et l'intensivité de $N/\lambda$ tient, à
+$\pm3\,\%$, jusqu'à $\lambda=2$ ; à $\lambda=1$, la seule graine
+survivante donne encore $15{,}4$). Les micro-écarts démographiques suggérés par
+l'exploration ($\mp1$--$2\,\%$) ne se sont \emph{pas} reproduits en
+confirmation (section~\ref{sec:negatifs}) : nous concluons à
+l'intensivité pure. Ce qui dépend de $\lambda$ est la physique de
+taille finie des avalanches (section~\ref{sec:avalanches}).
+
+\section{Interactions}
+\label{sec:interactions}
+
+\begin{figure}[tbh]
+\centering
+\includegraphics[width=\textwidth]{cut_sigma_k_lines.png}
+\caption{Coupe $\sigma\times k$ (moyennes $\pm$ écart-type,
+graines 1--3). Pas de croisement qualitatif : la transition en
+$\sigma$ n'est pas déplacée par $k$. L'interaction est quantitative :
+le Gini s'évase (à $\sigma=0{,}5$ : $0{,}24$ pour $k=2$ contre
+$0{,}02$ pour $k=10$), tandis que $N/\lambda$ et la dette/capital
+suivent des courbes maîtresses quasi indépendantes de $k$.}
+\label{fig:cut-k}
+\end{figure}
+
+\begin{figure}[tbh]
+\centering
+\includegraphics[width=\textwidth]{cut_sigma_delta_lines.png}
+\caption{Coupe $\sigma\times\delta$. À $\sigma\ge0{,}2$, $b$,
+susceptibilité et Gini s'effondrent sur une courbe commune (lecture
+« $\delta$ = échelle ») ; à $\sigma<0{,}15$, $\delta$ module la
+propagation. La dette/capital garde sa bosse basse-$\sigma$ à tout
+$\delta$, avec un niveau d'ensemble décroissant en $\delta$.}
+\label{fig:cut-delta}
+\end{figure}
+
+Les deux coupes bidimensionnelles ciblées après le screening
+(figures~\ref{fig:cut-k} et \ref{fig:cut-delta}) écartent tout
+croisement qualitatif : aucune interaction ne déplace la transition en
+$\sigma$, n'inverse un signe d'effet ni ne crée de nouveau régime.
+Deux interactions quantitatives sont établies et confirmées :
+
+\begin{enumerate}
+\item \textbf{Évasement des inégalités ($\sigma\times k$).} La
+  volatilité n'engendre d'inégalité durable que si le marché égalise
+  mal : le Gini croît fortement avec $\sigma$ à $k=2$ et reste presque
+  nul à $k=10$. Cellule confirmatoire $(\sigma{=}0{,}5,k{=}2)$ :
+  $\Delta\mathrm{Gini}=+0{,}169\pm0{,}042$ contre $+0{,}065$ pour
+  $\sigma=0{,}5$ seul et $+0{,}065$ pour $k=2$ seul — surenchère
+  claire au-delà de l'additivité.
+\item \textbf{Module basse-volatilité de $\delta$
+  ($\sigma\times\delta$).} Décrit en section~\ref{sec:delta} : l'effet
+  de $\delta$ sur la propagation est confiné au régime corrélé
+  $\sigma<0{,}15$.
+\end{enumerate}
+
+\section{Avalanches : loi tronquée, coupure de taille finie, plateau de
+branchement}
+\label{sec:avalanches}
+
+\begin{table}[tbh]
+\centering
+\small
+\begin{tabular}{@{}lrrrrrr@{}}
+\toprule
+Cellule & $\hat\alpha$ (pur) & $b$ & Vuong $z$ & $\hat s_c$ & $s_{\max}$ \\
+\midrule
+$\lambda=10$ & $2{,}312\pm0{,}013$ & $0{,}292\pm0{,}002$ & $-9{,}1$ (5/5 nég.) & $10{,}0$ & $29$ \\
+centre $\lambda=30$ & $2{,}248\pm0{,}003$ & $0{,}297\pm0{,}002$ & $-5{,}7$ (5/5 nég.) & $51{,}6$ & $54$ \\
+$\lambda=100$ & $2{,}318\pm0{,}003$ & $0{,}300\pm0{,}001$ & $+21{,}0$ (5/5 pos.) & n.i. & $110$ \\
+$\sigma=0$ & $1{,}801\pm0{,}007$ & $0{,}647\pm0{,}001$ & $-12{,}9$ & $80{,}7$ & $100$ \\
+$\sigma=0{,}10$ & $2{,}157\pm0{,}005$ & $0{,}383\pm0{,}001$ & $-6{,}8$ & $69{,}0$ & $60$ \\
+$\sigma=0{,}50$ & $2{,}207\pm0{,}008$ & $0{,}282\pm0{,}002$ & $-7{,}1$ & $43{,}7$ & $47$ \\
+$k=2$ & $2{,}217\pm0{,}008$ & $0{,}305\pm0{,}003$ & $-5{,}8$ & $57{,}6$ & $52$ \\
+$k=10$ & $2{,}426\pm0{,}012$ & $0{,}237\pm0{,}001$ & $-5{,}1$ & $37{,}9$ & $45$ \\
+$K_0=5$ / $K_0=100$ & $2{,}32$ / $2{,}14$ & $0{,}295$ / $0{,}309$ & nég. & $47$ / $55$ & $50$ / $57$ \\
+$\delta=0{,}02$ / $0{,}10$ & $2{,}28$ / $2{,}20$ & $0{,}301$ / $0{,}291$ & nég. & $56$ / $51$ & $51$ / $56$ \\
+\bottomrule
+\end{tabular}
+\caption{Lois de tailles d'avalanches par cellule confirmatoire
+(5 graines ; ajustements par graine puis agrégés ; fenêtre
+$[1000,4000]$, $s\ge2$, 4\,300--33\,000 événements par graine selon la
+cellule — 11\,000 au centre). $\hat\alpha$ : MLE discrète de la loi pure ; $b$ : rapport de
+branchement ; Vuong $z<0$ : la log-normale discrète bat la loi pure,
+$z>0$ l'inverse ; $\hat s_c$ : coupure de la loi tronquée
+(« n.i. » : non identifiable, coupure au-delà de la portée
+observable) ; $s_{\max}$ : plus grande avalanche (moyenne). Le rapport
+de vraisemblance de la loi tronquée contre la loi pure est significatif
+partout ($p<10^{-6}$ pour chaque graine).}
+\label{tab:lois}
+\end{table}
+
+\begin{figure}[tbh]
+\centering
+\includegraphics[width=\textwidth]{confirm_scaling.png}
+\caption{Scaling de taille finie ($\lambda=10/30/100$, un point par
+graine confirmatoire). Susceptibilité
+$\langle s^2\rangle/\langle s\rangle\propto\lambda^{0{,}51}$ ; taille
+maximale $\propto\lambda^{0{,}58}$ ; coupure ajustée
+$\hat s_c\propto\lambda^{1{,}5}$ entre $\lambda=10$ et $30$ (à
+$\lambda=100$ la coupure sort de la fenêtre observable et n'est pas
+tracée).}
+\label{fig:scaling}
+\end{figure}
+
+La table~\ref{tab:lois} et la figure~\ref{fig:scaling} rassemblent la
+statistique des cascades. Trois conclusions robustes :
+
+\begin{enumerate}
+\item \textbf{La loi de puissance tronquée est la description
+  cohérente à toutes les tailles.} À chaque graine de chaque cellule,
+  la loi tronquée bat significativement la loi pure (LRT,
+  $p<10^{-6}$). Le test de Vuong contre la log-normale discrète est
+  négatif à $\lambda\le30$ — signature d'une coupure serrée — et
+  bascule franchement en faveur de la loi de puissance à $\lambda=100$
+  ($z=+21{,}0\pm0{,}9$, 5/5 graines), où la coupure ajustée sort de la
+  fenêtre observable. La coupure croît vite avec la taille du système
+  ($\hat s_c$ : $10{,}0\to51{,}6$ pour $\lambda$ : $10\to30$, pente
+  log-log $1{,}5$), le maximum comme $\lambda^{0{,}58}$ et la
+  susceptibilité comme $\lambda^{0{,}51}$.
+\item \textbf{L'exposant asymptotique est
+  $\alpha\simeq2{,}31$.} L'exposant de la loi \emph{pure} paraît non
+  monotone en $\lambda$ ($2{,}312/2{,}248/2{,}318$) ; celui de la loi
+  \emph{tronquée} est monotone ($1{,}584\pm0{,}035$,
+  $2{,}041\pm0{,}009$, $2{,}313\pm0{,}003$) et rejoint la loi pure à
+  $\lambda=100$. La non-monotonie du fit pur est donc un artefact de
+  taille finie (compensation de la coupure par un raidissement), et la
+  meilleure estimation de l'exposant de grand système est
+  $\alpha=2{,}31$--$2{,}32$.
+\item \textbf{Le plateau $b\simeq0{,}30$ est institutionnel.} Hors
+  transition basse-$\sigma$, le rapport de branchement reste dans
+  $[0{,}28;0{,}31]$ pour toutes les valeurs de $\sigma\ge0{,}2$,
+  $\delta$, $K_0$ et $\lambda$ ; seuls $k$ (jusqu'à $0{,}237$ à
+  $k=10$) et le régime corrélé ($0{,}38$ à $\sigma=0{,}10$, $0{,}51$ à
+  $(\sigma{=}0{,}05,k{=}2)$, $0{,}647$ à $\sigma=0$) l'en délogent.
+  Ceci prolonge le résultat institutionnel de M4 (un round de marché
+  par tête épingle $b$) en précisant ses deux seules conditions de
+  validité : bruit suffisant et échantillon de marché petit.
+\end{enumerate}
+
+\section{Distributions individuelles et renouvellement}
+\label{sec:distributions}
+
+\begin{figure}[tbh]
+\centering
+\includegraphics[width=\textwidth]{confirm_gini_renewal.png}
+\caption{Gauche : trajectoires du Gini du capital après burn-in
+(5 graines par cellule, instantanés tous les 100 pas) — stationnaires
+et bien séparées. Droite : persistance du top 1\,\% du capital entre
+instantanés espacés de 100 pas (recouvrement de Jaccard moyen).}
+\label{fig:gini}
+\end{figure}
+
+\begin{figure}[tbh]
+\centering
+\includegraphics[width=\textwidth]{confirm_ccdf.png}
+\caption{Fonctions de survie (CCDF) du capital et du revenu brut au
+dernier instantané, une courbe par graine (jamais de fusion
+inter-graines). Le capital est distribué de façon compacte (l'entité
+meurt avant d'accumuler) ; le revenu porte une queue plus étalée,
+d'où son Gini plus élevé. À $k=10$ le support du capital devient très
+étroit (homogénéisation par le marché) ; à $\sigma=0$ la CCDF du revenu
+présente un épaulement lié aux revenus d'intérêts des prêteuses âgées.}
+\label{fig:ccdf}
+\end{figure}
+
+Les figures~\ref{fig:gini} et \ref{fig:ccdf} résument le volet
+distributionnel. Faits : le Gini du capital est stationnaire dans
+toutes les cellules et hiérarchisé exactement comme la théorie des
+rôles le prédit ($0{,}010$ à $k=10$ ; $0{,}035$ à $\sigma=0$ ;
+$0{,}074$ au centre ; $0{,}13$--$0{,}14$ à $\sigma=0{,}5$ et à
+$k=2$). Le haut de la distribution se renouvelle intégralement à
+l'échelle de 100 pas (recouvrement de Jaccard nul), sauf faible
+persistance dans les régimes à vies longues ($0{,}078\pm0{,}006$ à
+$\sigma=0$ ; $0{,}047\pm0{,}013$ à $\sigma=0{,}10$) : la persistance
+au sommet est bornée par la durée de vie individuelle — le modèle n'a
+ni héritage ni transmission, donc pas de dynasties. Le contrôle par
+l'âge réserve une surprise : la corrélation de Spearman âge--capital au
+dernier instantané est \emph{modérée partout} ($0{,}15$--$0{,}29$) et
+gouvernée par $k$ ($0{,}29\pm0{,}06$ à $k=2$ ; $0{,}01\pm0{,}03$ à
+$k=10$) bien plus que par $\sigma$ ($0{,}23$ à $\sigma=0$, $0{,}20$ à
+$\sigma=0{,}5$) : même sans choc, le marché du crédit découple le
+capital de l'âge en tirant prêteuses et emprunteuses vers des cibles
+communes — l'interprétation « cohortes » des distributions ne doit donc
+pas être poussée au-delà de ce que cette corrélation autorise. Enfin,
+aucune entité survivante ne porte de valeur nette
+négative (variance nulle sur 594 runs) : c'est un invariant de la règle
+de faillite, vérifié plutôt qu'une métrique.
+
+\section{La valeur nette : inégalités de bilan, cycle de vie du crédit et
+bilans de décès}
+\label{sec:nw}
+
+La valeur nette $\NW_i=K_i+C_i-D_i$ est la variable d'état de la
+mortalité ($\NW<0$ déclenche la faillite) ; c'est aussi la seule
+grandeur individuelle qui garde la mémoire des positions de crédit. Son
+agrégat est identiquement le capital total
+($\sum_i C_i=\sum_i D_i$, donc $\sum\NW=\sum K$) : toute l'information
+est \emph{distributionnelle}. Cette section — extension ajoutée après
+l'audit, sur les mêmes runs pré-enregistrés (aucune simulation
+nouvelle ; tables \path{results/summary/nw_*.csv}) — lui est dédiée.
+
+\begin{figure}[tbh]
+\centering
+\includegraphics[width=\textwidth]{nw_sensibilite.png}
+\caption{Sensibilité des bilans (OAT, graines 1--3, instantané final,
+exploratoire). Haut : Gini de la valeur nette contre Gini du capital le
+long de $\sigma$, $k$ et $K_0$ ; bas : le long de $\delta$ ; part
+d'entités nettes débitrices et corrélation de rang entre position nette
+$C-D$ et âge le long de $\sigma$ ; décomposition des causes de décès
+avec $\sigma$ prolongé jusqu'à 1 par les sondes de frontière (deux
+graines au-delà de $0{,}5$).}
+\label{fig:nw-sens}
+\end{figure}
+
+\begin{figure}[tbh]
+\centering
+\includegraphics[width=\textwidth]{nw_structure.png}
+\caption{Structure de la valeur nette (cellules confirmatoires, graines
+11--15, $T=4000$). (a) CCDF de $\NW$, une courbe par graine : la
+cellule $\sigma=0$ développe une queue de créancières un ordre de
+grandeur au-delà des autres. (b) Médiane de $(C-D)/K$ par tranche
+d'âge : plongeon initial vers $-0{,}85$ puis remontée, avec passage
+créancier net vers 150--200 pas à $\sigma=0$. (c) Densité de $\NW$ au
+décès (centre) par cause ; la masse positive correspond à la convention
+de file décrite dans le texte. (d) Synthèse par cellule.}
+\label{fig:nw-struct}
+\end{figure}
+
+\subsection{L'inégalité est dans les bilans, pas dans le capital}
+
+Fait central (figure~\ref{fig:nw-sens}) : le Gini de la valeur nette
+est partout un ordre de grandeur au-dessus de celui du capital
+($0{,}435\pm0{,}006$ contre $0{,}074\pm0{,}004$ au centre), et les
+deux réagissent \emph{différemment} aux paramètres :
+
+\begin{itemize}
+\item le long de $\sigma$, ils évoluent \textbf{en sens opposés} : le
+  Gini de $K$ monte ($0{,}04\to0{,}12$) tandis que celui de $\NW$
+  \emph{descend} ($0{,}68\to0{,}42$, PRCC $-0{,}77$ sur le plan LHS).
+  Mécanisme (lu sur la figure~\ref{fig:nw-struct}a) : l'inégalité de
+  bilan est portée par les vieilles créancières ; à $\sigma=0$ leur
+  accumulation n'est jamais interrompue et la CCDF de $\NW$ développe
+  une queue jusqu'à $\simeq4\,600$~J (contre $\simeq560$~J au centre),
+  d'où un Gini de $0{,}691\pm0{,}005$ ; le choc, en tuant tôt, tronque
+  cette accumulation ;
+\item le long de $k$, le contraste est encore plus net : $k$ écrase
+  l'inégalité de capital ($0{,}139\to0{,}010$ de $k=2$ à $10$) mais
+  \textbf{ne touche pas} l'inégalité de bilan (Gini $\NW$ plat,
+  $0{,}457\to0{,}438$, contraste confirmé nul-cohérent) : le marché
+  égalise le stock productif, pas les positions accumulées ;
+\item $K_0$ réduit modérément le Gini de $\NW$ (PRCC $-0{,}70$ ;
+  $0{,}506$ à $K_0=5$, $0{,}376$ à $K_0=100$) en relevant le bas de la
+  distribution ; $\delta$ agit peu ($0{,}449\to0{,}394$).
+\end{itemize}
+
+Sur les 70 contrastes appariés de cette extension (5 métriques de
+bilan $\times$ 14 cellules), 24 sont confirmés, 29 sont des effets nuls
+cohérents, 15 sont sans contrepartie exploratoire (cellules
+d'interaction hors axes OAT) et 2 seulement sont discordants (part
+nette débitrice à $\lambda=10$, amplitude du Gini $\NW$ à $k=2$) —
+tous deux de petite taille.
+
+\subsection{Cycle de vie de la position nette}
+
+La position nette $x_i=C_i-D_i$ suit un cycle de vie stéréotypé
+(figure~\ref{fig:nw-struct}b) : une entité naît sans contrat, plonge
+immédiatement en position débitrice (médiane de $x/K$ par tranche
+d'âge $\simeq-0{,}85$ chez les jeunes — l'emprunt initial vers la
+cible $K^\ast$), puis remonte régulièrement, les intérêts perçus et
+prêtés composant une position créancière croissante ($x/K$ atteint
+$+2{,}5$ à $3$ aux âges de 2\,000 pas du régime $\sigma=0$). Au centre,
+$62{,}3\,\%$ des entités vivantes sont nettes débitrices et la
+corrélation de rang entre $x$ et l'âge vaut $0{,}52$ ; ces deux nombres
+sont remarquablement stables le long de $\delta$, $K_0$, $k$ et
+$\lambda$ ($0{,}59$--$0{,}64$ de part débitrice) et ne bougent qu'avec
+$\sigma$ (part débitrice $0{,}82$ à $\sigma=0$ ; corrélation $0{,}61\to
+0{,}36$ de $\sigma=0$ à $0{,}5$). C'est le pendant « bilan » du
+résultat de la section précédente : le capital oublie l'âge (le marché
+l'égalise), la valeur nette s'en souvient.
+
+\subsection{Bilans de décès et invariance d'échelle du trou
+d'insolvabilité}
+
+Au centre, $93{,}5\,\%$ des morts partent en valeur nette négative
+(médiane $-8{,}5$~J, 5\textsuperscript{e} centile $-31$~J ;
+figure~\ref{fig:nw-struct}c). Fait quantitatif nouveau : la profondeur
+médiane du trou, \emph{rapportée au capital par tête}, vaut
+$-0{,}086\pm0{,}002$ dans les neuf cellules confirmatoires couvrant
+$\delta$, $K_0$, $k$ et $\lambda$ — elle est invariante le long de tous
+les axes d'échelle et ne dépend que de $\sigma$ ($-0{,}018$ à
+$\sigma=0$ ; $-0{,}046$ à $0{,}10$ ; $-0{,}086$ à $0{,}25$ ; $-0{,}138$
+à $0{,}50$). Cette invariance renforce la lecture « $\delta$ et $K_0$
+fixent les unités, $\sigma$ fixe la forme » et fournit une prédiction
+falsifiable précise à l'étude analytique de M5.
+
+La masse de décès à $\NW\ge0$ ($6{,}5\,\%$ au centre) n'est pas un
+paradoxe mais la trace mesurable d'une convention du moteur, documentée
+dans le rapport de mécanique : les membres d'une même file de faillite
+sont tués même si l'annulation d'une dette par une faillite antérieure
+de la même file a rétabli leur bilan entre-temps.
+
+\subsection{Le canal de liquidité est silencieux : M4B est une
+contagion de bilan pure}
+
+Le moteur possède deux causes racines de faillite : le défaut de
+service (liquidité) et l'insolvabilité ($\NW<0$). Fait négatif fort,
+visible sur le panneau des causes de la figure~\ref{fig:nw-sens} : dans
+\emph{toutes} les plages de l'étude ($\sigma\le0{,}5$), le canal de
+liquidité est inactif — zéro défaut de service par pas et zéro mort de
+cause « liquidité » après burn-in, sur les 594 runs. Il ne s'éveille
+qu'aux sondes de volatilité extrême ($\sigma\ge0{,}85$ :
+$0{,}05$--$0{,}19$ défaut par pas), et même là il reste marginal
+($<0{,}4\,\%$ des décès). Toute la mortalité de M4B est donc pilotée
+par la valeur nette : insolvabilité directe (part croissante avec
+$\sigma$ : $35\,\%$ des décès à $\sigma=0$, $72\,\%$ à $0{,}5$) ou
+induite en cascade (le complément, égal par construction au rapport de
+branchement $b$). Conséquence pour la réduction : dans ces plages, la
+machinerie de défaut de service est un garde-fou dormant ; M5 devra
+décider en connaissance de cause si le canal de liquidité doit être
+conservé (il peut se réactiver si $\gamma\ne1/2$ change l'échelle des
+taux) et l'étude analytique dispose du seuil d'activation empirique
+($\sigma\simeq0{,}85$ à la configuration centrale).
+
+\section{Cycles de l'activité : croissance et récession}
+\label{sec:cycles}
+
+Cette section — seconde extension post-audit, sur les mêmes runs
+pré-enregistrés (tables \path{results/summary/cycles_*.csv}) — étudie
+les périodes de croissance et de récession de l'activité agrégée : leur
+fréquence temporelle, la distribution de leurs tailles et leurs
+caractéristiques, en fonction des paramètres.
+
+\paragraph{Définitions.} La série primaire est la production totale par
+pas $X_t=\sum_i\sqrt{K_i}$ (l'analogue du PIB ; la population et le
+capital total donnent des lectures cohérentes), analysée en
+$y_t=\log X_t$ sur la fenêtre $[T/4,\,T]$. Un \emph{épisode} est une
+suite maximale de variations de même signe de $y_t$ (expansion : hausses
+consécutives ; récession : baisses ; une variation nulle prolonge
+l'épisode). Chaque épisode a deux tailles : sa \emph{taille temporelle}
+(durée en pas) et sa \emph{taille indicielle} (amplitude
+$A=|y_{\text{fin}}-y_{\text{début}}|$, en log-niveau). La fréquence
+temporelle est mesurée par le nombre d'épisodes par millier de pas et
+par le temps de mémoire $\tau_{\mathrm{int}}$ (autocorrélation intégrée
+de $y$). Les mêmes statistiques sont recalculées sur la moyenne mobile
+à $w=5$ et $w=25$ pas (robustesse et structure multi-échelle). Sous
+l'hypothèse nulle d'accroissements i.i.d., la durée moyenne d'un
+épisode brut vaut exactement 2 pas et la CCDF des durées est
+géométrique.
+
+\begin{figure}[tbh]
+\centering
+\includegraphics[width=\textwidth]{cycles_sensibilite.png}
+\caption{Sensibilité des cycles (OAT, graines 1--3 ; dernier panneau :
+cellules confirmatoires). Asymétrie, autocorrélation et raideur
+relative des récessions le long de $\sigma$ ; volatilité de la
+croissance (minimum intérieur vers $\sigma\simeq0{,}1$) ; temps de
+mémoire de l'activité comparé à la durée de vie $N/\lambda$ ;
+volatilité contre taille du système (pente log-log $-0{,}50$).}
+\label{fig:cycles-sens}
+\end{figure}
+
+\begin{figure}[tbh]
+\centering
+\includegraphics[width=\textwidth]{cycles_structure.png}
+\caption{Structure des cycles (cellules confirmatoires). Extraits de
+trajectoires (dents de scie du régime corrélé) ; CCDF des durées de
+phases contre la référence géométrique i.i.d. (une courbe par graine) ;
+taille indicielle contre taille temporelle (lissage $w=5$) ; signatures
+par cellule.}
+\label{fig:cycles-struct}
+\end{figure}
+
+\subsection{Fréquences et tailles : des cycles courts, sans phases
+longues}
+
+Faits (centre, 5 graines) : l'activité alterne $487\pm7$ épisodes par
+millier de pas (un cycle complet expansion$+$récession dure en moyenne
+$4{,}1$ pas) ; les durées moyennes sont $2{,}11\pm0{,}02$ pas
+(expansions) et $2{,}00\pm0{,}06$ (récessions), avec des maxima de
+$10$--$13$ pas sur 3\,000 pas observés : \textbf{aucune phase longue
+n'existe} à l'échelle brute, et les CCDF des durées restent au niveau
+ou en dessous de la référence géométrique i.i.d.
+(figure~\ref{fig:cycles-struct}) — les phases sont plutôt \emph{plus
+courtes} que le hasard, jamais plus longues. La taille indicielle croît
+avec la taille temporelle (exposant descriptif
+$\simeq1{,}7$--$1{,}8$ à $w=5$, stable entre cellules ; ce coefficient
+décrit la sélection d'épisodes monotones et ne doit pas être lu comme
+un exposant de Hurst). En lissant, des oscillations plus lentes
+apparaissent (cycle moyen $9$--$10$ pas à $w=5$, $12$--$19$ à $w=25$,
+maximal près du centre et réduit aux deux extrêmes de $\sigma$), mais
+la mémoire vraie de l'activité est portée par
+$\tau_{\mathrm{int}}$ : $23{,}5\pm0{,}6$ pas au centre,
+$43{,}5\pm8{,}7$ à $\sigma=0$, $11{,}6$ à $\sigma=0{,}5$.
+
+\paragraph{L'horloge des fluctuations est démographique.} Sur les 13
+cellules confirmatoires, $\tau_{\mathrm{int}}$ suit la durée de vie
+moyenne $N/\lambda$ (corrélation de rang $0{,}93$, rapport
+$\tau_{\mathrm{int}}/(N/\lambda)$ entre $1{,}2$ et $1{,}8$ ;
+figure~\ref{fig:cycles-sens}, panneau central bas) : le temps de
+renouvellement de la population fixe la persistance des niveaux
+d'activité. C'est le pendant temporel de la loi de Little.
+
+\subsection{Volatilité : deux sources de bruit, un minimum intérieur}
+
+La volatilité de la croissance $\mathrm{sd}(\Delta\log X)$ est pilotée
+par $\sigma$ (PRCC $+0{,}97$) et par $K_0$ ($-0{,}81$), avec
+$R^2_{\mathrm{CV}}=0{,}985$, et décroît avec la taille exactement comme
+$\lambda^{-0{,}50}$ (mesuré $-0{,}50$, figure~\ref{fig:cycles-sens}) :
+les fluctuations agrégées sont des sommes d'aléas quasi indépendants.
+Fait non trivial : elle est \emph{non monotone} en $\sigma$, avec un
+minimum intérieur vers $\sigma\simeq0{,}1$ ($0{,}0119$ contre
+$0{,}0131$ à $\sigma=0$ et $0{,}0366$ à $\sigma=0{,}5$, valeurs OAT).
+Lecture : à faible $\sigma$ le bruit agrégé est \emph{endogène} —
+généré par les avalanches de faillites — tandis qu'à fort $\sigma$ il
+est \emph{exogène} (chocs individuels) ; le minimum sépare les deux
+régimes de bruit, au même endroit que la transition de propagation de
+la section~\ref{sec:sigma}.
+
+\subsection{Asymétrie de krach : une signature du régime corrélé, à
+l'échelle des avalanches}
+
+Faits confirmés (graines 11--15 ; 33 contrastes confirmés, 49 nuls
+cohérents, 6 discordants mineurs, 24 sans contrepartie exploratoire) :
+
+\begin{itemize}
+\item la skewness de $\Delta\log X$ est \emph{toujours négative} (les
+  baisses brutales dominent les hausses brutales) et son ampleur croît
+  quand $\sigma$ décroît : $-0{,}26\pm0{,}04$ au centre,
+  $-0{,}83\pm0{,}03$ à $\sigma=0$ ; elle s'atténue aussi avec la taille
+  ($-0{,}46$ à $\lambda=10$, $-0{,}20$ à $\lambda=100$ : l'asymétrie de
+  krach est un effet de taille finie des avalanches) ;
+\item les récessions sont \emph{plus courtes} ($1{,}62$ contre
+  $2{,}01$ pas à $\sigma=0$) et \emph{plus raides} que les expansions
+  (rapport de pentes $1{,}24\pm0{,}02$ à $\sigma=0$, $1{,}06\pm0{,}03$
+  au centre, $\to1{,}04$ à $\sigma=0{,}5$) — le profil « montée lente,
+  chute brutale » des dents de scie visibles sur la
+  figure~\ref{fig:cycles-struct} ;
+\item l'autocorrélation des accroissements passe de $-0{,}16$
+  ($\sigma=0$ : retour à la moyenne prononcé, chaque krach étant suivi
+  de reconstruction) à $\simeq+0{,}05$ pour $\sigma\ge0{,}2$ : le
+  croisement de zéro a lieu vers $\sigma\simeq0{,}15$, dans la zone de
+  transition déjà identifiée.
+\end{itemize}
+
+Contrôle d'échelle : cette asymétrie vit à l'échelle brute, celle des
+cascades intra-pas — le rapport de pentes tombe à $1{,}02$--$1{,}04$
+dès $w=5$ et à $\simeq1{,}00$ à $w=25$. C'est une propriété
+« microtemporelle » du mécanisme d'avalanche, pas une asymétrie de
+grands cycles lissés.
+
+\subsection{Portée pour M5}
+
+Ces statistiques (volatilité, skewness, ACF1, taux d'épisodes,
+$\tau_{\mathrm{int}}$, rapports de raideur) constituent la baseline
+« conjoncturelle » de M4B : c'est contre elles que la future expérience
+d'effet rebond de M5 — qui modifiera un paramètre \emph{en cours de
+run} — devra comparer sa réponse dynamique et son contrefactuel
+statique. La prédiction falsifiable centrale léguée à l'étude
+analytique est le couple : $\tau_{\mathrm{int}}\propto$ durée de vie
+(horloge démographique) et minimum intérieur de volatilité à la
+frontière bruit endogène/exogène.
+
+\section{Résultats négatifs et effets non confirmés}
+\label{sec:negatifs}
+
+Conformément au protocole, nous listons ce qui n'a \emph{pas} été
+observé ou confirmé :
+
+\begin{itemize}
+\item \textbf{Aucune extinction dynamique, aucune croissance soutenue,
+  aucune censure} par le garde-fou dans tout l'espace exploré
+  (section~\ref{sec:regimes}).
+\item \textbf{Micro-dépendances de la démographie en $\lambda$ non
+  confirmées} : l'exploration suggérait $N/\lambda$ légèrement
+  décroissant de $\lambda=10$ à $100$ ($-1$ à $-2\,\%$) ; la
+  confirmation donne des signes opposés et de plus faibles amplitudes
+  ($+0{,}163\pm0{,}053$ à $\lambda=10$, $-0{,}017\pm0{,}027$ à
+  $\lambda=100$). Verdict : pas de dépendance fiable ; l'intensivité
+  est la description correcte.
+\item \textbf{Coupure $\hat s_c$ à $k=2$ non confirmée en amplitude}
+  (contraste exploratoire $-3{,}2$, confirmé $+6{,}0\pm2{,}8$) : la
+  coupure est la métrique la plus bruitée (variance graines $17\,\%$)
+  et ne doit être lue qu'à travers son scaling en $\lambda$.
+\item \textbf{Profondeur maximale de cascade non prédictible} par les
+  paramètres ($R^2_{\mathrm{CV}}=0{,}09$ ; $72\,\%$ de variance
+  stochastique) : nous ne rapportons aucune conclusion paramétrique sur
+  cette métrique extrême.
+\item \textbf{Trois amplitudes décalées} (signe correct, rapport hors
+  $[0{,}5;2]$) : dette/capital à $\sigma=0$, coupure à $K_0=100$,
+  prêts par tête à $k=2$ — toutes portées par les métriques les plus
+  variables ; aucune n'inverse une conclusion.
+\end{itemize}
+
+\section{Recommandations de réduction pour M5}
+\label{sec:reduction}
+
+Rappel : la présente étude n'implémente aucune réduction ; les
+décisions appartiennent à la conception de M5.
+
+\begin{enumerate}
+\item \textbf{$\sigma$, $k$, $K_0$ : à conserver comme paramètres
+  scientifiques.} Ils portent des effets forts, distincts et
+  confirmés sur trois familles de réponses différentes (démographie ;
+  inégalités et statistique fine ; protection démographique).
+\item \textbf{$\delta$ : candidat à l'absorption par adimensionnement,
+  avec une réserve explicite.} À $\sigma\ge0{,}2$, $\delta$ agit comme
+  l'échelle du capital (point fixe individuel $K^\ast=(1/\delta)^2$
+  avec $\alpha=1$) : M5 pourrait le fixer par convention d'unités
+  (p.~ex. mesurer $K$ en unités de $K^\ast$, ce qui ferait de
+  $K_0/K^\ast$ le vrai paramètre) — à condition de vérifier
+  analytiquement que le taux du marché et le service des intérêts se
+  renormalisent de même. Deux faits empêchent une suppression
+  aveugle : l'effet démographique modéré mais réel de $\delta$
+  ($N/\lambda$ : $13{,}5\to16{,}9$ sur la plage) et son module de
+  propagation dans le régime $\sigma<0{,}15$.
+\item \textbf{$\lambda$ : à traiter comme taille du système, pas comme
+  levier économique.} Toutes les grandeurs intensives en sont
+  indépendantes ; seuls les effets de taille finie (coupure, maximum,
+  susceptibilité) en dépendent, avec des pentes désormais chiffrées.
+  L'extinction d'amorçage $e^{-\lambda}$ doit être traitée comme une
+  condition initiale, pas comme un phénomène.
+\item \textbf{\code{pop\_max}, tolérances, $\alpha=1$ : conventions
+  confirmées.} Le garde-fou n'a jamais été actif ; le maintenir
+  n'introduit aucun biais dans les plages explorées.
+\item \textbf{Simplifications de mesure} : la profondeur maximale et la
+  coupure ajustée sont trop bruitées pour servir d'observables de
+  pilotage ; privilégier $b$, $\hat\alpha$ (avec taille de système
+  déclarée), la susceptibilité et $N/\lambda$.
+\end{enumerate}
+
+\section{Feuille de route M5 (hors périmètre de la présente étude)}
+\label{sec:m5}
+
+\subsection{Exposant de concavité $\gamma$}
+
+M5 introduira $F_\gamma(K)=\alpha K^\gamma$, $0<\gamma<1$
+($\gamma=1/2$ : cas M4B). Les baselines utiles pour isoler son effet
+sont posées ici : les valeurs de référence de la
+table~\ref{tab:centre} ; l'échelle individuelle attendue
+$K^\ast=(\alpha/\delta)^{1/(1-\gamma)}$, qui redonne $(1/\delta)^2$ à
+$\gamma=1/2$ et devrait gouverner le capital par tête ; le produit
+marginal $\gamma\alpha K^{\gamma-1}$ qui fixera les taux du marché ;
+et les signatures de taille finie de la figure~\ref{fig:scaling}, à
+re-mesurer à $\gamma\ne1/2$ pour tester si l'exposant $\alpha$ des
+avalanches et le plateau $b\simeq0{,}30$ sont bien institutionnels
+(règles du marché) plutôt que productifs.
+
+\subsection{Variation dynamique et effet rebond}
+
+La présente étude n'a fait varier que des constantes entre runs et ne
+peut donc rien affirmer sur un effet rebond au sens de Sorrell et
+Dimitropoulos (2008). Pour le mesurer, M5 devra définir : (i) une
+\emph{amélioration d'efficacité} (candidats naturels : $\alpha$ ou
+$\gamma$, modifiés en cours de run) ; (ii) la \emph{ressource}
+consommée et le \emph{service} rendu — dans M4B, la production
+$\sum\sqrt{K_i}$ et le capital total jouent ces rôles mais ne sont pas
+distingués d'une consommation ; (iii) un \emph{contrefactuel statique}
+« sans rebond » simulé en parallèle (mêmes graines, paramètre gelé),
+auquel comparer la réponse dynamique. Les séries nécessaires
+(production, capital, flux d'intérêts, volumes de crédit, démographie)
+sont déjà enregistrées par le moteur à chaque pas ; il manque
+uniquement la machinerie de changement de paramètre en cours de run et
+la définition du service. Une simple hausse de population ou de
+production après un changement ne suffira pas : il faudra l'écart au
+contrefactuel.
+
+\subsection{Étude analytique}
+
+Les faits empiriques suivants contraignent déjà la théorie à venir et
+lui fournissent des prédictions falsifiables :
+
+\begin{itemize}
+\item \emph{Démographie} : $N/\lambda=\E[\text{âge au décès}]$ (loi de
+  Little, vérifiée partout) ; l'analyse doit produire l'espérance de
+  durée de vie en fonction de $(\sigma,K_0,\delta,k)$ — convexité en
+  $\sigma$, log-linéarité en $K_0$, croissance modérée en $\delta$.
+\item \emph{Point fixe du capital} : sans crédit,
+  $\delta K=\alpha\sqrt K$ donne $K^\ast=(\alpha/\delta)^2$ ; le
+  capital par tête observé ($98{,}8$~J au centre) est bien en dessous
+  ($400$~J), à hauteur de l'âge fini des entités — l'analyse de la
+  dynamique moyenne doit expliquer ce facteur.
+\item \emph{Stationnarité inconditionnelle} : aucune bifurcation
+  extinction/croissance dans les plages explorées ; l'état vide n'est
+  accessible que par l'amorçage ($e^{-\lambda}$). Une théorie qui
+  prédirait une transition de phase démographique dans ces plages
+  serait falsifiée.
+\item \emph{Bilans} : la mortalité est entièrement pilotée par la
+  valeur nette dans les plages étudiées (canal de liquidité silencieux
+  sous $\sigma\simeq0{,}85$) ; la profondeur médiane du trou
+  d'insolvabilité vaut $-8{,}6\,\%\pm0{,}2$ du capital par tête le long
+  de $\delta$, $K_0$, $k$ et $\lambda$, et ne dépend que de $\sigma$ —
+  deux prédictions falsifiables directes pour la théorie ; le cycle de
+  vie débiteur$\to$créancier (plongeon initial à $x/K\simeq-0{,}85$,
+  remontée par les intérêts composés) devrait se déduire de la règle de
+  marché et du service des intérêts.
+\item \emph{Cascades} : loi tronquée avec
+  $\alpha_\infty\simeq2{,}31$, $\hat s_c$ croissant vite avec
+  $\lambda$ (pente $\simeq1{,}5$ sur $[10,30]$),
+  $s_{\max}\propto\lambda^{0{,}58}$,
+  $\chi\propto\lambda^{0{,}51}$ ; plateau institutionnel
+  $b\simeq0{,}30$ dont la théorie doit dériver la valeur depuis la
+  règle « un round par tête », et ses deux conditions de sortie
+  ($\sigma\lesssim0{,}2$, grand $k$).
+\item \emph{Distinction bifurcation / transitoire / censure} : dans
+  M4B, les trois diagnostics prévus (plafonds multiples, pentes,
+  encadrement de frontière) n'ont jamais eu à s'appliquer ; M5 devra
+  les conserver au cas où $\gamma>1/2$ ouvrirait un régime de
+  croissance réelle.
+\end{itemize}
+
+\section{Limites}
+\label{sec:limites}
+
+(i) Les plages, bien qu'élargies par les sondes ($\sigma$ jusqu'à 1,
+$\delta$ jusqu'à $0{,}01$, $K_0$ de 2 à 200), restent finies ; nous ne
+nous prononçons pas au-delà, notamment pour $\delta\to0$ strict ou
+$K_0\to\infty$. (ii) L'estimation de la coupure est peu fiable cellule
+par cellule (variance graines $17\,\%$) ; seules ses tendances de
+taille sont robustes ; la pente $1{,}5$ de $\hat s_c(\lambda)$ ne
+repose que sur deux tailles identifiables. (iii) Le plan LHS est un
+plan de screening : les PRCC et importances n'ont pas le statut
+d'indices de Sobol. (iv) Les horizons vont jusqu'à $T=8000$ ; des
+métastabilités au-delà ne peuvent être exclues, quoique rien ne les
+suggère. (v) Les ajustements de lois portent sur $s\ge2$ ; les morts
+isolées (taille 1), majoritaires, sont décrites par le taux de
+mortalité, pas par la loi de puissance. (vi) La comparaison
+exploration/confirmation repose sur des panels de graines disjoints
+mais de petite taille (3 et 5) ; les intervalles reflètent cette
+taille.
+
+\section{Conclusion}
+
+La sensibilité de M4B se résume en une phrase par paramètre : $\sigma$
+fixe la durée de vie et l'exposition, $k$ fixe les inégalités de
+capital et le détail des cascades, $K_0$ protège les jeunes, $\delta$
+fixe l'unité de capital (sauf à très faible bruit), $\lambda$ fixe la
+taille du système ; c'est la valeur nette — non le capital — qui
+porte l'inégalité, la mémoire du cycle de vie et la totalité de la
+mortalité dans les plages étudiées ; et la conjoncture agrégée bat au
+rythme du renouvellement démographique, avec pour seule signature
+singulière l'asymétrie de krach héritée des avalanches. Le modèle est partout stationnaire, ses signatures critiques
+(loi tronquée, coupure croissante avec la taille,
+$\alpha_\infty\simeq2{,}31$, plateau $b\simeq0{,}30$) sont robustes aux
+graines, aux fenêtres et aux horizons, et ses seules « frontières »
+sont un artefact d'amorçage et une transition douce vers le régime
+corrélé sans choc. Ces éléments, avec les baselines chiffrées de la
+table~\ref{tab:centre}, forment le socle de comparaison pour M5.
+
+\appendix
+
+\section{Traçabilité}
+\label{sec:annexe}
+
+Chaque valeur et figure de ce rapport provient des runs listés
+ci-dessous (594 runs distincts ; une cellule partagée par plusieurs
+plans apparaît sous chacun, 680 entrées). Les figures OAT/LHS/coupes
+agrègent les plans du même nom ; les tables~\ref{tab:centre} et
+\ref{tab:lois} et les figures de confirmation proviennent des lots
+Simulation Lab (préfixe de plan « confirm »), consultables dans
+l'interface avec leurs figures et marqués « à conserver ».
+
+\input{annexe_tracabilite_finale}
+
+\end{document}

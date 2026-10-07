@@ -46,7 +46,7 @@ Critiques lues:
 - `reviews/review_critique_paper_v3_wip_criticality.txt`
 - `reviews/review_v2_round2.txt`
 - `reviews/review_v3_round2.txt`
-- `Modèle_sans_banque_wip/critique_exhaustive_modele.txt`
+- `anciens_modeles/Modèle_sans_banque/critique_exhaustive_modele.txt`
 
 ## Conclusions techniques actuelles
 

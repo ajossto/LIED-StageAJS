@@ -25,6 +25,14 @@
 \hypersetup{colorlinks=true,linkcolor=blue!45!black,urlcolor=blue!45!black}
 \setlist{nosep}
 \newcommand{\code}[1]{\texttt{#1}}
+% Toutes les figures sont ENGENDRÉES par scripts/make_figures.py depuis
+% results/, et déposées dans report/figures/ (versionné). Les valeurs qu'elles
+% annotent sont confrontées aux macros de numbers.tex par tests/test_figures.py.
+\newcommand{\figurine}[3]{%
+  \begin{figure}[H]\centering
+  \includegraphics[width=#2\linewidth]{figures/#1}
+  \caption{#3}\label{fig:#1}
+  \end{figure}}
 \newcommand{\Kaut}{K^{*}_{\mathrm{aut}}}
 \newcommand{\fait}{\textbf{[Fait observé]}}
 \newcommand{\inference}{\textbf{[Inférence]}}
@@ -153,6 +161,18 @@ fois pour toutes.
   prête toujours, donc détenir des créances et être riche vont ensemble. Sa
   chute est la signature structurelle du changement de règle.
 \end{description}
+
+\figurine{f01_institution}{1.0}{\textbf{Ce que la règle « la plus riche
+prête » s'interdisait n'est pas un cas limite : c'est une bande entière du
+plan des capitaux.} À gauche, la part $\lambda^{*}$ du capital commun que
+l'optimum laisse à l'entité la moins efficace ; elle vaut $1/2$ quand les
+deux technologies coïncident et tombe à \lambdaStarOld{} dès que l'autre est
+une fois et demie plus productive. À droite, ce que cela donne dans le plan
+$(K_1, K_2)$ : l'optimum demande à l'entité de faible rendement de céder dès
+que $K_1 > \seuilBandeOld\,K_2$, là où l'ancienne règle ne l'autorisait qu'au
+delà de $K_1 > K_2$. Regarder la largeur de la bande rouge --- c'est
+exactement l'ensemble des paires que ce chantier débloque, et le
+§\ref{sec:regime} le retrouve en fréquence mesurée.}
 
 \subsection{L'amplitude d'une intervention, et sa part traitée}
 
@@ -316,6 +336,17 @@ longueur de la fenêtre.
 sa statistique de Student, au même seuil que le reste du rapport. L'étendue
 par run est rapportée à côté, comme plancher de bruit, et non comme critère.
 
+\figurine{f02_stationnarite}{1.0}{\textbf{Un seuil hérité d'une autre
+fenêtre ne mesurerait ici que la longueur de la fenêtre.} À gauche, le
+rapport de quarts sur $K_{\text{tot}}$, graine par graine, avec la moyenne et
+son intervalle de Student ; la bande rouge est le seuil fixe
+$[0{,}99\,;\,1{,}01]$ hérité de la lignée précédente. Regarder la colonne du
+\emph{contrôle} --- un bras qui ne subit aucune intervention et dont on sait
+qu'il est stationnaire : \nControleHorsBandeResiduel{} de ses
+\nControleGrainesResiduel{} graines tombent hors de la bande. À droite, le
+critère effectivement employé, qui teste la \emph{moyenne} du rapport contre
+1 ; la zone verte est la région d'acceptation.}
+
 \fait{} Sur la fenêtre résiduelle, \nNonStationnaireResiduel{} bras sur
 \nBrasTestesResiduel{} échouent ce test ; sur la fenêtre de transition,
 \nNonStationnaireTransition{} sur \nBrasTestesTransition{} --- ce qui est
@@ -327,16 +358,16 @@ niveau.
 
 \subsection{Combien d'échanges l'ancienne règle s'interdisait}
 
-\begin{figure}[H]
-\centering
-\includegraphics[width=\linewidth]{figures/horizon.png}
-\caption{À gauche : part des rondes de marché concluant un prêt dans le sens
-que l'ancienne règle interdisait, moyennée sur \nSeeds{} graines, par blocs de
-50 pas. À droite : effectif survivant de la cohorte d'origine, sous les deux
-règles. Les deux fenêtres de lecture sont ombrées. Source :
-\code{results/campaign/arms/}.}
-\label{fig:horizon}
-\end{figure}
+\figurine{f03_horizon}{1.0}{\textbf{Le régime nouveau ne s'éteint pas : il
+plafonne, et c'est une poignée de survivantes qui le tient.} À gauche, la
+part des rondes concluant un prêt à contre-sens, moyennée sur \nSeeds{}
+graines et par blocs de 50 pas, en échelle logarithmique. Regarder la forme :
+une décroissance rapide, puis un palier net --- alors que la cohorte
+d'origine n'est pas renouvelée et que sa durée de vie moyenne est de
+trente-quatre pas. À droite, l'explication : sous le sens libre, l'effectif de
+cette cohorte cesse de décroître et se stabilise ; sous l'ancienne règle il
+va à l'extinction. Les deux fenêtres de lecture sont ombrées, en rouge la
+transition et en bleu le régime résiduel.}
 
 \fait{} Dans la fenêtre de transition du bras \code{new\_A150},
 \pctReversalAhcentCinquanteTransition\,\% des rondes concluent un prêt à
@@ -351,11 +382,26 @@ refusées dans la fenêtre de transition. Rappel de ce que ce nombre est et
 n'est pas : il est pris \emph{dans l'état où le système à sens libre se
 trouve}, pas le long d'une trajectoire de l'ancienne règle.
 
+\figurine{f04_contrefactuel}{1.0}{\textbf{Le nombre d'échanges à
+contre-sens et le volume qu'ils portent ne disent pas la même chose, et leur
+écart change de signe.} À gauche, les deux parts sur toute la fenêtre. Ce
+qu'il faut regarder est le croisement : pendant la transition, les prêts à
+contre-sens sont \emph{plus petits} que la moyenne --- ils portent
+\pctVolumeRevAhcentCinquanteTransition\,\% du volume pour
+\pctReversalAhcentCinquanteTransition\,\% des rondes --- tandis qu'en régime
+résiduel ils sont \emph{plus gros}. À droite, les trois bras mixtes dans la
+fenêtre de transition ; noter que le compteur contrefactuel (rouge) et les
+prêts effectivement conclus (bleu) ne s'écartent jamais de plus de
+\ecartContrefactuelMax{} point de pourcentage, ce qui dit que presque toute
+paire refusée par l'ancienne règle conclut ici. (Les deux étiquettes de
+chaque paire de barres sont arrondies séparément : les soustraire donne
+jusqu'à deux centièmes, l'écart mesuré est plus petit.)}
+
 \input{tables/lot_d_regime}
 
 \subsection{Le régime ne s'éteint pas : il plafonne}
 
-\fait{} La figure~\ref{fig:horizon} montre une décroissance rapide suivie d'un
+\fait{} La part des rondes à contre-sens décroît rapidement, puis atteint un
 \emph{plateau}. Par blocs de 200 pas et sur la graine 0 du bras
 \code{new\_A150}, la part des rondes à contre-sens vaut $23{,}8$\,\% sur
 $]t_0,\ t_0+200]$, $7{,}8$\,\% sur le bloc suivant et $3{,}8$\,\% sur le
@@ -374,15 +420,18 @@ graines. Sous la règle ancienne, dans le bras apparié, il en reste
 
 \subsection{Qui sont les survivantes}
 
-\begin{figure}[H]
-\centering
-\includegraphics[width=\linewidth]{figures/survivors.png}
-\caption{État entité par entité à $t_0+2000$, bras \code{new\_A150}. Le rejeu
+\figurine{f05_survivants}{1.0}{\textbf{Les survivantes de l'ancienne
+technologie ne produisent presque plus : elles vivent de l'intérêt.} État
+entité par entité à $t_0+2000$, bras \code{new\_A150}. À gauche, l'effectif
+survivant de la cohorte d'origine, graine par graine : sous l'ancienne règle
+il est \emph{nul} sur les trois graines rejouées, et le zéro est écrit pour
+qu'on ne le confonde pas avec une donnée manquante. Au centre, ce qu'il faut
+regarder : les quelques points de l'ancienne technologie sont hauts et à
+gauche --- position nette très positive, capital modeste --- alors que le
+nuage de la technologie dominante est bas et à droite. À droite, la part du
+revenu qui vient des intérêts plutôt que de la production propre. Le rejeu
 qui produit cette figure reproduit la trajectoire de la campagne colonne par
-colonne --- c'est vérifié avant de lire l'état final. Source :
-\code{results/analysis/survivors\_entities.csv}.}
-\label{fig:survivors}
-\end{figure}
+colonne, ce qui est vérifié avant de lire l'état final.}
 
 \fait{} Le portrait est net, et il est le même sur les trois graines
 rejouées.
@@ -431,15 +480,18 @@ survit sans produire beaucoup.
 
 \subsection{Les effets agrégés, appariés}
 
-\begin{figure}[H]
-\centering
-\includegraphics[width=\linewidth]{figures/lot_d_paired.png}
-\caption{Écarts relatifs appariés par graine entre sens libre et règle
-ancienne, fenêtre de transition. Barres d'erreur : intervalle de Student à
-5\,\% sur $\nSeeds - 1$ degrés de liberté. Source :
-\code{results/analysis/lot\_d\_transition.json}.}
-\label{fig:lotd}
-\end{figure}
+\figurine{f06_apparie}{1.0}{\textbf{Le levier agit fortement pendant la
+transition et presque plus après : c'est ce qui rend les deux fenêtres
+obligatoires.} Écarts relatifs appariés par graine entre sens libre et règle
+ancienne, avec l'intervalle de Student à 5\,\% sur $\nSeeds - 1$ degrés de
+liberté. Les deux échelles verticales ne sont pas les mêmes : le plus grand
+écart vaut \ecartMaxTransition\,\% à gauche et \ecartMaxResiduel\,\% à droite.
+Ce qu'il faut regarder est le compte porté sur chaque panneau : sur les mêmes
+\nEcartsTransition{} écarts --- sept observables $\times$ trois bras ---
+\nEcartsNulsTransition{} seulement est indistinguable de zéro pendant la
+transition, contre \nEcartsNulsResiduel{} dans le régime résiduel. Une lecture
+moyennée sur les mille pas aurait donné le panneau de droite, et conclu
+« pas d'effet ».}
 
 \paragraph{Fenêtre de transition.}
 \input{tables/lot_d_paired_transition}
@@ -450,24 +502,46 @@ ancienne, fenêtre de transition. Barres d'erreur : intervalle de Student à
 \noindent Un astérisque marque un écart significatif à 5\,\%, deux
 à 1\,\%, aux seuils de Student rappelés au §\ref{sec:protocole}.
 
-\begin{figure}[H]
-\centering
-\includegraphics[width=\linewidth]{figures/creditors.png}
-\caption{Part du capital détenue par les créancières nettes, et corrélation
-entre rendement marginal et position nette, sur toute la durée d'un run
-apparié. Le trait vertical marque $t_0$.}
-\label{fig:creditors}
-\end{figure}
+\figurine{f07_creanciers}{1.0}{\textbf{La signature du changement de règle
+est un changement de \emph{signe}, pas de niveau.} Trois diagnostics sur un
+run apparié (bras \code{new\_A150}, graine 0) ; trait clair, la valeur pas à
+pas, trait épais, sa moyenne glissante sur 25 pas. Le trait vertical marque
+$t_0$, les segments pointillés le niveau moyen du régime résiduel. Ce qu'il
+faut regarder est le panneau central : la corrélation entre capital et
+position nette reste \emph{positive} sous l'ancienne règle
+(\niveauCorrKVoneResiduel) et devient \emph{négative} sous le sens libre
+(\niveauCorrKFreeResiduel). À gauche, la part du capital détenue par les
+créancières nettes, elle, ne bouge presque pas : ce n'est pas la quantité de
+capital prêté qui change, c'est qui le prête.}
 
 \fait{} La corrélation entre capital et position nette est le diagnostic le
-plus lisible : sous la règle ancienne, détenir des créances et être riche vont
-ensemble par construction, tandis que sous le sens libre la relation se
-déplace nettement. L'écart apparié sur cette grandeur vaut
-\diffCorrKAhcentCinquanteTransition\,\% dans la fenêtre de transition, et
-celui sur la corrélation entre \emph{rendement marginal} et position nette
-vaut \diffCorrMargAhcentCinquanteTransition\,\% --- c'est cette seconde
-corrélation qui dit que ce sont désormais les entités de faible rendement
-marginal qui détiennent les créances.
+plus lisible, et elle est citée ici en \textbf{niveau} et non en écart
+relatif. \inference{} La raison est une correction que le tracé de la
+trajectoire a imposée : un écart relatif sur une grandeur \emph{signée} ne
+veut rien dire. Passer de $-0{,}232$ à $-0{,}378$ s'écrit « $+62{,}9$\,\% »
+alors que la corrélation \emph{baisse}, et un écart qui traverse zéro s'écrit
+« $-196{,}8$\,\% ». Les deux nombres étaient rapportés ainsi dans une version
+antérieure de ce rapport ; ils sont remplacés par les niveaux.
+
+\fait{} Dans le régime résiduel, la corrélation entre capital et position
+nette vaut \niveauCorrKVoneResiduel{} sous la règle ancienne et
+\niveauCorrKFreeResiduel{} sous le sens libre : elle \textbf{change de
+signe}. C'est la signature structurelle du chantier, et c'est un énoncé plus
+fort qu'un déplacement de niveau --- sous l'ancienne règle, être riche et
+détenir des créances vont ensemble ; sous le sens libre, ils s'excluent.
+
+\incertitude{} \textbf{La corrélation au rendement marginal ne dit pas ce
+qu'on attendait d'elle.} Elle vaut \niveauCorrMargVoneResiduel{} sous la règle
+ancienne et \niveauCorrMargFreeResiduel{} sous le sens libre dans le régime
+résiduel : les deux sont négatives et \emph{indistinguables}. Dans la fenêtre
+de transition elles diffèrent (\niveauCorrMargVoneTransition{} contre
+\niveauCorrMargFreeTransition), mais dans le sens inverse de celui qu'on
+aurait annoncé : c'est sous la \emph{règle ancienne} que la relation entre
+faible rendement marginal et position créancière est la plus marquée, ce qui
+s'explique sans le sens du prêt --- la plus riche prête toujours, et la plus
+riche a le rendement marginal le plus faible par décroissance des rendements.
+Cette corrélation n'est donc pas un diagnostic du chantier, et il faut le
+dire : le diagnostic est celle au capital.
 
 \subsection{Pourquoi la production baisse alors que chaque échange l'augmente}
 \label{sec:paradoxe}
@@ -499,6 +573,18 @@ mesuré et apparié.
   effacées --- perte sèche pour ses créancières --- et son capital est détruit,
   pas redistribué.
 \end{enumerate}
+
+\figurine{f08_chaine}{0.80}{\textbf{Chaque maillon de la chaîne est mesuré
+et apparié, et le dernier a le signe opposé au premier.} Écarts appariés
+entre sens libre et règle ancienne dans la fenêtre de transition, bras
+\code{new\_A150}, barres de Student à 5\,\%. Se lit de haut en bas : plus de
+contrats, donc plus de service perpétuel, donc plus de faillites, donc
+davantage de capital détruit \emph{par unité de stock}, donc moins
+d'entités, moins de capital et moins de production. Le quatrième maillon est
+rapporté en part du stock et non en flux brut : le flux brut de capital
+détruit \emph{baisse} de \diffDestroyedAhcentCinquanteTransition\,\%, parce
+que le stock dont il est tiré a baissé davantage, et le lire ainsi
+inverserait la conclusion.}
 
 \inference{} Le gain instantané de chaque transaction est donc réel mais
 \emph{local et récurrent en sens inverse} : le surplus est un flux de
@@ -547,6 +633,16 @@ la fenêtre de transition :
 \noindent La loi sur-prédit la mortalité d'un facteur 3 à 10 sur les trois
 bras.
 
+\figurine{f09_loi_en_defaut}{1.0}{\textbf{La régularité de la lignée
+précédente ne range pas le cinquième levier.} À gauche, pour chaque bras
+mixte, la hausse de mortalité que la loi $(\text{rotation})^{1{,}337}$ prédit
+depuis la hausse de rotation mesurée, et celle qu'on mesure effectivement. À
+droite, les mêmes trois bras placés dans le plan de la loi, avec la courbe
+elle-même : ce qu'il faut regarder est la longueur des segments pointillés,
+qui est l'écart à la loi. \incertitude{} Cette fenêtre n'est pas un régime
+stationnaire, et la loi est une relation d'état stationnaire --- le
+§\ref{sec:loi-en-defaut} dit pourquoi ce n'est pas encore une réfutation.}
+
 \incertitude{} \textbf{Ce n'est pas encore une réfutation, et il faut le dire
 précisément.} La loi de la lignée précédente est une relation d'\emph{état
 stationnaire}, ajustée sur des runs qui y sont ; la fenêtre de transition
@@ -586,16 +682,15 @@ $[1,\ 1/(1-\delta)]$. À $\delta = 0{,}01$, cet intervalle est
 $[1\ ;\ \ratioSeuilResiduel]$. La distribution de ce rapport est lue sur les
 \nSeeds{} snapshots d'amorçage, \emph{avant} de lancer quoi que ce soit.
 
-\begin{figure}[H]
-\centering
-\includegraphics[width=\linewidth]{figures/service_ratio.png}
-\caption{Distribution du rapport capital / dû à l'instant du service, sur les
-\ratioNResiduel{} observations de débitrices des \nSeeds{} snapshots
-d'amorçage. La bande rouge est la fenêtre de bascule
-$[1\,;\,\ratioSeuilResiduel]$ ; le trait tireté marque le minimum observé.
-Source : \code{results/analysis/service\_ratio.csv}.}
-\label{fig:service-ratio}
-\end{figure}
+\figurine{f10_service_ratio}{0.92}{\textbf{La fenêtre de bascule est vide, et
+la figure dit de combien.} Distribution du rapport capital / dû à l'instant du
+service, sur les \ratioNResiduel{} observations de débitrices des \nSeeds{}
+amorçages, en échelle logarithmique. La bande rouge est la fenêtre
+$[1\,;\,\ratioSeuilResiduel]$ dans laquelle une débitrice basculerait ; le
+trait tireté marque le minimum observé. Ce qu'il faut regarder est la
+distance entre les deux --- un facteur \ratioMargeResiduel{} --- et le fait
+que la distribution entière est à droite. Cette lecture précède le lancement
+du bras traité : c'est une prédiction, pas un constat.}
 
 \noindent Les quantiles, pour les chiffres exacts :
 
@@ -651,6 +746,16 @@ sur un pas et beaucoup sur mille : c'est ce qui explique qu'un changement
 conservatif au pas déplace les agrégats de plusieurs pour cent à l'horizon de
 la fenêtre.
 
+\figurine{f11_redistribution}{1.0}{\textbf{Aucun défaut de plus, et pourtant
+des agrégats déplacés de plusieurs pour cent.} À gauche, les écarts appariés
+sur le régime résiduel avec leurs barres de Student : la première colonne,
+celle des défauts de liquidité, est exactement nulle --- c'est ce que la
+prédiction annonçait. À droite, l'écart de production au bras de référence,
+pas par pas : les deux bras sont rigoureusement identiques jusqu'à $t_0$
+puisqu'ils partagent leur amorçage, puis s'écartent et \emph{restent}
+écartés. C'est la marque d'un mécanisme qui ne crée pas d'événement mais
+déplace un flux à chaque pas.}
+
 \inference{} \textbf{Ce que la prédiction a attrapé, et ce qu'elle a manqué.}
 Elle a attrapé exactement ce sur quoi elle portait : le nombre de défauts de
 liquidité, qu'elle annonçait nul et qui l'est. Elle a manqué le canal réel,
@@ -669,6 +774,17 @@ reconstituer \emph{a posteriori}, ce qui était exact tant qu'une seule
 technologie vivait et approché sinon --- et une colonne indiquait, run par run,
 laquelle des trois reconstructions avait servi. Cette colonne n'existe plus.
 
+\figurine{f12_tension}{1.0}{\textbf{La tension est le rapport de deux
+échelles, et le calcul natif rend le second terme exact.} À gauche, l'échelle
+autarcique $\Kaut$ --- constante, elle ne dépend que de $A$, $\delta$ et
+$\gamma$ --- et le capital équivalent $K_{\text{eq}}$, qui monte pendant la
+relaxation puis se stabilise ; la flèche est la tension. À droite, sa
+décroissance, et le rapport de Jensen $K_{\text{eq}}/\overline{K}$ sur l'axe
+de droite. Ce qu'il faut regarder est que le rapport de Jensen s'écarte de 1
+de plus de deux pour cent : c'est l'écart que la reconstruction \emph{a
+posteriori} de la lignée précédente devait estimer, et que le calcul dans le
+moteur donne exactement, ses deux termes étant pris au même instant du pas.}
+
 \fait{} Le gain n'est pas seulement de commodité. Le rapport de Jensen
 $K_{\text{eq}}/\overline{K}$ est désormais \emph{exact}, ses deux termes étant
 pris au même instant du pas ; auparavant, le numérateur venait de la
@@ -680,26 +796,42 @@ $\delta$.
 \subsection{L'amplitude, et le levier qui n'est pas un cadran}
 
 \begin{center}\footnotesize
-\begin{tabular}{@{}lrrr@{}}
+\begin{tabular}{@{}lrrrr@{}}
 \toprule
-\textbf{levier} & $m$ \textbf{mesurée} & \textbf{prédiction naïve} $K=1$ &
-$p$ \textbf{ex ante} \\
+\textbf{levier} & $m$ \textbf{mesurée} & \textbf{naïve} $K=1$ &
+\textbf{au capital} $K_{\text{eq}}$ & $p$ \textbf{ex ante} \\
 \midrule
-$A \times 1{,}5$, toutes & 1,500000000000001 & 1,5 & 1,0 exactement \\
-$A \times 1{,}25$, fraction $\varphi = 0{,}2$ & 1,250000000000 & 1,25 &
-0,1978 \\
-$\gamma : 0{,}5 \to 0{,}6$, toutes & \textbf{1,960149} & \textbf{1,000000} &
-1,0 \\
-$A \times 1{,}5$, nouvelles & 1,500000000000 & 1,5 & 0,005769 \\
+$A \times 1{,}5$, toutes & \amplAllAMlong{} & \amplAllANaive{} &
+\amplAllAKeq{} & \amplAllAP{} \\
+$A \times 1{,}25$, fraction $\varphi = 0{,}2$ & \amplFractionAMlong{} &
+\amplFractionANaive{} & \amplFractionAKeq{} & \amplFractionAP{} \\
+$\gamma : 0{,}5 \to 0{,}6$, toutes & \textbf{\amplGammaM} &
+\textbf{\amplGammaNaive} & \amplGammaKeq{} & \amplGammaP{} \\
+$A \times 1{,}5$, nouvelles & \amplNewAMlong{} & \amplNewANaive{} &
+\amplNewAKeq{} & \amplNewAP{} \\
 \bottomrule
 \end{tabular}
 \end{center}
 
-\noindent Deux colonnes ont été retirées de ce tableau pour le garder lisible,
-et leurs valeurs tiennent en une phrase : la prédiction faite au capital
-équivalent, $K_{\text{eq}}^{\Delta\gamma}$, ne diffère de la prédiction naïve
-que pour le levier sur $\gamma$, où elle vaut $1{,}952475$ ; et $E$ vaut $1$ à
-$10^{-9}$ près dans les quatre cas, pour la raison donnée ci-dessous.
+\noindent \fait{} Ces quatre lignes sont \emph{engendrées} par
+\code{scripts/amplitude.py}, qui relance les quatre leviers et écrit la mesure
+du moteur dans \code{results/analysis/amplitude.csv}. Dans une version
+antérieure de ce rapport elles étaient recopiées à la main depuis la sortie
+d'un test, ce qui contrevenait à la règle du dépôt --- les valeurs étaient
+justes, mais rien ne les rattachait à leur source. La colonne $E$ n'y figure
+pas : elle vaut $1$ à \amplNewAE{} près au pire des quatre cas, pour la raison
+donnée ci-dessous.
+
+\figurine{f13_amplitude}{1.0}{\textbf{Un levier sur l'exposant n'est pas un
+cadran de puissance : son amplitude dépend du capital.} À gauche, pour chacun
+des quatre leviers, l'amplitude mesurée par le moteur au pas où l'intervention
+agit, la prédiction naïve qu'on ferait en supposant $K = 1$, et la prédiction
+faite au capital équivalent. Ce qu'il faut regarder est la troisième
+colonne : la prédiction naïve annonce que le levier sur $\gamma$ ne fait
+\emph{rien} ($m = \amplGammaNaive$), et la mesure donne \amplGammaM{}. À
+droite, la part de production que chaque levier touche \emph{ex ante}, en
+échelle logarithmique : trois ordres de grandeur séparent une portée
+« toutes » d'une portée « nouvelles ».}
 
 \fait{} Le levier sur $\gamma$ est le cas qui justifie la mesure. La prédiction
 naïve --- celle qu'on ferait en supposant $K = 1$, où $K^{\Delta\gamma} = 1$
@@ -752,13 +884,15 @@ est exactement ce qu'on attend d'une identité et doit être présenté comme te
 Le contenu est ailleurs : dans le fait que les deux premiers facteurs sont
 \emph{pinés}.
 
-\begin{figure}[H]
-\centering
-\includegraphics[width=\linewidth]{figures/rotation_decomposition.png}
-\caption{Les trois facteurs de \eqref{eq:decomposition} sur \rotNRuns{} runs
-des deux lignées. Source : \code{results/analysis/rotation\_runs.csv}.}
-\label{fig:rotation-decomposition}
-\end{figure}
+\figurine{f14_decomposition}{1.0}{\textbf{Deux facteurs sur trois sont pinés,
+et le troisième porte toute la variation.} Les trois facteurs de
+\eqref{eq:decomposition} sur \rotNRuns{} runs des deux lignées. À gauche,
+$f_1$ suit $\rho$ à la partie entière près. Au centre, $f_2$ ne quitte jamais
+la bande verte, large de six millièmes : presque toutes les paires tirées
+traitent. À droite, la rotation divisée par $\rho$ se confond avec $f_3$ sur
+la diagonale. Ce qu'il faut regarder est l'\emph{absence} de dispersion dans
+les deux premiers panneaux comparée au troisième --- c'est ce qui autorise à
+ne plus étudier que $f_3$.}
 
 \fait{} $f_1$ vaut $\rho$ à $\rotFOneGap$ près --- l'écart est celui de la
 partie entière $\lfloor \rho N\rfloor / N$, purement combinatoire. $f_2$ est
@@ -804,15 +938,16 @@ qui est la moyenne exacte d'une décroissance exponentielle entre les deux
 valeurs mesurées. Les deux Gini sont enregistrés par le moteur, sous drapeau,
 avant et après la phase de marché.
 
-\begin{figure}[H]
-\centering
-\includegraphics[width=\linewidth]{figures/rotation_closure.png}
-\caption{À gauche : $f_3$ mesuré contre le Gini, avant la phase de marché
-(triangles) et en moyenne logarithmique sur la phase (disques). À droite : la
-fermeture par le bilan de variance. Source :
-\code{results/analysis/rotation\_summary.json}.}
-\label{fig:rotation-closure}
-\end{figure}
+\figurine{f15_gini}{1.0}{\textbf{La phase de marché resserre la distribution
+qu'elle consomme, et l'ignorer fausse la relation de dix-sept pour cent.} À
+gauche, la courbe de Lorenz des capitaux à $t_0+2000$ sous les deux règles :
+elle donne au coefficient de Gini le sens qu'un nombre seul ne donne pas ---
+l'aire entre la courbe et la diagonale, doublée. À droite, ce qui est
+réellement mesuré : $f_3$ contre le Gini pris \emph{avant} la phase de marché
+(triangles) et contre sa moyenne logarithmique sur la phase (disques). Ce
+qu'il faut regarder est de quel côté de la diagonale tombent les triangles ---
+le Gini d'avant surestime systématiquement --- et à quel point les disques
+s'y recollent.}
 
 \inference{} \textbf{Ce qui est vérifiable ici, et ce qui ne l'est pas.}
 En régime homogène, $f_3 = G$ est une \emph{conséquence algébrique} de la
@@ -830,9 +965,16 @@ $\rotGapGiniLogMed$\,\% en médiane, avec une étendue de
 $\rotGapGiniLogMin$\,\% à $\rotGapGiniLogMax$\,\% --- soit un facteur
 trente-cinq sur le biais. L'ajustement en loi de puissance donne un exposant
 $\rotSlopeGini$ avec $R^2 = \rotRtwoGini$ sur $\rotNGini$ points couvrant une
-plage de $\times\rotSpanGini$. Autrement dit : la décroissance du Gini
-\emph{pendant} la phase de marché est bien exponentielle en le numéro de
-ronde, et c'est cela qui est mesuré.
+plage de $\times\rotSpanGini$.
+
+\incertitude{} \textbf{Ce que cela établit, et ce que cela n'établit pas.} Le
+moteur enregistre le Gini \emph{avant} et \emph{après} la phase de marché ---
+deux extrémités, pas une trajectoire. Que la moyenne logarithmique de ces deux
+extrémités recolle $f_3$ à un demi-pour-cent près est \emph{cohérent} avec une
+décroissance exponentielle en le numéro de ronde, et c'est l'hypothèse qui l'a
+fait choisir ; ce n'en est pas une mesure. La trancher demanderait
+d'instrumenter le Gini ronde par ronde, donc de toucher au moteur et de
+relancer le balayage.
 
 \subsection{Et hors du régime homogène ?}
 \label{sec:hetero}
@@ -849,15 +991,15 @@ Le bras \code{new\_A150} a donc été rejoué avec le Gini instrumenté, sous le
 deux règles de sens, pour mettre la relation à l'épreuve là où elle peut
 échouer.
 
-\begin{figure}[H]
-\centering
-\includegraphics[width=\linewidth]{figures/rotation_hetero.png}
-\caption{Écart relatif entre $f_3$ mesuré et $\bar G$, pas par pas, sur le
-bras \code{new\_A150} où deux technologies coexistent. La bande ombrée est la
-fenêtre de transition. Source :
-\code{results/rotation\_hetero/}.}
-\label{fig:hetero}
-\end{figure}
+\figurine{f18_hetero}{1.0}{\textbf{Hors du régime homogène la relation reste
+bonne en médiane, mais elle se trompe de moitié pendant les épisodes les plus
+pondérés.} Écart relatif entre $f_3$ mesuré et $\bar G$, pas par pas, sur le
+bras \code{new\_A150} où deux technologies coexistent ; trait clair, la valeur
+pas à pas, trait épais, sa moyenne glissante. Les deux fenêtres de lecture
+sont ombrées. À droite, la distribution des mêmes écarts. Ce qu'il faut
+regarder est l'asymétrie : la masse est contre zéro, et la queue part vers les
+écarts \emph{négatifs} --- $f_3$ tombe sous $\bar G$ quand le rééquilibrage
+est le plus fortement pondéré, c'est-à-dire pendant la transition.}
 
 \fait{} Sur \heteroFreeN{} pas mesurés par règle, l'écart
 $f_3/\bar G - 1$ a pour médiane \heteroFreeMed\,\% sous le sens libre et
@@ -917,6 +1059,17 @@ L'ajustement de la rotation contre $\rho\,CV$ donne un exposant
 $\rotSlopeClosureRot$ avec $R^2 = \rotRtwoClosureRot$ sur $\rotNClosureRot$
 points.
 
+\figurine{f16_fermeture}{1.0}{\textbf{Le bilan de variance donne le bon ordre
+de grandeur et rien de plus.} À gauche, $f_3$ mesuré contre le $CV$ que
+prédit \eqref{eq:cv}, chaque famille de levier d'une couleur, et la
+prédiction $CV/\sqrt{\pi}$ en tireté. Ce qu'il faut regarder est la
+\emph{disposition} des points : la famille $K_0$ (rouge) couvre seule
+l'essentiel de l'étendue horizontale, toutes les autres sont empilées au
+milieu --- c'est exactement la configuration où un ajustement groupé mesure
+la géométrie du balayage plutôt qu'une réponse, ce que le
+§\ref{sec:controle-fermeture} confirme. À droite, la distribution de l'écart
+à la forme fermée.}
+
 \subsection{Le contrôle qui invalide la fermeture}
 \label{sec:controle-fermeture}
 
@@ -959,6 +1112,17 @@ $\rho$ donne \leverSlopeRho{} et celle de $K_0$ \leverSlopeKzero{}, contre
 $\rotSlopeClosureRot$ pour l'ajustement groupé. \textbf{Les exposants intra-famille
 ne coïncident ni entre eux ni avec le groupé.}
 
+\figurine{f17_leviers}{1.0}{\textbf{Trois familles sur cinq ne couvrent pas
+assez de terrain pour que leur exposant veuille dire quoi que ce soit.} À
+gauche, l'étendue de $x$ que chaque famille balaie, en échelle logarithmique,
+avec le repère à 10\,\%. À droite, l'exposant ajusté à l'intérieur de chaque
+famille, avec son intervalle de Student, et le trait vertical de l'ajustement
+groupé. Ce qu'il faut regarder est double : les deux familles exploitables
+($\rho$ et $K_0$) donnent des exposants qui ne se recouvrent pas, et aucune
+ne recouvre le groupé ; et l'exposant de $\delta$, à \leverSlopeDelta{} sur
+une étendue de $\times\leverSpanDelta$, est du bruit affiché comme une
+pente.}
+
 \inference{} \textbf{La fermeture n'est donc pas établie, et c'est un constat
 d'échec, pas un résultat.} Le $R^2$ groupé de $\rotRtwoClosureRot$ reflète
 pour l'essentiel la géométrie du balayage --- la droite qui joint les points de
@@ -992,6 +1156,18 @@ transitoires --- là où l'ajustement publié portait sur 109 runs d'un balayage
 contrôlé. Les deux exposants décrivent des populations différentes ; les
 rapprocher demanderait de refaire l'ajustement sur le même sous-ensemble, ce
 qui n'a pas été fait.
+
+\figurine{f19_mortalite_rotation}{1.0}{\textbf{Sur tout le corpus des deux
+lignées, la mortalité suit la rotation sur une plage d'un facteur cinq.} À
+gauche, les \rotNMortAll{} runs en échelle logarithmique, colorés par règle de
+sens, avec l'ajustement groupé et, en tireté, l'exposant $1{,}337$ publié par
+la lignée précédente. Ce qu'il faut regarder est que les deux règles
+s'\emph{interpénètrent} : un run à sens libre tombe sur la même courbe qu'un
+run à règle ancienne. À droite, le biais résiduel à l'ajustement, par règle.
+\incertitude{} Le corpus mélange les deux lignées, les deux règles et des
+transitoires ; l'exposant qui en sort décrit une population plus hétérogène
+que les 109 runs sur lesquels le $1{,}337$ a été publié, et les deux ne sont
+pas directement comparables.}
 
 \fait{} \textbf{Et le levier nouveau ne biaise pas la loi en niveau.} Le biais
 résiduel médian par rapport à l'ajustement groupé vaut
@@ -1133,9 +1309,12 @@ machine à 8 cœurs dont 7 sont employés.
 \code{\$PY scripts/campaign.py phase} & 430~s (12 bras) \\
 \code{\$PY scripts/rotation.py sweep} & 1452~s (33 runs instrumentés) \\
 \code{\$PY scripts/survivors.py} & 160~s (6 rejeux vérifiés) \\
-\code{\$PY scripts/analyse.py} & verdicts, figures et tables \\
-\code{\$PY scripts/rotation.py analyse} & décomposition et fermeture \\
+\code{\$PY scripts/amplitude.py} & 102~s (4 leviers mesurés) \\
+\code{\$PY scripts/analyse.py} & 30~s : verdicts et tables \\
+\code{\$PY scripts/rotation.py analyse} & 17~s : décomposition et fermeture \\
 \code{\$PY scripts/make\_numbers.py} & tous les nombres cités ici \\
+\code{\$PY scripts/make\_figures.py} & les \nombreFigures{} figures des deux rapports \\
+\code{\$PY tests/test\_figures.py} & confronte figures et macros \\
 \code{\$PY scripts/import\_to\_simulation\_lab.py} & runs consultables \\
 \code{\$PY scripts/make\_traceability.py} & annexe ci-après \\
 \code{cd report \&\& pdflatex rapport\_final.tex} ($\times 3$) & le présent PDF \\
@@ -1144,6 +1323,19 @@ machine à 8 cœurs dont 7 sont employés.
 \end{center}
 
 \noindent Les tests sont listés, avec leur coût, dans le rapport de conception.
+
+\paragraph{Les figures suivent la même règle que les nombres.} Aucune n'est
+dessinée à la main : \code{scripts/make\_figures.py} les engendre toutes depuis
+\code{results/}, et les écrit dans \code{report/figures/}, qui est versionné
+--- \code{results/} ne l'est pas, et une figure incluse depuis là ferait échouer
+la compilation sur un clone propre. Les figures dont la source n'est pas
+versionnée déposent en plus la série \emph{réellement tracée} dans
+\code{report/figures/data/}. Enfin, chaque valeur \textbf{annotée} sur une
+figure est enregistrée dans \code{report/figures/manifest.json} et confrontée à
+la macro correspondante de \code{numbers.tex} par
+\code{tests/test\_figures.py} : \nombreValeursControlees{} valeurs sont
+vérifiées de cette façon, plus « aucune figure incluse mais absente » et
+« aucune figure engendrée que personne n'inclut ».
 
 \appendix
 \section{Annexe de traçabilité}

@@ -1,0 +1,899 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[french]{babel}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb}
+\usepackage[margin=2.35cm]{geometry}
+\usepackage{booktabs,longtable,tabularx}
+\usepackage{enumitem}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{microtype}
+\usepackage{float}
+\usepackage{hyperref}
+
+\hypersetup{colorlinks=true,linkcolor=blue!45!black,urlcolor=blue!45!black}
+\setlist{nosep}
+\newcommand{\code}[1]{\texttt{#1}}
+
+\title{Prompt M4.3Live\\
+\large Moteur M4.3 pilotable en direct, à la recherche d'un effet rebond}
+\author{Lignée M4.3Live --- succède à M4.3 (\code{m4\_3\_credit\_soc}, lu
+comme référence structurelle, pas une dépendance),\\
+destiné à une instance Claude Opus 5}
+\date{17 août 2026 --- révision 2}
+
+\begin{document}
+\maketitle
+
+\begin{quote}
+\sloppy
+\emph{Destinataire : une instance Claude Opus 5 (Claude Code), à qui ce
+document est confié comme spécification de tâche complète et autonome. Ce
+n'est pas un brouillon à discuter avant de commencer : les décisions de
+fond sont prises ci-dessous ; les points explicitement laissés ouverts
+(\S11) sont à trancher et documenter toi-même, pas à retourner à
+l'utilisateur avant d'avoir essayé.}
+
+\emph{Version : 17 août 2026, révision 2. Lignée : succède à M4.3
+(\code{m4\_3\_credit\_soc/}, lu comme référence structurelle ---
+\textbf{pas une dépendance}, \S3.5) mais n'est plus une extension au sens
+strict : l'institution de principal elle-même change de nature (\S3).
+Convention de dossier \code{m4\_3live\_credit\_soc/} inchangée.}
+
+\emph{\textbf{Provenance de cette révision} : ce document remplace la
+révision 1 du 17 août (matin). Il intègre (a) les annotations
+manuscrites de l'utilisateur portées sur le PDF de la révision 1 (15
+annotations, dont une vide, entre 12h44 et 16h21) et (b) le rapport
+\code{rapport\_architecture\_offline\_online.pdf} (17 août,
+après-midi, copié dans ce dossier pour pérennité) que ces annotations ont
+motivé. \textbf{Une annotation est explicitement dépassée par deux
+autres, postérieures de 25 à 70 minutes} : à 12h57 l'utilisateur note
+« on reste en arithmétique tout du long » à propos de \code{target\_rule}
+figé au lancement --- lecture encore valide sur ce point précis (\S2) ---
+mais à 13h33 et 14h09 il redéfinit complètement ce que « arithmétique »
+signifie (\S3). Ne pas lire la première annotation comme figeant
+l'ancienne formule littérale $(K_\ell-K_b)/2$ en toute circonstance.}
+\end{quote}
+
+\tableofcontents
+
+\section*{0. Lectures préalables obligatoires, et pièges à ne pas suivre}
+\addcontentsline{toc}{section}{0. Lectures préalables obligatoires, et pièges à ne pas suivre}
+
+Avant d'écrire une ligne de code, lire dans cet ordre :
+
+\begin{itemize}
+\item \code{m4\_3\_credit\_soc/m4\_3/model.py} (référence structurelle,
+  $\sim$800 lignes, \textbf{pas une dépendance à importer}, \S3.5) ---
+  c'est le fichier dont ce prompt cite les numéros de ligne ci-dessous ;
+  si le fichier a changé depuis, revérifier les citations, ne pas les
+  croire sur parole.
+\item \code{m4\_3\_credit\_soc/m4\_3/io.py} et
+  \code{m4\_3\_credit\_soc/report/rapport\_final.md} (contexte
+  scientifique de M4.3 : pourquoi \code{loan\_events}, pourquoi la règle
+  de principal historique était arithmétique).
+\item \code{simulation\_lab/contracts.py}, \code{simulation\_lab/jobs.py},
+  \code{simulation\_lab/web/app.py}, \code{docs/README\_simulation\_lab.md}
+  --- l'outil d'orchestration existant, dont ce prompt étend l'usage sans
+  le casser.
+\item \code{CLAUDE.md} (racine du dépôt) --- règles de travail du dépôt.
+\item \textbf{\code{m4\_3live\_credit\_soc/prompts/
+  rapport\_architecture\_offline\_online.pdf}} --- étude commandée par
+  l'utilisateur sur le calcul efficace, à l'échelle de millions de
+  résolutions, du transfert optimal introduit en \S3. Lecture obligatoire
+  avant d'écrire une ligne du \S3 : ce prompt en reprend les équations et
+  l'architecture recommandée sans les redémontrer.
+\item Optionnel mais utile, pas bloquant : les rapports des autres
+  lignées du dépôt (\code{m4\_credit\_soc/}, \code{m4b\_credit\_soc\_mini/},
+  \code{m4\_2\_credit\_soc/}, \code{m4\_2b\_credit\_soc/}, chacun avec son
+  \code{report/}) donnent une vision du fonctionnement intrinsèque de
+  cette classe de modèle au-delà de M4.3 (ex. tension entre taille
+  moyenne et taille autarcique du système, effet d'une multiplication
+  scalaire des paramètres) --- ne pas redécouvrir ce qui y est déjà
+  documenté.
+\end{itemize}
+
+\textbf{Deux passages de \code{CLAUDE.md} et de
+\code{docs/README\_simulation\_lab.md} sont obsolètes et vont t'induire en
+erreur si tu les suis sans vérifier :}
+
+\begin{enumerate}
+\item \code{CLAUDE.md} désigne \code{m4b\_credit\_soc\_mini/} comme
+  « moteur actif » et donne \code{random.Random(seed)} comme convention
+  RNG. \textbf{Faux pour ce travail} : le moteur de référence structurelle
+  est \code{m4\_3\_credit\_soc/m4\_3/model.py}, et son RNG est
+  \code{numpy.random.default\_rng(seed)} (\code{Simulation.\_\_init\_\_},
+  \code{m4\_3/model.py:525}) --- convention à reproduire dans le fork
+  indépendant de M4.3Live (\S3.5).
+\item \code{docs/README\_simulation\_lab.md} liste
+  \code{web/templates/index.html} et donne « stdlib + matplotlib » comme
+  dépendances. \textbf{Faux} : les templates actuels sont
+  \code{launch.html}/\code{results.html} (voir
+  \code{simulation\_lab/web/app.py:50-53}), et numpy/scipy sont
+  explicitement autorisés en plus de la stdlib. Pas de nouvelle
+  dépendance externe (pas de Flask/FastAPI/websockets tiers) sans accord
+  explicite de l'utilisateur --- rester sur
+  \code{http.server}/\code{ThreadingHTTPServer}.
+\end{enumerate}
+
+Règle de confiance à 95~\% du dépôt (\code{CLAUDE.md}) : si tu n'es pas
+certain à 95~\% d'un fait sur ce projet, le signaler explicitement (fait
+observé / inférence / hypothèse / incertitude). Citer systématiquement
+\code{fichier.py:ligne}. Ne jamais inventer un comportement du moteur non
+vérifié dans le code.
+
+\section*{1. Objectif scientifique : l'effet rebond, à observer pour l'instant, pas à expliquer}
+\addcontentsline{toc}{section}{1. Objectif scientifique : l'effet rebond, à observer pour l'instant, pas à expliquer}
+
+Le moteur M4.3 produit, par pas de temps, une production agrégée
+\code{prod\_tot} (\code{Simulation.series}, calculée \code{model.py:563-568}
+: $A \cdot K^{\gamma}$ par entité, sommée --- inchangé quelle que soit
+l'institution de principal, \S3). La « puissance d'extraction » d'une
+entité est portée par deux paramètres de sa fonction de
+production/rendement, $A$ et $\gamma$ --- ce ne sont \textbf{pas} des
+leviers interchangeables :
+
+\begin{itemize}
+\item \textbf{$A$ est le levier primaire.} Il multiplie linéairement la
+  production et le rendement marginal --- une hausse de $A$ augmente la
+  production pour toute capitalisation, sans ambiguïté de sens.
+\item \textbf{$\gamma$ est un levier secondaire, à interprétation non
+  monotone.} \code{Config.\_\_post\_init\_\_} (\code{model.py:86-87})
+  contraint $\gamma \in\, ]0,1[$. Pour $K<1$, augmenter $\gamma$
+  \emph{diminue} $K^{\gamma}$. Toute conclusion sur un effet rebond via
+  $\gamma$ doit signaler cette non-monotonie plutôt que traiter $\gamma$
+  comme un simple cadran de puissance.
+\end{itemize}
+
+\textbf{Définition de travail de l'effet rebond pour ce programme} : une
+augmentation de $A$ (et/ou $\gamma$, avec la réserve ci-dessus) appliquée
+à une partie de la population --- via la portée \code{fraction}
+\emph{ou} la portée \code{new} du \S2, pas nécessairement un
+sous-ensemble figé une fois pour toutes --- se traduit, sur
+\code{prod\_tot} agrégé du système entier, par une réponse non
+proportionnelle à l'augmentation locale --- voire par une baisse --- par
+comparaison à l'état qu'aurait eu le système en poursuivant \textbf{sans}
+ce changement dynamique de paramètres (une simulation de contrôle de
+même graine, \S7), et par comparaison à une intervention de même
+amplitude appliquée à la population entière (portée \code{all}). Ce
+n'est pas un critère binaire prêt à l'emploi : à toi de figer une
+statistique précise (élasticité de \code{prod\_tot} à l'intervention,
+fenêtre d'observation post-intervention, agrégation multi-graines) avant
+de lancer la campagne de mesure, et de la documenter.
+
+\textbf{L'objectif de cette itération du programme est d'OBSERVER l'effet
+rebond, pas de l'expliquer ni de le justifier} (décision explicite de
+l'utilisateur). Trois canaux plausibles de propagation d'une hausse
+locale --- pour information, comme grille de lecture, \textbf{pas comme
+livrable obligatoire} :
+
+\begin{enumerate}
+\item \textbf{Production directe} : les entités boostées produisent
+  plus, mécaniquement.
+\item \textbf{Accumulation de capital} : la production s'ajoute au
+  capital de l'entité (\code{model.py:567},
+  \code{population.K[entity] += produced}) avant la phase de marché du
+  même pas --- une entité boostée entre dans le marché du crédit avec un
+  $K$ plus élevé, ce qui change sa position de prêteuse ou d'emprunteuse.
+\item \textbf{Effet sur les échanges} : une entité boostée change le
+  calcul du transfert (\S3) et, si la piste du \S3.4 aboutit, du taux,
+  dans chaque paire où elle apparaît --- donc indirectement le risque de
+  faillite des autres entités.
+\end{enumerate}
+
+Si une décomposition sur ces trois canaux ressort naturellement de
+l'analyse, la documenter dans le rapport de résultats (\S9) comme
+analyse complémentaire est bienvenu --- mais ne pas la traiter comme un
+critère de succès, et ne pas retarder la campagne de mesure du \S7 pour
+l'obtenir. Le résultat attendu est un verdict d'observation (\S7) : effet
+rebond présent / absent / non tranchable avec le budget disponible.
+
+\section*{2. Portées d'intervention : sémantique exacte, trois portées, pas deux}
+\addcontentsline{toc}{section}{2. Portées d'intervention : sémantique exacte, trois portées, pas deux}
+
+La demande de l'utilisateur (« changer les variables pour toutes les
+entités ou seulement pour les nouvelles ») définit deux portées ; ce
+programme en exige une troisième pour que l'expérience du \S7 soit
+interprétable. Les trois portées, comme fonctionnalité générale du
+système, applicables (en principe) à n'importe quel paramètre numérique
+de \code{Config} :
+
+\begin{itemize}
+\item \textbf{\code{all} (toutes les entités)} : la nouvelle valeur
+  s'applique immédiatement à toutes les entités actuellement vivantes
+  \emph{et} à toutes les entités futures --- rétroactif et prospectif.
+\item \textbf{\code{new} (nouvelles entités seulement)} : la nouvelle
+  valeur ne s'applique qu'aux entités nées après l'intervention ; les
+  entités déjà vivantes gardent leur valeur d'origine \textbf{pour
+  toujours} --- sémantique de vintage/cohorte technologique (le capital
+  « embarque » la technologie de sa date de naissance, terminologie
+  standard en économie de la croissance ; le mentionner dans le rapport
+  de conception, \S9).
+\item \textbf{\code{fraction} (fraction $\varphi$ de la population
+  vivante, tirage aléatoire)} : au moment $t_0$ de l'intervention, tirer
+  une fraction $\varphi \in\, ]0,1]$ (ou une liste explicite
+  d'identifiants, pour le débogage) des entités \textbf{actuellement
+  vivantes} et leur assigner la nouvelle valeur, une seule fois.
+  \textbf{Ce que deviennent les naissances postérieures à $t_0$ (question
+  explicitement posée par l'utilisateur en annotation) : une
+  intervention \code{fraction} ne modifie PAS la valeur par défaut
+  utilisée aux naissances futures.} Seules les entités tirées à $t_0$
+  sont affectées ; les entités nées après $t_0$ reçoivent le défaut
+  alors en vigueur (celui d'avant l'intervention, sauf si une
+  intervention \code{all}/\code{new} distincte est émise séparément sur
+  le même paramètre). Raison de ce choix, à ne pas perdre en
+  implémentant : c'est ce qui garde l'intensité de traitement
+  \textbf{fixe} au moment de la mesure --- la raison d'être même de la
+  portée \code{fraction}. Si \code{fraction} modifiait aussi le défaut,
+  elle se comporterait comme \code{new} plus un tirage ponctuel, et
+  l'intensité dériverait à nouveau dans le temps.
+
+  \textbf{Portée requise pour l'expérience du \S7} : \code{new} a une
+  intensité de traitement qui dérive dans le temps (avec $\lambda$
+  constant, la part boostée de la population croît de 0 vers un régime
+  permanent au fil des naissances/morts, donc mesurer une élasticité
+  contre une intensité de traitement mouvante n'a pas de sens) ;
+  \code{fraction} fixe l'intensité au moment de la mesure --- c'est la
+  portée utilisée pour le protocole principal, \code{all} et \code{new}
+  restent des modes d'exploration secondaires (\S7).
+\end{itemize}
+
+\textbf{Où la portée a un sens, et où elle n'en a pas --- à ne pas
+deviner en silence :}
+
+\begin{itemize}
+\item $A$ et $\gamma$ (par entité, \S3) : les trois portées ont un sens
+  et doivent toutes être implémentées. \textbf{Attention} (mise en garde
+  explicite de l'utilisateur) : modifier $A$ ou $\gamma$ pour une
+  cohorte change son rendement marginal, donc son échelle de capital
+  naturelle (l'échelle autarcique déjà documentée dans la lignée
+  M4.2/M4.2B --- voir \code{m4\_2\_credit\_soc/} ou
+  \code{m4\_2b\_credit\_soc/} si la formule doit être retrouvée). Faire
+  varier $A$/$\gamma$ pour une cohorte \textbf{sans} ajuster \code{K0}
+  en proportion peut changer la tension du système (taille relative à
+  l'échelle autarcique) en même temps que l'extraction, ce qui
+  confondrait l'expérience du \S7. Ce prompt ne tranche pas si \code{K0}
+  doit être co-varié automatiquement avec une intervention
+  $A$/$\gamma$ --- c'est une décision de protocole à prendre et à
+  documenter explicitement avant la campagne du \S7 (liste des
+  décisions ouvertes, \S11), pas un détail à laisser implicite.
+\item \code{K0} (capital de naissance) : n'a de sens qu'au moment de la
+  naissance --- il n'existe rien à modifier « rétroactivement » sur une
+  entité déjà née. \code{all} et \code{new} sont donc \textbf{identiques
+  par construction} pour \code{K0} ; \code{fraction} n'a pas de sens pour
+  \code{K0} seul (pas d'implémentation requise, sauf si utilisé
+  conjointement avec $A$/$\gamma$ comme au paragraphe précédent).
+  Documenter cette dégénérescence dans l'IHM (ne pas la cacher en
+  désactivant silencieusement un sélecteur sans explication) et dans le
+  rapport de conception.
+\item \code{lam}, \code{delta}, \code{sigma}, \code{rho},
+  \code{eta\_beta}, \code{eta\_n\_ref} : ce sont des paramètres de
+  population/marché, pas des attributs d'entité --- \code{new} doit être
+  un alias explicite de \code{all} (documenté comme tel dans l'IHM, pas
+  masqué), \code{fraction} n'a pas de sens (pas d'implémentation
+  requise). Ceci ne les exclut pas comme axes secondaires de
+  l'\textbf{expérience} du \S7 elle-même --- des jeux différents de ces
+  paramètres, donc des régimes de population/marché différents, peuvent
+  être intéressants à observer pour la question du rebond (remarque de
+  l'utilisateur) ; seule l'extension de la sémantique de portée
+  fraction/new à ces paramètres est hors mandat.
+\item \code{target\_rule} : dans M4.3Live, il n'existe plus qu'une seule
+  institution de principal (\S3) --- la bascule arithmétique/géométrique
+  de M4.2B/M4.3 n'est pas reprise (M4.3Live est indépendant de ce
+  moteur, \S3.5). Le champ peut être conservé dans \code{Config} pour
+  usages futurs mais n'a, pour ce prompt, aucune valeur alternative à
+  exposer ; \textbf{exclu de l'intervention en direct} pour la même
+  raison que pour les autres choix institutionnels figés : rien dans la
+  question du rebond (\S1, \S7) n'exige de changer d'institution en
+  cours de run.
+\end{itemize}
+
+\textbf{Minage/synchronisation avec la boucle de pas} : une intervention
+arrive de manière asynchrone (requête HTTP) pendant qu'un thread exécute
+\code{Simulation.step()} en boucle. Elle doit être \textbf{mise en file
+d'attente} et appliquée en \textbf{tout début du prochain appel à
+\code{step()}, avant les naissances} --- jamais pendant un \code{step()}
+en cours. L'intervention effectivement appliquée doit être journalisée
+avec le $t$ réel auquel elle a pris effet. Le tirage \code{fraction}
+doit utiliser le générateur RNG de la simulation (\code{self.rng}) pour
+rester déterministe et rejouable --- pas un générateur séparé.
+\textbf{La mise en pause du direct ne doit consommer aucun tirage RNG} :
+mettre en pause puis reprendre et exécuter $N$ pas doit produire une
+trajectoire strictement identique à $N$ pas exécutés sans pause ---
+invariant à tester (\S8).
+
+\section*{3. L'institution de principal : maximiser la puissance d'extraction jointe}
+\addcontentsline{toc}{section}{3. L'institution de principal : maximiser la puissance d'extraction jointe}
+
+\textbf{Ce point remplace intégralement le \S3 de la révision précédente
+de ce prompt.} L'utilisateur abandonne la règle arithmétique littérale
+de M4.3 ($q_A=(K_\ell-K_b)/2$, \code{m4\_3\_credit\_soc/m4\_3/model.py:
+269-291}) comme institution première de M4.3Live : cette formule n'était
+qu'un cas particulier d'un problème plus général, celui du montant à
+échanger entre deux entités pour \textbf{maximiser leur puissance de
+production jointe immédiatement après l'échange}. Le rapport
+\code{rapport\_architecture\_offline\_online.pdf} (\S0, lecture
+obligatoire) pose et résout ce problème :
+
+$$\max_{-x \le \delta \le y} a(x+\delta)^{\alpha} + b(y-\delta)^{\beta},
+\qquad 0<\alpha,\beta<1,\ a,b>0 \qquad \text{(rapport \S1, éq.1)}$$
+
+avec $x=K_b$ (capital de l'emprunteuse), $y=K_\ell$ (capital de la
+prêteuse), $(a,\alpha)=(A_b,\gamma_b)$, $(b,\beta)=(A_\ell,\gamma_\ell)$
+(rapport \S2, éq.8). En posant $C=x+y$ (la somme conservée par
+l'échange), la solution s'écrit $\delta^{*}=C\lambda^{*}-x$ pour un
+certain $\lambda^{*}\in[0,1]$ (rapport \S1, éq.2). C'est le calcul de
+$\lambda^{*}$ (ou du capital optimal $h(C)=C\lambda^{*}$ attribué à
+l'emprunteuse) qui pose un problème de coût selon le régime.
+
+\subsection*{3.1 Trois régimes, un seul principe institutionnel}
+
+\begin{center}
+\begin{tabular}{@{}p{2.1cm} p{3.6cm} p{5.9cm} p{2.9cm}@{}}
+\toprule
+Régime & Condition & Calcul & Coût \\
+\midrule
+(a) homogène & $A_\ell=A_b$ \textbf{et} $\gamma_\ell=\gamma_b$ &
+  $\delta^{*}=(K_\ell-K_b)/2$, la formule historique de M4.3 &
+  trivial \\[0.4em]
+(b) exposants égaux & $\gamma_\ell=\gamma_b$, $A_\ell\neq A_b$ possible &
+  forme fermée exacte, éq.~(\ref{eq:lambda-star}) ci-dessous &
+  trivial (un log/exp par couple de technologies, jamais par
+  transaction) \\[0.4em]
+(c) exposants différents & $\gamma_\ell\neq\gamma_b$ &
+  pas de forme fermée --- machinerie du rapport, \S3.2 &
+  dépend du cache \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Formule fermée du régime (b) (rapport \S3, éq.14) :
+\begin{equation}
+\lambda^{*}=\frac{A_b^{1/(1-\gamma)}}{A_b^{1/(1-\gamma)}+A_\ell^{1/(1-\gamma)}}
+\label{eq:lambda-star}
+\end{equation}
+
+\textbf{Point à ne pas manquer, cause probable de la confusion la plus
+fréquente sur ce point} : le régime (b) n'est \textbf{pas} la formule
+historique. $\lambda^{*}$ n'est égal à $1/2$ que si $A_\ell=A_b$ en plus
+de $\gamma_\ell=\gamma_b$ (régime a) --- vérifier : à $A_b=A_\ell=A$,
+$A_b^{1/(1-\gamma)}=A_\ell^{1/(1-\gamma)}$ et $\lambda^{*}=1/2$
+exactement, ce qui redonne $\delta^{*}=(K_\ell-K_b)/2$ ; dès que
+$A_b\neq A_\ell$, $\lambda^{*}\neq1/2$. Une intervention qui ne modifie
+que $A$ (\S1, levier primaire) fait donc déjà sortir toute paire mixte du
+régime (a) vers le régime (b), avec un partage \textbf{pondéré} du
+capital --- « si les deux gammas sont égaux, le montant est aisément
+calculable » (annotation de l'utilisateur) signifie « calculable en forme
+fermée », pas « égal à la moitié de l'écart ».
+
+\subsection*{3.2 Régime (c) : architecture hot/warm/cold du rapport}
+
+Le rapport résout le régime (c) en exploitant une propriété structurelle
+de M4.3Live, pas générique : $(A_i,\gamma_i)$ prend un petit nombre de
+valeurs discrètes \textbf{exactes} (des « technologies »), pas des
+perturbations continues (rapport \S6.1) --- la bonne opération est de
+conditionner exactement sur le couple \textbf{ordonné} de technologies
+(émettrice, receveuse), pas d'approximer dans un espace à 6 paramètres
+continus (rapport \S6.3 : un surrogate générique à 6D construit avant
+l'inspection du cas réel s'est avéré inutile une fois cette structure
+exploitée --- ne pas répéter cette impasse). À couple de technologies
+fixé, toute la non-linéarité tient dans une seule dimension $C=x+y$ ---
+le Hessien de $\delta^{*}$ est exactement de rang un (rapport \S6,
+éq.29-32), indépendamment des corrélations entre $x$ et $y$.
+
+\textbf{Architecture exigée} (rapport \S11, « architecture recommandée »
+--- suivre sauf justification écrite d'un meilleur choix dans le rapport
+de conception, \S9) :
+
+\begin{itemize}
+\item \textbf{Indexation par technologie, pas par flottant.} Chaque
+  $(A_i,\gamma_i)$ distinct reçoit un identifiant entier à sa première
+  apparition ; une matrice dense
+  \code{kernel[s\_émettrice][s\_receveuse]} route un couple en $O(1)$
+  (rapport \S7.1).
+\item \textbf{Chemin chaud} : régime (b) dès que
+  $\gamma_{\text{émettrice}}=\gamma_{\text{receveuse}}$ --- aucune
+  table, formule fermée (\S3.1).
+\item \textbf{Chemin tiède} : couple de technologies nouveau, ou table
+  en cours de construction --- noyau sans table (une étape de Newton
+  depuis $z_0=-2t$, rapport \S4.2 éq.21, ou deux tours de point fixe) le
+  temps d'observer assez d'occurrences.
+\item \textbf{Chemin froid} : Newton robuste (rapport \S4, formulation
+  exacte en $(t,u,z)$, éq.17) pour la première occurrence d'un couple, un
+  $C$ hors du domaine couvert par la table, ou un audit aléatoire.
+\item \textbf{Construction paresseuse d'une LUT 1D} $h(C)$ par couple de
+  technologies non trivial, après un seuil d'amortissement \textbf{mesuré
+  sur la machine cible} (indicatif du rapport : $\sim$1800 usages face à
+  Newton exact sur son banc scalaire, \S8.1 --- \textbf{à recalibrer}, ce
+  chiffre vient d'un benchmark synthétique, pas de ce moteur) ;
+  interpolation linéaire ou cubique de Hermite selon la tolérance
+  requise (rapport \S7.2 pour le pseudo-algorithme complet, à reprendre).
+\item \textbf{Aucun tirage aléatoire pendant la construction/extension
+  d'une table} --- la compilation peut s'exécuter en tout début du pas où
+  une intervention est appliquée (même point de synchronisation que
+  \S2) ; elle change la durée murale du pas, jamais la trajectoire
+  (rapport \S7.2, dernier paragraphe).
+\item \textbf{La LUT 2D globale n'est pas nécessaire} dans M4.3Live :
+  elle resterait le baseline si les exposants redevenaient continus,
+  mais le support discret transforme chaque cellule en problème 1D moins
+  coûteux (rapport \S11, conclusion).
+\end{itemize}
+
+\textbf{Contrainte institutionnelle à fixer explicitement, pas seulement
+numérique} (rapport \S2, éq.9) : le marché ne prête aujourd'hui que de
+la plus riche vers la plus pauvre
+(\code{K[lender] >= K[borrower]}, \code{m4\_3\_credit\_soc/m4\_3/model.py:
+357-361}, comportement structurel hérité sans changement, \S3.3). Deux
+choix possibles pour la borne supérieure de $\delta^{*}$ : (i) autoriser
+le transfert jusqu'à l'optimum général $h(C)$, qui peut dépasser
+l'égalisation des capitaux ; (ii) le plafonner à l'égalisation
+($(K_\ell-K_b)/2$ dans un cas homogène, une borne équivalente en
+général). Ce prompt ne tranche pas --- décision à documenter dans le
+rapport de conception, et listée en \S11.
+
+\subsection*{3.3 Hérité sans changement}
+
+\begin{itemize}
+\item Le sens du prêt (plus riche vers plus pauvre), le pool $k\equiv2$,
+  les faillites cancel+destroy, l'ordre des phases --- tout hérité de
+  M4.3 comme référence structurelle.
+\item La formule de production $A\cdot K^{\gamma}$ par entité --- \S1.
+\item $A_i$ et $\gamma_i$ par entité sont deux listes parallèles sur
+  \code{Population}, fixées à la naissance, jamais retirées ni
+  réutilisées après une mort --- même convention que les listes
+  existantes de \code{Population} (\code{K}, \code{alive}, \code{birth},
+  \ldots) dans le moteur de référence.
+\item \code{\_pair\_rate} (\code{m4\_3\_credit\_soc/m4\_3/model.py:
+  258-266}, $m=A\gamma K^{\gamma-1}$, $\mathit{rate}=\sqrt{m_\ell m_b}$)
+  reste le mécanisme de taux \textbf{par défaut} de M4.3Live --- voir
+  \S3.4, ce n'est pas remplacé par défaut, et sa généralisation par
+  entité (chaque côté utilisant son propre $A_i,\gamma_i$) est directe
+  et sans ambiguïté, contrairement au problème du principal.
+\end{itemize}
+
+\subsection*{3.4 Le taux d'intérêt : piste ouverte, pas un prérequis bloquant}
+
+Une annotation de l'utilisateur propose d'aller plus loin que le
+rapport : au lieu de garder \code{\_pair\_rate} inchangé, faire en sorte
+que « les entités se partagent le surplus dû à leur coopération juste
+après leur contrat », via un paramètre de partage $p$ qui « remplace
+$m$ ». Le rapport, lui, ne couvre \textbf{que} le problème du montant
+(son \S2 dit explicitement que remplacer le principal par ce transfert
+optimal serait « une nouvelle règle de principal », distincte du calcul
+du taux) --- cette extension au taux est une piste de l'utilisateur à
+explorer, \textbf{pas un résultat déjà établi}, et ce prompt ne la
+considère pas comme résolue.
+
+\textbf{Ce qu'un candidat $p$ devrait produire, précisément.} Le carnet
+de prêts a besoin d'un taux scalaire \code{rate} tel que
+$\mathit{due} = \mathit{principal} \times \mathit{rate}$ à chaque pas,
+perpétuellement (\code{m4\_3\_credit\_soc/m4\_3/model.py:166-187} pour
+l'agrégat \code{due}, \code{model.py:572-594} pour le service payé chaque
+pas --- mécanique à reproduire à l'identique dans le fork, \S3.5). Le
+surplus coopératif, lui, est une quantité \textbf{ponctuelle}, calculée
+une seule fois au moment du contrat :
+
+$$\Delta = \bigl[A_b(x+\delta^{*})^{\gamma_b} +
+A_\ell(y-\delta^{*})^{\gamma_\ell}\bigr] - \bigl[A_b x^{\gamma_b} +
+A_\ell y^{\gamma_\ell}\bigr].$$
+
+\textbf{Le problème réel n'est pas « comment partager $\Delta$ »} (un
+$p\in[0,1]$ suffit à répondre à cette partie) --- \textbf{c'est que
+transformer une quantité ponctuelle $\Delta$ en un taux perpétuel $r$
+n'est pas un problème bien posé sans une hypothèse supplémentaire} (un
+horizon implicite, un taux d'actualisation, une convention de rente
+perpétuelle\ldots). C'est cette hypothèse manquante, pas le partage
+lui-même, qui est la vraie question ouverte à trancher.
+
+\textbf{Ce que ce prompt exige si cette piste est explorée} :
+
+\begin{itemize}
+\item Documenter explicitement l'hypothèse choisie pour transformer
+  $(\Delta, p, \mathit{principal})$ en un taux $r$ --- pas un choix
+  implicite enterré dans le code.
+\item Vérifier que $r>0$ et que ce taux ne casse pas mécaniquement la
+  solvabilité au pas suivant : \code{due} entre dans le calcul
+  \textbf{avant} la dépréciation (\code{model.py:572-594}) --- un taux
+  dérivé du surplus peut être très supérieur à l'ancien taux de
+  rendement marginal, et un pic de faillites causé par cet artefact
+  numérique n'aurait rien à voir avec la question du rebond (\S1).
+  Documenter cette vérification, pas seulement l'effectuer.
+\item \textbf{\code{\_pair\_rate} (\S3.3) reste le mécanisme
+  opérationnel par défaut} tant que cette piste n'est pas terminée et
+  validée par les deux points ci-dessus. La question du rebond (\S7) est
+  mesurable avec le mécanisme de taux existant --- ne pas bloquer tout le
+  programme sur $p$. Traiter ce point comme un chantier de conception
+  \textbf{parallèle}, à documenter dans le rapport de conception (\S9)
+  qu'il ait abouti ou non, pas comme un préalable au reste du prompt.
+\end{itemize}
+
+\subsection*{3.5 Fork indépendant, pas un import}
+
+\textbf{M4.3Live doit être indépendant des autres modèles du dépôt}
+(décision explicite de l'utilisateur) --- ce qui referme la question
+laissée ouverte dans la révision précédente de ce prompt (« import
+direct vs fork »). Ne \textbf{pas} importer \code{m4\_3\_credit\_soc.m4\_3}
+comme dépendance : écrire le moteur de M4.3Live comme un paquet autonome
+dans le nouveau dossier (\S10), qui lit
+\code{m4\_3\_credit\_soc/m4\_3/model.py} comme référence structurelle
+(mêmes conventions : \code{Population}/\code{LoanBook} à listes
+parallèles jamais réindexées, RNG \code{numpy.random.default\_rng(seed)},
+ordre des phases) sans en dépendre au sens Python du terme.
+
+\subsection*{3.6 Parité avec M4.3 : souhaitable si simple, plus une exigence}
+
+\textbf{Ce point change par rapport à la révision précédente de ce
+prompt} (annotation explicite de l'utilisateur) : une correspondance
+bit-à-bit avec M4.3 n'est \textbf{plus requise}. Si elle s'obtient
+simplement dans le régime (a) (\S3.1) --- c'est-à-dire si le chemin
+homogène du fork produit exactement $(K_\ell-K_b)/2$ par construction
+plutôt que par coïncidence numérique --- c'est un plus à documenter, pas
+un objectif à poursuivre activement. Les régimes (b) et (c) n'ont de
+toute façon aucun analogue dans M4.3 littéral (qui n'implémentait que le
+cas homogène) : aucune parité n'est même définie pour eux.
+
+\section*{4. Architecture « en direct » : session, boucle de pas, journal d'interventions}
+\addcontentsline{toc}{section}{4. Architecture « en direct » : session, boucle de pas, journal d'interventions}
+
+\begin{itemize}
+\item \textbf{Boucle de simulation} : un thread dédié appelle
+  \code{Simulation.step()} en boucle à une cadence pilotable
+  (lecture/pause, pas-à-pas, vitesse), avec une porte
+  (\code{threading.Event} ou équivalent) pour la pause --- voir
+  l'invariant RNG du \S2. La file d'attente d'interventions est un objet
+  partagé protégé par verrou, purement stdlib
+  (\code{threading.Lock}/\code{queue.Queue}), dans l'esprit de
+  \code{simulation\_lab/jobs.py} (déjà \code{threading}-based) plutôt que
+  le modèle \code{multiprocessing.Process} de
+  \code{\_run\_single\_model\_worker} (\code{simulation\_lab/jobs.py:24-51})
+  --- un sous-processus séparé rendrait le partage d'état (population
+  potentiellement jusqu'à \code{pop\_max=30000} entités) coûteux à faire
+  transiter par \code{Queue} à chaque pas ; documenter ce choix dans le
+  rapport de conception.
+\item \textbf{API de pilotage unique, partagée entre l'IHM HTML et un
+  pilote sans tête} : la fonction qui applique une intervention (portée,
+  paramètre, valeur, éventuel $t_0$/$\varphi$) doit être un point
+  d'entrée Python appelable aussi bien depuis les gestionnaires HTTP
+  \code{do\_POST} de l'IHM que depuis un script headless --- la campagne
+  de mesure du \S7 nécessite plusieurs graines et un plan d'intervention
+  identique, rejouable par script.
+\item \textbf{Flux d'état vers le navigateur} : suivre la convention de
+  sondage déjà en place dans \code{simulation\_lab}
+  (\code{GET /api/jobs/<id>} interrogé périodiquement, cf.
+  \code{simulation\_lab/web/static/app.js}) --- endpoint JSON renvoyant
+  l'état courant, sondé à intervalle fixe côté client. Pas de nouvelle
+  dépendance (pas de websocket tiers).
+\item \textbf{Journal d'interventions, obligatoire, artefact du run} :
+  chaque intervention effectivement appliquée ($t$ effectif, paramètre,
+  portée, ancienne valeur, nouvelle valeur, et pour \code{fraction} les
+  identifiants effectivement tirés) est écrite dans un fichier à côté
+  des autres artefacts du run. \textbf{Propriété exigée et testée
+  (\S8)} : rejouer un run en mode headless à partir de (seed, paramètres
+  initiaux, journal d'interventions) doit reproduire une trajectoire
+  strictement identique à l'originale.
+\item \textbf{Statuts de fin de simulation}
+  (\code{"extinction"}/\code{"explosion"}, \code{model.py:678-681}) : la
+  boucle en direct doit s'arrêter proprement sur ces statuts et
+  l'afficher clairement côté IHM.
+\item \textbf{Reprise depuis un run M4.3 existant} (demande explicite de
+  l'utilisateur) : pouvoir, à partir d'un run M4.3 déjà stocké dans
+  \code{simulation\_lab\_data/runs/<run\_id>/} (paramètres et graine dans
+  ses métadonnées, \S6), lancer une session M4.3Live à partir d'un pas
+  $t_0$ arbitraire (1000, 2000, \ldots) de ce run. \textbf{Impossibilité
+  à énoncer clairement, pas à contourner en silence} : M4.3Live étant un
+  fork avec une institution différente (\S3), rejouer le run stocké avec
+  le moteur M4.3Live ne reproduit sa trajectoire \textbf{que} dans le
+  régime homogène (\S3.1a), et seulement si les chemins flottants
+  concordent --- ce n'est pas garanti par construction (\S3.6). Exiger
+  donc une \textbf{vérification de divergence obligatoire à chaque
+  reprise} : rejouer depuis (seed, paramètres) jusqu'à $t_0$ avec le
+  moteur M4.3Live, comparer la série obtenue à la série stockée du run
+  original, rapporter l'écart maximal observé --- ne jamais présenter
+  une reprise comme identique au run d'origine sans avoir mesuré cet
+  écart.
+\item \textbf{Snapshot complet à $t_0$, pour brancher plusieurs
+  sessions} (demande explicite de l'utilisateur) : une fois un run amené
+  à $t_0$ (reprise depuis M4.3 ci-dessus, ou session M4.3Live fraîche),
+  sauvegarder un snapshot complet et picklable de l'état (population,
+  carnet de prêts, RNG, caches du \S3.2) pour pouvoir relancer plusieurs
+  sessions différentes (contrôle, un ou plusieurs traitements) depuis ce
+  même $t_0$ sans re-simuler depuis $t=0$ à chaque fois --- sert
+  directement le protocole apparié du \S7.
+\end{itemize}
+
+\section*{5. IHM HTML --- un outil de recherche interne, pas un produit}
+\addcontentsline{toc}{section}{5. IHM HTML --- un outil de recherche interne, pas un produit}
+
+Nouvelle page (ex. \code{/live}), servie par extension de
+\code{simulation\_lab/web/app.py} ou par un serveur dédié isolé (à
+trancher, \S11) mais dans les deux cas construite pour ne pas régresser
+l'existant (\S6). Contenu minimal exigé :
+
+\begin{itemize}
+\item graphiques en direct des séries clés (\code{prod\_tot},
+  \code{K\_tot}, \code{pop}, \code{defaults}, et une vue de la dispersion
+  de $A$/$\gamma$ dans la population --- au minimum moyenne par cohorte
+  née avant/après chaque intervention) ;
+\item panneau de contrôle : paramètre, nouvelle valeur, portée
+  (\code{all}/\code{new}/\code{fraction} avec champ $\varphi$ quand
+  pertinent, \S2), avec les dégénérescences du \S2 explicitement
+  affichées (pas de sélecteur qui ment sur ce qu'il fait) ;
+\item contrôles de lecture : play/pause/pas-à-pas/vitesse ;
+\item journal visible des interventions appliquées ($t$, paramètre,
+  portée, valeurs).
+\end{itemize}
+
+C'est un outil de recherche interne, que l'utilisateur veut pouvoir
+manipuler lui-même en complément d'un travail autonome de l'agent
+(remarque explicite de l'utilisateur) : priorité à la clarté et à
+l'exactitude des chiffres affichés sur le raffinement visuel. Réutiliser
+le style existant (\code{simulation\_lab/web/static/app.css}) plutôt
+qu'en construire un nouveau. Ne pas sur-investir en design.
+
+\section*{6. Intégration avec simulation\_lab : isolation, non-régression}
+\addcontentsline{toc}{section}{6. Intégration avec simulation\_lab : isolation, non-régression}
+
+\code{simulation\_lab/} reste fonctionnel pour ses usages actuels
+(lancement simple/batch, \code{/launch}, \code{/results}, CLI
+\code{list-models}/\code{run}/\code{batch}/\code{list-runs}) après ce
+travail --- vérifier au sens propre (relancer ces commandes, pas
+seulement lire le code) avant de considérer la tâche terminée. Isoler le
+nouveau code plutôt que modifier en place les chemins existants de
+\code{contracts.py}/\code{jobs.py}/\code{runs/} --- par exemple un
+module \code{simulation\_lab/live/} séparé, avec ses propres routes
+(\code{/live}, \code{/api/live/*}) ajoutées à
+\code{SimulationLabHandler} (\code{simulation\_lab/web/app.py:45-193})
+sans toucher aux branches existantes de \code{do\_GET}/\code{do\_POST}.
+La fonctionnalité de reprise (\S4) lit les runs déjà stockés via
+\code{simulation\_lab.runs.storage.RunStorage} (métadonnées, seed,
+paramètres) --- en lecture seule, sans modifier le format de stockage
+existant. Si un adaptateur \code{BaseSimulationModel} (\code{contracts.py})
+a un sens pour exposer une version \emph{batch} (sans direct) du moteur
+étendu via \code{/launch} classique, c'est un bonus optionnel --- pas un
+prérequis, le pilote headless du \S4 suffit pour la science.
+
+\section*{7. Protocole expérimental pour la question du rebond}
+\addcontentsline{toc}{section}{7. Protocole expérimental pour la question du rebond}
+
+\begin{itemize}
+\item \textbf{Contrôle apparié par graine.} Deux runs de même graine,
+  mêmes paramètres initiaux, l'un avec un journal d'interventions vide
+  (contrôle), l'autre avec une intervention à $t_0$ (traitement) : les
+  deux trajectoires sont \textbf{rigoureusement identiques jusqu'à
+  $t_0$} (même séquence RNG consommée dans le même ordre jusque-là) et
+  ne divergent qu'à partir de l'intervention. C'est ce qui rend la
+  différenciation appariée légitime et peu coûteuse --- s'appuyer dessus
+  comme estimateur plutôt qu'en inventer un autre. \textbf{Utiliser le
+  snapshot à $t_0$ du \S4} pour brancher contrôle et traitement(s) sans
+  re-simuler depuis $t=0$ à chaque fois.
+\item \textbf{Plan minimal} : à $t_0$ choisi après relaxation (temps
+  caractéristique du système, pas une valeur arbitraire). \textbf{Ne pas
+  relancer de mesure de temps de relaxation à partir de zéro} : M4.3 a
+  déjà estimé ce temps à sa baseline
+  (\code{m4\_3\_credit\_soc/scripts/renewal\_relaxation\_all\_runs.py},
+  résultats cités dans son rapport final) --- partir de cette estimation
+  existante pour fixer $t_0$ (avec une marge de sécurité raisonnable), et
+  ne remesurer que si les paramètres retenus pour \S7 s'écartent trop de
+  la baseline M4.3 pour que l'estimation reste fiable. Comparer ensuite
+  (a) contrôle, (b) portée \code{fraction} (ou \code{new}, \S1) à
+  $\varphi$ fixé sur $A$ (levier primaire, \S1, régime (b) du \S3.1),
+  (c) portée \code{all} de même amplitude sur $A$ comme référence
+  « hausse globale », (d) au moins une variante faisant varier $\gamma$
+  pour placer la paire dans le régime (c) du \S3.1 --- ceci exerce
+  délibérément le chemin coûteux de l'institution, pas seulement le
+  chemin fermé. Plusieurs graines par cellule (le nombre exact à ta
+  discrétion, mais jamais une seule). Optionnellement, des jeux
+  différents de $\lambda$/$\delta$/$\sigma$ peuvent servir de régimes de
+  population/marché secondaires (\S2).
+\item \textbf{Fenêtre d'observation} : mesurer \code{prod\_tot} sur une
+  fenêtre post-$t_0$ dont la longueur est justifiée par le temps de
+  relaxation du système, pas fixée arbitrairement.
+\item \textbf{Verdict à rendre}, avec la discipline
+  fait/inférence/hypothèse/incertitude du reste du dépôt : effet rebond
+  observé / non observé / non tranchable avec le budget de calcul
+  disponible (\S1 --- l'objectif de cette itération est l'observation,
+  pas l'attribution causale).
+\item Réutiliser l'outillage statistique existant du dépôt
+  (\code{m4\_3\_credit\_soc/scripts/lib\_metrics.py} et voisins) si
+  pertinent plutôt que le récrire ; le dire si rien ne s'applique.
+\end{itemize}
+
+\section*{8. Tests exigés}
+\addcontentsline{toc}{section}{8. Tests exigés}
+
+\begin{itemize}
+\item \textbf{Institution de principal} (\S3) : régime (a) reproduit
+  $(K_\ell-K_b)/2$ à une tolérance documentée (pas nécessairement
+  bit-exacte, \S3.6) ; régime (b) vérifié exactement contre la formule
+  fermée (rapport éq.14) ; régime (c) vérifié par comparaison
+  Newton-exact vs le chemin choisi (chaud/tiède/froid), erreur sous la
+  tolérance documentée.
+\item \textbf{Rejeu/déterminisme} (\S4) : le journal source de ce test
+  doit provenir d'une \textbf{session en direct réelle}, où les
+  interventions (au moins une par portée) ont été soumises de façon
+  asynchrone pendant que la boucle tournait --- pas d'un plan headless
+  écrit et exécuté par le même code que celui qui doit être vérifié. Ce
+  journal, rejoué en mode headless, doit reproduire une trajectoire
+  strictement identique à l'originale, en particulier même $t$ effectif
+  que celui enregistré.
+\item \textbf{Divergence à la reprise} (\S4) : pour la fonctionnalité de
+  reprise depuis un run M4.3 stocké, comparer systématiquement la série
+  rejouée à la série originale et vérifier que l'écart mesuré est
+  rapporté, pas seulement calculé en silence.
+\item \textbf{Invariant de pause} (\S2) : $N$ pas avec une ou plusieurs
+  pauses au milieu produisent la même trajectoire que $N$ pas sans
+  pause.
+\item \textbf{Sémantique de portée}, au moins un test unitaire par
+  portée : \code{new} ne change rien aux entités déjà nées ; \code{all}
+  change bien toutes les entités vivantes au pas suivant ;
+  \code{fraction} ne touche que le nombre attendu d'entités \textbf{et}
+  ne change pas le défaut utilisé par les naissances postérieures à
+  $t_0$ (vérifier explicitement qu'une entité née après $t_0$ reçoit
+  l'ancien défaut, pas la valeur tirée).
+\item \textbf{Solvabilité}, si la piste du \S3.4 est implémentée : le
+  taux candidat $r(p,\Delta,\mathit{principal})$ reste positif et ne
+  provoque pas un pic de défauts mécanique au pas suivant, sur un
+  échantillon de paires représentatif.
+\item Assertions Python simples, cohérent avec la convention du dépôt
+  (pas de pytest, \code{CLAUDE.md}).
+\end{itemize}
+
+\section*{9. Livrables}
+\addcontentsline{toc}{section}{9. Livrables}
+
+\begin{itemize}
+\item Code complet et fonctionnel dans \code{m4\_3live\_credit\_soc/}
+  (\S10 pour l'arborescence attendue) --- un système qui tourne
+  réellement, pas un squelette : démarrer le serveur, piloter une
+  session en direct dans un vrai navigateur, vérifier visuellement que
+  les graphiques et le panneau de contrôle fonctionnent, avant de
+  déclarer la tâche terminée.
+\item \textbf{Rapport de conception}, \LaTeX{} compilé en PDF
+  (\code{report/conception\_m4\_3live.pdf}) : toutes les décisions
+  d'architecture de ce prompt justifiées avec citations
+  \code{fichier.py:ligne} --- en particulier les trois régimes du \S3.1,
+  l'architecture hot/warm/cold retenue (\S3.2) et ses seuils
+  recalibrés, le choix de borne institutionnelle (\S3.2, dernier
+  point), le statut du chantier taux/$p$ (\S3.4, abouti ou non), le
+  caractère indépendant du fork (\S3.5), et les résultats de la
+  vérification de divergence à la reprise (\S4) --- y compris les
+  décisions explicitement laissées ouvertes (\S11) et la façon dont tu
+  les as tranchées.
+\item \textbf{Rapport de résultats}, \LaTeX{} compilé en PDF
+  (\code{report/rapport\_final.pdf}) : protocole du \S7, résultats,
+  figures, verdict d'observation sur l'effet rebond, limites --- même
+  discipline scientifique que
+  \code{m4\_3\_credit\_soc/report/rapport\_final.tex}.
+\item Compilation PDF vérifiée (le \code{.tex} seul ne suffit pas).
+\item Un \code{README.md} et un \code{JOURNAL.md} courts dans
+  \code{m4\_3live\_credit\_soc/}, cohérents avec la convention du dépôt.
+\end{itemize}
+
+\section*{10. Arborescence attendue}
+\addcontentsline{toc}{section}{10. Arborescence attendue}
+
+\begin{verbatim}
+m4_3live_credit_soc/
++-- prompts/PROMPT_M4_3LIVE.md      (ce document, source markdown)
++-- prompts/PROMPT_M4_3LIVE.tex/.pdf (cette version LaTeX/PDF)
++-- prompts/rapport_architecture_offline_online.pdf (etude du S3, lecture obligatoire)
++-- m4_3live/                        (paquet moteur INDEPENDANT, S3.5)
+|   +-- model.py                     (institution du S3, per-entite A/gamma)
+|   +-- live.py                      (session, boucle, journal, S4)
++-- driver/                          (pilote headless, S4 -- nom a ta discretion)
++-- web/ ou extension de simulation_lab/live/ (S6, a trancher S11)
++-- tests/
+|   +-- test_institution.py          (S8, trois regimes)
+|   +-- test_replay.py
+|   +-- test_scopes.py
+|   +-- test_resume_divergence.py    (S4, S8)
++-- scripts/                         (campagne du S7)
++-- results/                         (runs de la campagne, snapshots)
++-- report/
+|   +-- conception_m4_3live.tex/.pdf
+|   +-- rapport_final.tex/.pdf
+|   +-- figures/
++-- README.md
++-- JOURNAL.md
+\end{verbatim}
+
+\section*{11. Décisions laissées ouvertes, à trancher et documenter toi-même}
+\addcontentsline{toc}{section}{11. Décisions laissées ouvertes, à trancher et documenter toi-même}
+
+\begin{itemize}
+\item Nom exact du paquet/dossier si \code{m4\_3live\_credit\_soc}/
+  \code{m4\_3live} s'avère gênant en pratique --- réglé par défaut,
+  changement possible si justifié.
+\item Extension de \code{simulation\_lab/web/app.py} en place (isolée,
+  \S6) vs serveur HTTP dédié entièrement séparé pour \code{/live} --- les
+  deux sont acceptables, documenter le choix et pourquoi.
+\item Mécanisme exact de sondage HTTP (intervalle, format JSON) ---
+  reprendre la convention \code{app.js} existante par défaut, l'adapter
+  si le débit d'un direct l'exige, en le disant.
+\item Étendre l'hétérogénéité par entité à d'autres paramètres que
+  $A$/$\gamma$ (ex. \code{delta} par entité) --- hors mandat par défaut,
+  seulement si le protocole du \S7 en révèle un besoin net.
+\item \textbf{Co-variation de \code{K0} avec une intervention
+  $A$/$\gamma$} (\S2) --- automatique, optionnelle sur demande, ou
+  délibérément découplée ; à trancher avant la campagne du \S7 et à
+  documenter, quelle que soit la réponse.
+\item \textbf{Borne supérieure du transfert optimal} (\S3.2, égalisation
+  des capitaux vs optimum général $h(C)$) --- choix institutionnel, pas
+  numérique.
+\item \textbf{Seuils hot/warm/cold} (\S3.2) --- recalibrer sur la
+  machine cible, ne pas reprendre tels quels les chiffres du banc
+  synthétique du rapport.
+\item \textbf{Statut du chantier taux/$p$} (\S3.4) --- abouti (avec
+  l'hypothèse de conversion $\Delta\to r$ documentée et validée) ou
+  explicitement ajourné au profit de \code{\_pair\_rate}, mais pas
+  laissé dans un état intermédiaire non documenté.
+\end{itemize}
+
+\section*{12. Consignes de méthode de travail, pour toi (Opus 5)}
+\addcontentsline{toc}{section}{12. Consignes de méthode de travail, pour toi (Opus 5)}
+
+\begin{itemize}
+\item \textbf{Livrer un système complet, pas des ébauches.} Chaque pièce
+  du \S10 doit fonctionner de bout en bout avant que la tâche soit
+  déclarée terminée --- pas de squelette avec des TODO, pas de
+  fonctionnalité à moitié câblée.
+\item \textbf{Calibrer la longueur des livrables écrits sur leur
+  substance.} Les deux rapports \LaTeX{} doivent couvrir ce que ce
+  prompt demande, sans sections de remplissage, sans résumé redondant en
+  fin de document, sans paragraphe qui répète ce qui vient d'être dit
+  autrement.
+\item \textbf{Pas de vérification en boucle au-delà de ce qui est
+  demandé.} Les tests du \S8 et le test manuel dans un vrai navigateur
+  (\S9) sont les vérifications exigées --- inutile d'ajouter des passes
+  de relecture supplémentaires au-delà.
+\item \textbf{Périmètre : livrer ce qui est demandé, à l'échelle
+  demandée.} Prendre seul les décisions d'implémentation de routine (y
+  compris celles listées en \S11) ; ne pas élargir le mandat
+  scientifique au-delà du \S7 ; si une lecture différente de ce prompt
+  changerait matériellement le travail à produire, le signaler en une
+  phrase et continuer avec la lecture la plus proche du texte plutôt que
+  de redéfinir la tâche.
+\end{itemize}
+
+\subsection*{Sous-agents : subdiviser intelligemment, pas systématiquement}
+\addcontentsline{toc}{subsection}{Sous-agents : subdiviser intelligemment, pas systématiquement}
+
+Ce dépôt et cette tâche se prêtent à de la délégation --- utiliser les
+sous-agents avec discernement plutôt que tout faire en séquence toi-même
+ou, à l'inverse, tout déléguer par réflexe :
+
+\begin{itemize}
+\item \textbf{Réserver ton propre raisonnement (Opus) aux décisions qui
+  déterminent la validité scientifique et architecturale du travail} :
+  l'institution de principal et ses trois régimes (\S3), la sémantique
+  exacte des trois portées (\S2), le protocole expérimental et
+  l'écriture du verdict (\S7), l'intégration avec \code{simulation\_lab}
+  sans régression (\S6), et la relecture finale de cohérence entre code
+  et rapports. Ce sont les endroits où une erreur de jugement invalide
+  tout le reste.
+\item \textbf{Déléguer les missions simples, bien délimitées et
+  vérifiables isolément à des sous-agents sur un modèle plus léger
+  (Sonnet ou Haiku)} : écrire le CSS/JS répétitif de l'IHM une fois la
+  structure de l'API fixée, écrire un test unitaire donné une
+  spécification précise (\S8), lancer et collecter une graine de la
+  campagne du \S7 une fois le protocole gelé, rédiger une section
+  descriptive du rapport de conception à partir de décisions déjà
+  prises et citées, exécuter une vérification de non-régression sur
+  \code{simulation\_lab} et rapporter le résultat brut.
+\item Donner à chaque sous-agent délégué un mandat autonome et complet
+  (pas un fragment de phrase) : quel fichier, quel contrat
+  d'entrée/sortie, quel test de validation --- puisqu'un sous-agent frais
+  ne voit pas ce prompt, lui fournir directement les extraits pertinents
+  (numéros de ligne, formules, sémantique de portée) plutôt que d'y
+  renvoyer par référence.
+\item Ne pas déléguer la vérification de ton propre travail à un autre
+  sous-agent en plus des tests déjà exigés (\S8/\S9) --- pas de double
+  passe de relecture par sous-agent interposé.
+\item Ne pas ouvrir plus de sous-agents que la structure du travail n'en
+  justifie --- une tâche qui tient en quelques appels d'outils directs
+  n'a pas besoin d'être déléguée.
+\end{itemize}
+
+\end{document}

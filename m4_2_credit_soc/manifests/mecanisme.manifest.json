@@ -1,0 +1,150 @@
+{
+ "plan": "mecanisme",
+ "cells": [
+  {
+   "cell": "g067_meca",
+   "cell_id": "608cf92c7215",
+   "plan": "mecanisme",
+   "parameters": {
+    "A": 1.0,
+    "lam": 30.0,
+    "delta": 0.05,
+    "sigma": 0.25,
+    "K0": 25.0,
+    "pop_max": 30000,
+    "snapshot_every": 50,
+    "individual_every": 5,
+    "figures": true,
+    "gamma": 0.6666666666666666,
+    "T": 4000
+   },
+   "n_runs": 1,
+   "base_seed": 1,
+   "label": "M4.2 — mecanisme — g067_meca",
+   "keep": false,
+   "engine_hash": "932e58643e522d7b",
+   "batch_id": "20260727_184355_64ff9719",
+   "run_ids": [
+    "20260727_184355_b8b2e9f7"
+   ],
+   "duration_seconds": 502.3,
+   "launched_at": "2026-07-27T18:52:17+0200"
+  },
+  {
+   "cell": "g060_meca",
+   "cell_id": "bac9612220cf",
+   "plan": "mecanisme",
+   "parameters": {
+    "A": 1.0,
+    "lam": 30.0,
+    "delta": 0.05,
+    "sigma": 0.25,
+    "K0": 25.0,
+    "pop_max": 30000,
+    "snapshot_every": 50,
+    "individual_every": 5,
+    "figures": true,
+    "gamma": 0.6,
+    "T": 4000
+   },
+   "n_runs": 1,
+   "base_seed": 1,
+   "label": "M4.2 — mecanisme — g060_meca",
+   "keep": false,
+   "engine_hash": "932e58643e522d7b",
+   "batch_id": "20260727_184355_daada072",
+   "run_ids": [
+    "20260727_184355_a1bca015"
+   ],
+   "duration_seconds": 515.6,
+   "launched_at": "2026-07-27T18:52:30+0200"
+  },
+  {
+   "cell": "g050_meca",
+   "cell_id": "13d0f23f069f",
+   "plan": "mecanisme",
+   "parameters": {
+    "A": 1.0,
+    "lam": 30.0,
+    "delta": 0.05,
+    "sigma": 0.25,
+    "K0": 25.0,
+    "pop_max": 30000,
+    "snapshot_every": 50,
+    "individual_every": 5,
+    "figures": true,
+    "gamma": 0.5,
+    "T": 4000
+   },
+   "n_runs": 1,
+   "base_seed": 1,
+   "label": "M4.2 — mecanisme — g050_meca",
+   "keep": false,
+   "engine_hash": "932e58643e522d7b",
+   "batch_id": "20260727_184355_21cc7b3a",
+   "run_ids": [
+    "20260727_184355_1e0896c8"
+   ],
+   "duration_seconds": 572.5,
+   "launched_at": "2026-07-27T18:53:27+0200"
+  },
+  {
+   "cell": "g040_meca",
+   "cell_id": "2b12f8b0e25d",
+   "plan": "mecanisme",
+   "parameters": {
+    "A": 1.0,
+    "lam": 30.0,
+    "delta": 0.05,
+    "sigma": 0.25,
+    "K0": 25.0,
+    "pop_max": 30000,
+    "snapshot_every": 50,
+    "individual_every": 5,
+    "figures": true,
+    "gamma": 0.4,
+    "T": 4000
+   },
+   "n_runs": 1,
+   "base_seed": 1,
+   "label": "M4.2 — mecanisme — g040_meca",
+   "keep": false,
+   "engine_hash": "932e58643e522d7b",
+   "batch_id": "20260727_184355_bb449281",
+   "run_ids": [
+    "20260727_184355_6a568c58"
+   ],
+   "duration_seconds": 611.6,
+   "launched_at": "2026-07-27T18:54:06+0200"
+  },
+  {
+   "cell": "g033_meca",
+   "cell_id": "14c75bd4d78c",
+   "plan": "mecanisme",
+   "parameters": {
+    "A": 1.0,
+    "lam": 30.0,
+    "delta": 0.05,
+    "sigma": 0.25,
+    "K0": 25.0,
+    "pop_max": 30000,
+    "snapshot_every": 50,
+    "individual_every": 5,
+    "figures": true,
+    "gamma": 0.3333333333333333,
+    "T": 4000
+   },
+   "n_runs": 1,
+   "base_seed": 1,
+   "label": "M4.2 — mecanisme — g033_meca",
+   "keep": false,
+   "engine_hash": "932e58643e522d7b",
+   "batch_id": "20260727_184355_e0db0996",
+   "run_ids": [
+    "20260727_184355_e31165e7"
+   ],
+   "duration_seconds": 651.4,
+   "launched_at": "2026-07-27T18:54:46+0200"
+  }
+ ]
+}

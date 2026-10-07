@@ -3,7 +3,9 @@
 Document historique daté du 27 mars 2026.
 Il décrit l'organisation retenue à cette date, mais ne reflète plus à lui seul l'état courant du dépôt.
 La lignée concernée a depuis été déplacée dans `archives/modeles/claude3-v3-27-mars/`.
-Pour le travail actuel, le modèle le plus abouti est `Modèle_sans_banque_wip/`, branché dans `simulation_lab/`.
+La lignée alors considérée comme WIP est maintenant rangée dans
+`anciens_modeles/Modèle_sans_banque/`. M4B est le seul modèle acceptant de
+nouveaux lancements dans `simulation_lab/`.
 
 Décision appliquée : **`claude3-v3-27-mars/` est la seule version d'actualité pour le travail courant**.
 

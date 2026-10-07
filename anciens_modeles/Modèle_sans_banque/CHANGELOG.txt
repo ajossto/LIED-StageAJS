@@ -1,0 +1,365 @@
+JOURNAL DES MODIFICATIONS
+=========================
+Date : 2026-03-27
+Version de référence : claude3-v3-27-mars
+
+
+----------------------------------------------------------------------
+BLOC 0 — Correction de bug : double-dépréciation du bilan emprunteur
+----------------------------------------------------------------------
+Fichier : simulation.py
+Fonction supprimée dans : create_bankruptcy_estate() (devenu obsolète)
+
+Problème : lors de la création d'une masse de faillite, le code ajustait
+actif_exoinvesti et passif_exoinvesti de l'emprunteur par le delta
+(real_value - loan.principal). Or apply_depreciation() maintient déjà
+K^exo = P^exo = real_value via la dépréciation géométrique. La correction
+appliquait donc deux fois la même dépréciation.
+
+Correction : l'entièreté du mécanisme create_bankruptcy_estate() a été
+remplacé par process_single_failure() révisé (voir Bloc 1). Le bilan de
+l'emprunteur n'est plus modifié lors de la réévaluation d'un prêt.
+
+
+----------------------------------------------------------------------
+BLOC 1 — Suppression des masses de faillite (BankruptcyEstate)
+----------------------------------------------------------------------
+Fichiers : models.py, simulation.py, statistics.py
+
+Supprimé :
+  - Classe BankruptcyEstate (models.py)
+  - Attribut self.estates dans Simulation.__init__
+  - Méthode create_bankruptcy_estate()
+  - Méthode redistribute_estate_interest()
+  - Appel redistribute_estate_interest() dans run_step()
+  - Champ estates_created dans summary()
+  - Accès sim.estates dans statistics.py (Collector.record_step)
+  - Import BankruptcyEstate dans simulation.py
+
+Remplacé par : redistribution directe dans process_single_failure()
+
+Nouveau comportement :
+  Quand une entité A fait faillite en tant que prêteuse sur un prêt L → B :
+    1. La valeur réelle de L est calculée : real_value = principal × (1−δ_exo)^âge.
+    2. Les créanciers de A (ceux à qui elle devait) reçoivent des nouveaux contrats
+       de prêt fractionnés sur B, proportionnellement à leurs encours sur A.
+    3. Chaque créancier k reçoit un prêt k → B de principal w_k × real_value.
+       Son actif_prete et passif_credit_detenu sont mis à jour en conséquence.
+    4. Si aucun créancier éligible (ou real_value ≤ ε), le prêt est annulé
+       symétriquement : K^exo et P^exo de B sont réduits de real_value.
+    5. Les auto-prêts (créancier == emprunteur) sont exclus et leurs poids
+       redistribués proportionnellement aux autres créanciers.
+
+  Les intérêts futurs sur B passent directement par le marché normal
+  (pay_interest_phase), sans redistribution spéciale.
+
+Note statistique : nb_masses_faillite dans SystemicIndicator est maintenu à 0
+(champ conservé pour rétrocompatibilité CSV).
+
+
+----------------------------------------------------------------------
+BLOC 2 — Réévaluation des créances avant cession
+----------------------------------------------------------------------
+Fichier : simulation.py
+Méthode ajoutée : _revalue_loan(loan) → Optional[Loan]
+Méthode modifiée : _transfer_claims_for_payment()
+
+Principe : toute créance est évaluée à sa valeur réelle au moment où une
+entité cherche à la céder, qu'il s'agisse d'un paiement d'intérêts, d'un
+remboursement de principal ou de toute autre mobilisation de créance.
+
+_revalue_loan() :
+  - Calcule real_value = loan.principal × (1−δ_exo)^(current_step − creation_step)
+  - Si real_value ≤ ε : désactive le prêt, réduit actif_prete et
+    passif_credit_detenu du prêteur, retourne None.
+  - Si |delta| > ε : écrit le write-down (delta < 0) dans les livres du
+    prêteur, désactive l'ancien prêt, crée un nouveau prêt à real_value
+    (creation_step = pas courant), retourne le nouveau prêt.
+  - Sinon : retourne le prêt inchangé.
+  Le bilan de l'emprunteur (K^exo, P^exo) n'est JAMAIS modifié.
+
+_transfer_claims_for_payment() :
+  - Accepte un paramètre optionnel sorted_loans (liste pré-triée/filtrée).
+  - Appelle _revalue_loan() sur chaque créance candidate avant de la céder.
+  - La cession et l'éventuelle scission opèrent sur le prêt réévalué.
+
+Effet : une entité en difficulté de liquidité peut découvrir qu'une créance
+qu'elle portait à sa valeur nominale ne lui permet de lever que sa valeur
+réelle (inférieure). La fragilité cachée est révélée au moment de la vente.
+
+
+----------------------------------------------------------------------
+BLOC 3 — Contrainte d'endettement élargie aux revenus financiers
+----------------------------------------------------------------------
+Fichier : simulation.py
+Méthode modifiée : _debt_ratio_ok()
+
+Ancienne formule : charges_totales / (α√P) ≤ seuil
+Nouvelle formule : charges_totales / (α√P + Σ r_j·q_j) ≤ seuil
+  où Σ r_j·q_j est la somme des intérêts reçus sur les prêts actifs
+  détenus par l'emprunteur au moment du contrôle.
+
+Les revenus financiers sont calculés dynamiquement à chaque appel
+(pas gelés en début de pas). Cela est cohérent avec la logique du marché
+du crédit itératif : les transactions modifient les positions en cours
+d'itération.
+
+
+----------------------------------------------------------------------
+BLOC 4 — Arbitrage vente-de-créance / reliquéfaction (Option A)
+----------------------------------------------------------------------
+Fichier : simulation.py
+Méthode modifiée : _ensure_payment_capacity()
+
+Ancienne séquence : liquide → cession (taux croissant) → reliquéfaction endo
+
+Nouvelle séquence :
+  1) Actif liquide (inchangé).
+  2) Cession des créances dont le taux < r* (taux interne marginal de l'entité).
+     Ordre : taux croissant (céder les moins rentables en premier).
+  3) Reliquéfaction endogène (coefficient c, décote sur la valeur liquidée).
+  4) Cession des créances dont le taux ≥ r* (plus rentables, dernier recours).
+     r* est recalculé après l'étape 3 car P^endo a pu diminuer.
+
+Raisonnement : une créance dont le taux est inférieur au taux marginal de
+l'entité est moins rentable que sa capacité extractive. Il est rationnel de
+la vendre avant de sacrifier la capacité productive. À l'inverse, une créance
+très rémunératrice ne doit être cédée qu'en dernier ressort.
+
+Chaque cession appelle _revalue_loan() (Bloc 2) sur la créance traitée.
+
+
+----------------------------------------------------------------------
+BLOC 5 — Calcul de la fragilité cachée (statistiques)
+----------------------------------------------------------------------
+Fichier : simulation.py
+Méthode ajoutée : compute_hidden_fragility() → Dict[int, float]
+
+Calcule, pour chaque entité vivante prêteuse, la somme des écarts entre
+la valeur nominale portée dans les objets Loan (loan.principal) et la
+valeur économique réelle (principal × (1−δ_exo)^âge).
+
+Ne modifie aucun bilan. Peut être appelée à tout moment depuis l'extérieur
+pour produire des indicateurs de risque caché. Retourne un dictionnaire
+{entity_id: perte_cachée_totale} ne listant que les entités avec une perte
+non nulle (> ε).
+
+Usage typique :
+    frag = sim.compute_hidden_fragility()
+    total_hidden_loss = sum(frag.values())
+
+
+----------------------------------------------------------------------
+RÉSUMÉ DES FICHIERS MODIFIÉS
+----------------------------------------------------------------------
+models.py
+  - Suppression de BankruptcyEstate
+  - Nettoyage des imports (Dict, List, field supprimés)
+  - Mise à jour du docstring module
+
+simulation.py
+  - Mise à jour du docstring module
+  - Suppression de l'import BankruptcyEstate
+  - Suppression de self.estates et self.next_estate_id
+  - Ajout : _revalue_loan()
+  - Ajout : compute_hidden_fragility()
+  - Réécriture complète : process_single_failure() (redistribution directe)
+  - Suppression : create_bankruptcy_estate()
+  - Suppression : redistribute_estate_interest()
+  - Modification : _transfer_claims_for_payment() (réévaluation + sorted_loans)
+  - Modification : _ensure_payment_capacity() (arbitrage r*)
+  - Modification : _debt_ratio_ok() (revenus financiers inclus)
+  - Modification : run_step() (appel redistribute_estate_interest supprimé)
+  - Modification : summary() (champ estates_created supprimé)
+
+statistics.py
+  - Suppression de l'accès sim.estates dans Collector.record_step()
+  - nb_masses_faillite forcé à 0 (champ conservé dans l'output CSV)
+
+
+======================================================================
+BLOC 6 — Correction de l'offre de prêt : réserve de solvabilité
+======================================================================
+Date : 2026-04-02
+Fichier : simulation.py
+Méthode modifiée : _lender_offer()
+
+Problème identifié (analyse théorique + simulation) :
+  La valeur nette de toute entité est NW = L − B (invariant exact,
+  car K^endo=P^endo, K^exo=P^exo et K^prête=C s'annulent).
+  La faillite se réduit donc à L < B.
+
+  L'offre de prêt était : offer = max(0, L − s·P).
+  Après un prêt complet, le prêteur se retrouve avec L = s·P.
+  Or s·P < B dès que P < B/s = 5/0,05 = 100.
+  → Tout prêteur avec P < 100 peut prêter en dessous du seuil de
+    faillite et mourir instantanément au pas suivant (cascade).
+
+  Vérification empirique (seed=42, 200 pas, 10 entités initiales) :
+    - 100 % des morts sont causées par un prêt au cours du même pas.
+    - 89 % de mortalité globale ; le réseau ne dépasse jamais 1 prêt.
+    - Aucune entité n'atteint P = 100 avant de mourir.
+
+  Le marché du crédit sélectionne comme prêteur l'entité au r* le
+  plus faible (= la plus grande P), c'est-à-dire la plus développée.
+  Ces entités sont systématiquement tuées : syndrome de la grande
+  perche, le réseau ne peut pas s'auto-entretenir.
+
+Correction :
+  Ancienne réserve : s·P  (seuil de liquidité seul)
+  Nouvelle réserve : max(s·P, B_innée)  (max liquidité/solvabilité)
+
+  Après un prêt complet : L = max(s·P, B) ≥ B → solvable.
+  Pour P ≥ 100 : max(s·P, B) = s·P (comportement inchangé).
+  Pour P < 100 : max(s·P, B) = B (protection solvabilité active).
+
+Effet mesuré (mêmes paramètres, seed=42, 200 pas) :
+  Indicateur           | Avant   | Après
+  Taux de mortalité    | 89 %    | 12 %
+  Prêts actifs (t=200) |  1      | 75
+  Volume de crédit     | 12      | 1 524
+  Prêteurs actifs      |  1      |  8
+  Emprunteurs actifs   |  1      | 60
+  Entités avec P ≥ 100 |  0      | 49 (28 %)
+
+  Structure émergente : réseau cœur-périphérie.
+  Cœur : entités établies (P > B/s, r* faible) → prêteurs stables.
+  Périphérie : jeunes entités (P < B/s, r* élevé) → emprunteurs.
+
+Note : les mesures ci-dessus utilisaient B=5, L=10 (ancienne config).
+  Le bloc 7 ci-dessous généralise la correction à toutes les fonctions
+  qui calculent un surplus, et la valide avec B=190, L=200.
+
+
+======================================================================
+BLOC 7 — Généralisation via _liquidity_reserve() + correction AI
+======================================================================
+Date : 2026-04-02
+Fichier : simulation.py
+Méthodes modifiées :
+  - auto_invest_end_of_turn()  (surplus → réserve corrigée)
+  - _borrower_qmax()           (surplus planifié → réserve corrigée)
+  - _borrowing_is_acceptable() (surplus planifié → réserve corrigée)
+  - _lender_offer()            (refactorisé pour utiliser le helper)
+Méthode ajoutée :
+  - _liquidity_reserve(entity) → float
+
+Problème diagnostiqué :
+  Après le Bloc 6, deux nouveaux problèmes émergent quand B >> s·P :
+  1. auto_invest_end_of_turn : utilisait encore surplus = L − s·P,
+     ce qui drainait L sous B même sans aucun prêt.
+  2. _borrower_qmax / _borrowing_is_acceptable : calculaient le surplus
+     "planifié" avec l'ancienne formule, gonflant artificiellement le
+     surplus prévu et rendant qmax négatif (demande nulle).
+  Ces deux effets combinés supprimaient tout le marché du crédit.
+
+Correction :
+  Factorisation en un helper central :
+    _liquidity_reserve(e) = max(s·P, B_innée)
+  Ce helper est utilisé partout où un surplus liquide est calculé.
+  Garantit la cohérence entre l'offre de prêt, l'auto-invest, et les
+  calculs de demande de crédit.
+
+Effet mesuré (seed=42, 200 pas, config actuel B=190, L=200) :
+  Indicateur           | Avant Bloc 6 | Après Blocs 6+7
+  Taux de mortalité    |  99.6 %      |  0.0 %
+  Prêts actifs (t=200) |   0          | 200
+  Volume de crédit     |   0          | 14 824
+  Prêteurs actifs      |   0          |  15
+  Emprunteurs actifs   |   0          | 200
+
+Effet mesuré (seed=42, 200 pas, anciens paramètres B=5, L=10) :
+  Taux de mortalité    |  89 %        |  0.5 %
+  Prêts actifs (t=200) |   1          |  57
+  Volume de crédit     |  12          | 1 151
+  Prêteurs actifs      |   1          |   8
+  Emprunteurs actifs   |   1          |  46
+
+
+======================================================================
+BLOC 8 — Matching aléatoire, intermédiaires financiers et SOC
+======================================================================
+Date : 2026-04-02
+Fichiers : models.py, simulation.py, config.py
+
+Objectif : obtenir un système auto-critique avec faillites en cascade.
+  Chaque entité doit avoir une vie finie avec participation active au
+  marché du crédit (prêts + emprunts). Les faillites doivent se propager
+  par contagion financière, pas survenir de façon indépendante.
+
+Diagnostic du marché arbitré (avant Bloc 8) :
+  credit_market_iteration() sélectionnait toujours le prêteur avec r*
+  minimal et l'emprunteur avec r* maximal. Conséquence structurelle :
+    - Séparation stricte prêteur / emprunteur (jamais les deux)
+    - Aucun intermédiaire financier (interm=0 dans tous les tests)
+    - Les faillites sont des événements indépendants (pas de contagion)
+    - max_credit_iterations n'a aucun effet sur ce résultat
+
+Correction — matching aléatoire (n_candidats_pool, Bloc 8) :
+  Au lieu de trier toutes les entités et de prendre la paire optimale,
+  on tire aléatoirement parmi les k meilleures entités de chaque côté :
+    pool_prêteurs  = k entités avec r* le plus faible (candidates prêteurs)
+    pool_emprunteurs = k entités avec r* le plus élevé (candidates emprunteurs)
+    → tirage aléatoire dans chaque pool → matching non-déterministe
+
+  Une entité médiane peut ainsi être :
+    - prêteur envers une petite entité (r* plus faible qu'elle)
+    - emprunteur envers une grande entité (r* plus élevé qu'elle)
+  → intermédiaires financiers naturels → contagion en cascade possible.
+
+  Échantillonnage O(k log k) : avant le tri, on tire aléatoirement 2k
+  entités parmi les actives (au lieu de toutes), ce qui donne un marché
+  décentralisé avec information locale limitée et complexité O(k log k)
+  par transaction au lieu de O(N log N).
+
+Optimisations de performance (Bloc 8) :
+  1. passif_total : converti de propriété calculée (3 additions à chaque appel)
+     en attribut maintenu en temps réel. Mis à jour dans execute_loan(),
+     auto_invest_end_of_turn(), apply_depreciation(), _pay_single_amortization(),
+     process_single_failure(). Gain : ~16× sur les runs calibration.
+
+  2. charges_interets / revenus_interets : attributs Entity initialisés une
+     seule fois par pas via _rebuild_interest_cache() (O(N_loans)), puis mis
+     à jour O(1) dans execute_loan(). Remplacent les itérations O(N_loans)
+     répétées dans _debt_ratio_ok() et _existing_interest_burden().
+
+  3. _rebuild_interest_cache() : appelé une seule fois par pas dans run_step(),
+     juste avant credit_market_iteration().
+
+Point de transition critique (k=3) :
+  Sweep paramétrique sur n_candidats_pool (seed=42, 300 pas, n=100, lambda=1) :
+
+  pool | mort  | vie_med | interm | cascades | max_casc
+  -----|-------|---------|--------|----------|--------
+    1  |  0.0% |   209   |   48   |    0     |   0
+    2  |  0.7% |   201   |  231   |    2     |   2
+    3  | 35.2% |   174   |  210   |   89     |   6   ← point critique
+    5  | 61.1% |   100   |  113   |  137     |   5
+    8  | 60.0% |    82   |  136   |  154     |   4
+   20  | 55.8% |    81   |  125   |  146     |   4
+
+  k=3 est le point de transition : de k≤2 (régime stable, pas de cascades)
+  à k≥3 (régime critique, cascades en nombre). La mortalité saute de 0.7%
+  à 35% entre k=2 et k=3.
+
+Calibration des paramètres par défaut (SOC) :
+  Avant Bloc 8 : theta=1.0 → surleverage systématique, mort>90%.
+  Après Bloc 8 :
+    n_candidats_pool = 3   (point critique de transition)
+    theta            = 0.35 (fraction de la demande empruntée)
+    lambda_creation  = 2   (était 10 : trop lent, population explosive)
+
+  Mesures finales (seed=42, 300 pas, n=100, lambda=2, pool=3, theta=0.35) :
+    Taux de mortalité      :  8.6%
+    Durée de vie médiane   : 165 pas
+    Intermédiaires actifs  : 416  (sur ~500 entités vivantes)
+    Cascades de faillite   :  40
+    Cascade maximale       :   5 entités
+
+  Régime plus critique (lambda=1) :
+    Taux de mortalité      : 27.3%
+    Durée de vie médiane   : 184 pas
+    Intermédiaires actifs  : 207
+    Cascades de faillite   :  72
+    Cascade maximale       :   4 entités
+

@@ -63,7 +63,6 @@ sys.path.insert(0, str(ROOT.parent))
 
 CAMPAIGN = ROOT / "results" / "campaign"
 ANALYSIS = ROOT / "results" / "analysis"
-FIGURES = ROOT / "report" / "figures"
 TABLES = ROOT / "report" / "tables"
 
 T0 = 2000
@@ -134,6 +133,11 @@ def summarise_run(directory: Path, bounds: tuple[int, int]) -> dict | None:
         out[column] = _mean(float(row[column]) for row in tail)
     out["rotation"] = out["loan_volume"] / out["K_tot"]
     out["deaths_per_pop"] = out["deaths"] / out["pop"]
+    # Le capital DÉTRUIT par les faillites, rapporté au stock dont il est
+    # tiré. Le flux brut peut baisser alors même que les faillites augmentent,
+    # simplement parce que le stock a baissé ; c'est le rapport, et lui seul,
+    # qui dit si les faillites mordent davantage sur le capital.
+    out["destroyed_per_K"] = out["destroyed"] / out["K_tot"]
     out["reversed_share"] = (
         out["mkt_reversed"] / _mean(float(row["mkt_rounds"]) for row in tail)
     )
@@ -233,7 +237,7 @@ def analyse_lot_D(window_name: str) -> dict:
         by_cell.setdefault((direction, arm), {})[seed] = summary
     arms = sorted({arm for _, arm in by_cell})
     payload: dict = {"window": window_name, "bounds": list(bounds),
-                     "arms": {}, "stationarity": []}
+                     "arms": {}, "stationarity": [], "stationarity_runs": []}
 
     for arm in arms:
         free = by_cell.get(("free", arm), {})
@@ -251,8 +255,8 @@ def analyse_lot_D(window_name: str) -> dict:
                        "reversed_share", "blocked_share", "volume_rev_share",
                        "K_share_creditors", "corr_marg_net", "corr_K_net",
                        "jensen", "n_loans", "tech0_alive", "destroyed",
-                       "claim_losses", "mkt_surplus", "roots_insolvency",
-                       "defaults", "book_keys"):
+                       "destroyed_per_K", "claim_losses", "mkt_surplus",
+                       "roots_insolvency", "defaults", "book_keys"):
             entry["levels_free"][column] = absolute(free, sorted(free), column)
             entry.setdefault("levels_v1", {})[column] = absolute(v1, sorted(v1), column)
             if v1:
@@ -292,6 +296,16 @@ def analyse_lot_D(window_name: str) -> dict:
             flagged = flagged or not entry[column]["stationnaire"]
         entry["stationnaire"] = not flagged
         payload["stationarity"].append(entry)
+        # Les rapports RUN PAR RUN, persistés à côté de l'agrégat. Ce n'est
+        # pas une redondance : c'est ce qui permet de montrer qu'une bande
+        # fixe héritée d'une autre fenêtre rejetterait le contrôle lui-même,
+        # ce qui ne se voit pas sur une moyenne et son erreur-type.
+        for seed in seeds_here:
+            payload["stationarity_runs"].append({
+                "direction": direction, "arm": arm, "seed": seed,
+                **{column: cells[seed].get(f"stat_{column}")
+                   for column in ("K_tot", "pop", "prod_tot")},
+            })
     return payload
 
 
@@ -395,119 +409,6 @@ def service_ratio_distribution(delta: float) -> dict:
 
 
 # --------------------------------------------------------------------------
-def figure_lot_D(payload: dict, path: Path) -> None:
-    import matplotlib
-
-    matplotlib.use("Agg")
-    import matplotlib.pyplot as plt
-
-    try:
-        from simulation_lab.plot_utils import apply_style
-
-        apply_style()
-    except Exception:
-        pass
-
-    arms = [a for a in sorted(payload["arms"]) if payload["arms"][a]["paired_free_vs_v1"]]
-    if not arms:
-        return
-    columns = [
-        ("prod_tot", "production"),
-        ("pop", "population"),
-        ("deaths_per_pop", "mortalité"),
-        ("loan_volume", "volume prêté"),
-        ("rotation", "rotation du crédit"),
-        ("interest_paid", "intérêts versés"),
-    ]
-    figure, axes = plt.subplots(1, 2, figsize=(12, 4.4))
-
-    width = 0.8 / len(arms)
-    palette = ["#294c60", "#c1440e", "#7a9e9f", "#8f6b9e"]
-    for index, arm in enumerate(arms):
-        entry = payload["arms"][arm]["paired_free_vs_v1"]
-        xs = [i + index * width for i in range(len(columns))]
-        values = [100.0 * entry[c]["mean"] for c, _ in columns]
-        errors = [100.0 * entry[c]["se"] * (entry[c]["t_crit_5pct"] or 2.201)
-                  for c, _ in columns]
-        axes[0].bar(xs, values, width=width * 0.92, yerr=errors, capsize=2,
-                    color=palette[index % len(palette)], label=arm)
-    axes[0].axhline(0.0, color="black", lw=0.8)
-    axes[0].set_xticks([i + 0.4 - width / 2 for i in range(len(columns))])
-    axes[0].set_xticklabels([label for _, label in columns], rotation=20, fontsize=7)
-    axes[0].set_ylabel("écart relatif sens libre / règle v1 (%)")
-    axes[0].set_title("(a) effet du sens libre, apparié par graine\n"
-                      "(barres : intervalle de Student à 5 %)", fontsize=9)
-    axes[0].legend(fontsize=7)
-
-    labels, shares, blocked = [], [], []
-    for arm in arms:
-        levels = payload["arms"][arm]["levels_free"]
-        labels.append(arm)
-        shares.append(100.0 * levels["reversed_share"]["mean"])
-        blocked.append(100.0 * levels["blocked_share"]["mean"])
-    xs = list(range(len(labels)))
-    axes[1].bar([x - 0.2 for x in xs], blocked, width=0.4, color="#c1440e",
-                label="paires que la règle v1 aurait refusées (contrefactuel)")
-    axes[1].bar([x + 0.2 for x in xs], shares, width=0.4, color="#294c60",
-                label="prêts effectivement conclus dans ce sens")
-    axes[1].set_xticks(xs)
-    axes[1].set_xticklabels(labels, fontsize=8)
-    axes[1].set_ylabel("part des rondes de marché (%)")
-    axes[1].set_title("(b) ce que la règle v1 s'interdisait", fontsize=9)
-    axes[1].legend(fontsize=7)
-    for axis in axes:
-        axis.grid(True, alpha=0.2, axis="y")
-    figure.tight_layout()
-    path.parent.mkdir(parents=True, exist_ok=True)
-    figure.savefig(path, dpi=130, bbox_inches="tight")
-    plt.close(figure)
-
-
-def figure_creditors(path: Path) -> None:
-    import matplotlib
-
-    matplotlib.use("Agg")
-    import matplotlib.pyplot as plt
-
-    try:
-        from simulation_lab.plot_utils import apply_style
-
-        apply_style()
-    except Exception:
-        pass
-
-    figure, axes = plt.subplots(1, 2, figsize=(11, 4))
-    cases = [
-        ("free", "#294c60", "sens libre"),
-        ("richest_lends", "#c1440e", "règle v1 (la plus riche prête)"),
-    ]
-    for direction, colour, label in cases:
-        path_series = CAMPAIGN / "arms" / direction / "new_A150" / "seed0" / "series.csv"
-        rows = read_csv(path_series)
-        if not rows:
-            continue
-        steps = [int(row["t"]) for row in rows]
-        axes[0].plot(steps, [float(row["K_share_creditors"]) for row in rows],
-                     color=colour, lw=0.8, label=label)
-        axes[1].plot(steps, [float(row["corr_marg_net"]) for row in rows],
-                     color=colour, lw=0.8, label=label)
-    for axis, title, ylabel in (
-        (axes[0], "part du capital détenue par les créancières nettes",
-         r"$K_{\rm créancières}/K_{\rm tot}$"),
-        (axes[1], "corrélation rendement marginal ↔ position nette", "r de Pearson"),
-    ):
-        axis.axvline(T0, color="black", lw=0.8, ls=":")
-        axis.set_title(title, fontsize=9)
-        axis.set_xlabel("t (pas)")
-        axis.set_ylabel(ylabel)
-        axis.grid(True, alpha=0.2)
-        axis.legend(fontsize=7)
-    figure.suptitle("Le régime que le sens libre rend possible — bras new_A150, graine 0")
-    figure.tight_layout()
-    figure.savefig(path, dpi=130, bbox_inches="tight")
-    plt.close(figure)
-
-
 def write_tables(lot_d_transition: dict, lot_d_residuel: dict, lot_e: dict) -> None:
     TABLES.mkdir(parents=True, exist_ok=True)
 
@@ -582,101 +483,20 @@ def write_tables(lot_d_transition: dict, lot_d_residuel: dict, lot_e: dict) -> N
              + plain(prediction["fenetre_de_bascule"]) + r" \\",
              r"\textbf{défauts prédits sous \code{deprec\_first}} & "
              + plain(prediction["defauts_predits"]) + r" \\",
+             # Le dénominateur est NUL dans les deux bras : la hausse
+             # relative n'existe pas, et l'écrire « --- % » se lit comme une
+             # donnée manquante. On écrit ce qui est vrai.
              r"hausse relative \emph{prédite} & "
-             + pct(prediction["hausse_relative_predite"]) + r"\,\% \\",
+             + (pct(prediction["hausse_relative_predite"]) + r"\,\%"
+                if prediction.get("hausse_relative_predite") is not None
+                else r"\emph{non définie} ($0/0$)") + r" \\",
              r"hausse relative \emph{mesurée} & "
-             + pct(prediction["hausse_relative_mesuree"]) + r"\,\% \\",
+             + (pct(prediction["hausse_relative_mesuree"]) + r"\,\%"
+                if prediction.get("hausse_relative_mesuree") ==
+                prediction.get("hausse_relative_mesuree")
+                else r"\emph{non définie} ($0/0$)") + r" \\",
              r"\bottomrule", r"\end{tabular}"]
     (TABLES / "lot_e_prediction.tex").write_text("\n".join(lines) + "\n", encoding="utf-8")
-
-
-def figure_horizon(path: Path) -> None:
-    """Le régime nouveau en fonction de l'horizon, moyenné sur les graines.
-
-    C'est la figure qui justifie les deux fenêtres : la part des rondes
-    conclues à contre-sens décroît d'un facteur ~17 en 400 pas, puis plafonne.
-    L'échelle de temps est celle du renouvellement de la population, pas celle
-    de la fenêtre d'observation."""
-    import matplotlib
-
-    matplotlib.use("Agg")
-    import matplotlib.pyplot as plt
-
-    try:
-        from simulation_lab.plot_utils import apply_style
-
-        apply_style()
-    except Exception:
-        pass
-
-    figure, axes = plt.subplots(1, 2, figsize=(11, 4))
-    palette = {"new_A150": "#294c60", "new_A075": "#c1440e", "new_g060": "#7a9e9f"}
-    block = 50
-    for arm, colour in palette.items():
-        root = CAMPAIGN / "arms" / "free" / arm
-        seeds = sorted(root.glob("seed*"))
-        if not seeds:
-            continue
-        curves_share, curves_tech = [], []
-        for seed_dir in seeds:
-            rows = [r for r in read_csv(seed_dir / "series.csv") if int(r["t"]) > T0]
-            tech = read_csv(seed_dir / "tech_series.csv")
-            by_t = {}
-            for row in tech:
-                if int(row["tech"]) == 0:
-                    by_t[int(row["t"])] = float(row["n_alive"])
-            share, alive = [], []
-            for start in range(0, len(rows) - block + 1, block):
-                chunk = rows[start:start + block]
-                rounds = sum(float(r["mkt_rounds"]) for r in chunk)
-                share.append(sum(float(r["mkt_reversed"]) for r in chunk) / rounds
-                             if rounds else float("nan"))
-                alive.append(_mean(by_t.get(int(r["t"]), 0.0) for r in chunk))
-            curves_share.append(share)
-            curves_tech.append(alive)
-        length = min(len(c) for c in curves_share)
-        steps = [T0 + block * (i + 0.5) for i in range(length)]
-        mean_share = [_mean(c[i] for c in curves_share) for i in range(length)]
-        mean_tech = [_mean(c[i] for c in curves_tech) for i in range(length)]
-        axes[0].plot(steps, [100 * v for v in mean_share], color=colour, lw=1.2, label=arm)
-        axes[1].plot(steps, mean_tech, color=colour, lw=1.2, label=arm + " (sens libre)")
-        v1_dir = CAMPAIGN / "arms" / "richest_lends" / arm
-        v1_curves = []
-        for seed_dir in sorted(v1_dir.glob("seed*")):
-            tech = read_csv(seed_dir / "tech_series.csv")
-            by_t = {int(r["t"]): float(r["n_alive"]) for r in tech if int(r["tech"]) == 0}
-            rows = [r for r in read_csv(seed_dir / "series.csv") if int(r["t"]) > T0]
-            alive = []
-            for start in range(0, len(rows) - block + 1, block):
-                chunk = rows[start:start + block]
-                alive.append(_mean(by_t.get(int(r["t"]), 0.0) for r in chunk))
-            v1_curves.append(alive)
-        if v1_curves:
-            n = min(length, min(len(c) for c in v1_curves))
-            axes[1].plot(steps[:n], [_mean(c[i] for c in v1_curves) for i in range(n)],
-                         color=colour, lw=1.0, ls="--", label=arm + " (règle v1)")
-
-    for bounds, label, colour in ((WINDOWS["transition"], "transition", "#d9d0c1"),
-                                  (WINDOWS["residuel"], "régime résiduel", "#c9d6d5")):
-        for axis in axes:
-            axis.axvspan(bounds[0], bounds[1], color=colour, alpha=0.5, zorder=0)
-        axes[0].text(0.5 * (bounds[0] + bounds[1]), axes[0].get_ylim()[1], label,
-                     fontsize=6, ha="center", va="top")
-    axes[0].set_ylabel("prêts à contre-sens / rondes (%)")
-    axes[0].set_title("(a) le régime nouveau décroît puis plafonne", fontsize=9)
-    axes[1].set_yscale("symlog")
-    axes[1].set_ylabel("entités de l'ancienne technologie vivantes")
-    axes[1].set_title("(b) la cohorte d'origine survit sous le sens libre,\n"
-                      "s'éteint sous la règle v1", fontsize=9)
-    for axis in axes:
-        axis.set_xlabel("t (pas)")
-        axis.grid(True, alpha=0.2)
-        axis.legend(fontsize=6)
-    figure.suptitle("Horizon du régime que le sens libre rend possible")
-    figure.tight_layout()
-    path.parent.mkdir(parents=True, exist_ok=True)
-    figure.savefig(path, dpi=130, bbox_inches="tight")
-    plt.close(figure)
 
 
 def main(argv=None) -> int:
@@ -696,10 +516,19 @@ def main(argv=None) -> int:
 
     lot_d_res, lot_e_res = payload["residuel"]
     lot_d_tr, _ = payload["transition"]
-    figure_lot_D(lot_d_tr, FIGURES / "lot_d_paired.png")
-    figure_creditors(FIGURES / "creditors.png")
-    figure_horizon(FIGURES / "horizon.png")
     write_tables(lot_d_tr, lot_d_res, lot_e_res)
+
+    # Rapports de stationnarité run par run, les deux fenêtres dans le même
+    # fichier. Les figures les relisent ; elles ne les recalculent pas.
+    with open(ANALYSIS / "stationarity_runs.csv", "w", newline="",
+              encoding="utf-8") as handle:
+        writer = csv.writer(handle)
+        writer.writerow(["fenetre", "direction", "bras", "graine",
+                         "K_tot", "pop", "prod_tot"])
+        for name, (lot_d, _lot_e) in payload.items():
+            for row in lot_d["stationarity_runs"]:
+                writer.writerow([name, row["direction"], row["arm"], row["seed"],
+                                 row["K_tot"], row["pop"], row["prod_tot"]])
 
     digest = {}
     for name, (lot_d, lot_e) in payload.items():

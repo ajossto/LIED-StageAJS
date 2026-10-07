@@ -1,0 +1,63 @@
+{
+ "plan": "benchmark",
+ "cells": [
+  {
+   "cell": "bench_g067",
+   "cell_id": "d583d9ee36ab",
+   "plan": "benchmark",
+   "parameters": {
+    "A": 1.0,
+    "lam": 30.0,
+    "delta": 0.05,
+    "sigma": 0.25,
+    "K0": 25.0,
+    "pop_max": 30000,
+    "snapshot_every": 0,
+    "individual_every": 0,
+    "figures": false,
+    "gamma": 0.6666666666666666,
+    "T": 4000
+   },
+   "n_runs": 1,
+   "base_seed": 1,
+   "label": "M4.2 — benchmark — bench_g067",
+   "keep": false,
+   "engine_hash": "932e58643e522d7b",
+   "batch_id": "20260727_160954_c408cd26",
+   "run_ids": [
+    "20260727_160954_29051328"
+   ],
+   "duration_seconds": 166.3,
+   "launched_at": "2026-07-27T16:12:39+0200"
+  },
+  {
+   "cell": "bench_g033",
+   "cell_id": "f196a9080a64",
+   "plan": "benchmark",
+   "parameters": {
+    "A": 1.0,
+    "lam": 30.0,
+    "delta": 0.05,
+    "sigma": 0.25,
+    "K0": 25.0,
+    "pop_max": 30000,
+    "snapshot_every": 0,
+    "individual_every": 0,
+    "figures": false,
+    "gamma": 0.3333333333333333,
+    "T": 4000
+   },
+   "n_runs": 1,
+   "base_seed": 1,
+   "label": "M4.2 — benchmark — bench_g033",
+   "keep": false,
+   "engine_hash": "932e58643e522d7b",
+   "batch_id": "20260727_160954_62254fe4",
+   "run_ids": [
+    "20260727_160954_d7c9806c"
+   ],
+   "duration_seconds": 290.8,
+   "launched_at": "2026-07-27T16:14:44+0200"
+  }
+ ]
+}

@@ -32,7 +32,8 @@
     <section class="panel">
       <div class="toolbar">
         <h2>Simulations</h2>
-        <div style="display:flex;gap:8px;align-items:center;">
+        <div style="display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px;align-items:center;">
+          <button id="toggle-gallery" class="secondary compact-button" title="Vue galerie : simulations côte à côte">▦ Galerie</button>
           <button id="toggle-multiseed" class="secondary compact-button" title="Vue groupes multi-seeds">⊕ Multi-seeds</button>
           <button id="refresh-runs">Rafraîchir</button>
         </div>
@@ -98,6 +99,7 @@
           <label><input type="checkbox" id="study-filter-converged"> Régime strict</label>
         </div>
       </div>
+      <pre id="messages"></pre>
       <div id="runs-list" class="runs-list"></div>
       <div id="trash-actions" class="inline-actions hidden">
         <button id="empty-trash" class="secondary">Vider la corbeille</button>

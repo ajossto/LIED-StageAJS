@@ -1,0 +1,637 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[french]{babel}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb}
+\usepackage[margin=2.35cm]{geometry}
+\usepackage{booktabs,longtable,tabularx}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{microtype}
+\usepackage{hyperref}
+
+\hypersetup{colorlinks=true,linkcolor=blue!45!black,urlcolor=blue!45!black}
+\setlist{nosep}
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\NW}{\mathrm{NW}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\R}{\mathbb{R}}
+\definecolor{codebg}{RGB}{246,247,249}
+\lstset{basicstyle=\ttfamily\small,backgroundcolor=\color{codebg},
+  frame=single,breaklines=true,columns=fullflexible,showstringspaces=false}
+
+\title{Mécanique du modèle de société de crédit M4\\
+\large et spécification de sa réduction minimale M4B}
+\author{Audit et réimplémentation du dossier \code{m4\_credit\_soc\_fable}}
+\date{17 juillet 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Ce document décrit la mécanique effectivement exécutée par le modèle M4,
+et non les variantes historiques qui restent accessibles pour les ablations.
+Chaque entité ne possède qu'un stock réel, son capital productif $K$. Les
+créances et dettes proviennent exclusivement d'un réseau de prêts nominaux
+perpétuels. À chaque pas, des naissances et des chocs alimentent le système,
+la production accroît $K$, les intérêts redistribuent du capital, le marché
+crée de nouvelles expositions, puis les défauts détruisent les créances et
+peuvent déclencher une cascade. M4B fixe les institutions de la configuration
+finale validée, supprime les branches expérimentales et conserve les mêmes
+tirages aléatoires et le même ordre de calcul. Des tests de parité comparent
+les deux moteurs à chaque pas et obtiennent des trajectoires identiques.
+\end{abstract}
+
+\tableofcontents
+
+\section{Ce que le système représente}
+
+M4 est un modèle multi-agents de société de crédit. Il n'y a ni banque
+centrale, ni monnaie séparée, ni bilan bancaire agrégé. Les entités naissent,
+produisent, prêtent une partie de leur capital à d'autres entités et paient
+des intérêts sur leurs dettes. Leur réseau de contrats produit une fragilité
+endogène : la disparition d'une emprunteuse efface l'actif de ses prêteuses.
+
+La configuration principale est volontairement asymétrique :
+
+\begin{itemize}
+\item $K$ est réel, productif, soumis aux chocs et à la dépréciation ;
+\item le principal d'un prêt est nominal, perpétuel et ne se déprécie pas ;
+\item seuls les intérêts sont servis ; le principal n'est jamais amorti ;
+\item une entité sans dette contractuelle ne peut pas mourir ;
+\item aucune récupération ne protège une prêteuse lorsque sa débitrice meurt.
+\end{itemize}
+
+Cette asymétrie est le cœur du mécanisme. Le marché reconstruit sans cesse un
+stock nominal de créances adossé à des capitaux réels fluctuants. Les pertes
+sur créances sont donc capables de faire passer une prêteuse de solvable à
+insolvable sans qu'un choc exogène supplémentaire soit nécessaire.
+
+\section{État du modèle}
+
+\subsection{Entités}
+
+Une entité $i$ est identifiée par un entier attribué à sa naissance et jamais
+réutilisé. Son seul état économique réel est
+\[
+K_i(t)\geq 0.
+\]
+Le moteur mémorise aussi sa date de naissance, son statut vivant ou mort et,
+pour le pas courant, sa production, ses intérêts reçus, ses intérêts payés et
+un indicateur de défaut de service. Ces dernières quantités sont des mesures,
+pas des stocks reportés au pas suivant.
+
+L'ensemble des identifiants vivants est maintenu explicitement et trié avant
+chaque parcours. Ce détail garantit que le même vecteur de chocs aléatoires
+est toujours affecté aux mêmes identifiants pour une graine donnée.
+
+\subsection{Contrats de prêt}
+
+Un prêt est un quadruplet
+\[
+(\ell,b,q,r),
+\]
+où $\ell$ est la prêteuse, $b$ l'emprunteuse, $q>0$ le principal et $r>0$
+le taux d'intérêt par pas. Le contrat est perpétuel. Pour chaque entité, le
+carnet maintient les agrégats
+\[
+C_i=\sum_{(i,b,q,r)}q,
+\qquad
+D_i=\sum_{(\ell,i,q,r)}q,
+\qquad
+S_i=\sum_{(\ell,i,q,r)}rq.
+\]
+$C_i$ est le total de ses créances, $D_i$ sa dette nominale et $S_i$ le
+service d'intérêts dû au pas courant.
+
+Il existe au plus un contrat orienté par paire $(\ell,b)$. Si la même paire
+échange de nouveau, les principaux sont additionnés et le taux devient
+\[
+r_{\mathrm{new}}
+=\frac{q_0r_0+qr}{q_0+q}.
+\]
+Cette fusion préserve exactement le principal total et le flux d'intérêts
+$q_0r_0+qr$. La paire inverse $(b,\ell)$ reste un contrat différent.
+
+La valeur nette d'une entité est dérivée du capital et du carnet :
+\[
+\boxed{\NW_i=K_i+C_i-D_i.}
+\]
+Il n'existe aucun terme de dette initiale $d_0$. Une entité qui n'a jamais
+emprunté vérifie $D_i=0$ et ne peut donc pas devenir insolvable tant que
+$K_i\geq0$.
+
+\section{Chronologie exacte d'un pas}
+
+L'ordre des opérations fait partie du modèle. Une permutation des phases
+changerait la date du premier paiement d'un prêt, l'ensemble admis sur le
+marché ou le déclenchement des faillites.
+
+\begin{center}
+\begin{tabularx}{\textwidth}{@{}clX@{}}
+\toprule
+Phase & Opération & Effet principal \\
+\midrule
+1 & Naissances & injection de $K_0$ et nouveaux identifiants \\
+2 & Choc & variation multiplicative du capital réel \\
+3 & Production & création réelle, entièrement retenue dans $K$ \\
+4 & Intérêts & transfert de $K$ ; défaut si liquidité insuffisante \\
+5 & Dépréciation & destruction d'une fraction du capital réel \\
+6 & Marché & transfert de $K$ et création de contrats nominaux \\
+7 & Faillites & annulation de contrats, destruction et propagation \\
+8 & Mesure & séries, avalanches et instantanés, sans tirage aléatoire \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\subsection{Phase 1 : naissances}
+
+Le nombre de naissances est
+\[
+B_t\sim\operatorname{Poisson}(\lambda).
+\]
+Chaque nouvelle entité reçoit $K_0$ et aucun contrat. L'injection réelle du
+pas est donc $I_t=B_tK_0$. Les nouvelles entités participent immédiatement
+aux phases suivantes : elles subissent le choc, produisent, puis peuvent
+entrer sur le marché du même pas.
+
+Si la population finit un pas à zéro, le pilote prend l'état
+\code{extinction} et s'arrête. L'extinction est donc absorbante dans une
+exécution normale, même si une loi de Poisson aurait permis des naissances
+ultérieures.
+
+\subsection{Phase 2 : choc multiplicatif}
+
+Pour chaque vivante,
+\[
+K_i\leftarrow K_i\exp(\eta_i),
+\qquad
+\eta_i\overset{\mathrm{iid}}{\sim}
+\mathcal N\!\left(-\frac{\sigma^2}{2},\sigma^2\right).
+\]
+Le décalage $-\sigma^2/2$ donne
+\[
+\E[\exp(\eta_i)]=1.
+\]
+Le choc est ainsi sans dérive en espérance, bien que sa médiane soit
+inférieure à un. La grandeur enregistrée
+\code{shock\_gain} est la différence entre le capital total juste après et
+juste avant cette phase ; elle peut être positive ou négative dans un run.
+
+\subsection{Phase 3 : production}
+
+La production est concave :
+\[
+P_i=\alpha\sqrt{K_i},\qquad \alpha=1.
+\]
+Elle est entièrement retenue :
+\[
+K_i\leftarrow K_i+P_i.
+\]
+Il n'y a plus de variable de liquidité, de taux d'épargne ou de consommation
+séparée. Le champ \code{prod} conserve $P_i$ jusqu'au pas suivant afin de
+calculer le revenu individuel dans les instantanés.
+
+\subsection{Phase 4 : service des intérêts}
+
+Pour une emprunteuse $b$, le montant dû est $S_b$. Si $K_b\geq S_b$, elle
+paie tout. Sinon, elle verse tout son capital au prorata et fait défaut :
+\[
+\phi_b=\min\left(1,\frac{K_b}{S_b}\right),
+\qquad
+p_{\ell b}=\phi_b r_{\ell b}q_{\ell b}.
+\]
+Après paiement,
+\[
+K_b\leftarrow K_b-\sum_\ell p_{\ell b},
+\qquad
+K_\ell\leftarrow K_\ell+p_{\ell b}.
+\]
+Si $\phi_b<1$, $K_b$ devient nul et son indicateur de défaut est activé. Le
+principal et le service futur du contrat restent inchangés : il n'y a ni
+arriéré, ni renégociation. Le défaut entraînera la mort en phase 7, même si
+la valeur nette comptable de l'entité reste positive.
+
+Une subtilité est conservée pour la fidélité exacte : les emprunteuses sont
+servies selon l'ordre historique d'apparition des clés du carnet. Une entité
+qui reçoit des intérêts comme prêteuse avant son propre tour peut employer
+ce capital pour payer. Ce service est proportionnel entre les créancières
+d'une même emprunteuse, mais il n'est pas simultané à l'échelle du réseau.
+
+Un prêt créé pendant la phase 6 ne paiera ses premiers intérêts qu'au pas
+suivant. Cette temporalité évite de faire payer un contrat avant sa création.
+
+\subsection{Phase 5 : dépréciation}
+
+Le capital réel devient
+\[
+K_i\leftarrow(1-\delta)K_i.
+\]
+Une valeur résiduelle inférieure à $10^{-12}$ est arrondie à zéro. Les
+principaux $q$ et les taux $r$ sont nominaux : ils restent strictement
+inchangés. La dépréciation fragilise donc mécaniquement un bilan endetté en
+réduisant son actif réel sans réduire son passif nominal.
+
+\subsection{Phase 6 : marché local du crédit}
+
+Le pool est la liste des entités vivantes qui n'ont pas fait défaut pendant
+le service du pas. Il est figé pour toute la phase. Le moteur réalise un
+round par membre du pool. À chaque round :
+
+\begin{enumerate}
+\item il tire uniformément jusqu'à $k$ identifiants distincts ;
+\item la plus riche en $K$ devient prêteuse $\ell$, la plus pauvre devient
+  emprunteuse $b$ ;
+\item si leurs capitaux diffèrent, il calcule un taux et une cible commune ;
+\item il transfère le volume possible et ajoute le contrat correspondant.
+\end{enumerate}
+
+Le rendement marginal imputé à une entité de capital $K_x$ est
+\[
+r_x=\frac{\alpha}{2\sqrt{K_x}}.
+\]
+Le taux bilatéral est la moyenne géométrique
+\[
+r=\sqrt{r_\ell r_b}.
+\]
+L'objectif de revenu définit la cible
+\[
+K^*(r)=\left(\frac{\alpha}{2r}\right)^2
+=\sqrt{K_\ell K_b}.
+\]
+Le principal transféré vaut
+\[
+q=\min\!\left(K_\ell-K^*,\;\max(0,K^*-K_b)\right).
+\]
+Si $q\geq10^{-9}$,
+\[
+K_\ell\leftarrow K_\ell-q,
+\qquad
+K_b\leftarrow K_b+q,
+\]
+et le contrat $(\ell,b,q,r)$ est inscrit. Cette opération conserve le
+capital réel total. Elle conserve aussi la valeur nette de chacune des deux
+parties au moment de l'échange : la prêteuse remplace $q$ de capital par une
+créance de $q$, et l'emprunteuse reçoit $q$ de capital contre une dette de
+$q$.
+
+Pour les grandes populations, le tirage sans remise utilise un rejet de
+doublons plutôt qu'une permutation complète. Ce choix est une optimisation,
+mais sa branche et son ordre d'appels au générateur aléatoire sont conservés
+dans M4B afin d'obtenir la même trajectoire que M4.
+
+\subsection{Phase 7 : faillites et cascades}
+
+Une première file, triée par identifiant, rassemble toutes les vivantes qui
+vérifient au moins une condition :
+\[
+\text{défaut de service}
+\qquad\text{ou}\qquad
+\NW_i<-10^{-9}.
+\]
+La cause d'une racine est notée \code{liquidity}, \code{insolvency} ou
+\code{both}. Le traitement d'une faillite $i$ est irréversible :
+
+\begin{enumerate}
+\item chaque contrat où $i$ est emprunteuse est supprimé ; la prêteuse perd
+  son principal et une arête de perte $i\rightarrow\ell$ de poids $q$ est
+  enregistrée ;
+\item chaque contrat où $i$ est prêteuse est supprimé ; ses emprunteuses sont
+  libérées de ces dettes ;
+\item le capital $K_i$ restant est détruit ; $i$ est retirée de la population
+  vivante et son capital est mis à zéro.
+\end{enumerate}
+
+Après le traitement de toute la file, le moteur recalcule la valeur nette des
+survivantes. Celles qui sont devenues insolvables par perte d'une créance
+forment la génération suivante. Le processus continue jusqu'à une file vide.
+La profondeur enregistrée est le numéro maximal de génération, et non la
+longueur d'un chemin particulier dans le graphe.
+
+Les membres d'une même file sont déterminés avant le début de l'itération.
+Une entité déjà placée dans cette file sera donc tuée même si l'annulation
+d'une de ses propres dettes par une faillite précédente améliorerait ensuite
+son bilan. Cette convention de mise à jour par générations est identique dans
+M4 et M4B.
+
+\subsection{Phase 8 : mesures}
+
+Une ligne de série est construite après la résolution complète. Elle contient
+la démographie, le capital et la valeur nette totaux, la production, le
+nombre et le volume de prêts, les paiements, les défauts, les causes racines,
+la profondeur, les pertes de créances, le capital détruit et les trois flux
+du bilan réel. Cette phase ne tire aucun nombre aléatoire et ne modifie pas
+la trajectoire économique.
+
+\section{Construction d'une avalanche}
+
+Toutes les morts d'un même pas ne constituent pas automatiquement une seule
+avalanche. Le moteur construit le graphe des arêtes de perte créées pendant
+la résolution, puis le restreint aux entités mortes lors de cette résolution.
+Une avalanche est une composante faiblement connexe de ce graphe.
+
+Ainsi, deux racines sans exposition commune restent deux avalanches de taille
+un. Deux racines déjà insolvables mais liées par un contrat appartiennent en
+revanche à la même composante ; le champ \code{n\_roots} permet de distinguer
+ce cas d'une longue propagation. Les mesures fondamentales sont :
+
+\begin{itemize}
+\item \code{size} : nombre de mortes dans la composante ;
+\item \code{n\_roots} : nombre de membres présents dans la première file ;
+\item \code{depth} : génération maximale atteinte ;
+\item \code{generation} : génération de chaque membre ;
+\item \code{volume\_j} : somme des principaux de créances détruits par les
+faillites de la composante, y compris lorsque la prêteuse touchée survit ;
+\item le rapport de branchement empirique
+\[
+b=1-\frac{\sum_a R_a}{\sum_a S_a},
+\]
+où $R_a$ et $S_a$ sont le nombre de racines et la taille de l'avalanche $a$.
+\end{itemize}
+
+La mesure retenue est strictement intra-pas. Relier automatiquement des
+pertes du pas $t$ aux morts du pas $t+1$ peut fabriquer une composante géante
+par percolation temporelle ; cette variante exploratoire n'est donc pas
+intégrée au moteur minimal.
+
+\section{Pourquoi des cascades apparaissent}
+
+Le mécanisme est une alternance accumulation--relaxation.
+
+Pendant les périodes calmes, chaque pas ajoute environ un round de marché par
+entité. Le carnet fusionne les échanges répétés, mais le stock d'expositions
+nominales est continuellement reconstruit. Les chocs et la dépréciation font
+évoluer le capital réel sous ce réseau nominal. Une entité peut alors faire
+défaut par manque de capital disponible ou devenir insolvable.
+
+Sa disparition retire brutalement $q$ de l'actif comptable de chacune de ses
+prêteuses. Il n'existe dans la règle finale ni récupération du capital
+résiduel, ni transfert des créances détenues par la morte. Si la perte rend
+une prêteuse insolvable, celle-ci disparaît à la génération suivante et
+transmet à son tour ses propres pertes. La cascade élague ainsi simultanément
+la population et le réseau, avant que les naissances et le marché ne le
+reconstruisent.
+
+Le volume de marché est donc une propriété institutionnelle déterminante. La
+configuration finale fixe un round par tête : le paramètre expérimental qui
+divisait ou multipliait ce volume n'est pas conservé dans M4B.
+
+\section{Invariants et contrôles comptables}
+
+\subsection{Capital non négatif}
+
+Le choc conserve le signe, la production est positive, le paiement est borné
+par le capital disponible, le marché ne prélève pas plus que l'excédent à la
+cible et la mort fixe $K$ à zéro. Par construction,
+\[
+K_i\geq0.
+\]
+
+\subsection{Égalité des créances et des dettes}
+
+Chaque principal apparaît une fois comme créance et une fois comme dette :
+\[
+\sum_i C_i=\sum_i D_i.
+\]
+Après chaque cascade, aucun contrat ne doit référencer une entité morte. Il
+en découle, à l'arrondi près,
+\[
+\sum_{i\ \mathrm{vivante}}\NW_i
+=\sum_{i\ \mathrm{vivante}}K_i.
+\]
+
+\subsection{Bilan réel d'un pas}
+
+Les prêts et les intérêts sont des transferts internes. Les seuls flux qui
+changent le capital total sont l'injection des naissances, le choc réalisé,
+la production, la dépréciation et la destruction lors des faillites :
+\[
+\boxed{
+K_{\mathrm{tot}}(t)-K_{\mathrm{tot}}(t-1)
+=I_t+G_t+P_t-\Delta_t-X_t.}
+\]
+Les colonnes correspondantes de \code{series.csv} permettent de tester cette
+identité après coup.
+
+\subsection{Reproductibilité}
+
+Chaque simulation possède un unique générateur
+\code{numpy.random.default\_rng(seed)}. L'ordre est : Poisson des naissances,
+vecteur normal des chocs, puis échantillons du marché. Les faillites et les
+mesures ne consomment aucun tirage. Les instantanés accèdent aux agrégats avec
+des lectures non mutantes, afin de ne pas insérer de nouvelles clés dans les
+tables ordonnées du carnet. Un run enregistré et un run non enregistré ont
+donc la même série bit à bit.
+
+\section{Ce que M4B retire et ce qu'il conserve}
+
+M4 contient des variantes utiles pour établir la causalité scientifique, mais
+elles ne décrivent pas le modèle principal. Les laisser dans une version
+pédagogique ferait croire que toutes appartiennent à la mécanique finale.
+
+\begin{longtable}{p{0.29\textwidth}p{0.29\textwidth}p{0.34\textwidth}}
+\toprule
+Élément & Décision M4B & Motif \\
+\midrule
+\endhead
+État réel $K$ & conservé & unique stock économique du modèle final \\
+Prêts perpétuels et fusion par paire & conservés et fixés & structure
+constitutive du réseau \\
+Choc i.i.d. & conservé et fixé & configuration principale ; pas de
+corrélation imposée \\
+Objectif de revenu & conservé et fixé & donne $K^*=\sqrt{K_\ell K_b}$ \\
+Un round par tête & conservé et fixé & institution finale validée \\
+Annulation + destruction & conservées et fixées & mécanisme de propagation \\
+Chocs macro et sectoriels & retirés & ablations sur la synchronisation \\
+Objectif de richesse & retiré & contrôle expérimental à faible levier \\
+Naissance par emprunt & retirée & variante non active \\
+Cohorte initiale & retirée & ablation démographique \\
+Désactivation du crédit & retirée & réduction de contrôle, pas modèle principal \\
+Transfert des créances / récupération prorata & retirés & anciennes règles
+qui amortissent les cascades \\
+Nombre de rounds configurable & retiré & levier de campagne fixé à sa valeur
+finale \\
+Logs enrichis, watchers, figures, ajustements dPlN & séparés & post-traitement,
+sans rôle dynamique \\
+\bottomrule
+\end{longtable}
+
+Les constantes numériques de tolérance et $\alpha=1$ sont définies une seule
+fois dans le module, et non présentées comme des paramètres de recherche. La
+configuration publique ne contient que :
+
+\begin{center}
+\begin{tabular}{@{}lll@{}}
+\toprule
+Nom & Défaut & Rôle \\
+\midrule
+\code{lam} & 10 & intensité des naissances \\
+\code{delta} & 0,05 & dépréciation du capital \\
+\code{sigma} & 0,25 & volatilité du choc \\
+\code{K0} & 25 & capital de naissance \\
+\code{k} & 3 & taille de l'échantillon de marché \\
+\code{seed} & 0 & graine du générateur \\
+\code{T} & 2000 & horizon maximal \\
+\code{pop\_max} & 30000 & garde-fou d'arrêt \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{Données enregistrées pour l'analyse statistique}
+
+Le moteur et l'écriture sont séparés : \code{model.py} ne connaît aucun
+chemin de fichier, tandis que \code{io.py} reçoit des instantanés en lecture
+seule. Un dossier de run contient les données primaires suivantes.
+
+\begin{longtable}{p{0.31\textwidth}p{0.61\textwidth}}
+\toprule
+Fichier & Contenu et usages \\
+\midrule
+\endhead
+\code{config.json} & version, paramètres, $\alpha$ et règles institutionnelles
+fixes ; reproduction exacte du run \\
+\code{series.csv} & une ligne par pas : démographie, capital, crédit, défauts,
+avalanches et bilan réel \\
+\code{individual\_series.csv.gz} & une ligne par entité vivante et par pas,
+plus une ligne terminale pour chaque morte ; trajectoires individuelles
+compressées \\
+\code{avalanches.csv} & identifiant, pas, taille, profondeur, nombre et causes
+des racines, volume causal des pertes de créances en joules \\
+\code{avalanche\_members.csv} & appartenance de chaque morte, statut racine et
+génération ; audit des agrégats causaux \\
+\code{entities.csv} & naissance, mort éventuelle, cause et survie finale de
+chaque identifiant \\
+\code{deaths.csv} & âge et bilan individuel juste avant chaque mort \\
+\code{final\_loans.csv} & prêteuse, emprunteuse, principal et taux du carnet
+final \\
+\code{entities\_t*.npz} & vecteurs individuels $K,C,D,\NW$,
+production, revenu, âge et degrés \\
+\code{network\_t*.npz} & arêtes $(\ell,b,q,r)$ aux mêmes dates \\
+\code{summary.json} & statut final, comptes globaux, rapport de branchement et
+résultat du contrôle de cohérence \\
+\bottomrule
+\end{longtable}
+
+Ces tables suffisent à étudier la stationnarité de la population, la
+distribution des tailles et profondeurs d'avalanches, le rapport de
+branchement, les durées de vie, les distributions de $K$, $\NW$ et du revenu,
+le renouvellement du haut de la distribution et la topologie du réseau. Les
+figures et ajustements statistiques restent des produits dérivés : ils
+peuvent être régénérés sans relancer le modèle.
+
+Le volume d'une avalanche est affecté par la source de chaque perte : pour
+une composante $a$, $V_a$ additionne tous les principaux dont l'emprunteuse
+faillie appartient à $a$. Cette convention conserve donc la perte infligée à
+une prêteuse survivante et permet les CCDF et ajustements dPlN sans pooling
+ambigu de plusieurs avalanches survenues au même pas.
+
+La table longitudinale individuelle contient précisément : $t$, identifiant,
+date de naissance, âge, statut de vie, cause et génération de décès, $K$,
+créances, dettes, $\NW$, production, intérêts reçus et payés, revenu brut,
+revenu net, défaut de service et degrés entrant/sortant du réseau. Pour une
+survivante, le bilan est celui de la fin du pas, après la cascade. Pour une
+morte, la ligne terminale conserve son bilan juste avant la suppression de
+ses contrats et de son capital. Toutes les entités possèdent donc une
+trajectoire jusqu'à leur dernier état économiquement interprétable.
+
+Cette table est écrite en flux dans un CSV compressé : sa taille ne pèse pas
+sur la mémoire de la simulation. Elle est exhaustive par défaut. La fréquence
+des survivantes peut être réduite pour les très grandes populations ; l'état
+terminal de chaque morte et le dernier état des survivantes restent alors
+conservés. Cette option ne change que la mesure et ne consomme aucun tirage
+aléatoire.
+
+Les instantanés sont espacés de 50 pas par défaut. Une valeur nulle désactive
+les instantanés intermédiaires, mais l'état final est toujours enregistré.
+Le format NumPy compressé conserve les types et évite la duplication d'une
+colonne de temps sur chaque ligne individuelle.
+
+\section{Validation de la réduction}
+
+La fidélité n'est pas évaluée seulement sur des moyennes. Le test de parité
+lance M4 et M4B avec la même configuration principale et, après chaque pas,
+compare exactement :
+
+\begin{itemize}
+\item le statut et toutes les colonnes communes de la série ;
+\item le capital, la vie, la naissance et le défaut de chaque entité ;
+\item tous les contrats, créances, dettes et services dus ;
+\item les tailles, profondeurs, racines et causes des avalanches.
+\end{itemize}
+
+Deux régimes, avec graines, volatilités, intensités de naissance et tailles
+d'échantillon différentes, couvrent 210 pas dans le test automatisé. Les
+trajectoires sont identiques champ par champ. Cinq contrôles supplémentaires
+vérifient le bilan réel, l'absence de contrats orphelins, le paiement partiel,
+la neutralité des mesures, la fréquence des trajectoires individuelles et la
+relecture des fichiers de sortie.
+
+La suite de tests du M4 de référence a également été exécutée avant la
+réduction : 69 tests sur 69 passent. Un condensat n'est donc pas construit à
+partir d'une référence déjà défaillante.
+
+\section{Utilisation}
+
+Depuis le dossier \code{m4b\_credit\_soc\_mini} :
+
+\begin{lstlisting}[language=bash]
+python3 run.py --steps 2000 --seed 0 --output results/baseline
+\end{lstlisting}
+
+Les principaux paramètres peuvent être changés explicitement :
+
+\begin{lstlisting}[language=bash]
+python3 run.py --steps 4000 --lambda 30 --sigma 0.25 \
+  --market-sample 3 --snapshot-every 100 --seed 2 \
+  --output results/lambda30_seed2
+\end{lstlisting}
+
+Le test autonome se lance avec :
+
+\begin{lstlisting}[language=bash]
+python3 tests/test_mini.py
+\end{lstlisting}
+
+La dépendance d'exécution est limitée à NumPy. SciPy, les bibliothèques de
+tracé et les routines d'ajustement de lois ne sont pas nécessaires pour
+simuler ou enregistrer un run.
+
+\section{Traçabilité du code audité}
+
+La lecture a porté sur le rapport M4 et sur tous les modules dynamiques. Les
+points d'ancrage principaux sont :
+
+\begin{itemize}
+\item configuration : \code{m4\_credit\_soc\_fable/src/m4/config.py} ;
+\item entités et contrats : \code{entities.py}, \code{contracts.py} ;
+\item chocs, production et dépréciation : \code{production.py} ;
+\item marché : \code{market.py} ;
+\item faillites et avalanches : \code{bankruptcy.py} ;
+\item ordre d'exécution et mesures : \code{simulation.py} ;
+\item schémas historiques de sortie : \code{metrics.py} ;
+\item justification scientifique :
+  \code{reports/01\_soc\_final/main.tex} et \code{NOTES.md} ;
+\item tests de la référence : \code{tests/}.
+\end{itemize}
+
+Le dossier de référence a été traité comme immuable. M4B est une copie
+conceptuelle indépendante : il n'importe aucun module de M4 pendant une
+simulation normale. Seul le test de parité importe les deux moteurs afin de
+les comparer.
+
+\section*{Conclusion}
+\addcontentsline{toc}{section}{Conclusion}
+
+La mécanique finale se résume à un stock réel productif, un réseau nominal
+perpétuel et une règle de perte sans amortisseur. Le marché accumule des
+expositions ; les chocs, la dépréciation et le service des intérêts déplacent
+les bilans ; une faillite efface des créances et peut rendre insolvables les
+prêteuses exposées. M4B conserve exactement cette boucle et son ordre de
+calcul, tout en retirant les axes d'ablation et l'infrastructure de campagne.
+La séparation entre moteur, données primaires et analyse rend désormais le
+système plus court à lire, plus difficile à paramétrer accidentellement hors
+du modèle validé et directement exploitable pour de futures statistiques.
+
+\end{document}

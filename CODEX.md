@@ -7,7 +7,10 @@ Le projet modélise une société industrielle simplifiée avec prêts, faillite
 Contexte de recherche académique : pas d'application web, pas d'API, pas de déploiement.
 
 **Lire avant d'agir** :
-- `modeles-systeme-physicoeconomique/modele_sans_banque_wip/model.py` — adaptateur du modèle WIP actuellement branché
+- `README.md` — navigation et statut courant des lignées
+- `m4_4_rebond_credit_soc/README.md` — dernière lignée scientifique auditée (août 2026)
+- `recherche/note_communication_encadrants/README.md` — proto-rapport de stage
+- `recherche/note_resultats/` — proto-article des conclusions, document frère distinct
 - `simulation_lab/` — orchestration locale, stockage et UI
 - `docs/ORGANISATION_ACTIVE_27_MARS.md` — note historique du 27 mars à ne pas confondre avec l'état courant
 
@@ -16,7 +19,7 @@ Contexte de recherche académique : pas d'application web, pas d'API, pas de dé
 ## Tech Stack
 
 - **Langage** : Python 3
-- **Dépendances** : stdlib + matplotlib
+- **Dépendances** : selon la lignée ; consulter ses imports et son environnement (notamment NumPy/SciPy pour les analyses récentes)
 - **Frameworks** : aucun
 - **Venv** : `/home/anatole/jupyter/.venv`
 - **Python à utiliser** : `/home/anatole/jupyter/.venv/bin/python3`
@@ -30,15 +33,19 @@ Contexte de recherche académique : pas d'application web, pas d'API, pas de dé
 
 ```text
 jupyter/
+├── m4_4_rebond_credit_soc/  ← dernière lignée auditée, campagnes et tests
+├── m4_3live_credit_soc/    ← interventions et technologies individuelles
+├── m4_2_credit_soc/        ← moteur implémenté et étude d'échelle
+├── m4b_credit_soc_mini/    ← référence historique autonome
 ├── simulation_lab/           ← orchestration actuelle (CLI + UI locale)
 ├── modeles-systeme-physicoeconomique/
-│   ├── modele_sans_banque_wip/  ← modèle le plus abouti actuellement branché
-│   └── claude3_v2/              ← autre modèle intégré au lab
+│   └── m4b_credit_soc_mini/    ← adaptateur historique ; autres capacités via list-models
+├── recherche/
+│   └── sensibilite_m4b/        ← campagne de sensibilité historique
 ├── archives/
 │   └── modeles/
 │       └── claude3-v3-27-mars/  ← archive complète de l'ancienne lignée 27 mars
-├── claude/                   ← archive v1, ne pas modifier
-├── claude3-v2/               ← archive v2, ne pas modifier
+├── anciens_modeles/          ← tous les moteurs et travaux jusqu'à M3 inclus
 ├── docs/                     ← documentation de cadrage et notes de session
 ├── recherche/                ← matériaux de recherche, notes et visuels hors flux actif
 ├── arborescence_modeles/     ← index et symlinks d'archives
@@ -60,7 +67,7 @@ cd /home/anatole/jupyter
 /home/anatole/jupyter/.venv/bin/python3 -m simulation_lab.cli list-models
 
 # Lancer une validation historique ciblée si nécessaire
-cd /home/anatole/jupyter/claude3-v2
+cd /home/anatole/jupyter/anciens_modeles/claude3-v2
 /home/anatole/jupyter/.venv/bin/python3 tests/test_basic.py
 
 # Vérifier la syntaxe d'un fichier
@@ -80,7 +87,7 @@ Sorties générées dans `simulation_lab_data/` et, pour les anciens modèles, d
 - `snake_case` pour variables, fonctions et fichiers
 - Modèles métier en `@dataclass` typées
 - Références inter-entités par ID entier, pas par pointeurs d'objets
-- Générateur pseudo-aléatoire isolé via `random.Random(seed)`
+- Générateur pseudo-aléatoire isolé ; API et garanties de parité propres à chaque lignée
 - Un rôle clair par module
 - Commenter seulement les invariants ou choix non évidents
 - Ne pas ajouter de dépendances sans nécessité démontrée
@@ -90,9 +97,9 @@ Sorties générées dans `simulation_lab_data/` et, pour les anciens modèles, d
 
 ## Working Rules for Codex
 
-- Lire d'abord l'adaptateur WIP et la couche `simulation_lab` avant toute modification fonctionnelle
-- Travailler par défaut sur `simulation_lab/` et `modeles-systeme-physicoeconomique/`
-- Ne pas modifier `claude/` ou `claude3-v2/` sans demande explicite
+- Lire d'abord le moteur concerné et, pour une intégration, son adaptateur et la couche `simulation_lab` avant toute modification fonctionnelle
+- Travailler dans la lignée explicitement concernée ; les versions historiques servent de références en lecture
+- Ne pas modifier les moteurs de `anciens_modeles/` sans demande explicite
 - Mettre à jour ce fichier si la structure du dossier, la version active, les commandes utiles ou les conventions changent
 - Faire des changements minimaux, ciblés et justifiables
 - Vérifier dans le code avant d'affirmer un comportement
@@ -132,9 +139,16 @@ En cas de conflit entre souvenir, commentaire et implémentation : **le code fai
 
 ## Source of Truth
 
-- **Modèle WIP branché** : `modeles-systeme-physicoeconomique/modele_sans_banque_wip/model.py`
+- **Navigation courante** : `README.md`
+- **Dernier moteur audité (index du 14 septembre 2026)** : `m4_4_rebond_credit_soc/m4_4/`
+- **Résultats numériques M4.4** : `m4_4_rebond_credit_soc/results/analysis/` et `report/`
+- **Proto-rapport du raisonnement** : `recherche/note_communication_encadrants/`
+- **Proto-article des conclusions** : `recherche/note_resultats/`
+- **Intentions de l'auteur** : réponses explicites aux questionnaires et à l'audit ; les inférences non validées restent provisoires
+- **Rapport de sensibilité historique** : `recherche/sensibilite_m4b/report/rapport_final.pdf`
+- **M4.2 implémenté** : `m4_2_credit_soc/`
 - **Orchestration actuelle** : `simulation_lab/`
 - **Note historique 27 mars** : `docs/ORGANISATION_ACTIVE_27_MARS.md`
 - **Archives et index** : `arborescence_modeles/INDEX_ARBORESCENCE.md`
 - **Archives ZIP** : `banque_versions_zip/INDEX_ZIP.md`
-- **Description théorique WIP** : `Modèle_sans_banque_wip/description_theorisation_modele.pdf`
+- **Description théorique d'une légacy WIP** : `anciens_modeles/Modèle_sans_banque/description_theorisation_modele.pdf`

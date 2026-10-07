@@ -1,0 +1,652 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage{fontspec}
+\usepackage[french]{babel}
+\usepackage{microtype}
+\usepackage[margin=2.25cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs,longtable,tabularx}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{url}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+
+\setmainfont{Latin Modern Roman}
+\setsansfont{Latin Modern Sans}
+\setmonofont{Latin Modern Mono}
+
+\definecolor{ink}{HTML}{18212B}
+\definecolor{navy}{HTML}{173B57}
+\definecolor{blue}{HTML}{176B91}
+\definecolor{rulegray}{HTML}{CFD8DE}
+
+\color{ink}
+\hypersetup{
+  colorlinks=true,
+  linkcolor=navy,
+  urlcolor=blue,
+  pdftitle={Prompt Fable 5 — Étude de sensibilité du modèle M4B},
+  pdfauthor={Anatole Joseph Stouls}
+}
+\urlstyle{tt}
+\setlist[itemize]{leftmargin=1.5em,itemsep=0.3em,topsep=0.4em}
+\setlist[enumerate]{leftmargin=1.7em,itemsep=0.35em,topsep=0.4em}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.55em}
+\setlength{\emergencystretch}{3em}
+
+\titleformat{\section}
+  {\Large\bfseries\sffamily\color{navy}}{\thesection}{0.65em}{}
+\titleformat{\subsection}
+  {\large\bfseries\sffamily\color{blue}}{\thesubsection}{0.55em}{}
+\titlespacing*{\section}{0pt}{1.7em}{0.55em}
+\titlespacing*{\subsection}{0pt}{1.2em}{0.4em}
+
+\pagestyle{fancy}
+\setlength{\headheight}{22pt}
+\fancyhf{}
+\fancyhead[L]{\small\sffamily Prompt Fable 5}
+\fancyhead[R]{\small\sffamily Sensibilité M4B}
+\fancyfoot[C]{\small\sffamily\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\headrule}{\hbox to\headwidth{\color{rulegray}\leaders\hrule height \headrulewidth\hfill}}
+
+\newcommand{\code}[1]{\texttt{\color{navy}#1}}
+\newcommand{\file}[1]{\nolinkurl{#1}}
+\newcommand{\term}[1]{\textbf{\color{navy}#1}}
+\newenvironment{briefbox}
+  {\begin{center}\begin{minipage}{0.94\textwidth}\color{navy}\hrule\vspace{0.7em}}
+  {\vspace{0.5em}\hrule\end{minipage}\end{center}}
+\newenvironment{notebox}
+  {\begin{center}\begin{minipage}{0.90\textwidth}\color{navy}\itshape}
+  {\end{minipage}\end{center}}
+
+\begin{document}
+
+\begin{titlepage}
+  \centering
+  \vspace*{2.2cm}
+  {\sffamily\bfseries\color{navy}\fontsize{28}{34}\selectfont
+    Étude de sensibilité\par}
+  \vspace{0.35cm}
+  {\sffamily\bfseries\color{blue}\fontsize{24}{30}\selectfont
+    du modèle M4B\par}
+  \vspace{1.1cm}
+  {\Large Prompt de recherche pour Claude Fable 5\par}
+  \vspace{1.6cm}
+  \begin{minipage}{0.78\textwidth}
+    \begin{briefbox}
+      Mission de recherche numérique de bout en bout : plan d'expérience,
+      simulations stochastiques, analyse de sensibilité, contrôle de robustesse
+      et rapports scientifiques reproductibles. Le modèle étudié est M4B.
+    \end{briefbox}
+  \end{minipage}
+  \vfill
+  {\large Anatole Joseph Stouls\par}
+  \vspace{0.25cm}
+  {\large 17 juillet 2026\par}
+  \vspace{0.8cm}
+  {\small\sffamily Version révisée après annotations du lecteur.\par}
+  {\small\sffamily À exécuter de préférence avec l'effort \code{xhigh}.\par}
+\end{titlepage}
+
+\tableofcontents
+\clearpage
+
+\section{Rôle et objectif scientifique}
+
+Tu es responsable d'une étude de sensibilité reproductible du modèle de
+société de crédit \term{M4B}. Travaille comme chercheur en économophysique,
+systèmes complexes et simulation stochastique : audite le moteur, fige un
+protocole, exécute la campagne, analyse les résultats et rédige les rapports
+scientifiques en français.
+
+L'étude doit cartographier honnêtement :
+
+\begin{enumerate}
+  \item quels paramètres contrôlent le régime démographique, le réseau de
+    crédit, les faillites en cascade et les distributions individuelles ;
+  \item où se trouvent les non-linéarités, seuils, interactions et changements
+    de régime ;
+  \item quelles signatures sont robustes aux paramètres, aux graines, à la
+    durée et aux choix de fenêtre statistique ;
+  \item quels paramètres semblent actifs, redondants ou assimilables à des
+    conventions d'échelle, afin d'éclairer une éventuelle réduction future du
+    modèle.
+\end{enumerate}
+
+L'objectif n'est ni de chercher la configuration qui « donne le plus de SOC »,
+ni de sélectionner les seuls résultats compatibles avec le rapport antérieur.
+Les extinctions, explosions, absences d'effet et contradictions sont des
+résultats à conserver et à expliquer.
+
+\begin{notebox}
+\textbf{Consigne d'autonomie.} Quand tu as assez d'information pour agir,
+agis. Mène la mission jusqu'aux simulations, aux analyses et aux rapports
+compilés ; ne termine pas sur un simple plan ou une promesse d'exécution.
+\end{notebox}
+
+\section{Périmètre : M4B uniquement}
+
+Le modèle étudié est :
+
+\begin{center}
+  \file{/home/anatole/jupyter/m4b_credit_soc_mini/}
+\end{center}
+
+M4B n'est pas traité comme un simple auxiliaire de M4 : il constitue l'objet
+scientifique de cette campagne. Les simulations de sensibilité, les cartes de
+régime, les conclusions et les recommandations de réduction doivent être
+obtenues depuis M4B.
+
+\subsection{Recours exceptionnel à M4}
+
+Le dossier \file{m4_credit_soc_fable/} est une référence historique et de
+provenance, pas un second modèle à balayer. Il n'y a \term{aucune campagne M4}
+à mener en parallèle.
+
+Tout nouveau recours exécutable à M4 doit satisfaire les quatre conditions
+suivantes :
+
+\begin{enumerate}
+  \item une question précise ne peut pas être résolue à partir du moteur M4B,
+    de ses sorties, de ses tests ou de son rapport mécanique ;
+  \item le besoin et la conclusion attendue sont écrits avant l'exécution ;
+  \item le nombre de runs M4 est minimal et leur résultat est isolé dans une
+    annexe méthodologique, sans entrer dans les estimateurs M4B ;
+  \item le rapport explique pourquoi ce recours était indispensable et ce
+    qu'il permet de conclure sur M4B.
+\end{enumerate}
+
+Le test de parité existant constitue un recours justifiable une fois comme
+contrôle de provenance de la réduction. Il ne transforme pas M4 en objet de
+l'étude et ne doit pas être répété à chaque cellule. Si la preuve de parité
+existante et l'intégrité du code suffisent, cite-les sans relancer M4.
+
+La lecture d'un rapport M4 pour comprendre l'histoire du mécanisme est permise,
+mais les affirmations de la présente étude doivent être vérifiées sur M4B.
+
+\section{Répertoire de travail et lectures obligatoires}
+
+Travaille dans \file{/home/anatole/jupyter}. Utilise le Python du venv :
+\file{/home/anatole/jupyter/.venv/bin/python3}.
+
+Lis intégralement avant de figer le protocole :
+
+\begin{itemize}
+  \item guide Fable :
+    \file{/home/anatole/jupyter/m4_credit_soc/Prompting Claude Fable.md} ;
+  \item présentation et usage de M4B :
+    \file{m4b_credit_soc_mini/README.md} ;
+  \item rapport mécanique M4B :
+    \file{m4b_credit_soc_mini/report/mecanique_m4b.pdf} et sa source
+    \code{mecanique\_m4b.tex} ;
+  \item moteur et formats de sortie : \file{m4b_credit_soc_mini/m4b/},
+    \file{run.py} et \file{tests/} ;
+  \item intégration de M4B dans Simulation Lab :
+    \file{modeles-systeme-physicoeconomique/m4b_credit_soc_mini/} et
+    \file{simulation_lab/}.
+\end{itemize}
+
+Crée tous les scripts, données dérivées, figures, notes techniques et rapports
+de l'étude dans :
+
+\begin{center}
+  \file{/home/anatole/jupyter/recherche/sensibilite_m4b/}
+\end{center}
+
+Traite comme \term{source en lecture seule} le moteur
+\file{m4b_credit_soc_mini/m4b/}, ses tests, son rapport et les résultats
+antérieurs. Une lacune d'instrumentation doit être contournée dans les scripts
+de campagne ou signalée ; elle ne justifie pas silencieusement une nouvelle
+version de la dynamique.
+
+\section{Paramètres et statut expérimental}
+
+Les paramètres scientifiques publics de M4B sont :
+
+\begin{longtable}{@{}p{0.18\textwidth}p{0.70\textwidth}@{}}
+\toprule
+\textbf{Paramètre} & \textbf{Rôle} \\
+\midrule
+\endhead
+\code{lam} & Intensité des naissances et axe de taille démographique. \\
+\code{delta} & Taux de dépréciation du capital. \\
+\code{sigma} & Volatilité du choc multiplicatif. \\
+\code{K0} & Capital attribué à la naissance. \\
+\code{k} & Taille de l'échantillon du marché local. \\
+\bottomrule
+\end{longtable}
+
+\code{seed} définit une réplication stochastique. \code{T} définit la durée
+d'observation. \code{pop\_max} est un garde-fou d'arrêt. Aucun des trois ne doit
+être interprété comme un mécanisme économique. \code{alpha=1} et les
+tolérances numériques sont des conventions ou constantes et ne doivent pas
+être promues artificiellement en paramètres scientifiques.
+
+\subsection{Rôle strict de l'étude temporelle}
+
+La variation de \code{T}, du burn-in et des fenêtres sert à vérifier la
+\term{probité des résultats} : convergence, stationnarité, stabilité des
+estimateurs et absence de conclusion fondée sur un transitoire. Elle ne doit
+pas devenir un axe de sensibilité économique ni entrer dans le classement des
+paramètres scientifiques.
+
+Une conclusion n'est robuste dans le temps que si :
+
+\begin{itemize}
+  \item elle persiste lorsque l'horizon est prolongé ;
+  \item elle ne dépend pas d'une seule définition du burn-in ;
+  \item les métriques cumulatives et les métriques par fenêtres donnent une
+    lecture compatible ;
+  \item les dérives résiduelles sont quantifiées et visibles.
+\end{itemize}
+
+\section{Grandeurs de réponse}
+
+Avant les runs de production, définis dans le rapport de protocole un
+dictionnaire des métriques : formule, unité, fenêtre temporelle, condition de
+validité et statut primaire ou secondaire.
+
+\subsection{Régime et démographie}
+
+\begin{itemize}
+  \item statut \code{ok}, extinction ou arrêt par \code{pop\_max} ;
+  \item population moyenne après burn-in, $N/\lambda$, pente temporelle,
+    autocorrélation et variabilité ;
+  \item naissances, morts, durée de vie, renouvellement et bilan des flux ;
+  \item stationnarité vérifiée sur plusieurs fenêtres et plusieurs horizons,
+    jamais sur la seule valeur finale.
+\end{itemize}
+
+\subsection{Crédit, exposition et réseau}
+
+\begin{itemize}
+  \item nombre et volume de prêts, dette rapportée au capital ou aux actifs,
+    degrés et concentration des expositions ;
+  \item rythme d'accumulation puis d'élagage du carnet autour des grands
+    événements ;
+  \item métriques intensives ou normalisées par la population lorsque cela est
+    requis par la comparaison.
+\end{itemize}
+
+\subsection{Avalanches et propagation causale}
+
+\begin{itemize}
+  \item fréquence, quantiles, maximum absolu et maximum rapporté à la
+    population ;
+  \item rapport de branchement, fraction induite, racines/taille et profondeur ;
+  \item susceptibilité ou échelle de coupure, par exemple
+    $\langle s^2\rangle/\langle s\rangle$ ;
+  \item MLE \term{discret} de la loi de puissance, notamment au seuil
+    $s_{\min}=2$, ajustement loi de puissance avec coupure et comparaison de
+    vraisemblance avec une log-normale discrète renormalisée ;
+  \item scaling de la coupure avec la taille du système.
+\end{itemize}
+
+Ne conclus jamais à une loi de puissance sur le seul $r^2$ d'une régression
+log-log. Si un run contient trop peu d'avalanches pour un ajustement fiable,
+marque la métrique non identifiable au lieu de produire un nombre trompeur.
+
+\subsection{Distributions individuelles et inégalités}
+
+\begin{itemize}
+  \item capital $K$, valeur nette, revenu brut/net, Gini et renouvellement du
+    haut de la distribution ;
+  \item familles comparées sur les mêmes supports et avec les mêmes règles de
+    troncature ;
+  \item contrôle par âge ou cohorte lorsque l'interprétation
+    distributionnelle peut en dépendre.
+\end{itemize}
+
+\subsection{Intégrité numérique}
+
+\begin{itemize}
+  \item égalité créances-dettes, absence de contrats orphelins, capital non
+    négatif, bilan réel par pas et reproductibilité ;
+  \item temps de calcul, volume des données et tout arrêt anticipé ;
+  \item neutralité des options de mesure sur la trajectoire aléatoire.
+\end{itemize}
+
+\section{Protocole expérimental}
+
+\subsection{Audit et réutilisation}
+
+\begin{enumerate}
+  \item Exécute les contrôles unitaires et comptables propres à M4B. Le test de
+    parité M4 peut être cité ou lancé une fois selon les règles de la
+    section~2.1.
+  \item Inventorie les runs existants. Ne réutilise un run que si son moteur,
+    sa configuration complète, sa graine, son horizon, son statut et ses
+    données primaires sont vérifiables. Un nom de dossier ne suffit pas.
+  \item Lance un benchmark représentatif pour mesurer coût et taille disque,
+    puis fixe un budget défendable. Laisse au moins deux cœurs au système et
+    évite la surallocation mémoire ou disque.
+  \item Fige le protocole exploratoire et les règles de passage à la phase
+    confirmatoire dans un rapport LaTeX daté.
+\end{enumerate}
+
+\subsection{Séparer taille, temps et paramètres microscopiques}
+
+Traite \code{lam} d'abord comme axe de taille finie et démographique. Traite
+\code{T} uniquement comme contrôle de probité temporelle. Ne les mélange pas
+sans précaution dans un classement d'importance avec \code{delta},
+\code{sigma}, \code{K0} et \code{k}.
+
+La référence est :
+
+\begin{center}
+\code{lam=10, delta=0.05, sigma=0.25, K0=25, k=3, T=2000}.
+\end{center}
+
+Pour obtenir des queues mieux identifiées, le centre de la campagne peut être
+\code{lam=30} ; justifie ce choix et conserve un lien explicite avec la
+baseline.
+
+Construis successivement :
+
+\begin{enumerate}
+  \item un contrôle de taille autour de $\lambda\in\{10,30,100\}$ ;
+  \item un contrôle temporel limité à la vérification des résultats, par
+    exemple $T\in\{2000,4000\}$ et plusieurs burn-ins ;
+  \item des courbes OAT autour du centre pour rendre visibles monotonies,
+    seuils et formes non linéaires ;
+  \item un plan global espace-remplissant sur les paramètres microscopiques ;
+  \item des coupes 2D ciblées choisies après le screening ;
+  \item une phase confirmatoire indépendante sur les régimes et interactions
+    les plus importants.
+\end{enumerate}
+
+\subsection{Plages initiales}
+
+Ces plages doivent être auditées par des pilotes, puis corrigées si elles ne
+produisent que des cas triviaux ou des arrêts :
+
+\begin{center}
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Paramètre} & \textbf{Plage initiale} & \textbf{Remarque} \\
+\midrule
+\code{delta} & $0{,}02$--$0{,}10$ & autour de $0{,}05$ \\
+\code{sigma} & $0{,}10$--$0{,}50$ & contrôle $\sigma=0$ séparé \\
+\code{K0} & $5$--$100$ & échelle logarithmique préférable \\
+\code{k} & $\{2,3,4,6,10\}$ & paramètre discret \\
+\code{lam} & $\{10,30,100\}$ & scaling principal \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Ces bornes sont des points de départ, pas des vérités. Relie-les aux équations,
+au rapport mécanique, aux pilotes et aux régimes observés.
+
+Pour le plan global, utilise un plan reproductible adapté au mélange continu
+et discret, par exemple un Latin hypercube stratifié pour les continus avec
+équilibrage de \code{k}. Un ordre de grandeur de 48 à 80 points avec trois
+graines par point est raisonnable après benchmark ; ajuste ce nombre selon le
+coût et la précision observés. Ne revendique pas d'indices de Sobol si le plan
+de Saltelli et le nombre de réplications ne les rendent pas valides.
+
+Note pratique sur le temps de calcul : pour des valeurs petites de
+\code{sigma} et \code{delta}, le système peut devenir très grand et mettre
+beaucoup de temps à atteindre son régime permanent. Il peut alors être
+nécessaire de pousser \code{T} bien au-delà de 10000, voire jusqu'à 30000.
+Adapter \code{T} dans ce cas reste une exigence de probité temporelle, mais il
+faut le faire avec prudence : attention au volume total des simulations et aux
+coûts de stockage associés.
+
+Utilise le même panel de graines pour chaque cellule d'une comparaison. Cela
+permet des contrastes appariés, mais ne l'appelle pas abusivement « common
+random numbers » si les trajectoires consomment ensuite des tirages différents.
+Ne fusionne jamais les événements de plusieurs graines avant d'ajuster une
+loi : ajuste chaque graine, puis agrège les estimateurs et leur incertitude.
+
+Après screening, confirme les cellules retenues avec $T=4000$ et au moins cinq
+graines. Près d'une frontière de régime, ou lorsque la variance inter-graines
+domine l'effet, augmente les répétitions. Utilise par défaut un burn-in de
+$T/4$ et vérifie la robustesse à la fenêtre.
+
+\subsection{Diagnostic obligatoire du garde-fou de population}
+
+\code{pop\_max} ne borne pas la dynamique : il censure une trajectoire par
+sécurité. Atteindre cette valeur ne suffit donc jamais à conclure à une
+explosion.
+
+Pour toute cellule qui atteint \code{pop\_max} :
+
+\begin{enumerate}
+  \item répète-la avec plusieurs plafonds plus élevés et le même panel de
+    graines ;
+  \item examine les pentes, accélérations et temps de franchissement plutôt que
+    la seule population finale ;
+  \item encadre adaptativement la frontière dans l'espace des paramètres avec
+    des cellules voisines des deux côtés ;
+  \item vérifie qu'il existe un changement qualitatif entre un régime voisin
+    stationnaire, qui peut frôler le plafond sans l'atteindre durablement, et
+    un régime à croissance soutenue qui franchit successivement les plafonds ;
+  \item si la moyenne stationnaire augmente continûment jusqu'à simplement
+    croiser un plafond arbitraire, classe le run « censuré par le garde-fou » et
+    non « explosif ».
+\end{enumerate}
+
+Le rapport doit montrer le diagnostic par des trajectoires et une carte locale,
+et distinguer formellement \emph{changement de régime}, \emph{forte population
+stationnaire} et \emph{censure numérique}.
+
+\subsection{Analyse de sensibilité}
+
+Produis plusieurs lectures complémentaires :
+
+\begin{itemize}
+  \item courbes OAT avec incertitude inter-graines et contrastes appariés ;
+  \item corrélations de rang partielles ou régressions standardisées avec
+    intervalles bootstrap pour le screening global ;
+  \item modèle de réponse non linéaire validé hors échantillon pour détecter
+    seuils et interactions, avec importance par permutation si pertinente ;
+  \item cartes de régime extinction/stationnaire/croissance et diagrammes 2D
+    des interactions confirmées ;
+  \item décomposition explicite de la variabilité due aux paramètres et de la
+    variabilité stochastique inter-graines.
+\end{itemize}
+
+Ne donne pas un classement unique sans préciser la métrique. Rapporte tailles
+d'effet, incertitudes, non-monotonies et conditions de validité. Toute analyse
+exploratoire utilisée pour choisir des cellules doit être étiquetée comme telle
+et séparée de la confirmation.
+
+\section{Infrastructure et traçabilité}
+
+Organise le dossier de campagne au minimum ainsi :
+
+\begin{verbatim}
+recherche/sensibilite_m4b/
+  scripts/
+  manifests/
+  results/
+  figures/
+  report/
+    protocole.tex
+    rapport_preliminaire.tex
+    rapport_final.tex
+\end{verbatim}
+
+Exigences :
+
+\begin{itemize}
+  \item scripts relançables et reprise après interruption ;
+  \item identifiant de run déterministe ou table de correspondance non ambiguë ;
+  \item manifeste comportant version du moteur, tous les paramètres, graine,
+    horizon, burn-in, statut, durée, chemin des données et contrôles
+    d'intégrité ;
+  \item résultats agrégés en CSV ou JSON pour les calculs, mais interprétation
+    scientifique dans les rapports LaTeX ;
+  \item journal technique des décisions, résultats négatifs et anomalies ;
+  \item aucune cellule silencieusement exclue parce qu'elle s'éteint, atteint
+    un garde-fou ou contredit l'hypothèse.
+\end{itemize}
+
+M4B est le modèle actif de Simulation Lab. Les runs confirmatoires retenus
+doivent y être consultables, avec leurs figures et métadonnées, et être marqués
+à conserver. Pour le screening massif, limite l'écriture individuelle
+(\code{individual\_every=0} ou fréquence espacée) et les instantanés lorsque
+ces données ne sont pas requises. Vérifie sur un contrôle que les options de
+mesure ne changent pas la trajectoire.
+
+\section{Livrables scientifiques en LaTeX}
+
+Les livrables destinés au lecteur sont des \term{rapports écrits en LaTeX et
+compilés en PDF}. Les fichiers CSV, JSON, scripts et manifestes sont des annexes
+techniques, pas des substituts au raisonnement écrit.
+
+Rédige au minimum :
+
+\begin{enumerate}
+  \item \code{protocole.tex/.pdf} : modèle, questions, paramètres, métriques,
+    plan d'expérience, règles de confirmation, diagnostic de \code{pop\_max}
+    et critères d'arrêt ;
+  \item \code{rapport\_preliminaire.tex/.pdf} : audit, pilotes, qualité des
+    données, bornes révisées, puissance statistique et décisions avant la
+    confirmation ;
+  \item \code{rapport\_final.tex/.pdf} : méthode, résultats, résultats
+    négatifs, cartes de régime, incertitudes, limites, recommandations de
+    réduction et perspective M5.
+\end{enumerate}
+
+Ces documents s'adressent à un \term{public avisé} en économie quantitative,
+économophysique ou systèmes complexes. Ils doivent rester autonomes et
+compréhensibles sans lire le code ni les échanges de l'agent :
+
+\begin{itemize}
+  \item présenter les équations utiles et la chronologie de M4B ;
+  \item définir toute métrique avant son interprétation ;
+  \item distinguer faits simulés, inférences statistiques et hypothèses ;
+  \item expliquer les choix de méthode et les limites sans jargon d'outillage ;
+  \item commenter chaque tableau et chaque figure dans le texte ;
+  \item donner les effectifs, graines, horizons, intervalles d'incertitude et
+    provenance des données ;
+  \item ne jamais renvoyer le lecteur à un CSV brut pour comprendre une
+    conclusion.
+\end{itemize}
+
+Chaque figure et tableau doit être reproductible depuis le manifeste. Compile
+les documents avec XeLaTeX ou LuaLaTeX, vérifie les références croisées, les
+légendes, les débordements et la lisibilité des pages finales.
+
+\section{Suite du projet : horizon M5, hors périmètre}
+
+Le rapport final doit informer le lecteur de la suite envisagée, sans la mener
+dans la présente étude.
+
+\subsection{Réduction éventuelle avant M5}
+
+La sensibilité M4B doit identifier les paramètres actifs, faiblement
+identifiables, redondants ou essentiellement liés aux unités. Elle peut
+recommander une réduction argumentée du nombre de paramètres. Elle ne doit pas
+implémenter silencieusement cette réduction dans M4B : la décision appartient
+à la conception de M5.
+
+\subsection{Nouvel exposant de concavité}
+
+Dans M4B, la production ou extraction est actuellement de type racine carrée :
+
+\[
+  F(K)=\alpha K^{1/2}.
+\]
+
+M5 introduira un exposant continu $\gamma$ :
+
+\[
+  F_{\gamma}(K)=\alpha K^{\gamma},
+  \qquad 0<\gamma<1,
+\]
+
+avec $\gamma=1/2$ comme cas M4B et, par exemple, $\gamma=1/1{,}5=2/3$ ou
+$\gamma=1/3$. Ce paramètre n'appartient pas à la campagne actuelle. Le rapport
+M4B doit toutefois fournir les baselines, unités, régimes et métriques qui
+permettront d'isoler son effet dans M5.
+
+\subsection{Variation dynamique et effet rebond}
+
+Une étape ultérieure cherchera à faire apparaître un \term{effet rebond} à
+partir d'une variation dynamique des paramètres du système. Au sens économique
+de Sorrell et Dimitropoulos (2008), une amélioration d'efficacité réduit le coût
+effectif d'un service, stimule sa consommation et reprend une partie des
+économies de ressource attendues ; si cette reprise dépasse la totalité des
+économies prévues, la littérature parle de \emph{backfire}.
+
+Référence locale :
+
+\begin{center}
+\file{/home/anatole/Zotero/storage/TMKGGCJA/}\par
+\file{Sorrell et Dimitropoulos - 2008 - The rebound effect Microeconomic definitions, lim.pdf}
+\end{center}
+
+Dans M5, ce concept devra être traduit avec prudence : définir une amélioration
+d'efficacité, la ressource consommée, le service ou l'activité utile, puis
+comparer la réponse dynamique à un contrefactuel statique « sans rebond ». Une
+simple hausse de population, de production ou de crédit après un changement de
+paramètre ne suffira pas à établir un effet rebond.
+
+La présente étude ne fait varier que des paramètres constants entre runs. Elle
+ne doit donc ni simuler cette politique dynamique, ni annoncer un effet rebond.
+Elle doit seulement livrer une carte de référence et signaler quelles variables
+seront nécessaires à sa mesure future.
+
+\subsection{Étude théorique du comportement du système}
+
+M5 sera accompagné d'une étude analytique destinée à préciser le comportement
+attendu avant ou en parallèle des simulations. Elle devra notamment examiner :
+
+\begin{itemize}
+  \item points fixes et stabilité de la dynamique moyenne du capital ;
+  \item rôle de $\gamma$, $\delta$, $\sigma$, $K_0$, $k$ et $\lambda$ dans les
+    échelles et nombres sans dimension ;
+  \item conditions attendues de stationnarité, extinction ou croissance ;
+  \item effets de la concavité sur les distributions de capital et de revenu ;
+  \item articulation entre exposition au crédit, défaut et propagation des
+    avalanches ;
+  \item prédictions falsifiables permettant de distinguer une bifurcation, un
+    transitoire long et une censure par garde-fou.
+\end{itemize}
+
+Le rapport final de sensibilité doit terminer par cette feuille de route et
+indiquer quels résultats empiriques de M4B contraignent déjà l'analyse future.
+
+\section{Vérification et conduite autonome}
+
+Délègue les sous-tâches réellement indépendantes à des sous-agents, par exemple
+l'inventaire des runs, la vérification statistique et l'audit des rapports.
+Garde la conception expérimentale et la synthèse scientifique sous ta
+responsabilité. À la fin de chaque phase majeure, fais vérifier par un
+sous-agent à contexte frais : conformité au protocole, séparation exploration
+et confirmation, calcul des métriques, diagnostic de \code{pop\_max},
+provenance des figures et adéquation des conclusions aux données.
+
+Avant chaque compte rendu de progression, vérifie chaque affirmation dans un
+résultat d'outil de cette session. Si un test échoue, si un run est incomplet ou
+si une étape est omise, dis-le explicitement. Ne présente jamais une intention
+comme un travail accompli.
+
+Travaille de façon autonome pour toutes les actions réversibles dans ce
+périmètre. Ne demande l'utilisateur que si une action destructive ou
+irréversible, un changement du moteur M4B, une extension de périmètre ou une
+information que lui seul possède devient indispensable. Ne supprime aucun
+résultat existant et ne modifie pas le moteur de référence.
+
+\section{Définition de « terminé »}
+
+\begin{briefbox}
+La mission est terminée seulement lorsque les runs retenus sont exécutés ou
+explicitement comptabilisés comme échecs ou censures, les contrôles sont
+passés, les résultats sont reproductibles, le statut des franchissements de
+\code{pop\_max} est établi, les figures sont sourcées et les trois rapports
+LaTeX sont compilés et relus. Le rapport final doit conclure sur la sensibilité
+de M4B, proposer prudemment les réductions éventuelles et présenter la feuille
+de route M5 comme une perspective hors périmètre.
+\end{briefbox}
+
+Dans ton message final, commence par le résultat scientifique principal, puis
+donne les chemins des rapports PDF et leurs limites éventuelles.
+
+\end{document}

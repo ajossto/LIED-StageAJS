@@ -1,0 +1,288 @@
+\section*{Lecture préalable obligatoire}
+
+\begin{itemize}[leftmargin=*]
+  \item \code{m3\_credit\_soc/NOTES.md} — journal complet du programme M3.
+    Utile comme historique de ce qui a déjà été essayé, \textbf{pas comme
+    verdict à respecter} (voir plus bas). Ne relancez pas un test déjà fait
+    sans le citer et dire pourquoi le refaire apporte quelque chose de
+    nouveau.
+  \item \code{m3\_credit\_soc/reports/05\_negative\_results/main.tex} et
+    \code{reports/07\_income\_rule/main.tex} — synthèses rédigées des
+    résultats négatifs et du mini-protocole X1, même remarque.
+  \item \code{src/m4/*.py} (dans \Workspace{}) — moteur actuel, fork de M3.
+    \code{config.py} documente chaque champ et pourquoi ses valeurs par
+    défaut sont ce qu'elles sont.
+  \item \textbf{Articles et notes de conception de référence, pour les lois
+    réelles et les pistes de mécanisme} — dossier
+    \code{recherche/} (racine du dépôt \code{jupyter/})~:
+    \begin{itemize}
+      \item \code{recherche/analyse\_articles/} — recodage et analyse de
+        modèles d'économie statistique~: Bouchaud~\&~Mézard, \emph{Wealth
+        condensation in a simple model of economy} (mécanisme de
+        condensation de richesse par croissance multiplicative + échange,
+        directement pertinent pour une dynamique d'accumulation-relaxation)~;
+        deux modèles de Ian Wright sur les microfondations et l'architecture
+        sociale d'une économie de classes. Le texte intégral des articles
+        n'est pas versionné (copyright) mais chaque sous-dossier contient
+        le recodage, l'analyse statistique et un rapport.
+      \item \code{recherche/analyse\_distributions\_taille\_revenu/} —
+        boîte à outils déjà écrite pour tester la famille de loi (13
+        familles, MLE, AIC/BIC) et la queue (test de Clauset--Shalizi--Newman)
+        de distributions de taille/revenu — à réutiliser, pas à réinventer.
+      \item \code{recherche/conception\_boltzmann\_pareto\_soc/} — note de
+        conception antérieure à M2, qui discute déjà explicitement une
+        transition stable~$\to$~SOC pilotée par un paramètre de connectivité
+        du marché et des diagnostics SOC (tailles de cascade, corrélation
+        concentration/défaut). Directement pertinent pour la conception du
+        mécanisme recherché ici.
+    \end{itemize}
+\end{itemize}
+
+\section*{Contexte}
+
+M3 est un modèle multi-agents de société de crédit : entités avec liquidité
+\(L\) et capital productif \(K\), prêts bilatéraux, faillites en cascade,
+recherche d'un régime SOC (\emph{self-organized criticality}) sur la taille
+des avalanches de faillites. M4 est un fork de M3. Un premier run simple
+(\code{m4\_first\_s0}, seed~0, $T{=}2000$, baseline chocs sectoriels
+corrélés + objectif de revenu myope) a été exécuté et donne une population
+effondrée ($\approx 135$) et des avalanches non triviales mais petites
+(max$=7$).
+
+\textbf{Vous travaillez dans \Workspace{}, un dossier de travail
+indépendant.} Un autre agent travaille en parallèle dans \OtherWorkspace{},
+sur le même sujet, à partir du même point de départ. Les deux dossiers sont
+des copies indépendantes~: ne modifiez pas \OtherWorkspace{}. Vous pouvez
+consulter le \code{NOTES.md} de l'autre dossier s'il existe et si cela vous
+aide, mais ne convergez pas prématurément vers la même solution sous ce
+seul prétexte — l'intérêt de deux dossiers séparés est d'obtenir deux
+explorations réellement indépendantes.
+
+\textbf{Avertissement fort~: les résultats de M2 et de M3 sont à prendre
+avec des pincettes.} Ils viennent d'un programme antérieur, sous des choix
+de conception et des critères qui ne sont pas forcément les bons pour cette
+phase (voir en particulier, plus bas, la correction apportée sur l'effet du
+réseau de crédit, qui avait été mal généralisé dans une version précédente
+de ce document). Traitez tout ce qui suit comme un point de départ
+discutable, pas comme un acquis.
+
+\section*{Objectif}
+
+Obtenir un régime où les avalanches de faillites (composantes connexes du
+graphe de pertes, cf. \code{bankruptcy.py::\_build\_avalanches}) sont
+produites par un mécanisme d'\textbf{accumulation-relaxation endogène} — pas
+par amplification d'une corrélation imposée de l'extérieur — et suivent une
+distribution de taille en loi de puissance robuste, avec des tailles
+significativement au-delà de 7 (potentiellement 100+ selon la taille du
+système). Le système doit continuer à produire des distributions de
+\textbf{taille des entités} ($\NW$, $K$ — pas la taille des avalanches) et de
+\textbf{revenu} dont la \textbf{famille} de loi colle aux lois réelles
+étudiées dans \code{recherche/} (voir « Contraintes à préserver »).
+
+\textbf{Objectif final de simplification~: un code simple.} La liquidité
+d'illiquidité (défaut d'une entité solvable mais illiquide) \emph{n'est pas
+un enjeu de ce programme} — ne cherchez pas à préserver ce canal pour
+lui-même. Simplifier les variables d'état (par exemple fusionner $L$ et $K$,
+ou toute autre réduction) est encouragé si ça allège le code et que les
+contraintes ci-dessous restent respectées. En particulier, $d_0$ doit à
+terme être \textbf{complètement retiré du code} (pas seulement fixé à~0,
+voir plus bas) — c'est un objectif de simplification explicite, pas une
+option parmi d'autres.
+
+\paragraph{Refonte radicale autorisée.} Vous n'êtes pas limité·e à ajuster
+des paramètres de M4 tel quel. Toute partie du mécanisme peut être repensée
+si l'analyse le justifie et si le changement est documenté et comparé à la
+baseline actuelle~: la règle de faillite (\code{bankruptcy.py}), la
+topologie de marché (\code{market.py}), la structure du choc, le nombre et
+la nature des variables d'état par entité, la règle de taux, etc. Rien
+n'est sanctuarisé sauf ce qui est listé plus bas comme contrainte.
+
+\paragraph{Point de départ retenu pour l'investigation~: la sectorialité
+des chocs.} Commencez par l'axe des chocs sectoriels corrélés
+(\code{shock\_rho\_sector}, \code{n\_sectors} — variantes G/G2 de M3), pas
+par la piste de dette de subsistance (qui reste une voie possible mais pas
+privilégiée, voir plus bas). C'est un choix délibéré~: M3 a lu cet axe comme
+une amplification continue sans transition, mais ce jugement reposait
+notamment sur le critère var/mean, dont ce document explique plus bas
+pourquoi il n'est pas nécessaire — l'axe mérite d'être ré-examiné avec le
+bon critère.
+
+\paragraph{Marqueur déjà observé, à prendre au sérieux~: régression en loi
+de puissance après exclusion des avalanches de taille 1.} En excluant les
+avalanches de taille 1 de la régression log-log (garder les deux
+régressions, avec et sans taille 1, affichées), on obtient déjà de très bons
+ajustements ($r^2 > 0{,}90$) sur des runs existants. C'est un très bon
+marqueur d'un régime auto-critique — bien meilleur que var/mean — à
+calculer systématiquement pour chaque mécanisme candidat (voir « Critères de
+succès »).
+
+\section*{Ce que M3 a établi (points de départ, à ré-examiner, pas des
+vérités intangibles)}
+
+\begin{enumerate}[leftmargin=*]
+
+\item \textbf{Corrélation imposée vs auto-organisation — axe de départ de
+  l'investigation.} G1 (choc macro) et G2/G2b/G2c (choc sectoriel, $\rho_s$
+  de 0 à 0,8) montraient dans M3 une réponse jugée \emph{continue}~: var/mean
+  des avalanches de 0,07 (iid) à 0,84 ($\rho_s{=}0{,}8$), max jusqu'à 72,
+  sans transition nette au sens de ce critère. Mais var/mean n'est pas le
+  bon critère (voir « Critères de succès ») — c'est précisément pourquoi cet
+  axe est repris en premier ici, avec le marqueur de régression hors
+  taille~1 comme signal principal.
+
+\item \textbf{Décision de conception retenue pour M4~: $d_0$ est supprimé.}
+  Le run H de M3 ($d_0{=}0$) a montré que le système se borne seul par
+  l'insolvabilité contractuelle (population stationnaire, renouvellement
+  observé) sans plancher exogène~: on sait donc qu'on peut s'en passer.
+  Commencez par \code{d0=0} en configuration si besoin d'une étape
+  intermédiaire, mais l'objectif final est de retirer \code{d0} et son
+  usage \textbf{du code lui-même} (\code{config.py}, \code{bankruptcy.py::
+  net\_worth}), pas seulement de le neutraliser par sa valeur. La piste
+  consistant à router une dette de subsistance vers de vraies créancières du
+  marché (plutôt que vers un puits abstrait) reste une voie possible à
+  explorer, mais ce n'est \textbf{pas la seule ni la prioritaire} — l'axe
+  retenu en premier est la sectorialité des chocs (ci-dessus).
+
+\item \textbf{Le réseau de crédit a un effet réel et attendu sur les
+  cascades.} Activer le crédit (vs l'ablation B, sans marché) multiplie les
+  cascades~: c'est le canal même qui les rend possibles en connectant les
+  entités entre elles, et c'est parfaitement normal — ne traitez aucun
+  résultat de ce document comme disant le contraire. Ce que la dose-réponse
+  F/F''/baseline de M3 a réellement fermé est plus étroit~: \emph{à volume
+  de crédit égal}, changer la règle d'appariement (assortative~/ random~/
+  random\_lender) ne changeait rien de mesuré au-delà de ce volume — mais ce
+  résultat lui-même est à ré-examiner avec les bons critères plutôt qu'à
+  prendre pour acquis.
+
+\item \textbf{Le crédit est causal démographiquement, pas
+  distributionnellement}, en baseline richesse (A vs B) selon M3~; ce n'est
+  qu'avec la règle de revenu (X1) que le crédit devenait distributionnellement
+  actif (Gini $0{,}62$--$0{,}69$ vs $0{,}56$). À vérifier plutôt qu'à
+  supposer si votre mécanisme candidat change la donne.
+
+\end{enumerate}
+
+\section*{Contraintes à préserver}
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Familles de distribution.} Corps de $\NW$, $K$, revenu
+    doivent rester dans des familles reconnaissables (pas nécessairement
+    identiques à Fisk/dPlN/lognormal observées en M3 — à re-tester, pas à
+    supposer). Pour les lois réelles de référence, voir
+    \code{recherche/analyse\_articles/} et
+    \code{recherche/analyse\_distributions\_taille\_revenu/} (lecture
+    préalable ci-dessus) plutôt que de partir de zéro.
+  \item \textbf{Renouvellement démographique minimal, pas un taux de
+    mortalité cible.} La seule exigence est qu'il existe un renouvellement
+    (turnover) de la population/du haut de la distribution, même très
+    lent — pas de taux de mortalité particulier à atteindre, et ne
+    réutilisez pas un critère de mortalité instantanée du top (voir pièges
+    d'outillage) : mesurez le renouvellement entre fenêtres temporelles.
+  \item \textbf{Invariants comptables du moteur} (cascade de faillite avec
+    point fixe garanti, snapshot en lecture pure pour les figures, etc. —
+    voir docstrings \code{bankruptcy.py}, \code{contracts.py}, tests
+    \code{tests/}). Toute refonte du moteur doit préserver un jeu
+    d'invariants équivalent et le tester.
+  \item \textbf{Reproductibilité}~: \code{random.Random(seed)} isolé,
+    jamais le RNG global~; artefacts sur disque (\code{config.json},
+    \code{summary.json}, \code{series.csv}, \code{avalanches.csv},
+    \code{snap\_t*.npz}) comme seule source pour les figures — jamais
+    l'état mémoire de la simulation.
+\end{itemize}
+
+\section*{Pièges d'outillage à ne pas reproduire}
+
+\begin{enumerate}[leftmargin=*]
+  \item Test LR Pareto/lognormale \textbf{sans renormalisation} de la
+    lognormale tronquée $\rightarrow$ biais pro-Pareto systématique.
+  \item AIC du corps de distribution avec des familles \textbf{non
+    tronquées} sur un corps qui est en réalité tronqué $\rightarrow$ biais
+    anti-exponentiel.
+  \item Transfert prorata des créances de faillite sans fusion par paire
+    (\code{merge\_pairs}) $\rightarrow$ explosion combinatoire du carnet de
+    prêts (observé jusqu'à 12,4~M de contrats sur la grille M3).
+  \item Moyenne arithmétique des taux d'intérêt au lieu de géométrique
+    $\rightarrow$ le marché de crédit s'éteint de lui-même.
+  \item Critère de « mortalité instantanée du top » — mauvais critère,
+    structurellement nul. Ce qu'on veut n'est qu'un \textbf{renouvellement},
+    même très lent~: mesurez-le entre fenêtres temporelles, pas
+    instantanément.
+  \item \textbf{Période transitoire.} Ne calculez pas de statistiques sur
+    des données qui incluent encore le régime transitoire de démarrage —
+    identifiez et excluez le burn-in avant d'ajuster une distribution ou de
+    compter des avalanches.
+  \item \textbf{Robustesse de la fenêtre d'analyse.} Faites varier le temps
+    de simulation $T$ pour vérifier que le choix de fenêtre d'analyse (où
+    commence le régime stationnaire, sur quelle plage on ajuste) est
+    robuste, pas un artefact d'un $T$ particulier.
+  \item \textbf{Variance inter-seeds.} Pour chaque point de paramètres,
+    utilisez plusieurs seeds afin d'estimer la variance des résultats — un
+    seed unique ne suffit pas pour juger qu'un effet est réel.
+\end{enumerate}
+
+\section*{Critères de succès}
+
+\begin{enumerate}[leftmargin=*]
+  \item \textbf{Marqueur principal~: régression en loi de puissance après
+    exclusion des avalanches de taille 1, $r^2 > 0{,}90$.} Gardez les deux
+    régressions affichées (toutes tailles, et hors taille~1) — c'est le
+    signal le plus net déjà observé d'un régime auto-critique. À calculer
+    systématiquement pour chaque mécanisme candidat.
+  \item \textbf{Scaling en taille finie}~: le cutoff de la distribution de
+    taille d'avalanches croît avec la taille du système (population
+    stationnaire ou nombre d'entités actives), signature classique d'un
+    régime critique.
+  \item \textbf{Ajustement en loi de puissance qui survit au test LR
+    corrigé} (avec la renormalisation correcte des alternatives tronquées —
+    piège n°1 ci-dessus), pas seulement une droite à l'œil sur un graphe
+    log-log.
+  \item \textbf{La condition sur-Poisson (var/mean $>1$) N'EST PAS
+    nécessaire.} Ne l'utilisez pas comme critère de rejet d'un mécanisme —
+    M3 en a fait un usage excessif alors que ce n'est pas ce qui compte
+    (voir le marqueur principal ci-dessus).
+  \item Les distributions de taille des entités et de revenu gardent une
+    famille reconnaissable, en cohérence avec les lois réelles de
+    référence (\code{recherche/}), avec le changement documenté si une
+    famille change.
+  \item Le mécanisme proposé a une \textbf{histoire causale endogène}
+    articulable en une phrase (pas juste « on a poussé un paramètre de
+    corrélation plus haut ») — feedback d'accumulation puis de relaxation
+    porté par la dynamique du modèle lui-même.
+  \item \textbf{Piège à nommer explicitement~: un effondrement quasi total
+    n'est pas de la SOC.} La façon la moins chère d'obtenir de « grosses
+    avalanches » dans un modèle de cascade de levier est un régime bimodal
+    (une masse de défauts de taille~1 + un effondrement occasionnel de tout
+    le système) — ce n'est ni une loi de puissance ni un régime critique,
+    c'est une extinction. Un run qui rapporte « avalanche de 100+
+    obtenue~! » doit être vérifié contre ce scénario (et contre les
+    critères 1--3) avant d'être compté comme un succès.
+\end{enumerate}
+
+\section*{Livrables attendus}
+
+\begin{itemize}[leftmargin=*]
+  \item Modifications du moteur dans \code{src/m4/} (ou nouveau module si
+    la refonte le justifie), avec tests couvrant les invariants touchés.
+  \item Au moins un run comparatif baseline-vs-mécanisme-candidat avec
+    figures (réutiliser les recettes déjà établies~:
+    \code{simulation\_lab/plot\_utils.py} et \code{webapp/mpl\_figures.py} —
+    log-binning adaptatif, erreur bootstrap, double régression avec/sans
+    taille~1, écrites pour \code{cascades\_rank\_size.png} dans
+    \code{m3\_credit\_soc} — à copier/adapter, pas à réinventer).
+  \item Une entrée de journal dans \code{\Workspace{}/NOTES.md} (sur le
+    modèle de celui de M3~: un résumé d'une ligne en tête de chaque entrée,
+    confirmé ou infirmé, et pourquoi) pour chaque hypothèse testée, y
+    compris les échecs — les négatifs sont aussi précieux que les positifs
+    dans ce programme.
+\end{itemize}
+
+\section*{Quand s'arrêter et demander}
+
+\textbf{Ne vous arrêtez pas pour demander confirmation.} Continuez le
+travail de bout en bout, y compris pour les décisions notables (changer une
+convention documentée ailleurs comme figée, lancer un run coûteux, conclure
+qu'aucun mécanisme testé ne produit de SOC robuste). Dans tous ces cas,
+\textbf{notifiez-le dans le journal / le rapport} — ce qui compte est que la
+décision et sa justification soient tracées, pas qu'elle soit validée avant
+d'être prise.
+

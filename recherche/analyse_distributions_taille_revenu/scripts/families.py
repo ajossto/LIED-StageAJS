@@ -2,7 +2,7 @@
 (entity size / income), fit by MLE, compared by AIC/BIC.
 
 Reuses the existing lognormal-mixture and lognormal+Pareto-tail fitters from
-modele-27-04-WIP/src/analysis.py (already MLE-based) instead of reimplementing them.
+anciens_modeles/modele-27-04-WIP/src/analysis.py (already MLE-based) instead of reimplementing them.
 """
 import math
 import os
@@ -18,7 +18,7 @@ from scipy.special import betaln
 
 # scripts/ -> analyse_distributions_taille_revenu/ -> recherche/ -> jupyter/ (repo root)
 _REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-sys.path.insert(0, os.path.join(_REPO_ROOT, "modele-27-04-WIP", "src"))
+sys.path.insert(0, os.path.join(_REPO_ROOT, "anciens_modeles", "modele-27-04-WIP", "src"))
 import analysis as _an  # noqa: E402
 
 

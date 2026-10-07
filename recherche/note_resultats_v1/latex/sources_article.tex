@@ -1,0 +1,101 @@
+\subsection{Trois protocoles, sans fusion des échantillons}
+\begin{small}
+\begin{longtable}{@{}p{.18\linewidth}p{.75\linewidth}@{}}
+\toprule Famille & Configuration et données \\\midrule\endhead
+M4B central & $A=1$, $\gamma=1/2$, $\lambda=30$, $\delta=0{,}05$,
+$\sigma=0{,}25$, $K^\circ=25$, $k=3$, cible géométrique. Cinq graines
+11--15 ; contractions sur $1000<t\le4000$, Gini sur l'état final.
+Les identifiants Simulation Lab sont dans les exports d'épisodes et de
+confirmation. Le balayage du Gini présenté varie $\sigma$ seulement. \\
+Recalage Live-v1 & Référence $A=1$, $\gamma=1/2$, $\lambda=30$,
+$\delta=\sigma=0{,}01$, $K^\circ=25$, $\rho=1$ ; graines 0--2,
+départ vide. Fenêtre $1200<t_{\rm ancien}\le2000$.
+Le bras à dépréciation fine utilise sa référence $\delta=0{,}002$.
+Les dossiers sont nommés dans \texttt{temps\_graines.csv}. \\
+M4.4 principal & Même référence physique que Live-v1 ; cible arithmétique
+en régime homogène, sens libre du prêt, règle marginale. Douze graines
+0--11, intervention au pas 2001, fenêtre $3000<t\le4000$.
+Dotation compensée : $K^\circ=56{,}25$ pour les nouvelles entrantes
+après intervention ; stocks existants inchangés. \\
+Partage M4.4 & $p\in\{0;0{,}25;0{,}5;0{,}75;1\}$ ou règle marginale ;
+douze graines, même fenêtre. Les rapports au bras $p=0$ sont appariés.
+Diagnostic de charge : règle marginale seulement, $3000<t\le3990$,
+horizon de décès de dix pas. \\
+Rencontres M4.4 & $\rho\in\{0{,}5;1;1{,}5;2;3\}$ ; douze graines
+par valeur. Les Gini de bilan sont recalculés sur les panneaux de
+$3000<t\le4000$, comme les fenêtres des autres mesures. \\
+\bottomrule
+\end{longtable}
+\end{small}
+
+\subsection{Chaque figure et ses fichiers de points}
+Les fichiers CSV sans préfixe et \chemin{diagnostic_chaine.json} sont
+relatifs à \chemin{data_article/}. Les fichiers TeX et les chemins
+commençant par \chemin{data_revision/} sont relatifs au dossier LaTeX.
+Le manifeste relie les exports aux sources
+originales et à leurs empreintes ; il ne transforme pas un export
+agrégé en microdonnées complètes.
+\begin{footnotesize}
+\begin{longtable}{@{}p{.09\linewidth}p{.48\linewidth}p{.36\linewidth}@{}}
+\toprule Fig. & Données / fichier local & Nature du calcul \\
+\midrule\endhead
+\ref{fig:exemple} & \chemin{exemple_article.tex} & Quatre entités fictives,
+prêt réel et inscription nominale ; aucune mesure simulée. \\
+\ref{fig:art_technologie} & \chemin{technologie_points.csv},
+\chemin{technologie_courbes_v2.csv} & Technologies analytiques
+$2K^{1/4}$ et $K^{1/2}$ ; pas de régression. \\
+\ref{fig:cascade} & \chemin{cascade_article.tex} & Bilan fictif à cinq
+entités ; arbre des quatre faillites vérifié séparément. \\
+\ref{fig:art_avalanches} & \chemin{avalanches_counts.csv},
+\chemin{avalanches_fits.csv}, \chemin{avalanches_points.csv} & Tailles
+entières dans les CSV d'avalanches ; ajustements et IC inter-graines. \\
+\ref{fig:art_cycles} & \chemin{cycles_fits.csv}, \chemin{cycles_points.csv} ;
+épisodes dans \chemin{data_revision/rev_cycles_episodes.csv} & Cinq
+runs M4B ; coefficient exponentiel depuis la durée moyenne. \\
+\ref{fig:art_lorenz} & \chemin{lorenz_points.csv}, \chemin{lorenz_ginis.csv} &
+Panneaux du contrôle ; dates exactes 2010, 3000, 4000. \\
+\ref{fig:art_sensibilite} & \chemin{m4b_sensibilite_points.csv},
+\chemin{m4b_nw_confirmation.csv} & Gini NW sur cinq instantanés finaux
+indépendants par cellule. \\
+\ref{fig:art_rho} & \chemin{rho_points.csv}, \chemin{rho_fits.csv},
+\chemin{rho_nw_graines.csv} & Trois estimateurs du tableau de campagne,
+plus Gini NW recalculé ; régressions par graine. \\
+\ref{fig:art_temps} & \chemin{temps_graines.csv}, \chemin{temps_points.csv} &
+Séries Live-v1 ramenées à une même durée et à un même flux par pas ancien. \\
+\ref{fig:art_reponse} & \chemin{elasticites_graines.csv} ; courbes dans
+\chemin{data_revision/rev_reponse_courbes.csv} & Élasticités recalculées
+depuis les séries ; lissage centré 101 pas conservé pour les courbes. \\
+\ref{fig:chaine} & \chemin{corps_article.tex} ; diagnostics
+\chemin{diagnostic_chaine.json} & Schéma interprétatif,
+pas graphe causal identifié par intervention sur chaque médiateur. \\
+\ref{fig:art_quantiles} & \chemin{data_revision/rev_quantiles_graines.csv} &
+Rapports par graine conservés ; abscisse transformée en logit. \\
+\ref{fig:art_deciles} & \chemin{deciles_v2_points.csv},
+\chemin{deciles_v2_graines.csv} & Parts de production, intérêts et NW ;
+classement par capital à chaque instantané. \\
+\ref{fig:art_institutions} & \chemin{institutions_points.csv},
+\chemin{institutions_fits.csv}, \chemin{institutions_references.csv} &
+Rapports à $p=0$ et régressions linéaires descriptives. \\
+\ref{fig:art_charge} & \chemin{charge_graines.csv}, \chemin{charge_points.csv},
+\chemin{charge_resume.csv} & Intérêts versés/revenu brut ; décès
+observables jusqu'au bout de l'horizon. \\
+\ref{fig:rev_stock_trajectoire} &
+\chemin{data_revision/rev_stock_trajectoire_points.csv} &
+Extrait brut M4B ; figure conservée. \\
+\bottomrule
+\end{longtable}
+\end{footnotesize}
+
+Les nouveaux contrôles de composition par âge sont dans
+\chemin{ages_graines.csv}. Les conventions de classement sont
+explicites dans le script ; les ex æquo sont départagés par ordre
+stable. Le plan de révision et le registre des décisions sont hors
+du dossier LaTeX, dans \chemin{../revision_2026-09-15/}, pour
+préserver séparément les corrections à reporter au rapport de stage.
+
+Le complément sur les médianes instantanées des âges est calculé par
+\chemin{../scripts/ages_v2.py}. Ses valeurs par graine, sa convention
+de moyenne et les empreintes des panneaux sources sont conservées dans
+\chemin{../revision_2026-09-17/ages_v2_graines.csv} et
+\chemin{../revision_2026-09-17/ages_v2.json}. Il n'exécute aucune
+simulation et ne modifie aucun générateur de figures.

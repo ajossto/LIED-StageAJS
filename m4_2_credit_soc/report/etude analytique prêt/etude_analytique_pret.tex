@@ -1,0 +1,987 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[french]{babel}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage[margin=2.35cm]{geometry}
+\usepackage{booktabs,tabularx}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{microtype}
+\usepackage{hyperref}
+
+\hypersetup{colorlinks=true,linkcolor=blue!45!black,urlcolor=blue!45!black}
+\setlist{nosep}
+\newcommand{\E}{\mathbb E}
+\newcommand{\Pp}{\mathbb P}
+\newcommand{\R}{\mathbb R}
+\newcommand{\1}{\mathbf 1}
+\newcommand{\dd}{\,\mathrm d}
+\newcommand{\Law}{\mathcal L}
+\newcommand{\cim}{\dagger}
+\DeclareMathOperator{\supp}{supp}
+
+\newtheorem{theorem}{Théorème}[section]
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{lemma}[theorem]{Lemme}
+\newtheorem{corollary}[theorem]{Corollaire}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Définition}
+\theoremstyle{remark}
+\newtheorem{remark}[theorem]{Remarque}
+
+\title{Étude analytique d'un prêt unique entre deux entités\\
+\large Effets du principal, du taux, de la concavité, de la dépréciation
+et des chocs lognormaux}
+\author{Complément mathématique à la spécification M4.2}
+\date{29 juillet 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+On isole deux entités initialement sans contrat. Au pas initial, la plus
+riche accorde à la plus pauvre un unique prêt nominal perpétuel ; aucun
+autre prêt et aucune naissance n'ont ensuite lieu. La production est
+$K\mapsto K^\gamma$, la dépréciation vaut $\delta$, et les chocs sont
+exactement ceux de M4.2. Pour un principal général $q$ et un taux
+$r\in[0,1]$, nous dérivons la dynamique tuée de l'emprunteuse, les noyaux
+intégraux donnant la loi exacte de son temps de défaut et la loi jointe des
+deux capitaux au défaut. Deux règles sont comparées : égalisation à la
+moyenne arithmétique et cible à la moyenne géométrique ; la première
+maximise la production initiale mais donne un temps de survie presque
+sûrement inférieur ou égal. Deux conclusions structurelles apparaissent.
+Premièrement, la prêteuse ne peut jamais
+mourir dans ce système orienté à deux sommets. Deuxièmement, si le choc est
+non dégénéré, l'emprunteuse meurt presque sûrement en temps fini, tandis
+que le capital de la prêteuse converge en loi vers la distribution
+invariante de la dynamique autarcique. Le régime déterministe est traité
+séparément : lui seul admet des trajectoires convergeant vers deux
+constantes positives.
+\end{abstract}
+
+\tableofcontents
+
+\section{Cadre exact et convention temporelle}
+
+On fixe
+\[
+0<\gamma<1,\qquad 0\leq\delta<1,\qquad d=1-\delta>0,
+\qquad \sigma\geq0,
+\]
+et, conformément au modèle principal M4.2, $A=1$. Posons
+\begin{equation}
+\Phi_\gamma(z)=z+z^\gamma,\qquad z\geq0.
+\label{eq:phi}
+\end{equation}
+Cette fonction regroupe le capital après choc et la production retenue,
+avant service des intérêts et dépréciation. Elle est continue, strictement
+croissante et bijective de $\R_+$ sur $\R_+$. Son inverse est noté
+$\Psi_\gamma=\Phi_\gamma^{-1}$.
+
+Les deux capitaux juste avant l'unique transfert sont
+\[
+k_1>k_2>0.
+\]
+L'entité 1 prête un principal $q\in(0,k_1)$ à l'entité 2, au taux fixe
+$r\in[0,1]$. Le service nominal perpétuel est
+\begin{equation}
+c=rq.
+\label{eq:c}
+\end{equation}
+Le temps $n=0$ est placé immédiatement après ce transfert :
+\begin{equation}
+L_0=k_1-q,\qquad B_0=k_2+q,
+\label{eq:initial}
+\end{equation}
+où $L$ désigne le capital de la prêteuse et $B$ celui de l'emprunteuse.
+Cette convention sépare l'effet du contrat des phases choc--production du
+pas où il est émis. Le transfert conserve le capital réel total et les
+valeurs nettes initiales :
+\[
+(L_0+q)=k_1,\qquad (B_0-q)=k_2.
+\]
+
+À chaque pas $n+1$, indépendamment entre entités et entre dates,
+\begin{equation}
+\xi^i_{n+1}\sim\mathcal N(-\sigma^2/2,\sigma^2),\qquad
+X^i_{n+1}=e^{\xi^i_{n+1}},\qquad \E[X^i_{n+1}]=1.
+\label{eq:shock}
+\end{equation}
+Pour $\sigma>0$, la densité du multiplicateur est
+\begin{equation}
+\rho_\sigma(x)=\frac{1}{x\sigma\sqrt{2\pi}}
+\exp\!\left[-\frac{(\log x+\sigma^2/2)^2}{2\sigma^2}\right],
+\qquad x>0.
+\label{eq:lognormal-density}
+\end{equation}
+Le cas $\sigma=0$ correspond à $X\equiv1$.
+
+\paragraph{Portée des tolérances.}
+Les résultats sont écrits pour les seuils mathématiques exacts. La
+tolérance d'insolvabilité $10^{-9}$ de l'implémentation remplace simplement
+$q$ par $q-10^{-9}$ dans le test de valeur nette ; elle ne modifie aucune
+conclusion structurelle tant que les capitaux et le prêt sont à une
+échelle macroscopique.
+
+\section{Deux définitions du principal}
+
+\subsection{Égalisation à la moyenne arithmétique}
+
+Imposer $L_0=B_0=(k_1+k_2)/2$ donne
+\begin{equation}
+q_{\mathrm A}=\frac{k_1-k_2}{2},
+\qquad L_0^{\mathrm A}=B_0^{\mathrm A}=\frac{k_1+k_2}{2}.
+\label{eq:qA}
+\end{equation}
+Cette règle est l'unique maximisatrice de la production immédiatement
+postérieure au transfert. En effet, sur $0\leq q\leq k_1-k_2$,
+\[
+q\longmapsto (k_1-q)^\gamma+(k_2+q)^\gamma
+\]
+est strictement concave et sa dérivée s'annule uniquement lorsque les deux
+capitaux sont égaux. C'est la version à deux dimensions du principe
+d'égalisation d'une fonction symétrique strictement concave sous contrainte
+de somme.
+
+\subsection{Cible à la moyenne géométrique}
+
+La règle de M4.2 vise pour l'emprunteuse le capital
+$g=\sqrt{k_1k_2}$. Le principal général de la spécification est
+\[
+\min(k_1-g,g-k_2).
+\]
+Or
+\[
+(k_1-g)-(g-k_2)=k_1+k_2-2\sqrt{k_1k_2}
+=(\sqrt{k_1}-\sqrt{k_2})^2>0.
+\]
+Par conséquent,
+\begin{equation}
+q_{\mathrm G}=\sqrt{k_1k_2}-k_2,\qquad
+B_0^{\mathrm G}=\sqrt{k_1k_2},\qquad
+L_0^{\mathrm G}=k_1+k_2-\sqrt{k_1k_2}.
+\label{eq:qG}
+\end{equation}
+
+\begin{proposition}[Ordre des deux transferts]
+Pour $k_1>k_2>0$,
+\[
+0<q_{\mathrm G}<q_{\mathrm A},\qquad
+B_0^{\mathrm G}<B_0^{\mathrm A},\qquad
+L_0^{\mathrm G}>L_0^{\mathrm A}.
+\]
+De plus, le levier initial $q/B_0$ est plus grand sous la règle
+arithmétique :
+\begin{equation}
+\frac{q_{\mathrm A}}{B_0^{\mathrm A}}
+>\frac{q_{\mathrm G}}{B_0^{\mathrm G}}.
+\label{eq:leverage-order}
+\end{equation}
+\end{proposition}
+\begin{proof}
+La première différence vaut
+\[
+q_{\mathrm A}-q_{\mathrm G}
+=\frac{(\sqrt{k_1}-\sqrt{k_2})^2}{2}>0.
+\]
+Pour le levier, avec $s=\sqrt{k_1/k_2}>1$,
+\[
+\frac{q_{\mathrm A}}{B_0^{\mathrm A}}
+-\frac{q_{\mathrm G}}{B_0^{\mathrm G}}
+=\frac{s^2-1}{s^2+1}-\frac{s-1}{s}
+=\frac{(s-1)^2}{s(s^2+1)}>0.
+\]
+\end{proof}
+
+La règle arithmétique maximise donc la production commune instantanée,
+mais crée simultanément un principal nominal et un levier plus élevés.
+Après normalisation par le principal, ce second effet domine au sens
+trajectoriel : on démontrera en proposition~\ref{prop:A-before-G} que
+l'emprunteuse arithmétique meurt toujours au plus tôt aussi vite que
+l'emprunteuse géométrique sous les mêmes chocs.
+
+\section{Dynamique exacte tant que l'emprunteuse vit}
+
+Supposons l'emprunteuse vivante au temps $n$. Après choc et production,
+les ressources des deux entités sont
+\[
+Y^L_{n+1}=\Phi_\gamma(L_nX^L_{n+1}),\qquad
+Y^B_{n+1}=\Phi_\gamma(B_nX^B_{n+1}).
+\]
+Le paiement effectif est
+\begin{equation}
+p_{n+1}=\min(c,Y^B_{n+1}).
+\label{eq:payment}
+\end{equation}
+Juste avant la résolution des faillites, les capitaux sont
+\begin{equation}
+\widetilde L_{n+1}=d(Y^L_{n+1}+p_{n+1}),\qquad
+\widetilde B_{n+1}=d(Y^B_{n+1}-p_{n+1}).
+\label{eq:tentative}
+\end{equation}
+
+L'emprunteuse survit si elle paie tout l'intérêt et si sa valeur nette
+post-dépréciation est non négative :
+\[
+Y^B_{n+1}\geq c,\qquad
+d(Y^B_{n+1}-c)-q\geq0.
+\]
+Comme $q>0$, la seconde condition implique la première. On obtient donc le
+critère unique
+\begin{equation}
+\boxed{\quad
+Y^B_{n+1}\geq h_{q,r,\delta},\qquad
+h_{q,r,\delta}=rq+\frac{q}{1-\delta}
+=q\left(r+\frac1d\right).
+\quad}
+\label{eq:survival-threshold}
+\end{equation}
+Définissons le seuil en capital choqué
+\begin{equation}
+z_*=\Psi_\gamma(h_{q,r,\delta}).
+\label{eq:zstar}
+\end{equation}
+Conditionnellement à $B_n=b$, le décès au pas suivant équivaut à
+\begin{equation}
+X^B_{n+1}<\frac{z_*}{b}
+\quad\Longleftrightarrow\quad
+\xi^B_{n+1}<\log\frac{z_*}{b}.
+\label{eq:death-event}
+\end{equation}
+
+Sur l'événement de survie, la dynamique est ainsi
+\begin{equation}
+\begin{split}
+L_{n+1}&=d\{\Phi_\gamma(L_nX^L_{n+1})+c\},\\
+B_{n+1}&=d\{\Phi_\gamma(B_nX^B_{n+1})-c\}\geq q.
+\end{split}
+\label{eq:alive-dynamics}
+\end{equation}
+Au décès de l'emprunteuse, son capital résiduel pré-liquidation est
+\begin{equation}
+B_{T}^{\cim}=d\,[Y^B_T-c]_+\in[0,q),
+\label{eq:terminal-borrower}
+\end{equation}
+puis ce capital est détruit et la créance $q$ est annulée. La taille
+post-liquidation est donc le point cimetière, noté $\partial$ ; conserver
+$B_T^{\cim}$ permet de mesurer ce qui est effectivement détruit.
+
+\subsection{Risque conditionnel à un pas}
+
+Notons $\Phi_{\mathrm N}$ la fonction de répartition normale standard. De
+\eqref{eq:death-event}, pour $\sigma>0$,
+\begin{equation}
+\boxed{\quad
+\kappa_{q,r}(b)
+=\Pp(T=n+1\mid T>n,B_n=b)
+=\Phi_{\mathrm N}\!\left(
+\frac{\log(z_*/b)+\sigma^2/2}{\sigma}
+\right).
+\quad}
+\label{eq:hazard}
+\end{equation}
+Le défaut de liquidité strict correspond au seuil plus bas
+$z_{\mathrm{liq}}=\Psi_\gamma(c)$ :
+\begin{equation}
+\Pp(\text{liquidité au pas suivant}\mid B_n=b)
+=\Phi_{\mathrm N}\!\left(
+\frac{\log(z_{\mathrm{liq}}/b)+\sigma^2/2}{\sigma}
+\right),
+\label{eq:liquidity-hazard}
+\end{equation}
+avec la convention que cette probabilité vaut zéro si $c=0$. La
+différence entre \eqref{eq:hazard} et \eqref{eq:liquidity-hazard} est la
+probabilité d'une insolvabilité malgré paiement intégral de la rente.
+
+Pour chacune des règles $s\in\{\mathrm A,\mathrm G\}$, les expressions
+exactes au premier pas s'obtiennent en substituant
+\begin{equation}
+q=q_s,\qquad b=B_0^s,\qquad
+z_*^s=\Psi_\gamma\!\left[q_s\left(r+\frac1d\right)\right]
+\label{eq:schemes-substitution}
+\end{equation}
+dans \eqref{eq:hazard}. La règle arithmétique augmente à la fois $q$ et
+$b$, mais l'augmentation relative du principal est la plus forte. Le
+classement exact est
+\begin{equation}
+\kappa^{\mathrm A}_{q,r}(B_0^{\mathrm A})
+>\kappa^{\mathrm G}_{q,r}(B_0^{\mathrm G}),
+\label{eq:hazard-scheme-order}
+\end{equation}
+comme conséquence du résultat trajectoriel suivant.
+
+\begin{proposition}[La règle arithmétique réduit la durée de vie]
+\label{prop:A-before-G}
+Couplons les deux règles avec la même suite de chocs de l'emprunteuse et
+le même taux $r$. Alors
+\begin{equation}
+T_B^{\mathrm A}\leq T_B^{\mathrm G}
+\qquad\text{presque sûrement}.
+\label{eq:TA-TG}
+\end{equation}
+Pour $\sigma>0$, l'inégalité des risques au premier pas est stricte.
+\end{proposition}
+\begin{proof}
+Normalisons le capital de l'emprunteuse par son principal : $W_n=B_n/q$.
+Tant qu'elle vit, \eqref{eq:alive-dynamics} devient
+\begin{equation}
+W_{n+1}=d\left\{W_nX_{n+1}
++q^{\gamma-1}(W_nX_{n+1})^\gamma-r\right\},
+\qquad W_{n+1}\geq1.
+\label{eq:normalized-borrower}
+\end{equation}
+La proposition sur les leviers donne
+$W_0^{\mathrm A}<W_0^{\mathrm G}$. De plus,
+$q_{\mathrm A}>q_{\mathrm G}$ et $\gamma-1<0$, donc
+$q_{\mathrm A}^{\gamma-1}<q_{\mathrm G}^{\gamma-1}$. Le membre de droite
+de \eqref{eq:normalized-borrower} est croissant en $W$. Une récurrence
+immédiate donne ainsi $W_n^{\mathrm A}\leq W_n^{\mathrm G}$ tant que la
+première chaîne n'est pas absorbée. Le franchissement de $1$ se produit
+donc d'abord sous la règle arithmétique. La densité lognormale est
+strictement positive et les deux seuils sont distincts, d'où la stricte
+inégalité au premier pas.
+\end{proof}
+
+\section{Temps d'arrêt et impossibilité d'une seconde mort}
+
+On définit, dans $\mathbb N^*=\{1,2,\ldots\}$ complété par $+\infty$,
+\begin{equation}
+T_B=\inf\{n\geq1:B_n\text{ fait défaut au pas }n\},
+\qquad
+T_L=\inf\{n\geq1:L_n\text{ meurt au pas }n\}.
+\label{eq:stopping-times}
+\end{equation}
+
+\begin{theorem}[La prêteuse est immortelle]
+Pour tout $k_1>k_2>0$, tout principal admissible $0<q<k_1$, tout
+$r\in[0,1]$, $0\leq\delta<1$ et toute réalisation finie des chocs,
+\begin{equation}
+T_L=+\infty.
+\label{eq:lender-immortal}
+\end{equation}
+Ainsi, dans le modèle exact à deux entités,
+\[
+T_{(1)}=\min(T_B,T_L)=T_B,
+\qquad T_{(2)}=\max(T_B,T_L)=+\infty.
+\]
+Une séquence de morts $T_1<T_2<\infty$ est impossible.
+\end{theorem}
+\begin{proof}
+Avant la mort de l'emprunteuse, la valeur nette de la prêteuse est
+$L_n+q>0$ : elle a une créance $q$, aucune dette, et son capital reste
+strictement positif car $d>0$, $X^L_n>0$ et
+$\Phi_\gamma(z)>0$ pour $z>0$. Au pas où l'emprunteuse meurt,
+$\widetilde L=d\{\Phi_\gamma(LX^L)+p\}>0$. La perte de la créance retire
+$q$ de l'actif nominal mais ne retire aucun capital réel ; la nouvelle
+valeur nette est donc $\widetilde L>0$. Après l'annulation du contrat, la
+prêteuse n'a ni créance ni dette et suit une dynamique autarcique qui
+préserve strictement la positivité. Aucun critère de liquidité ou
+d'insolvabilité ne peut être déclenché.
+\end{proof}
+
+Cette proposition n'est pas une approximation asymptotique : elle découle
+de l'orientation du bilan. Une cascade à deux morts exigerait que la
+prêteuse ait par ailleurs une dette ou une obligation de service, ce qui
+est exclu par l'expérience présente.
+
+\section{Loi exacte du temps de mort de l'emprunteuse}
+
+Les formules suivantes caractérisent entièrement les distributions
+demandées. Elles ne sont généralement pas réductibles à des fonctions
+élémentaires, car l'itération non linéaire $z+z^\gamma$ est composée avec
+un choc lognormal. Elles sont néanmoins exactes : elles ramènent le
+problème à des intégrales unidimensionnelles positives.
+
+\subsection{Noyau sous-stochastique de survie}
+
+Pour $b\geq q$ et $y\geq q$, posons
+\begin{equation}
+u_y=\Psi_\gamma\!\left(c+\frac yd\right),
+\qquad x(b,y)=\frac{u_y}{b}.
+\label{eq:change-borrower}
+\end{equation}
+Le changement de variable
+$y=d\{\Phi_\gamma(bx)-c\}$ donne le noyau de survie
+\begin{equation}
+Q_{q,r}(b,\dd y)=q_{q,r}(b,y)\1_{\{y\geq q\}}\dd y,
+\label{eq:Q}
+\end{equation}
+avec
+\begin{equation}
+q_{q,r}(b,y)=
+\frac{\rho_\sigma(x(b,y))}
+{d\,b\,\Phi_\gamma'(u_y)},
+\qquad
+\Phi_\gamma'(u)=1+\gamma u^{\gamma-1}.
+\label{eq:Qdensity}
+\end{equation}
+Sa masse est la probabilité de survie conditionnelle :
+\begin{equation}
+Q_{q,r}\1(b)=1-\kappa_{q,r}(b).
+\label{eq:Qmass}
+\end{equation}
+
+Soit $\mu_0=\delta_{B_0}$ la masse de Dirac au capital initial. La mesure
+non normalisée des survivantes au temps $n$ est
+\begin{equation}
+\mu_n=\mu_0Q_{q,r}^{,n}.
+\label{eq:mun}
+\end{equation}
+Elle satisfait, pour $n\geq0$,
+\begin{align}
+\Pp(T_B>n)&=\mu_n\1,
+\label{eq:survival-law}\\
+\Pp(T_B=n+1)&=\int_q^\infty \kappa_{q,r}(b)\,\mu_n(\dd b).
+\label{eq:Tlaw}
+\end{align}
+Les équations \eqref{eq:Qdensity}--\eqref{eq:Tlaw} donnent la loi discrète
+exacte de $T_B$ en fonction de
+$(k_1,k_2,\gamma,\delta,\sigma,r)$ et de la règle choisie pour $q$.
+
+Sous forme récursive, si $m_n$ est la densité de $\mu_n$ pour $n\geq1$,
+\begin{equation}
+m_{n+1}(y)=\1_{\{y\geq q\}}
+\int_q^\infty m_n(b)q_{q,r}(b,y)\dd b,
+\label{eq:density-recursion}
+\end{equation}
+la première étape étant
+$m_1(y)=q_{q,r}(B_0,y)\1_{\{y\geq q\}}$.
+
+\subsection{Loi du capital détruit au temps d'arrêt}
+
+Conditionnellement à $B_n=b$, la loi de $B_{n+1}^{\cim}$ sur l'événement
+de mort comporte une masse en zéro et une densité sur $(0,q)$. La masse en
+zéro, correspondant au défaut de liquidité, est
+\begin{equation}
+a_0(b)=
+\Phi_{\mathrm N}\!\left(
+\frac{\log(\Psi_\gamma(c)/b)+\sigma^2/2}{\sigma}
+\right)
+\label{eq:atom-zero}
+\end{equation}
+pour $c>0$, et $a_0(b)=0$ pour $c=0$. Pour $0<y<q$, la densité est
+\begin{equation}
+d_{q,r}(b,y)=
+\frac{\rho_\sigma\!\left(
+\Psi_\gamma(c+y/d)/b\right)}
+{d\,b\,\Phi_\gamma'\!\left(\Psi_\gamma(c+y/d)\right)}.
+\label{eq:death-density}
+\end{equation}
+Notons $D_{q,r}(b,\dd y)$ la mesure ainsi formée. Sa masse totale vérifie
+\[
+D_{q,r}\1(b)=a_0(b)+\int_0^q d_{q,r}(b,y)\dd y
+=\kappa_{q,r}(b).
+\]
+La loi jointe du temps de mort et du capital pré-liquidation est alors
+\begin{equation}
+\boxed{\quad
+\Pp(T_B=n+1,B_T^{\cim}\in\dd y)
+=\int_q^\infty D_{q,r}(b,\dd y)\,\mu_n(\dd b).
+\quad}
+\label{eq:joint-T-B}
+\end{equation}
+En sommant sur $n$, la loi du capital détruit est la mesure-résolvante
+\begin{equation}
+\Law(B_T^{\cim})
+=\delta_{B_0}(I-Q_{q,r})^{-1}D_{q,r}
+=\sum_{n\geq0}\delta_{B_0}Q_{q,r}^{,n}D_{q,r},
+\label{eq:resolvent-B}
+\end{equation}
+dès que l'absorption est presque sûre, propriété démontrée en
+section~\ref{sec:asymptotic-stochastic}.
+
+\section{Loi jointe des deux capitaux au premier décès}
+
+La loi de $L_{T_B}$ ne se déduit pas du seul noyau $Q$, car le paiement
+reçu au pas de mort dépend du choc de l'emprunteuse. Cette dépendance
+disparaît lors d'une insolvabilité avec service complet, mais subsiste lors
+d'un défaut de liquidité.
+
+Pour toute fonction mesurable positive $g$, définissons le noyau de mort
+joint
+\begin{multline}
+(\mathcal Dg)(l,b)=
+\int_0^{z_*/b}\int_0^\infty
+g\Bigl(
+d\{\Phi_\gamma(lx_1)+\min(c,\Phi_\gamma(bx_2))\},\\
+d[\Phi_\gamma(bx_2)-c]_+
+\Bigr)
+\rho_\sigma(x_1)\rho_\sigma(x_2)\dd x_1\dd x_2.
+\label{eq:joint-death-kernel}
+\end{multline}
+Sur un pas où les deux entités continuent, les transitions sont
+indépendantes conditionnellement à l'état courant, puisque le paiement est
+alors exactement $c$. Le noyau de la prêteuse avec rente est, pour
+$l'>dc$,
+\begin{equation}
+R_c(l,l')=
+\frac{\rho_\sigma\!\left(
+\Psi_\gamma(l'/d-c)/l\right)}
+{d\,l\,\Phi_\gamma'\!\left(\Psi_\gamma(l'/d-c)\right)}.
+\label{eq:lender-rent-kernel}
+\end{equation}
+Le noyau joint sous-stochastique de survie vaut donc
+\begin{equation}
+\mathcal S((l,b),\dd l'\dd b')
+=R_c(l,l')q_{q,r}(b,b')
+\1_{\{l'>dc,b'\geq q\}}\dd l'\dd b'.
+\label{eq:joint-survival-kernel}
+\end{equation}
+Avec $\nu_0=\delta_{(L_0,B_0)}$, on obtient enfin
+\begin{equation}
+\boxed{\quad
+\Pp(T_B=n+1,(L_{T_B},B_{T_B}^{\cim})\in A)
+=(\nu_0\mathcal S^n\mathcal D)(A).
+\quad}
+\label{eq:joint-stopped-law}
+\end{equation}
+La somme
+\begin{equation}
+\Law(L_{T_B},B_{T_B}^{\cim})
+=\nu_0(I-\mathcal S)^{-1}\mathcal D
+\label{eq:joint-resolvent}
+\end{equation}
+est la réponse analytique complète à la question des tailles au premier
+temps d'arrêt. Au second temps d'arrêt, $T_L=+\infty$ ; il n'existe donc
+pas de variable $L_{T_L}$ à valeurs réelles. La description correcte est
+la loi asymptotique de $L_n$, étudiée ci-dessous.
+
+\section{Régime stochastique non dégénéré}
+\label{sec:asymptotic-stochastic}
+
+\subsection{Mort presque sûre de l'emprunteuse}
+
+\begin{theorem}[Absorption presque sûre]
+Supposons $q>0$ et $\sigma>0$. Alors, pour tout
+$0\leq\delta<1$, tout $r\in[0,1]$ et tout état initial fini,
+\begin{equation}
+\Pp(T_B<\infty)=1.
+\label{eq:absorption-as}
+\end{equation}
+Il n'existe donc pas, avec les chocs exacts de M4.2, de régime de survie
+éternelle des deux entités avec probabilité positive.
+\end{theorem}
+\begin{proof}
+Couplons l'emprunteuse, jusqu'à sa mort, à la chaîne autarcique
+\begin{equation}
+U_{n+1}=d\Phi_\gamma(U_nX^B_{n+1}),\qquad U_0=B_0.
+\label{eq:upper-chain}
+\end{equation}
+Par monotonie de $\Phi_\gamma$ et parce que $c\geq0$, on a
+$B_n\leq U_n$ tant que l'emprunteuse vit.
+
+Choisissons $p\in(0,1)$. Le choc lognormal vérifie
+\begin{equation}
+\E[X^p]=\exp\!\left(\frac{p^2-p}{2}\sigma^2\right)<1.
+\label{eq:lognormal-moment}
+\end{equation}
+Comme $(a+b)^p\leq a^p+b^p$,
+\begin{equation}
+\E[U_{n+1}^p\mid U_n=u]
+\leq d^p\E[X^p]u^p
++d^p\E[X^{\gamma p}]u^{\gamma p}.
+\label{eq:drift}
+\end{equation}
+Le coefficient du terme dominant est strictement inférieur à un et
+$\gamma p<p$ : la chaîne ne peut donc s'échapper vers $+\infty$. Il faut
+aussi exclure une fuite vers zéro. Pour $s>0$, on a
+\[
+U_{n+1}^{-s}
+\leq d^{-s}U_n^{-\gamma s}(X^B_{n+1})^{-\gamma s}.
+\]
+Tous les moments négatifs du choc lognormal sont finis et
+$u^{-\gamma s}/u^{-s}=u^{s(1-\gamma)}\to0$ quand $u\downarrow0$.
+Une fonction de Lyapunov combinant $u^p$ et $u^{-s}$ fournit donc une
+dérive vers l'intérieur aux deux extrémités. Jointe à la densité
+strictement positive du choc, elle implique que la chaîne $U$ revient
+presque sûrement une infinité de fois dans un compact
+$[\varepsilon,M]\subset(0,\infty)$.
+
+À chacune de ces visites, si l'emprunteuse est encore vivante, alors
+$q\leq B_n\leq U_n\leq M$. Le choc suivant la tue dès que
+$X^B_{n+1}<z_*/M$, événement de probabilité
+$\Pp(X<z_*/M)>0$, uniforme sur ce compact. La propriété de Markov forte
+aux temps de retour entraîne que la probabilité d'échapper à toutes ces
+tentatives est nulle.
+\end{proof}
+
+Le théorème inclut $r=0$. Même sans rente, la dette nominale $q$ subsiste
+et la condition de valeur nette impose $B_n\geq q$. Un choc lognormal
+arbitrairement défavorable finit presque sûrement par franchir ce seuil.
+
+\subsection{Dynamique de la prêteuse après le défaut}
+
+Après $T_B$, la prêteuse suit la chaîne autarcique
+\begin{equation}
+L_{n+1}=d\Phi_\gamma(L_nX^L_{n+1}).
+\label{eq:lender-autarky}
+\end{equation}
+Son noyau a pour densité, pour $l,y>0$,
+\begin{equation}
+A(l,y)=
+\frac{\rho_\sigma\!\left(\Psi_\gamma(y/d)/l\right)}
+{d\,l\,\Phi_\gamma'\!\left(\Psi_\gamma(y/d)\right)}.
+\label{eq:autarky-kernel}
+\end{equation}
+La même dérive \eqref{eq:drift} assure l'existence d'une unique loi
+invariante $\pi_{\gamma,\delta,\sigma}$ et la convergence en loi vers
+celle-ci. Sa densité, lorsqu'elle est notée $\pi(y)$, est caractérisée par
+l'équation de Fredholm
+\begin{equation}
+\pi(y)=\int_0^\infty \pi(l)A(l,y)\dd l,
+\qquad \int_0^\infty\pi(y)\dd y=1.
+\label{eq:invariant-fredholm}
+\end{equation}
+Elle ne possède pas, en général, de forme élémentaire.
+
+Si $\delta>0$ et le premier moment est fini, la stationnarité donne
+l'identité exacte
+\begin{equation}
+\delta\E_\pi[L]
+=d\,e^{-\gamma(1-\gamma)\sigma^2/2}
+\E_\pi[L^\gamma].
+\label{eq:stationary-moment}
+\end{equation}
+En effet, $L$ et le nouveau choc sont indépendants sous la loi
+stationnaire, $\E X=1$ et
+$\E X^\gamma=e^{-\gamma(1-\gamma)\sigma^2/2}$.
+
+Pour $p>0$, le coefficient multiplicatif asymptotique satisfait
+\begin{equation}
+\E[(dX)^p]
+=\exp\!\left(p\log d+\frac{p^2-p}{2}\sigma^2\right).
+\label{eq:moment-coefficient}
+\end{equation}
+Lorsque $\delta>0$, le seuil positif non nul résolvant
+$\E[(dX)^p]=1$ est
+\begin{equation}
+p_*=1-\frac{2\log d}{\sigma^2}>1.
+\label{eq:pstar}
+\end{equation}
+L'inégalité de dérive fournit notamment la finitude des moments d'ordre
+$p<p_*$ compatibles avec le terme sous-linéaire. Cette relation explique
+comment une dépréciation plus forte allège la queue stationnaire, tandis
+qu'une volatilité plus forte l'alourdit.
+
+\begin{corollary}[État asymptotique du système]
+Pour $q>0$ et $\sigma>0$, sur l'espace d'états complété par le cimetière
+$\partial$,
+\begin{equation}
+\Law(L_n,B_n)\Longrightarrow
+\pi_{\gamma,\delta,\sigma}\otimes\delta_{\partial}.
+\label{eq:system-limit}
+\end{equation}
+La loi limite ne dépend ni de $q$ ni de $r$ ; ces paramètres gouvernent le
+transitoire, la loi de $T_B$, les capitaux au défaut et la richesse
+accumulée par la prêteuse avant le retour progressif au régime autarcique.
+\end{corollary}
+
+Des chocs persistants non dégénérés excluent une convergence presque sûre
+vers une constante : même sous la loi invariante, un nouveau multiplicateur
+aléatoire intervient à chaque pas. La formulation « tailles constantes
+positives » doit donc être réservée à $\sigma=0$.
+
+\section{Régime déterministe \texorpdfstring{$\sigma=0$}{sigma = 0}}
+
+Cette section décrit exactement les cas où les deux tailles peuvent
+converger vers des constantes. Supposons d'abord $0<\delta<1$ et posons
+\begin{equation}
+a=\frac{\delta}{1-\delta}=\frac\delta d.
+\label{eq:a}
+\end{equation}
+Tant que l'emprunteuse vit, sa récurrence est
+\begin{equation}
+B_{n+1}=G_c(B_n)=d(B_n+B_n^\gamma-c),
+\qquad B_{n+1}\geq q.
+\label{eq:det-borrower}
+\end{equation}
+Ses points fixes positifs résolvent
+\begin{equation}
+H(k)=k^\gamma-ak=c.
+\label{eq:H}
+\end{equation}
+La fonction $H$ est strictement concave et atteint son maximum en
+\begin{equation}
+k_m=\left(\frac\gamma a\right)^{1/(1-\gamma)},
+\qquad
+c_{\max}=H(k_m)
+=(1-\gamma)\left(\frac\gamma a\right)^{\gamma/(1-\gamma)}.
+\label{eq:cmax}
+\end{equation}
+
+\begin{theorem}[Classification déterministe de l'emprunteuse]
+Soit $B_0>q$.
+\begin{enumerate}
+\item Si $0\leq c<c_{\max}$, l'équation \eqref{eq:H} possède deux
+racines $k_-<k_m<k_+$, avec la convention $k_-=0$ lorsque $c=0$.
+La racine $k_-$ est instable et $k_+$ est stable. L'emprunteuse survit
+éternellement et converge vers $k_+$ si
+\begin{equation}
+B_0>k_-,\qquad k_+\geq q.
+\label{eq:det-survival-condition}
+\end{equation}
+Le cas exceptionnel $B_0=k_-\geq q$ donne une trajectoire constante
+instable. Dans tous les autres cas, elle franchit $q$ et meurt en temps
+fini.
+\item Si $c=c_{\max}$, le point $k_m$ est double. La survie a lieu si
+$B_0\geq k_m\geq q$ ; la convergence vers $k_m$ est alors non
+géométrique. Sinon le décès est fini.
+\item Si $c>c_{\max}$, aucun point fixe n'existe et le décès survient en
+temps fini.
+\end{enumerate}
+\end{theorem}
+\begin{proof}
+On a
+\[
+G_c(k)-k=d\{H(k)-c\},\qquad
+G_c'(k)=d(1+\gamma k^{\gamma-1}).
+\]
+La géométrie de la fonction strictement concave $H$ donne le nombre de
+racines et le signe de $G_c(k)-k$. Au point $k_m$, $G_c'(k_m)=1$ ; la
+racine inférieure a donc une dérivée supérieure à un et la racine
+supérieure une dérivée inférieure à un. La monotonie de $G_c$ donne les
+bassins annoncés. Si la limite attractive est sous $q$, ou si la suite
+décroît vers zéro, le seuil $q$ est franchi en temps fini.
+\end{proof}
+
+Si l'emprunteuse survit, la prêteuse reçoit indéfiniment $c$ et suit
+\[
+L_{n+1}=d(L_n+L_n^\gamma+c).
+\]
+Elle converge vers l'unique solution $\ell_c>K_{\mathrm{aut}}$ de
+\begin{equation}
+a\ell_c-\ell_c^\gamma=c,
+\qquad
+K_{\mathrm{aut}}=a^{-1/(1-\gamma)}
+=\left(\frac{1-\delta}{\delta}\right)^{1/(1-\gamma)}.
+\label{eq:lender-fixed}
+\end{equation}
+Si l'emprunteuse meurt, la rente cesse et la prêteuse converge vers
+$K_{\mathrm{aut}}$.
+
+Pour le cas central $\gamma=1/2$, toutes les frontières sont explicites.
+Avec $u=\sqrt{k}$,
+\begin{equation}
+k_\pm=\left(\frac{1\pm\sqrt{1-4ac}}{2a}\right)^2,
+\quad c_{\max}=\frac1{4a},
+\quad
+\ell_c=\left(\frac{1+\sqrt{1+4ac}}{2a}\right)^2.
+\label{eq:sqrt-explicit}
+\end{equation}
+
+Si $\delta=0$ et $\sigma=0$, il n'existe pas de force de rappel
+autarcique. L'emprunteuse vérifie
+$B_{n+1}-B_n=B_n^\gamma-c$. Elle croît sans borne si
+$B_0>c^{1/\gamma}$, reste constante à l'égalité, et décroît jusqu'au
+défaut si $B_0<c^{1/\gamma}$. La prêteuse croît toujours sans borne. Ce
+cas frontière n'admet donc pas les constantes autarciques de
+\eqref{eq:lender-fixed}.
+
+\section{Effets comparatifs de
+\texorpdfstring{$r$, $\delta$, $\sigma$ et $\gamma$}{r, delta, sigma et gamma}}
+
+\subsection{Taux et dépréciation : ordres trajectoriels}
+
+À $q$ et état initial fixés, un taux plus élevé augmente $c=rq$ et diminue
+la récurrence de l'emprunteuse pour toute réalisation commune des chocs.
+Par couplage monotone,
+\begin{equation}
+r_2\geq r_1\quad\Longrightarrow\quad
+T_B(r_2)\leq T_B(r_1)\quad\text{presque sûrement}.
+\label{eq:r-monotone}
+\end{equation}
+Une dépréciation plus élevée diminue directement
+$d\{\Phi_\gamma(BX)-c\}$ et augmente le seuil
+$c+q/d$. De même,
+\begin{equation}
+\delta_2\geq\delta_1\quad\Longrightarrow\quad
+T_B(\delta_2)\leq T_B(\delta_1)
+\quad\text{presque sûrement}.
+\label{eq:delta-monotone}
+\end{equation}
+Ces deux classements sont globaux. Le changement simultané de $q$,
+$c=rq$ et $B_0$ entre les règles arithmétique et géométrique est, lui,
+résolu par la normalisation \eqref{eq:normalized-borrower} :
+$T_B^{\mathrm A}\leq T_B^{\mathrm G}$ presque sûrement.
+
+\subsection{Amplitude du choc}
+
+Pour un état courant $b$, écrivons $\alpha=z_*/b$. Le risque instantané
+est
+\begin{equation}
+\kappa_\sigma(b)=
+\Phi_{\mathrm N}\left(\frac{\log\alpha}{\sigma}+\frac\sigma2\right).
+\label{eq:kappa-sigma}
+\end{equation}
+La dérivée de l'argument de $\Phi_{\mathrm N}$ vaut
+\begin{equation}
+\frac12-\frac{\log\alpha}{\sigma^2}.
+\label{eq:sigma-derivative}
+\end{equation}
+Si $\alpha\leq1$, le risque à un pas croît avec $\sigma$. Si
+$\alpha>1$, il décroît d'abord puis croît après
+$\sigma=\sqrt{2\log\alpha}$. La volatilité n'est donc pas globalement
+ordonnée, même au premier pas : le déplacement de la moyenne logarithmique
+$-\sigma^2/2$, nécessaire pour conserver $\E X=1$, intervient avec
+l'étalement.
+
+\subsection{Concavité}
+
+À échelle fixée,
+\[
+\frac{\partial}{\partial\gamma}\Phi_\gamma(z)=z^\gamma\log z.
+\]
+Augmenter $\gamma$ accroît la production si $z>1$, mais la réduit si
+$0<z<1$. Il n'existe donc pas d'ordre global en $\gamma$ sans
+normalisation d'échelle. Toute comparaison doit passer par
+$\Psi_\gamma(h)$ dans \eqref{eq:hazard} ou par le noyau
+\eqref{eq:Qdensity}. Ce point est essentiel : un effet attribué à la
+concavité peut en réalité provenir du déplacement de l'échelle autarcique
+$K_{\mathrm{aut}}$.
+
+\section{Choix du taux selon l'objectif de la prêteuse}
+
+Le modèle mathématique ne sélectionne pas un taux unique lorsque
+$r\in[0,1]$ est une décision stratégique. Il faut préciser l'objectif.
+Quelques résultats exacts délimitent les possibilités.
+
+\paragraph{Recette personnelle au prochain pas.}
+La recette effective est
+\begin{equation}
+R_1(r)=\E\bigl[\min(rq,\Phi_\gamma(B_0X))\bigr].
+\label{eq:immediate-revenue}
+\end{equation}
+Pour $\sigma>0$, elle possède elle aussi une expression lognormale fermée.
+Pour $x>0$ et $p>0$, posons
+\begin{equation}
+M_p(x)=\E[X^p\1_{\{X<x\}}]
+=e^{(p^2-p)\sigma^2/2}
+\Phi_{\mathrm N}\!\left(
+\frac{\log x+(1/2-p)\sigma^2}{\sigma}\right).
+\label{eq:truncated-moment}
+\end{equation}
+Si $c=rq>0$ et $x_c=\Psi_\gamma(c)/B_0$, alors
+\begin{equation}
+R_1(r)=B_0M_1(x_c)+B_0^\gamma M_\gamma(x_c)
++c\{1-\Pp(X<x_c)\}.
+\label{eq:closed-revenue}
+\end{equation}
+Pour $c=0$, $R_1=0$.
+Elle est croissante en $r$ point par point. Une prêteuse maximisant
+uniquement sa recette immédiate choisit donc $r=1$. La même conclusion
+vaut pour son capital espéré immédiatement après dépréciation.
+
+\paragraph{Survie de l'emprunteuse.}
+La probabilité de survie à tout horizon décroît avec $r$ par
+\eqref{eq:r-monotone}. Une prêteuse qui souhaite uniquement préserver son
+partenaire choisit $r=0$. Cela ne garantit toutefois pas une survie
+éternelle lorsque $\sigma>0$, à cause de la contrainte de valeur nette
+$B\geq q$.
+
+\paragraph{Production commune instantanée.}
+Le taux n'agit pas sur la production du pas d'émission. Le principal
+$q_{\mathrm A}$ est optimal par stricte concavité. Aux pas ultérieurs, le
+service transfère du capital de l'entité pauvre vers l'entité riche et
+tend à réduire la production concave commune tant que les deux survivent.
+La faillite ajoute une discontinuité par destruction du capital résiduel ;
+aucun taux constant n'est universellement optimal.
+
+\paragraph{Objectif intertemporel de la prêteuse.}
+Pour un facteur d'actualisation $\beta\in(0,1)$ et une utilité $U$, une
+formulation exacte est
+\begin{equation}
+V_r(l,b)=\E_{l,b}\left[\sum_{n\geq0}\beta^nU(L_n)\right],
+\qquad r\in[0,1],
+\label{eq:bellman-objective}
+\end{equation}
+où les transitions avant et au défaut sont données par
+$\mathcal S$ et $\mathcal D$, puis par $A$. Le choix optimal est
+$\arg\max_{r\in[0,1]}V_r(L_0,B_0)$. La rente croissante et la durée de
+vie décroissante créent un arbitrage réel ; sans spécifier $U$ et $\beta$,
+il est mathématiquement impossible de sélectionner un taux intérieur.
+
+\section{Synthèse des issues asymptotiques}
+
+\begin{center}
+\begin{tabularx}{\textwidth}{@{}lXX@{}}
+\toprule
+Régime & Emprunteuse & Prêteuse \\
+\midrule
+$\sigma>0$, $q>0$
+& $T_B<\infty$ p.s.; loi exacte par
+$\delta_{B_0}Q^nD$; puis état $\partial$
+& $T_L=\infty$; loi au défaut par
+$(I-\mathcal S)^{-1}\mathcal D$; puis convergence en loi vers $\pi$ \\
+\addlinespace
+$\sigma=0$, $0<\delta<1$, survie de $B$
+& convergence vers $k_+$ sous les conditions
+\eqref{eq:det-survival-condition}
+& convergence vers $\ell_c$ \\
+\addlinespace
+$\sigma=0$, $0<\delta<1$, mort de $B$
+& mort déterministe en temps fini
+& convergence vers $K_{\mathrm{aut}}$ \\
+\addlinespace
+$\sigma=\delta=0$
+& croissance, équilibre instable ou mort selon $B_0^\gamma-c$
+& croissance sans borne \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+Les deux issues envisagées « mort de l'une puis de l'autre » et
+« prêteuse morte, emprunteuse survivante » sont exclues par le bilan exact
+de cette expérience. Sous choc non dégénéré, l'issue presque sûre est
+unique au niveau qualitatif : mort finie de l'emprunteuse, survie éternelle
+de la prêteuse. Les paramètres et la règle de principal restent néanmoins
+déterminants pour les distributions de $T_B$, $B_T^{\cim}$ et $L_{T_B}$.
+
+\section{Calcul effectif sans simulation}
+
+Pour calculer numériquement les lois théoriques sans simuler de
+trajectoires, une discrétisation déterministe du noyau suffit :
+\begin{enumerate}
+\item calculer $q_s,L_0^s,B_0^s$ pour
+$s\in\{\mathrm A,\mathrm G\}$ ;
+\item résoudre scalairement
+$z+z^\gamma=q_s(r+1/d)$ pour obtenir $z_*^s$ ;
+\item évaluer \eqref{eq:hazard} pour la probabilité au premier pas ;
+\item discrétiser $b,y\in[q_s,\infty)$ sur une grille transformée en
+$\log b$, puis construire la matrice positive correspondant à
+\eqref{eq:Qdensity} ;
+\item itérer $\mu_{n+1}=\mu_nQ$ et utiliser
+\eqref{eq:Tlaw}, \eqref{eq:joint-T-B} ;
+\item pour la loi jointe avec la prêteuse, appliquer le noyau produit
+\eqref{eq:joint-survival-kernel} et le noyau terminal
+\eqref{eq:joint-death-kernel}.
+\end{enumerate}
+Cette procédure est une quadrature des formules analytiques, non une
+simulation de Monte-Carlo. Un code empirique minimal séparé pourra ensuite
+contrôler ces distributions, en particulier le risque à un pas et les
+relations d'ordre en $r$ et $\delta$.
+
+\section{Conclusion}
+
+L'expérience à deux entités se réduit exactement à une chaîne de Markov
+tuée unidimensionnelle pour l'emprunteuse, couplée à la prêteuse seulement
+par le paiement terminal. La totalité des lois d'arrêt est encodée par le
+noyau explicite $Q_{q,r}$ et sa résolvante. Le taux agit à travers la rente
+$c=rq$ ; la dépréciation agit à la fois sur la dynamique et sur le seuil
+de solvabilité $q/(1-\delta)$ ; la volatilité intervient par une fonction
+normale fermée au risque conditionnel ; la concavité intervient par
+l'inverse de $z+z^\gamma$.
+
+La moyenne arithmétique est l'optimum de production commune au moment du
+transfert, mais elle impose plus de principal et plus de levier que la
+cible géométrique. Pour la durée de survie, ce coût nominal domine : sous
+un couplage commun, $T_B^{\mathrm A}\leq T_B^{\mathrm G}$ presque
+sûrement. Enfin, le réseau minimal révèle un fait institutionnel fort :
+une créance perdue ne peut
+tuer une prêteuse sans dette, car la perte du principal nominal ne rend pas
+son capital réel négatif. Les cascades à plusieurs morts observées dans le
+modèle complet sont donc nécessairement un effet de réseau, absent de la
+dyade isolée.
+
+\end{document}

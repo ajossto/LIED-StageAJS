@@ -1,0 +1,488 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage{fontspec}
+\usepackage[french]{babel}
+\usepackage{amsmath,amssymb}
+\usepackage[margin=2.3cm]{geometry}
+\usepackage{booktabs,longtable,tabularx,array}
+\usepackage{graphicx}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{microtype}
+\usepackage{url}
+\usepackage{hyperref}
+
+\hypersetup{colorlinks=true,linkcolor=blue!45!black,urlcolor=blue!45!black}
+\setlist{nosep}
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\NW}{\mathrm{NW}}
+\graphicspath{{../figures/}}
+
+\title{Étude de sensibilité M4B — rapport préliminaire\\
+\large Audit, pilotes, exploration OAT et screening global ;
+décisions avant la phase confirmatoire}
+\author{Campagne \code{recherche/sensibilite\_m4b}}
+\date{18 juillet 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Ce rapport présente les résultats de la phase exploratoire de l'étude de
+sensibilité du modèle de société de crédit M4B, conformément au protocole
+figé du 17 juillet 2026 (\code{protocole.pdf}). Il couvre : l'audit du
+moteur et l'inventaire des données existantes ; les cellules pilotes qui
+auditent les plages de paramètres ; les contrôles de probité temporelle ;
+les courbes un-facteur-à-la-fois (OAT) ; les sondes de frontière ; le
+screening global sur plan hypercube latin ; et la carte d'extinction à
+petite intensité de naissances. Il se conclut par la liste justifiée des
+cellules confirmatoires et des coupes bidimensionnelles. Résultat
+d'ensemble : dans toutes les plages auditées à $\lambda=30$, le modèle est
+stationnaire, sans extinction ni censure par le garde-fou ; les réponses
+sont continues ; la principale structure non linéaire est une transition
+douce mais rapide dans la zone $\sigma\in[0,\,0{,}2]$ entre un régime de
+cascades très propagatives ($b\simeq0{,}65$--$0{,}77$) et le régime de
+plateau ($b\simeq0{,}30$) ; et la volatilité $\sigma$ domine la
+démographie, tandis que $k$ domine les inégalités et la statistique fine
+des avalanches, $K_0$ agit log-linéairement sur la durée de vie et
+$\delta$ se comporte surtout comme une échelle du capital.
+\end{abstract}
+
+\tableofcontents
+
+\section{Rappels et conventions}
+
+Le modèle, ses paramètres ($\lambda$ intensité des naissances, $\delta$
+dépréciation, $\sigma$ volatilité du choc multiplicatif, $K_0$ capital de
+naissance, $k$ taille de l'échantillon du marché local), le dictionnaire
+des métriques et les règles d'analyse sont définis dans le protocole
+(\code{report/protocole.pdf}) ; les définitions essentielles sont
+rappelées au fil du texte. Sauf mention contraire : horizon $T=2000$,
+fenêtre d'analyse $[T/4,\,T]$, graines d'exploration $\{1,2,3\}$
+partagées entre cellules (contrastes appariés), écriture minimale
+(neutralité démontrée, section~\ref{sec:audit}). Toutes les cellules
+citées sont identifiées par leur \code{run\_id} dans les manifestes
+(\code{manifests/*.json}) ; l'annexe~\ref{sec:annexe} donne la
+correspondance des cellules citées.
+
+Le rapport distingue systématiquement : \emph{fait simulé} (valeur lue
+dans les données d'un run), \emph{inférence statistique} (estimation avec
+incertitude) et \emph{hypothèse} (interprétation à confirmer).
+
+\section{Audit du moteur et des données}
+\label{sec:audit}
+
+Réalisé le 17 juillet 2026, détails dans le protocole
+(section « Audit ») et le journal (\code{JOURNAL.md}) :
+
+\begin{itemize}
+\item 6/6 tests du moteur passés, dont la parité exacte M4/M4B champ par
+  champ sur deux régimes — unique recours exécutable à M4 de l'étude ;
+  4/4 tests des routines statistiques passés ;
+\item neutralité des options de mesure : séries bit à bit identiques
+  entre écriture minimale et complète (deux contrôles) ;
+\item intégrité comptable : résidu relatif maximal $6\cdot10^{-16}$ sur
+  les runs de benchmark, zéro erreur de carnet ; ce contrôle est répété
+  sur chaque run de campagne (aucune violation à ce jour) ;
+\item provenance : moteur \code{m4b-mini-3}, condensat
+  \code{f3a7ce02cd9185c7}, inscrit dans chaque manifeste ;
+\item inventaire : aucun run M4B préexistant réutilisable (10 runs de
+  validation d'intégration dans Simulation Lab, horizons courts, panels
+  non contrôlés) — la campagne reproduit tout sous manifeste.
+\end{itemize}
+
+\section{Pilotes : audit des plages initiales}
+\label{sec:pilotes}
+
+Trente cellules pilotes (plan \code{pilotes}, graines $\{1,2\}$) ont
+couvert les coins de l'espace
+$(\delta,\sigma)\in\{0{,}02;0{,}10\}\times\{0{,}10;0{,}50\}$, les
+extrêmes $K_0\in\{5,100\}$ et $k\in\{2,10\}$, les contrôles $\sigma=0$,
+le coin de mortalité $(K_0{=}5,\sigma{=}0{,}50,\delta{=}0{,}10)$, le
+centre, et les contrôles temporels ($T=4000$ au centre, $T=8000$ au coin
+lent, $\lambda=100$ au coin lent).
+
+\paragraph{Résultat principal.} Les 30 runs terminent en statut
+\code{ok} : aucune extinction, aucune censure par \code{pop\_max},
+dérives relatives de population $\le 4\,\%$ sur la fenêtre, moitiés de
+fenêtre cohérentes. \textbf{Les plages initiales sont donc validées sans
+révision} : chaque coin produit un régime stationnaire non trivial, avec
+des avalanches en effectif suffisant pour les ajustements
+($\ge 3\,000$ événements de taille $\ge2$ par run partout).
+
+\paragraph{Le contrôle $\sigma=0$ n'est pas dégénéré.} Fait simulé
+inattendu : sans choc, le système reste mortel et stationnaire, avec une
+population dense ($N/\lambda=36{,}9$--$37{,}0$ ; $46{,}2$--$46{,}7$ si
+$\delta=0{,}02$) et des cascades très propagatives (rapport de
+branchement $b=0{,}65$--$0{,}77$, exposant $\hat\alpha=1{,}72$--$1{,}80$,
+Gini du capital $0{,}03$--$0{,}04$). Hypothèse mécanique (à documenter au
+rapport final) : l'hétérogénéité par l'âge suffit — les jeunes
+emprunteuses à faible $K$ contractent des dettes dont le service peut
+excéder leur capital du pas, et l'insolvabilité par perte de créance
+propage ensuite. Ce régime « corrélé » constitue une limite singulière
+utile, conservée comme cellule confirmatoire.
+
+\paragraph{Régimes lents déjà stationnaires.} Le coin
+$(\delta{=}0{,}02,\sigma{=}0{,}10)$ donne $N/\lambda=24{,}1$--$24{,}4$ à
+$T=2000$ et $24{,}3$ à $T=8000$ (dérive $\sim0$) : pas de transitoire
+long dans les plages retenues ; les horizons $T\gg10^4$ envisagés par
+prudence ne sont pas nécessaires ici.
+
+\section{Contrôles de probité temporelle}
+\label{sec:temps}
+
+\begin{itemize}
+\item \textbf{Horizon} : au centre, $T=4000$ reproduit $T=2000$ :
+  $N/\lambda=14{,}8$ identique, $\hat\alpha$ $2{,}25$--$2{,}26$ contre
+  $2{,}26$--$2{,}27$, $b=0{,}30$ stable, effectif de queue doublé
+  ($\approx11\,300$).
+\item \textbf{Burn-in} : sur les 30 pilotes, remplacer le burn-in $T/4$
+  par $T/8$ ou $T/2$ change la population moyenne d'au plus $0{,}8\,\%$
+  (médiane $0{,}2$--$0{,}3\,\%$), $\hat\alpha$ d'au plus $0{,}014$ et $b$
+  d'au plus $0{,}004$ : le choix du burn-in est sans conséquence dans les
+  plages explorées.
+\item \textbf{Demi-fenêtres} : les écarts de population entre les deux
+  moitiés de la fenêtre par défaut restent $\le4\,\%$ en relatif
+  (généralement $\le2\,\%$), sans biais de signe systématique.
+\end{itemize}
+
+Conclusion (inférence) : les métriques fenêtrées de l'exploration sont
+insensibles aux choix de fenêtre ; $T=2000$ suffit au screening, et le
+passage à $T=4000$ en confirmation sert à doubler l'effectif des queues,
+pas à corriger un biais temporel.
+
+\section{Courbes OAT autour du centre}
+\label{sec:oat}
+
+Plan \code{oat} : 22 cellules uniques le long des cinq axes, graines
+$\{1,2,3\}$, centre $\lambda=30$, $\delta=0{,}05$, $\sigma=0{,}25$,
+$K_0=25$, $k=3$. Figures \path{figures/oat_<axe>.png} ; contrastes
+appariés (cellule $-$ centre, même graine) dans
+\path{results/summary/oat_contrasts.csv}.
+
+\subsection{Volatilité $\sigma$ : levier dominant et transition douce}
+
+\begin{figure}[tbh]
+\centering
+\includegraphics[width=\textwidth]{oat_sigma.png}
+\caption{OAT $\sigma$ (12 métriques). Points bleus : graines ; carrés
+rouges : moyenne $\pm$ écart-type inter-graines. Axe $\sigma$ de 0 à
+0{,}5 ; le contrôle $\sigma=0$ est inclus comme limite.}
+\label{fig:oat-sigma}
+\end{figure}
+
+Faits simulés (figure~\ref{fig:oat-sigma}) :
+
+\begin{itemize}
+\item $N/\lambda$ décroît de façon monotone et convexe : $36{,}9$
+  ($\sigma=0$) $\to$ $14{,}9$ ($0{,}25$) $\to$ $7{,}2$ ($0{,}5$) ; le
+  taux de mortalité croît convexement ($0{,}027\to0{,}138$ par tête et
+  par pas). Prolongé par les sondes de frontière
+  (section~\ref{sec:frontiere}) jusqu'à $N/\lambda=3{,}5$ à $\sigma=1$,
+  toujours sans effondrement discontinu.
+\item Toute la structure non linéaire de la propagation se concentre dans
+  $\sigma\in[0,\,0{,}2]$ : $b$ chute de $0{,}65$ à $0{,}31$ puis reste
+  quasi constant ($0{,}28$--$0{,}30$) ; la susceptibilité passe de $26$ à
+  $8$ puis stagne ; $\hat\alpha$ monte de $1{,}80$ à $\simeq2{,}25$ puis
+  plafonne.
+\item La dette rapportée au capital est \textbf{non monotone} : maximum
+  $\simeq1{,}53$ vers $\sigma\simeq0{,}15$--$0{,}2$, puis décroissance
+  vers $0{,}90$ à $\sigma=0{,}5$. Hypothèse : à faible $\sigma$ le
+  carnet survit longtemps (durées de vie longues) mais les écarts de
+  capital qui motivent les prêts sont petits ; à fort $\sigma$ le carnet
+  est détruit trop vite ; l'exposition maximale se situe entre les deux.
+\item Le Gini du capital croît continûment avec $\sigma$
+  ($0{,}036\to0{,}12$), de même que l'avalanche maximale rapportée à la
+  population.
+\end{itemize}
+
+\subsection{Dépréciation $\delta$ : essentiellement une échelle du capital}
+
+Faits simulés (\code{oat\_delta.png}) : $K$ par tête passe de $159$ à
+$51$\,J quand $\delta$ va de $0{,}02$ à $0{,}10$ ; $N/\lambda$
+\emph{augmente} de $13{,}5$ à $16{,}9$ (effet contre-intuitif mais très
+net : écart-type inter-graines $\sim0{,}04$) ; la dette/capital décroît
+($1{,}52\to1{,}17$) ; la statistique d'avalanches est à peine modifiée
+($b$ : $0{,}299\to0{,}289$ ; $\hat\alpha$ : $2{,}29\to2{,}22$ ;
+susceptibilité : $7{,}4\to8{,}1$). Hypothèse d'interprétation : $\delta$
+fixe surtout l'échelle du capital individuel
+($K^\ast=(1/\delta)^2$ pour l'équilibre production--dépréciation d'une
+entité isolée), ce qui renormalise les taux du marché
+($r_x=1/(2\sqrt{K_x})$) sans changer la topologie de propagation ; la
+hausse de $N/\lambda$ avec $\delta$ (durée de vie plus longue à capital
+plus faible) devra être expliquée au rapport final. $\delta$ est le
+premier candidat au statut de « convention d'échelle » pour la
+discussion de réduction.
+
+\subsection{Capital de naissance $K_0$ : log-linéaire sur la survie}
+
+Faits simulés (\code{oat\_K0.png}) : $N/\lambda$ croît de $10{,}7$ à
+$19{,}9$ quand $K_0$ va de 5 à 100 (quasi linéaire en $\log K_0$) ; la
+mortalité baisse d'un tiers ; $b$ est quasi plat
+($0{,}296$--$0{,}306$) ; $\hat\alpha$ décroît modérément
+($2{,}30\to2{,}14$) ; la susceptibilité monte ($6{,}9\to9{,}5$). La
+dette/capital présente une bosse vers $K_0\simeq50$. $K_0$ agit donc
+principalement sur la démographie (protection des jeunes) avec un effet
+secondaire sur les queues.
+
+\subsection{Taille du marché $k$ : inégalités et statistique fine}
+
+Faits simulés (\code{oat\_k.png}) : la démographie est presque
+insensible ($N/\lambda$ : $15{,}4\to14{,}5$), mais : Gini du capital
+$0{,}136\to0{,}010$ ($k=2\to10$) ; $b$ décroît linéairement
+$0{,}305\to0{,}237$ ; $\hat\alpha$ croît $2{,}21\to2{,}43$ ;
+susceptibilité $8{,}3\to5{,}2$ ; dette/capital maximale à $k=4$
+($1{,}44$). Interprétation (hypothèse) : un plus grand échantillon
+sélectionne des paires plus contrastées, homogénéise le capital
+(les cibles $K^\ast=\sqrt{K_\ell K_b}$ resserrent la distribution) et
+fragmente l'exposition, d'où des cascades plus petites et une queue plus
+raide.
+
+\subsection{Axe de taille $\lambda$ : intensivité et coupure}
+
+Faits simulés (\code{oat\_lam.png}) : $N/\lambda$, l'âge au décès, le
+capital par tête, le Gini et la dette/capital sont stables à
+$\pm2\,\%$ entre $\lambda=10$ et $100$ (grandeurs intensives) ; la
+susceptibilité croît fortement avec la taille ($4{,}8\to15{,}4$) et le
+maximum relatif décroît — signatures de taille finie attendues. À
+$\lambda=100$, l'ajustement en loi tronquée dégénère (coupure estimée
+$\sim10^8$, hors de la portée observable) tandis que le test de Vuong
+bascule en faveur de la loi de puissance pure ($z=+15{,}0$ contre
+$z=-6{,}5$ à $\lambda=10$ et $-4{,}2$ à $\lambda=30$) : la coupure de
+taille finie sort de la fenêtre d'observation quand le système grandit.
+Convention adoptée : lorsque $\hat s_c$ dépasse largement la plus grande
+avalanche observée, la coupure est déclarée « au-delà de la portée
+observable » et sa valeur numérique n'est pas interprétée.
+$\hat\alpha(\lambda)$ présente une légère non-monotonie
+($2{,}32/2{,}27/2{,}31$ pour $\lambda=10/30/100$) que la phase
+confirmatoire devra trancher.
+
+\subsection{Puissance statistique}
+
+Au centre, les coefficients de variation inter-graines valent :
+$0{,}1$--$1\,\%$ pour les moyennes démographiques et de propagation
+($N/\lambda$, âge au décès, $b$, susceptibilité, $\hat\alpha$),
+$3$--$5\,\%$ pour le Gini, la coupure et la dette/capital, $14\,\%$ pour
+l'avalanche maximale. Avec 3 graines, l'effet minimal détectable
+(à $2$ écarts-types du contraste apparié) est par exemple $0{,}06$ sur
+$N/\lambda$, $0{,}005$ sur $b$, $0{,}014$ sur $\hat\alpha$ — très
+inférieur aux effets observés le long des axes. Les 5 graines de la
+confirmation sont surtout utiles aux métriques extrêmes (maximum,
+coupure) et aux voisinages des non-monotonies.
+
+\section{Sondes de frontière et carte d'extinction}
+\label{sec:frontiere}
+
+\subsection{Au-delà des plages, à $\lambda=30$}
+
+Plan \code{pilotes2} (16 runs) : $\sigma\in\{0{,}6;0{,}7;0{,}85;1{,}0\}$,
+$\delta=0{,}01$, $K_0\in\{2,200\}$. Tous \code{ok}. La durée de vie
+moyenne décroît continûment jusqu'à $N/\lambda=3{,}5$ à $\sigma=1$
+(mortalité $0{,}286$ par tête et par pas) sans transition brutale ni
+extinction. Fait de structure : à $\lambda=30$, l'extinction absorbante
+(population nulle en fin de pas) est pratiquement inaccessible, car
+$P[\mathrm{Poisson}(30)=0]\approx10^{-13}$ : la « frontière
+d'extinction » du modèle est une propriété du petit $\lambda$, pas des
+paramètres microscopiques seuls.
+
+\subsection{Carte d'extinction à petit $\lambda$}
+\label{sec:lambdaext}
+
+Plan \code{lambda\_ext} : $\lambda\in\{1,2,3,5,10\}\times
+\sigma\in\{0{,}25;0{,}5;1{,}0\}$, 3 graines, 45 runs.
+
+Faits simulés : les seules extinctions observées (9 runs sur 45 —
+deux graines sur trois à $\lambda=1$ et une sur trois à $\lambda=2$,
+identiques pour chaque $\sigma$ puisque l'événement ne dépend que du
+premier tirage de Poisson) surviennent toutes au \emph{premier pas},
+pour $\lambda\in\{1,2\}$ :
+la population initiale étant vide, l'extinction se produit si le premier
+tirage de Poisson est nul, événement de probabilité $e^{-\lambda}$
+($0{,}37$ à $\lambda=1$, $0{,}14$ à $\lambda=2$) — les fréquences
+observées (2/3 et 1/3 sur trois graines, identiques pour chaque
+$\sigma$) sont compatibles. \textbf{Aucune extinction tardive n'a été
+observée} : toute population établie persiste, même à $\lambda=1$ et
+$\sigma=1$ ($\bar N\simeq4$ entités). L'intensivité $N/\lambda$ tient
+jusqu'à $\lambda=1$ ($15{,}4$ à $\lambda=1$ contre $14{,}6$--$14{,}9$ à
+$\lambda\ge10$, $\sigma=0{,}25$).
+
+Conclusion (inférence) : dans l'espace exploré, M4B ne possède
+\emph{pas} de frontière d'effondrement démographique. L'« extinction »
+est un artefact de la condition initiale vide, de probabilité
+$\simeq e^{-\lambda}$, et non un régime dynamique. C'est un résultat
+négatif structurant : la carte des régimes demandée par le protocole se
+réduit, dans les plages explorées, à un unique régime stationnaire dont
+les propriétés varient continûment. La croissance soutenue n'a pas
+davantage été observée ($T$ fini ; les statuts \code{pop\_max} n'ont
+jamais été atteints — voir aussi le contrôle $\sigma=0$, stationnaire
+dense).
+
+\section{Screening global (plan hypercube latin)}
+\label{sec:lhs}
+
+Plan \code{lhs} : 64 points sur $(\delta,\sigma,K_0)$ continus
+($K_0$ log-uniforme) avec $k$ équilibré sur $\{2,3,4,6,10\}$,
+$\lambda=30$, $T=2000$, graines $\{1,2,3\}$, soit 192 runs ; graine du
+plan 20260717. Les 192 runs terminent en statut \code{ok} (aucune
+extinction ni censure), fenêtres valides partout.
+
+\subsection{Méthode}
+
+Trois lectures complémentaires, décrites au protocole : corrélations de
+rang partielles (PRCC) et régressions standardisées (SRC) avec
+intervalles bootstrap à 95\,\% par rééchantillonnage des 64 points du
+plan (jamais des graines isolément) ; surface de réponse quadratique
+complète (carrés et interactions) sur variables standardisées, validée
+hors échantillon par validation croisée à 8 plis constitués de points
+entiers du plan ($R^2_{\mathrm{CV}}$) ; importance par permutation sur
+la surface validée ; décomposition de la variance de chaque métrique en
+part entre points du plan (paramètres) et part intra-point (graines).
+
+\subsection{Résultats}
+
+\begin{figure}[tbh]
+\centering
+\includegraphics[width=0.78\textwidth]{lhs_prcc.png}
+\caption{Corrélations de rang partielles (PRCC) entre les quatre
+paramètres microscopiques et les métriques de réponse, sur le plan LHS.
+Chaque case donne la corrélation partielle de rang, les autres
+paramètres étant tenus fixes.}
+\label{fig:lhs-prcc}
+\end{figure}
+
+Faits et inférences principaux (figure~\ref{fig:lhs-prcc}, table
+\code{results/summary/lhs\_screening.csv}) :
+
+\begin{itemize}
+\item \textbf{Prédictibilité.} Les surfaces quadratiques prédisent hors
+  échantillon $R^2_{\mathrm{CV}}=0{,}84$--$1{,}00$ pour treize des seize
+  métriques : les réponses sont lisses et bien capturées par quatre
+  paramètres, leurs carrés et leurs interactions. Exceptions :
+  profondeur maximale ($R^2_{\mathrm{CV}}=0{,}09$ — extrême dominé par le
+  bruit), coupure $s_c$ ($0{,}77$) et Gini des principaux ($0{,}70$).
+\item \textbf{Partage des rôles.} La démographie ($N/\lambda$, taux de
+  mortalité, âge au décès) est gouvernée par $\sigma$ (PRCC $\mp0{,}98$)
+  puis $K_0$ ($\pm0{,}91$), $\delta$ ($\pm0{,}49$), $k$ faible
+  ($\mp0{,}25$). Les inégalités de capital sont gouvernées par $k$
+  (PRCC $-0{,}99$) et $\sigma$ ($+0{,}93$). La statistique des
+  avalanches ($\hat\alpha$, susceptibilité, coupure) est co-gouvernée
+  par $k$ (PRCC $+0{,}85$, $-0{,}86$, $-0{,}71$) et $K_0$/$\sigma$ ; le
+  rapport de branchement par $\sigma$ ($-0{,}83$) et $k$ ($-0{,}79$).
+  L'échelle du capital individuel est gouvernée par $\delta$
+  ($-0{,}89$) et $K_0$ ($+0{,}93$).
+\item \textbf{$\delta$ est partout secondaire hors échelle du capital} :
+  ses PRCC sur la propagation restent modestes ($-0{,}21$ sur $b$,
+  $-0{,}44$ sur $\hat\alpha$) alors qu'il contrôle fortement
+  $K$ par tête et la dette/capital — cohérent avec l'hypothèse « échelle »
+  issue de l'OAT.
+\item \textbf{Variabilité stochastique.} La part de variance intra-point
+  (graines) est $\le9\,\%$ pour treize métriques sur seize
+  ($\le0{,}2\,\%$ en démographie) ; elle atteint $17\,\%$ pour la
+  coupure et $72\,\%$ pour la profondeur maximale, qui ne devra être
+  interprétée qu'avec les cinq graines confirmatoires. La fraction
+  d'entités survivantes à valeur nette négative est structurellement
+  nulle (variance nulle) : la phase de faillites élimine par
+  construction toute valeur nette négative — contrôle de cohérence
+  du moteur plutôt que métrique de réponse.
+\item \textbf{Non-linéarités.} L'écart entre $R^2$ linéaire et
+  $R^2_{\mathrm{CV}}$ quadratique (p.~ex. $0{,}85\to0{,}98$ pour
+  $N/\lambda$, $0{,}72\to0{,}90$ pour le Gini de $K$, $0{,}73\to0{,}86$
+  pour $b$) confirme les courbures vues en OAT (convexité en $\sigma$,
+  saturation en $K_0$), sans invalider la hiérarchie ci-dessus.
+\end{itemize}
+
+Ces analyses sont exploratoires : elles hiérarchisent et sélectionnent,
+la quantification finale revient à la phase confirmatoire.
+
+\section{Décisions pour la suite de la campagne}
+\label{sec:decisions}
+
+Décisions arrêtées à l'issue de l'exploration, conformément aux règles
+de passage du protocole (les choix ci-dessous s'appuient sur les
+analyses exploratoires étiquetées comme telles) :
+
+\subsection{Coupes bidimensionnelles retenues}
+
+\begin{enumerate}
+\item $\boldsymbol{\sigma\times k}$ : $\sigma\in\{0{,}05$--$0{,}50\}$
+  (8 niveaux resserrés autour de la zone de transition) $\times$
+  $k\in\{2,3,4,6,10\}$. Justification : ce sont les deux moteurs
+  co-dominants de la propagation ($b$, $\hat\alpha$, susceptibilité) et
+  des inégalités ; la coupe teste si la position et la raideur de la
+  transition en $\sigma$ dépendent de $k$ (interaction).
+\item $\boldsymbol{\sigma\times\delta}$ : mêmes niveaux de $\sigma$
+  $\times$ $\delta\in\{0{,}02;0{,}035;0{,}05;0{,}07;0{,}10\}$.
+  Justification : caractériser la crête non monotone de la
+  dette/capital (maximum vers $\sigma\simeq0{,}15$--$0{,}2$) et tester
+  l'hypothèse « $\delta$ = échelle pure » à tout $\sigma$ (si elle
+  tient, les effets de $\delta$ sur la propagation restent faibles le
+  long de toute la coupe).
+\end{enumerate}
+
+Graines $\{1,2,3\}$, $T=2000$, écriture minimale ; cellules déjà
+exécutées (OAT) réutilisées par identifiant.
+
+\subsection{Cellules confirmatoires}
+
+$T=4000$, graines $\{11,\dots,15\}$ (disjointes de l'exploration),
+instantanés périodiques tous les 100 pas, versées dans Simulation Lab et
+marquées à conserver :
+
+\begin{center}
+\begin{tabularx}{\textwidth}{@{}lX@{}}
+\toprule
+Cellule & Motif \\
+\midrule
+référence $\lambda=10$ & lien avec la baseline historique du modèle \\
+centre $\lambda=30$ & point d'ancrage de toute la campagne \\
+$\lambda=100$ & scaling de taille (susceptibilité, coupure, maximum) \\
+$\sigma=0$ & régime corrélé limite ($b\simeq0{,}65$) \\
+$\sigma=0{,}10$ & zone de transition (pente maximale des réponses) \\
+$\sigma=0{,}50$ & régime à vies courtes \\
+$\delta=0{,}02$ et $\delta=0{,}10$ & test apparié de l'hypothèse
+« échelle » \\
+$K_0=5$ et $K_0=100$ & bornes du levier démographique log-linéaire \\
+$k=2$ et $k=10$ & bornes du levier inégalités/statistique fine \\
+$\lambda=2,\ \sigma=0{,}25$ & probabilité d'extinction initiale
+($e^{-\lambda}$), 10 graines \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+S'y ajouteront, après dépouillement des coupes, une à deux cellules
+d'interaction si un croisement qualitatif est détecté (règle du
+protocole : encadrement des frontières par paires). Critères de
+confirmation : signe et ordre de grandeur du contraste apparié
+préservés, intervalle à 95\,\% excluant zéro, insensibilité aux burn-ins
+$T/8$--$T/2$ et cohérence entre demi-fenêtres.
+
+\subsection{Diagnostic \code{pop\_max}}
+
+Aucune cellule n'a atteint le garde-fou à ce stade : le diagnostic
+obligatoire du protocole est sans objet sur l'exploration ; il sera
+réexécuté sur les runs confirmatoires ($T=4000$) et rapporté au rapport
+final. Le vocabulaire « explosion » du moteur n'a jamais été employé
+pour classer un run.
+
+\subsection{Bornes et budget révisés}
+
+Les plages initiales sont reconduites sans révision (section
+\ref{sec:pilotes}). Budget consommé par l'exploration (benchmark,
+pilotes, sondes, OAT, carte d'extinction, LHS) : 340 runs, zéro échec,
+7{,}8\,h CPU, 3{,}65\,Go (chiffres agrégés depuis les manifestes).
+Budget restant estimé pour coupes 2D + confirmation :
+$\approx245$ runs, $\approx10$--$12$\,h CPU — dans l'enveloppe du
+protocole.
+
+\appendix
+
+\section{Traçabilité des cellules citées}
+\label{sec:annexe}
+
+La table ci-dessous liste les 355 entrées de plan de la phase
+exploratoire (340 runs distincts : une cellule partagée par deux plans
+apparaît sous chacun). Toutes les figures et valeurs de ce rapport en
+sont issues ; aucun run n'a été exclu.
+
+\input{annexe_tracabilite}
+
+\end{document}

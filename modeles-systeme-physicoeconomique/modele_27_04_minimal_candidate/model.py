@@ -45,6 +45,6 @@ MODEL = MinimalCandidateModel(
         "même moteur, alpha individuel fixe par défaut, k=3, crédit perpétuel, "
         "auto-investissement et dépréciation exogène conservés."
     ),
-    source_dir=str(PROJECT_ROOT / "modele-27-04-WIP" / "src"),
+    source_dir=str(PROJECT_ROOT / "anciens_modeles" / "modele-27-04-WIP" / "src"),
 )
 MODEL.tags = ["legacy", "elagage", "candidate"]

@@ -1,0 +1,540 @@
+\appendix
+\FloatBarrier
+\onecolumn
+\input{glossaire_article}
+\twocolumn
+\clearpage
+\section{Étude de cas : une réalisation concrète}\label{sec:etude_cas}
+Les sections précédentes agrègent des observations sur douze graines.
+Cette annexe détaille au contraire une seule réalisation du contrôle
+principal (graine 0, $T=4000$, 60151 décès, 8174 avalanches), pour
+donner un visage concret aux mécanismes discutés plus haut. Aucune des
+figures qui suivent n'est une nouvelle mesure statistique~: elles
+illustrent, elles ne remplacent pas les résultats agrégés du corps de
+l'article.
+
+Deux familles de figures coexistent ici. Celles préfixées \texttt{ann\_}
+sont dessinées pour cet article à partir des exports de la réalisation.
+Celles préfixées \texttt{lab\_} sont les sorties automatiques de
+Simulation Lab pour ce même run (\texttt{m4\_4\_\allowbreak\_bras\_\allowbreak\_free\_\allowbreak\_control\_\allowbreak\_seed0}), reproduites sans retouche
+(les SVG d'origine sont conservés, seule la conversion en PDF vectoriel
+est ajoutée) et avec les libellés du Lab. Trois précautions valent pour
+toutes. D'abord, le Lab analyse la période postérieure à l'amorçage
+($t>1000$) et non la fenêtre $3000<t\le4000$ de l'article~; les
+effectifs ne se comparent donc pas terme à terme. Ensuite, les
+ajustements qu'il superpose (queue en loi de puissance, relaxation
+exponentielle, régression linéaire) sont ses ajustements exploratoires
+par défaut~: ils ne sont pas ceux de l'annexe~\ref{sec:ajustements} et
+n'établissent ni loi de puissance ni criticité. Enfin, le module de
+rapport du Lab a été écrit pour M4.3~; un pont le fait lire les sorties
+de M4.4, et l'étiquette de modèle des métadonnées SVG reste
+\texttt{m4\_3\_credit\_soc} bien que le run soit celui du moteur M4.4.
+Une seule graine~: aucune incertitude n'est associée.
+
+\subsection{Trajectoire complète}
+La figure~\ref{fig:ann_trajectoire_complete} reprend l'intégralité des
+4000 pas de cette réalisation, sans la fenêtre restreinte de la
+figure~\ref{fig:art_trajectoire}. La phase d'amorçage, où la population
+croît depuis une entité unique, se distingue nettement du régime
+fluctuant qui s'installe ensuite~; la fenêtre d'analyse principale de
+l'article ($3000<t\le4000$, annexe~\ref{sec:stationnarite}) est repérée
+sur le graphique.
+
+\figurinelarge{ann_trajectoire_complete}{0.94}{\textbf{La réalisation
+entière, sans agrégation.} Contrôle principal, graine 0, $0\le t\le4000$.
+Gauche~: effectif de la population. Centre~: stock productif total
+$\sum_i K_i$. Droite~: nombre de prêts actifs, c'est-à-dire la taille du
+réseau de crédit lui-même. Les trois séries partagent la même forme
+d'amorçage puis de régime fluctuant~; la zone grisée marque la fenêtre
+stationnaire utilisée ailleurs dans l'article.}
+
+La figure~\ref{fig:lab_macro_overview} est la vue d'ensemble produite
+par Simulation Lab pour le même run. Elle ajoute au tracé précédent le
+crédit nouvellement accordé à chaque pas et le rapport des dettes au
+capital, mesuré aux instantanés. Deux encarts agrandissent une fenêtre
+de 200 pas pour montrer l'amplitude des fluctuations pas à pas du
+capital, de la population et du crédit.
+
+\figurinelarge{lab_macro_overview}{0.94}{\textbf{Vue d'ensemble de la
+réalisation, sortie Simulation Lab.} Contrôle principal, graine 0,
+$0\le t\le4000$. Capital total $K$ (J), nouveau crédit (J/pas),
+population et rapport $\sum$dettes$/\sum K$ (aux instantanés~; voisin
+de 2 sur la partie stationnaire). Encarts~: agrandissement de
+$2900<t\le3100$ pour le capital et la population (à gauche) et pour le
+nouveau crédit (à droite)~; les axes verticaux des encarts sont
+recadrés et non isotropes. Libellés du Lab.}
+
+\subsection{Devenirs individuels}
+Cinq entités de cette même réalisation illustrent des devenirs
+distincts~: deux atteignent $t=4000$ (l'une, présente dès l'amorçage,
+en tête du classement par stock~; l'autre, née bien plus tard, à un
+niveau médian)~; une troisième est la racine d'une petite avalanche
+isolée (taille 12, profondeur 9)~; une quatrième est l'une des treize
+racines de la plus grande avalanche de la fenêtre stationnaire (taille
+145, profondeur 20, détaillée en figure~\ref{fig:ann_cascades_arbres})~;
+la cinquième est la victime la plus éloignée de cette même avalanche, en
+génération 20.
+
+\figurinelarge{ann_devenirs}{0.94}{\textbf{Cinq trajectoires
+individuelles.} Stock productif $K_i(t)$, pas de temps enregistrés tous
+les 10 pas. Chaque courbe s'arrête à la mort de l'entité (marqueur,
+cause indiquée dans les données exportées) ou continue jusqu'à $t=4000$
+pour les deux survivantes. Une entité peut grandir puis disparaître sans
+lien avec une grande cascade~; une autre peut être emportée après des
+générations de propagation.}
+
+Ces trois morts sont-elles précoces ou tardives~? La figure~\ref{fig:ann_durees_vie}
+situe leur âge dans la distribution complète des 60151 durées de vie de
+cette graine~: les trois valent 8, 31 et 36 pas, contre un âge médian de
+13 pas sur l'ensemble des morts~; aucune n'est un événement extrême de
+longévité, la queue de la distribution s'étendant jusqu'à 3916 pas.
+
+\figurine{ann_durees_vie}{0.95}{\textbf{Où se situent ces trois entités
+dans la distribution des durées de vie~?} Contrôle principal, graine 0,
+60151 morts sur $0\le t\le4000$, âge médian 13 pas. Traits verticaux~:
+âge des trois entités mortes de la figure précédente.}
+
+Plutôt que l'âge au décès, la figure~\ref{fig:lab_instantaneous_life_expectancy_by_leverage}
+(Simulation Lab) met en regard la vie restante d'une entité à un instant
+donné et son ratio instantané dettes/actifs. La vie restante y est
+tronquée à un horizon de 659 pas, choisi par le Lab à partir des âges au
+décès observés. La moyenne conditionnelle décroît quand le ratio
+augmente. C'est une lecture descriptive d'une seule réalisation~: les
+couples (entité, instant) successifs d'une même entité ne sont pas
+indépendants, et la figure n'établit pas que le ratio cause la mort.
+
+\figurinelarge{lab_instantaneous_life_expectancy_by_leverage}{0.94}{\textbf{Vie
+restante et rapport dettes/actifs, sortie Simulation Lab.} Contrôle
+principal, graine 0. Gauche~: les 151\,933 couples (entité, instant)
+de l'analyse, vie restante tronquée à 659 pas (ordonnée), ratio
+instantané dettes/actifs (abscisse), effectif en échelle logarithmique.
+Droite~: moyenne conditionnelle par classes de ratio (``espérance
+restreinte''), avec bande interdécile. Libellés du Lab.}
+
+\subsection{Deux cascades, deux échelles}
+La figure~\ref{fig:ann_cascades_arbres} dessine explicitement le graphe
+de propagation de deux avalanches réelles de cette réalisation, dans le
+même esprit que l'exemple stylisé de la figure~\ref{fig:cascade} mais à
+partir de données simulées~: une petite avalanche (taille 12, une seule
+racine, profondeur 9) et la plus grande de la fenêtre stationnaire
+(taille 145, treize racines, profondeur 20). Les deux sont tirées de la
+même graine~; leur différence de taille n'est pas un effet de graine,
+mais la variabilité déjà quantifiée en figure~\ref{fig:art_avalanches}.
+
+\figurinelarge{ann_cascades_arbres}{0.94}{\textbf{Deux avalanches
+réellement simulées.} Contrôle principal, graine 0. Gauche~: avalanche
+de taille 12, $t=3239$ (12 nœuds, 12 arêtes). Droite~: avalanche de
+taille 145, $t=3510$ (145 nœuds, 313 arêtes), la plus grande de la
+fenêtre stationnaire pour cette graine. Chaque nœud est une entité
+morte~; chaque flèche (ou, à droite, chaque segment fin faute de place
+pour les têtes) va de l'emprunteuse défaillante vers la créancière
+affectée (même convention que la figure~\ref{fig:cascade}), la hauteur
+code la génération de propagation. Le nombre d'arêtes dépasse largement
+le nombre de nœuds~: une créancière peut être affectée par plusieurs
+mortes, ce n'est pas un arbre au sens strict, contrairement à l'exemple
+stylisé de la figure~\ref{fig:cascade}.
+Racines en couleur pleine.}
+
+Ces deux tailles ne sont pas choisies pour être représentatives~: la
+figure~\ref{fig:ann_cascade_rang} les replace dans le classement des 4086
+avalanches de cette même graine et fenêtre. La taille 145 est la plus
+grande de toute la fenêtre (rang 1)~; la taille 12 est courante, au rang
+586, dans le dernier tiers supérieur de la distribution.
+
+\figurine{ann_cascade_rang}{0.95}{\textbf{Rang des deux avalanches
+choisies dans leur propre graine.} Contrôle principal, graine 0, 4086
+avalanches, $3000<t\le4000$. La courbe est la distribution rangée des
+tailles (rang 1 = la plus grande)~; les deux points marquent les
+avalanches de la figure~\ref{fig:ann_cascades_arbres}.}
+
+\subsection{Chronologie des grandes cascades}
+Les grandes avalanches sont-elles regroupées dans le temps, ou
+dispersées~? La figure~\ref{fig:ann_chronologie} place chaque avalanche
+de cette graine et fenêtre selon son instant et sa taille. Aucun
+regroupement temporel visible des grandes tailles n'apparaît~: les
+contractions courtes de l'activité agrégée (§4.3) ne coïncident donc pas
+avec un agenda repérable de grandes cascades individuelles~; les deux
+phénomènes, quoique tous deux définis sur le même graphe de pertes, ne
+sont pas la même observation.
+
+\figurinelarge{ann_chronologie}{0.94}{\textbf{Taille de chaque avalanche
+selon son instant.} Contrôle principal, graine 0, 4086 avalanches,
+$3000<t\le4000$. Les deux points colorés reprennent les avalanches des
+figures~\ref{fig:ann_cascades_arbres} et~\ref{fig:ann_cascade_rang}.}
+
+\subsection{Structure du réseau de crédit à un instant donné}\label{sec:reseau_instant}
+Les figures précédentes dessinent le graphe des pertes, c'est-à-dire la
+propagation des défauts~; ce n'est pas le réseau de crédit lui-même. Le
+carnet de prêts réellement actifs à $t=4000$ permet la distinction~:
+chaque entité y a un degré sortant (nombre de créances actives, en tant
+que prêteuse) et un degré entrant (nombre de dettes actives, en tant
+qu'emprunteuse), indépendamment de toute faillite. Sur les 1031 entités
+vivantes à cet instant, 1023 portent au moins un prêt actif~; le degré
+total (créances plus dettes) vaut 54 en médiane.
+
+La figure~\ref{fig:ann_reseau_instant} compare cette distribution à celle
+de deux autres graines au même instant~: la forme est stable d'une graine
+à l'autre, ce n'est donc pas une singularité de la graine 0 choisie pour
+cette étude de cas. Le nuage créances contre dettes montre par ailleurs
+que peu d'entités sont fortement créancières nettes~: la masse des points
+se tient près de la diagonale ou au-dessous, et les quelques entités aux
+plus fortes créances actives (au-delà de 80) ne portent pas
+symétriquement autant de dettes.
+
+\figurinelarge{ann_reseau_instant}{0.94}{\textbf{Le carnet de prêts
+actifs, pas le graphe des pertes.} Contrôle principal, $t=4000$. Gauche~:
+distribution du degré total (créances plus dettes actives), graine 0
+contre deux graines de référence (1 et 2)~; la forme est stable, pas
+propre à une graine. Droite~: créances contre dettes actives par entité,
+graine 0~; la diagonale marque l'égalité prêteuse/emprunteuse.}
+
+
+\newcommand{\planchecell}[2]{\makebox[.495\textwidth][c]{%
+ \begin{tikzpicture}
+ \node[anchor=north west,inner sep=0] (im) at (0,0)
+   {\includegraphics[width=.49\textwidth,height=4.1cm,keepaspectratio]{#2}};
+ \node[anchor=north west,inner sep=1pt,font=\sffamily\bfseries\small,
+   fill=white,fill opacity=0.85,text opacity=1] at (im.north west) {(#1)};
+ \end{tikzpicture}}}
+
+\FloatBarrier
+\clearpage
+\onecolumn\raggedbottom
+\subsection{Planche de synthèse : huit sorties de Simulation Lab}\label{sec:planche_lab}
+Huit sorties du Lab pour la réalisation étudiée~: stabilité de
+l'inégalité (a--b), distribution de valeur nette et renouvellement de
+ses plus hauts niveaux (c--d), avalanches (e--g), réseau de prêts (h).
+L'origine et l'empreinte de chaque fichier sont dans
+\chemin{latex/data_article/lab_figures_manifest.json}.
+\vspace{4pt}
+\begingroup\setlength{\tabcolsep}{0pt}\renewcommand{\arraystretch}{1}
+\noindent\begin{tabular}{@{}cc@{}}
+\planchecell{a}{lab_gini_networth_interest}&\planchecell{b}{lab_lorenz_networth}\\[3pt]
+\planchecell{c}{lab_entity_networth_histo_temporal_mean}&\planchecell{d}{lab_soc_top_decile_renewal}\\[3pt]
+\planchecell{e}{lab_avalanche_size_ccdf}&\planchecell{f}{lab_avalanche_depth}\\[3pt]
+\planchecell{g}{lab_avalanche_roots_share}&\planchecell{h}{lab_loan_roles_contracts}\\
+\end{tabular}\endgroup
+
+\captionof{figure}{\small\textbf{Huit sorties de Simulation Lab pour la
+même réalisation.} Contrôle principal, graine 0, $T=4000$~; libellés du
+Lab. (a)~Gini de la valeur nette NW (trait plein) et des intérêts reçus
+(tirets), instantanés de $t\ge2010$. (b)~Courbes de Lorenz de NW~: douze
+instantanés intermédiaires (pâles) et état final $t=4000$
+($G=0{,}603$). (c)~Densité de NW, moyenne temporelle de 200 instantanés~;
+trait noir~: régression de queue du Lab ($\alpha=2{,}52\pm0{,}07$, 14
+points). (d)~Part du décile supérieur de NW du premier instantané
+($t=2010$) encore présente dans ce décile~; ajustement exponentiel du Lab
+($\tau=379\pm10$ pas, ajusté dès le décalage 200)~; le libellé de
+l'ordonnée est tronqué dans la figure d'origine. (e)~Probabilité de
+survie des tailles d'avalanche $s\ge2$ ($n=4054$, $t>1000$) et ajustement
+tronqué du Lab ($\alpha=1{,}56$~; la coupure ajustée, de l'ordre de
+$6\cdot10^{13}$, dépasse de loin toute taille observable).
+(f)~Profondeur causale selon la taille, effectif en échelle
+logarithmique~; (g)~part de faillites racines selon la taille, courbes
+grises $y=k/x$ pour $k$ racines~; (f) et (g) portent sur les 8174
+avalanches du run, amorçage compris. (h)~Contrats actifs par entité
+comme prêteuse et comme emprunteuse à $t=4000$ (1023 entités, 31\,456
+prêts), avec la régression linéaire du Lab (pente $1{,}13$). Les
+ajustements sont exploratoires et ne démontrent ni loi de puissance ni
+criticité~; une seule graine, sans incertitude.}\label{fig:lab_planche}
+\clearpage
+\flushbottom
+\twocolumn
+
+\FloatBarrier
+\section{Vérifier le régime étudié et les calculs de réponse}\label{sec:stationnarite}
+Pour chaque graine $s$, bras et observable $X$, nous calculons
+\[
+ R_s(X)=\frac{\langle X\rangle_{3750<t\le4000}}
+                  {\langle X\rangle_{3000<t\le3250}},\qquad
+ t_X=\frac{\overline R(X)-1}{s_R/\sqrt{12}},
+\]
+où $s_R$ est l'écart-type des douze rapports. L'IC95 est
+$\overline R\pm t_{0{,}975;11}s_R/\sqrt{12}$, avec
+$t_{0{,}975;11}\simeq2{,}201$.
+Ce diagnostic compare deux niveaux temporels éloignés ; il n'analyse
+ni toute la structure de corrélation ni la stabilité de la distribution.
+
+\input{table_stationnarite_article}
+
+Aucun de ces contrastes n'excède le seuil bilatéral usuel, mais les
+intervalles autorisent des dérives de l'ordre du pour-cent. Les observations
+temporelles d'un run ne sont pas utilisées comme 1000 répétitions indépendantes.
+Le résultat ne vaut pas automatiquement pour une fenêtre antérieure,
+une autre observable ou une configuration exploratoire non présentée.
+
+\paragraph{Renouvellement et mémoire de l'état initial.}
+Le renouvellement d'un décile fournit une autre échelle temporelle, mais
+il faut préciser la grandeur de classement et distinguer la disparition
+d'une entité de sa sortie du décile. Pour un ensemble $D(t_0)$ défini
+à une date de référence, la rétention
+$|D(t_0)\cap D(t_0+h)|/|D(t_0)|$ mesure la persistance dans le groupe,
+tandis que la fraction de ses membres encore vivants mesure leur survie.
+Ces deux courbes ne sont pas interchangeables ; le terme « premier
+décile » doit préciser s'il désigne les valeurs basses ou les plus élevées.
+Même une rétention faible ne démontre pas l'oubli de la configuration
+initiale : des engagements et des corrélations peuvent persister au-delà
+des individus. Ce contrôle doit être confronté aux autocorrélations des
+observables et à des initialisations distinctes. Aucun temps d'oubli
+quantifié n'est établi ici ; l'éloignement de la fenêtre finale et
+l'absence de dérive détectée ne suffisent pas à le certifier.
+
+Les bilans de population donnent exactement
+$N(t+1)-N(t)=B(t)-D(t)$ si $B$ et $D$ désignent les entrées et sorties
+du pas avec la même convention de comptage. Sur une longue fenêtre stable,
+$\overline B\simeq\overline D$ et $\overline B\simeq\lambda$ ;
+le rapport $\overline D/\overline N$ devient proche de
+$\lambda/\overline N$. Ce n'est pas exactement la moyenne de
+$D(t)/N(t)$, et les termes de bord ne sont pas nuls par décret.
+La relation explique pourquoi une élasticité de mortalité peut être
+presque l'opposée de celle de population sans constituer une découverte
+causale indépendante.
+
+L'élasticité de l'équation~\eqref{eq:eps} porte sur une intervention
+finie. Sa moyenne et son IC sont calculés après formation des douze
+log-rapports appariés, et non après moyenne de tous les points temporels
+dans les deux bras. Les formules de décomposition sont sensibles au
+choix de l'effectif : les entités présentes à la production peuvent
+disparaître avant l'instantané de fin de pas. Cette différence est
+conservée dans les données sources ; elle ne doit pas être effacée pour
+forcer la fermeture numérique d'une identité mal définie.
+
+\section{Ajustements de distributions : définitions et limites}\label{sec:ajustements}
+\subsection{Masse, densité par classe et fonction de survie}
+Pour une taille entière $S$, la masse $P(S=s)$ et la survie
+$P(S\ge s)$ sont distinctes. L'histogramme représente ici la masse
+d'une classe $[l,r[$ divisée par $r-l$, afin qu'une classe large ne
+paraisse pas plus probable seulement parce qu'elle contient plus
+de tailles. La courbe ajustée est sommée sur les mêmes tailles
+entières avant cette division. Une pente de survie ne peut pas être
+substituée directement à l'exposant de masse.
+
+La vraisemblance descriptive de la loi~\eqref{eq:avalanche} est maximisée
+par graine, sur toutes les tailles $s\ge1$. La normalisation numérique
+utilise $1\le s\le20000$ ; la masse des mille dernières valeurs est
+contrôlée inférieure à $10^{-10}$ à l'optimum. Les bornes numériques
+de recherche sont $-2\le\alpha\le5$ et
+$10^{-5}\le1/S_c\le2$ ; un optimum sur une borne signalerait une
+identification insuffisante. Les 24 ajustements présentés sont intérieurs.
+Le support d'ajustement n'est pas choisi pour maximiser la rectitude
+apparente d'un sous-ensemble de points.
+
+Les IC inter-graines et le bootstrap de runs entiers mesurent la
+variabilité des estimateurs ou des courbes moyennes obtenus par ce
+protocole. L'ajustement par produit de probabilités ne démontre pas
+l'indépendance des avalanches d'un run. Nous n'en tirons donc pas
+d'erreurs-types événementielles ni un test d'adéquation certifié.
+Il faudrait notamment compléter par une comparaison de familles sur
+le même support et un diagnostic d'adéquation absolue tenant compte
+de la dépendance temporelle \cite{clauset}.
+
+Le coefficient descriptif affiché est
+\[
+ R^2_{\log}=1-
+ \frac{\sum_j[\log\widehat p_j-\log p_{j,\rm ajust}]^2}
+      {\sum_j[\log\widehat p_j-\overline{\log\widehat p}]^2},
+\]
+sur les classes empiriques non vides. Ce n'est pas un pourcentage
+de probabilité correctement prédit, et ce n'est pas le critère
+optimisé par la vraisemblance. Il dépend du découpage des classes.
+Les zéros ne sont pas remplacés par une petite valeur arbitraire
+pour les rendre logarithmables.
+
+\subsection{Durées : exponentielle discrète et choix de fenêtre}
+Si $D\ge1$ suit une loi géométrique, avec probabilité d'arrêt $u$ à
+chaque pas, alors $P(D\ge d)=(1-u)^{d-1}$ et
+$\widehat u=1/\overline D$. Ainsi
+$\widehat\beta=-\log(1-1/\overline D)$ dans
+$P(D\ge d)=\exp[-\beta(d-1)]$.
+Les régressions de la figure~\ref{fig:art_cycles} utilisent cette
+forme normalisée, non une droite en log-log. Le $R^2$ y est calculé
+sur les log-survies non nulles, aux durées 1 à 11. Les épisodes restent
+potentiellement corrélés et les frontières de fenêtre tronquent certains
+d'entre eux ; les IC sont donc fondés sur les cinq graines et non sur
+un nombre fictif de récessions indépendantes.
+
+\subsection{Le test de Vuong et ce qu'il compare réellement}
+Dans les analyses existantes des valeurs nettes et intérêts, le seuil
+$x_{\min}$ est choisi par minimisation d'une distance de
+Kolmogorov--Smirnov pour une puissance continue. Au-dessus de ce même
+seuil et sur les mêmes valeurs, on ajuste aussi une log-normale et
+une exponentielle, conditionnées à $X\ge x_{\min}$.
+La puissance comparée ici est \emph{sans coupure supérieure} : ce
+n'est pas le modèle discret à coupure exponentielle des avalanches.
+La troncature \emph{à gauche}, qui définit un échantillon de queue,
+ne doit pas être confondue avec la coupure \emph{à droite}.
+
+Pour les densités ajustées $f$ et $g$, on définit
+$d_i=\log f(x_i)-\log g(x_i)$ puis
+\[
+ z=\frac{\sqrt n\,\overline d}{s_d},\qquad
+ s_d^2=\frac1{n-1}\sum_i(d_i-\overline d)^2.
+\]
+Une valeur positive favorise $f$ en log-vraisemblance moyenne.
+L'interprétation usuelle de $\pm1{,}96$ comme seuil à 5\,\%
+nécessite des hypothèses de régularité, de séparation des modèles
+et d'échantillonnage. Ici le seuil a été sélectionné, les entités
+interagissent, et certaines log-normales ajustées sont très proches
+d'une limite en puissance. Le score est donc rapporté comme diagnostic,
+pas comme certification de ces hypothèses \cite{vuong}.
+
+Le signalement $\sigma_{\rm LN}>10$ concerne 50 des 72 ajustements
+d'intérêts et 46 des 72 ajustements de valeur nette. Il marque une
+zone numérique, pas une frontière mathématique entre deux familles.
+Deux groupes visibles dans un nuage de paramètres d'ajustement ne
+signifient pas que les agents forment deux populations économiques :
+chaque point de ce nuage représentait un ajustement, pas une entité.
+Les résultats par ajustement et leurs identifiants sont disponibles dans
+\chemin{data_revision/rev_vuong_points.csv}.
+
+Comparer Pareto, puissance à coupure et log-normale demande de
+fixer le même domaine, de décrire la sélection du seuil et d'évaluer
+l'adéquation, pas seulement de compter les paramètres. Une coupure
+qui divergerait avec la taille du système définirait une limite
+intéressante, à vérifier sur plusieurs tailles ; elle ne rend pas
+gratuit son ajustement à taille finie.
+
+\section{Charge du crédit et pondération du surplus}
+\subsection{Définition et mesure du taux de charge}\label{sec:charge}
+Notons $P_i$ la production du pas, $I_i^{\text{reçu}}$ les intérêts
+reçus, $I_i^{\text{versé}}$ ceux effectivement payés, et $D_i$ la
+somme des principaux dus. Trois rapports doivent être distingués :
+\begin{align*}
+ c_i^{\text{versé}}&=\frac{I_i^{\text{versé}}}{P_i+I_i^{\text{reçu}}},\\
+ c_i^{\text{dû}}&=\frac{\sum_{\ell:i\,\mathrm{emprunte}}r_\ell q_\ell}{P_i+I_i^{\text{reçu}}},\\
+ d_i^{\text{revenu}}&=\frac{D_i}{P_i+I_i^{\text{reçu}}}.
+\end{align*}
+Le premier est une part de revenu brut versée ; le deuxième est la
+charge contractuelle due ; le troisième rapporte un stock de dette
+à un revenu par pas et s'interprète en nombre de pas. La
+variable $D_i/P_i$ ne représente aucun des deux premiers rapports.
+Le dénominateur inclut les revenus financiers, même si leur
+somme agrégée n'est pas une nouvelle production réelle.
+
+\figurine{art_charge}{0.95}{\textbf{Un diagnostic de charge correctement
+nommé.} Règle marginale M4.4, douze graines. Pour les instantanés
+$3000<t\le3990$, la variable est
+$I_i^{\text{versé}}/(P_i+I_i^{\text{reçu}})$ ; la réponse est la fraction
+des entités décédant dans les dix pas suivants. Les classes ont les
+bornes explicites indiquées, communes aux graines ; elles ne sont
+pas des classes de capital. La dernière fenêtre incomplète est
+exclue. Les IC95 comparent les fractions obtenues dans douze runs,
+sans attribuer une indépendance binomiale aux entités répétées.
+Les décès toutes causes et les racines par insolvabilité sont séparés.}
+
+Les panneaux enregistrent les intérêts versés, pas le service dû
+au moment exact précédant le paiement. Un paiement au prorata peut
+faire paraître faible une charge pourtant insoutenable ; le moment
+de prélèvement et les flux reçus dans le pas comptent aussi.
+Le diagramme reste descriptif, conditionnel aux survivantes observées
+dans le panneau. Il ne justifie ni une causalité de la charge vers
+le décès ni une réfutation générale de convexité. Des calculs de
+convexité ou d'écart de Jensen sur $D_i/P_i$ ne répondraient pas
+à la question posée sur le taux de charge ainsi défini.
+
+\subsection{Preuve de l'identité de pondération}\label{sec:ponderation}
+Pour $n$ contrats dont le surplus moyen est strictement positif,
+posons $\overline p=n^{-1}\sum p_j$,
+$\overline\Delta=n^{-1}\sum\Delta_j$ et
+$p_w=\sum p_j\Delta_j/\sum\Delta_j$.
+En définissant la covariance empirique avec le dénominateur $n$,
+\[
+ \operatorname{Cov}_n(p,\Delta)
+ =\frac1n\sum_j(p_j-\overline p)(\Delta_j-\overline\Delta)
+ =\frac1n\sum_jp_j\Delta_j-\overline p\,\overline\Delta,
+\]
+on obtient immédiatement
+\begin{equation}
+ p_w-\overline p=\frac{\operatorname{Cov}_n(p,\Delta)}{\overline\Delta}.
+ \label{eq:identite}
+\end{equation}
+Si une covariance corrigée avec dénominateur $n-1$ est utilisée,
+il faut multiplier le numérateur par $(n-1)/n$. L'identité vaut
+aussi en espérance lorsque les moments existent et que
+$\mathbb E[\Delta]\ne0$.
+
+Pour un partage fixé constant, l'écart est nul par construction.
+Pour une règle variable, il peut être positif même si la plupart
+des contrats ont un principal ou un surplus très petit. La
+distribution effective des contrats décide de son ampleur ; une
+grille analytique couvrant des contrats rarement réalisés ne peut
+pas remplacer cette distribution. Qualifier une règle à partir
+de ces seuls cas théoriques surestimerait leur portée empirique.
+L'identité comptable ne démontre pas une explication des différences
+de mortalité ou de population entre institutions.
+
+\section{Compléments de mesure et valeurs tabulées}\label{sec:tableaux}
+\subsection{Rapports de quantiles}
+Le tableau ci-dessous et la figure~\ref{fig:art_quantiles} reposent
+sur les mêmes observations. Chaque $\pm$ est un demi-IC95 de
+Student des douze rapports par graine, non un écart-type entre
+entités. « Revenu brut » signifie production plus intérêts reçus.
+\onecolumn
+\begin{small}\input{table_quantiles}\end{small}
+\twocolumn
+
+\subsection{Portée temporaire d'une intervention}
+Une intervention limitée aux entités présentes peut s'éteindre
+avec leur cohorte si les naissances ne l'héritent pas. Cette
+expérience de portée partielle est un contrôle de protocole,
+non une preuve principale du mécanisme de rebond. À l'inverse,
+modifier toutes les entités et les entrantes futures conserve
+le traitement malgré le renouvellement de population. Modifier
+$\gamma$ change la forme de la fonction et les dimensions de
+son coefficient : ce n'est pas la même opération que multiplier
+$A$ à $\gamma$ fixe.
+
+\subsection{Plusieurs pertes et causes suffisantes}
+Le graphe peut attribuer plusieurs pertes à une victime.
+Cela ne veut pas dire que chacune aurait suffi, isolément, à
+la rendre insolvable. Pour l'illustrer, une valeur nette initiale
+de 5 et deux pertes de 3 conduisent à $-1$ ; aucune perte seule
+ne suffit. Avec une valeur nette de 2, chacune des deux pertes
+suffirait. C'est la marge de solvabilité avant les pertes qui
+fait la différence, pas le seul nombre d'arêtes.
+
+Le comptage des parents doit aussi préciser s'il retient les
+seules pertes venant de la génération précédente ou toutes
+celles du pas. L'analyse détaillée de suffisance exige de
+reconstituer également les dettes effacées ; elle n'est pas
+nécessaire pour établir l'existence de la propagation ni la
+non-proportionnalité de la réponse. Les calculs antérieurs
+restent archivés, mais leurs pourcentages ne sont pas utilisés
+comme preuve dans cet article.
+
+\subsection{Stock et production sur une même réalisation}
+\figurinelarge{rev_stock_trajectoire}{0.94}{\textbf{Observer la différence entre
+stock et flux.} M4B central, graine 11, extrait $3000<t\le3200$.
+Chaque ligne suit une seule réalisation, sans incertitude de mesure
+artificiellement ajoutée ; les points orange repèrent les pas
+de baisse. Les durées de contraction sont calculées séparément
+sur les deux observables dans la figure~\ref{fig:art_cycles}.}
+
+\section{Sources locales, configurations et reproductibilité}\label{sec:sources_revision}
+Le PDF est compilable avec les seuls fichiers LaTeX et figures
+de ce dossier, sans le rapport de stage ni les questionnaires.
+Les calculs nouveaux sont produits par
+\chemin{../scripts/revision_article.py}, qui n'écrit que dans
+le dossier de cet article et ne lance aucune simulation.
+Les exports numériques, observations par graine et empreintes
+SHA-256 des sources sont dans \chemin{data_article/}.
+Les compléments conservés de la version précédente sont dans
+\chemin{data_revision/}. Recalculer depuis les microdonnées
+demande les campagnes locales, qui ne sont pas toutes versionnées.
+
+\onecolumn
+\input{sources_article}
+\twocolumn
+
+Les configurations détaillées et les identifiants M4.4 de la
+campagne initiale restent dans
+\chemin{data_revision/runs_m44.csv}, qui distingue les paramètres
+enregistrés et les interventions. Certaines métadonnées d'amorçage
+ne renseignent pas les paramètres ; ces lacunes ne sont pas comblées
+par déduction silencieuse.
+Les codes techniques \texttt{K0} des fichiers sources sont
+conservés pour leur traçabilité ; dans la notation scientifique,
+la dotation se lit désormais $K^\circ$ et son rapport réduit
+$\kappa^\circ$. Renommer la notation ne modifie pas les moteurs.
+
+\input{complements_v2}

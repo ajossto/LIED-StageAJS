@@ -1,0 +1,130 @@
+% Annexe générée par scripts/make_annexe.py — ne pas éditer à la main.
+\section*{Annexe : traçabilité des simulations}
+Chaque run est un run Simulation Lab (dossier \code{simulation\_lab\_data/runs/<run\_id>}) ; la correspondance cellule $\to$ runs est dans \code{manifests/*.manifest.json}. Les fits par run sont dans \code{results/metrics/<run\_id>.json} et les agrégats dans \code{results/tables/}.
+\begin{small}
+\begin{longtable}{llllrrrl}
+\toprule
+run\_id & plan & cellule & graine & $\gamma$ & $\lambda$ & $T$ & statut\\
+\midrule
+\endhead
+\code{20260727\_160954\_29051328} & benchmark & bench\_g067 & 1 & 0.667 & 30 & 4000 & completed\\
+\code{20260727\_160954\_d7c9806c} & benchmark & bench\_g033 & 1 & 0.333 & 30 & 4000 & completed\\
+\code{20260727\_161533\_9b2ab740} & pilotes & g040 & 1 & 0.400 & 30 & 4000 & completed\\
+\code{20260727\_161533\_dfa5f765} & pilotes & g040 & 2 & 0.400 & 30 & 4000 & completed\\
+\code{20260727\_161533\_7ccc4ceb} & pilotes & g040 & 3 & 0.400 & 30 & 4000 & completed\\
+\code{20260727\_161533\_be4cd8c8} & pilotes & g033 & 1 & 0.333 & 30 & 4000 & completed\\
+\code{20260727\_161533\_128eec20} & pilotes & g033 & 2 & 0.333 & 30 & 4000 & completed\\
+\code{20260727\_161533\_986a783a} & pilotes & g033 & 3 & 0.333 & 30 & 4000 & completed\\
+\code{20260727\_162133\_2a12e894} & pilotes & g060 & 1 & 0.600 & 30 & 4000 & completed\\
+\code{20260727\_162133\_bed8a893} & pilotes & g060 & 2 & 0.600 & 30 & 4000 & completed\\
+\code{20260727\_162133\_73b818c9} & pilotes & g060 & 3 & 0.600 & 30 & 4000 & completed\\
+\code{20260727\_162110\_0f51704c} & pilotes & g050 & 1 & 0.500 & 30 & 4000 & completed\\
+\code{20260727\_162110\_7bedce89} & pilotes & g050 & 2 & 0.500 & 30 & 4000 & completed\\
+\code{20260727\_162110\_9eee0426} & pilotes & g050 & 3 & 0.500 & 30 & 4000 & completed\\
+\code{20260727\_162603\_57b6df9a} & pilotes & g075\_sonde & 1 & 0.750 & 30 & 4000 & completed\\
+\code{20260727\_162531\_d36bad55} & pilotes & g067 & 1 & 0.667 & 30 & 4000 & completed\\
+\code{20260727\_162531\_04dfd5f8} & pilotes & g067 & 2 & 0.667 & 30 & 4000 & completed\\
+\code{20260727\_162531\_09d69b7e} & pilotes & g067 & 3 & 0.667 & 30 & 4000 & completed\\
+\code{20260727\_161533\_be4cd8c8} & taille\_finie & g033 & 1 & 0.333 & 30 & 4000 & completed\\
+\code{20260727\_161533\_128eec20} & taille\_finie & g033 & 2 & 0.333 & 30 & 4000 & completed\\
+\code{20260727\_161533\_986a783a} & taille\_finie & g033 & 3 & 0.333 & 30 & 4000 & completed\\
+\code{20260727\_163104\_a1225eb5} & taille\_finie & g033\_lam10 & 1 & 0.333 & 10 & 8000 & completed\\
+\code{20260727\_163104\_b0236ff4} & taille\_finie & g033\_lam10 & 2 & 0.333 & 10 & 8000 & completed\\
+\code{20260727\_163104\_fedefddd} & taille\_finie & g033\_lam10 & 3 & 0.333 & 10 & 8000 & completed\\
+\code{20260727\_163555\_e4f8c832} & taille\_finie & g040\_lam10 & 1 & 0.400 & 10 & 8000 & completed\\
+\code{20260727\_163555\_98e76c0a} & taille\_finie & g040\_lam10 & 2 & 0.400 & 10 & 8000 & completed\\
+\code{20260727\_163555\_c70f3ee7} & taille\_finie & g040\_lam10 & 3 & 0.400 & 10 & 8000 & completed\\
+\code{20260727\_161533\_9b2ab740} & taille\_finie & g040 & 1 & 0.400 & 30 & 4000 & completed\\
+\code{20260727\_161533\_dfa5f765} & taille\_finie & g040 & 2 & 0.400 & 30 & 4000 & completed\\
+\code{20260727\_161533\_7ccc4ceb} & taille\_finie & g040 & 3 & 0.400 & 30 & 4000 & completed\\
+\code{20260727\_163104\_bef132ad} & taille\_finie & g033\_lam100 & 1 & 0.333 & 100 & 4000 & completed\\
+\code{20260727\_163104\_4b9ce8fe} & taille\_finie & g033\_lam100 & 2 & 0.333 & 100 & 4000 & completed\\
+\code{20260727\_163104\_68bd7116} & taille\_finie & g033\_lam100 & 3 & 0.333 & 100 & 4000 & completed\\
+\code{20260727\_165050\_35fb9cc5} & taille\_finie & g050\_lam10 & 1 & 0.500 & 10 & 8000 & completed\\
+\code{20260727\_165050\_00887418} & taille\_finie & g050\_lam10 & 2 & 0.500 & 10 & 8000 & completed\\
+\code{20260727\_165050\_c34d4c25} & taille\_finie & g050\_lam10 & 3 & 0.500 & 10 & 8000 & completed\\
+\code{20260727\_162110\_0f51704c} & taille\_finie & g050 & 1 & 0.500 & 30 & 4000 & completed\\
+\code{20260727\_162110\_7bedce89} & taille\_finie & g050 & 2 & 0.500 & 30 & 4000 & completed\\
+\code{20260727\_162110\_9eee0426} & taille\_finie & g050 & 3 & 0.500 & 30 & 4000 & completed\\
+\code{20260727\_164035\_9df38b9c} & taille\_finie & g040\_lam100 & 1 & 0.400 & 100 & 4000 & completed\\
+\code{20260727\_164035\_c77fba58} & taille\_finie & g040\_lam100 & 2 & 0.400 & 100 & 4000 & completed\\
+\code{20260727\_164035\_f8cfdf9a} & taille\_finie & g040\_lam100 & 3 & 0.400 & 100 & 4000 & completed\\
+\code{20260727\_165854\_e9868cc7} & taille\_finie & g060\_lam10 & 1 & 0.600 & 10 & 8000 & completed\\
+\code{20260727\_165854\_1ed8e88b} & taille\_finie & g060\_lam10 & 2 & 0.600 & 10 & 8000 & completed\\
+\code{20260727\_165854\_ad44077d} & taille\_finie & g060\_lam10 & 3 & 0.600 & 10 & 8000 & completed\\
+\code{20260727\_162133\_2a12e894} & taille\_finie & g060 & 1 & 0.600 & 30 & 4000 & completed\\
+\code{20260727\_162133\_bed8a893} & taille\_finie & g060 & 2 & 0.600 & 30 & 4000 & completed\\
+\code{20260727\_162133\_73b818c9} & taille\_finie & g060 & 3 & 0.600 & 30 & 4000 & completed\\
+\code{20260727\_165510\_efa1748f} & taille\_finie & g050\_lam100 & 1 & 0.500 & 100 & 4000 & completed\\
+\code{20260727\_165510\_1a2ac6e9} & taille\_finie & g050\_lam100 & 2 & 0.500 & 100 & 4000 & completed\\
+\code{20260727\_165510\_7cfb5d17} & taille\_finie & g050\_lam100 & 3 & 0.500 & 100 & 4000 & completed\\
+\code{20260727\_171108\_35986207} & taille\_finie & g067\_lam10 & 1 & 0.667 & 10 & 8000 & completed\\
+\code{20260727\_171108\_1ccc839e} & taille\_finie & g067\_lam10 & 2 & 0.667 & 10 & 8000 & completed\\
+\code{20260727\_171108\_708b7b8f} & taille\_finie & g067\_lam10 & 3 & 0.667 & 10 & 8000 & completed\\
+\code{20260727\_162531\_d36bad55} & taille\_finie & g067 & 1 & 0.667 & 30 & 4000 & completed\\
+\code{20260727\_162531\_04dfd5f8} & taille\_finie & g067 & 2 & 0.667 & 30 & 4000 & completed\\
+\code{20260727\_162531\_09d69b7e} & taille\_finie & g067 & 3 & 0.667 & 30 & 4000 & completed\\
+\code{20260727\_170313\_45bf4b8f} & taille\_finie & g060\_lam100 & 1 & 0.600 & 100 & 4000 & completed\\
+\code{20260727\_170313\_a4a2f4fa} & taille\_finie & g060\_lam100 & 2 & 0.600 & 100 & 4000 & completed\\
+\code{20260727\_170313\_f3ec93f2} & taille\_finie & g060\_lam100 & 3 & 0.600 & 100 & 4000 & completed\\
+\code{20260727\_171520\_cab04bf8} & taille\_finie & g067\_lam100 & 1 & 0.667 & 100 & 4000 & completed\\
+\code{20260727\_171520\_3e7f3be9} & taille\_finie & g067\_lam100 & 2 & 0.667 & 100 & 4000 & completed\\
+\code{20260727\_171520\_790e6788} & taille\_finie & g067\_lam100 & 3 & 0.667 & 100 & 4000 & completed\\
+\code{20260727\_172713\_c3eaf564} & horizon\_double & g050\_T8000 & 1 & 0.500 & 30 & 8000 & completed\\
+\code{20260727\_172713\_8822ea62} & horizon\_double & g050\_T8000 & 2 & 0.500 & 30 & 8000 & completed\\
+\code{20260727\_172713\_eca29fdc} & horizon\_double & g050\_T8000 & 3 & 0.500 & 30 & 8000 & completed\\
+\code{20260727\_172713\_f6b48923} & horizon\_double & g033\_T8000 & 1 & 0.333 & 30 & 8000 & completed\\
+\code{20260727\_172713\_2e2f81ed} & horizon\_double & g033\_T8000 & 2 & 0.333 & 30 & 8000 & completed\\
+\code{20260727\_172713\_eb823f56} & horizon\_double & g033\_T8000 & 3 & 0.333 & 30 & 8000 & completed\\
+\code{20260727\_174005\_b2c277c8} & horizon\_double & g067\_T8000 & 1 & 0.667 & 30 & 8000 & completed\\
+\code{20260727\_174005\_4a0fab1a} & horizon\_double & g067\_T8000 & 2 & 0.667 & 30 & 8000 & completed\\
+\code{20260727\_174005\_a7d2ba66} & horizon\_double & g067\_T8000 & 3 & 0.667 & 30 & 8000 & completed\\
+\code{20260727\_175504\_85dee157} & confirm & g033\_confirm & 11 & 0.333 & 30 & 4000 & completed\\
+\code{20260727\_175504\_da86412e} & confirm & g033\_confirm & 12 & 0.333 & 30 & 4000 & completed\\
+\code{20260727\_175504\_5bc07338} & confirm & g033\_confirm & 13 & 0.333 & 30 & 4000 & completed\\
+\code{20260727\_175504\_a6f95655} & confirm & g033\_confirm & 14 & 0.333 & 30 & 4000 & completed\\
+\code{20260727\_175504\_05396f59} & confirm & g033\_confirm & 15 & 0.333 & 30 & 4000 & completed\\
+\code{20260727\_180556\_fc9cc56c} & confirm & g050\_confirm & 11 & 0.500 & 30 & 4000 & completed\\
+\code{20260727\_180556\_3b538fea} & confirm & g050\_confirm & 12 & 0.500 & 30 & 4000 & completed\\
+\code{20260727\_180556\_ffc1e03b} & confirm & g050\_confirm & 13 & 0.500 & 30 & 4000 & completed\\
+\code{20260727\_180556\_bed0e50b} & confirm & g050\_confirm & 14 & 0.500 & 30 & 4000 & completed\\
+\code{20260727\_180556\_d0c58064} & confirm & g050\_confirm & 15 & 0.500 & 30 & 4000 & completed\\
+\code{20260727\_181536\_0fb74787} & confirm & g060\_confirm & 11 & 0.600 & 30 & 4000 & completed\\
+\code{20260727\_181536\_0f37e2cb} & confirm & g060\_confirm & 12 & 0.600 & 30 & 4000 & completed\\
+\code{20260727\_181536\_14a294b8} & confirm & g060\_confirm & 13 & 0.600 & 30 & 4000 & completed\\
+\code{20260727\_181536\_aa4e0c09} & confirm & g060\_confirm & 14 & 0.600 & 30 & 4000 & completed\\
+\code{20260727\_181536\_d787f683} & confirm & g060\_confirm & 15 & 0.600 & 30 & 4000 & completed\\
+\code{20260727\_182401\_5542d4b4} & confirm & g067\_confirm & 11 & 0.667 & 30 & 4000 & completed\\
+\code{20260727\_182402\_8574a621} & confirm & g067\_confirm & 12 & 0.667 & 30 & 4000 & completed\\
+\code{20260727\_182402\_dcc5afba} & confirm & g067\_confirm & 13 & 0.667 & 30 & 4000 & completed\\
+\code{20260727\_182402\_1c5fe2b8} & confirm & g067\_confirm & 14 & 0.667 & 30 & 4000 & completed\\
+\code{20260727\_182402\_2b851ed1} & confirm & g067\_confirm & 15 & 0.667 & 30 & 4000 & completed\\
+\code{20260727\_183204\_0c234778} & ablation\_A & g060\_Anorm & 1 & 0.600 & 30 & 4000 & completed\\
+\code{20260727\_183204\_7fea484e} & ablation\_A & g060\_Anorm & 2 & 0.600 & 30 & 4000 & completed\\
+\code{20260727\_183204\_0bc048a2} & ablation\_A & g060\_Anorm & 3 & 0.600 & 30 & 4000 & completed\\
+\code{20260727\_183204\_b7c8fd58} & ablation\_A & g033\_Anorm & 1 & 0.333 & 30 & 4000 & completed\\
+\code{20260727\_183204\_bbb241d1} & ablation\_A & g033\_Anorm & 2 & 0.333 & 30 & 4000 & completed\\
+\code{20260727\_183204\_13506a8c} & ablation\_A & g033\_Anorm & 3 & 0.333 & 30 & 4000 & completed\\
+\code{20260727\_183808\_16957da0} & ablation\_A & g067\_Anorm & 1 & 0.667 & 30 & 4000 & completed\\
+\code{20260727\_183808\_f4780243} & ablation\_A & g067\_Anorm & 2 & 0.667 & 30 & 4000 & completed\\
+\code{20260727\_183808\_5ebeae50} & ablation\_A & g067\_Anorm & 3 & 0.667 & 30 & 4000 & completed\\
+\code{20260729\_143545\_56cf0dee} & ablation\_A\_confirm & g033\_Anorm\_confirm & 11 & 0.333 & 30 & 4000 & completed\\
+\code{20260729\_143546\_0f543b0a} & ablation\_A\_confirm & g033\_Anorm\_confirm & 12 & 0.333 & 30 & 4000 & completed\\
+\code{20260729\_143546\_08c4a4d0} & ablation\_A\_confirm & g033\_Anorm\_confirm & 13 & 0.333 & 30 & 4000 & completed\\
+\code{20260729\_143546\_0bf46b26} & ablation\_A\_confirm & g033\_Anorm\_confirm & 14 & 0.333 & 30 & 4000 & completed\\
+\code{20260729\_143546\_ccb0ded4} & ablation\_A\_confirm & g033\_Anorm\_confirm & 15 & 0.333 & 30 & 4000 & completed\\
+\code{20260727\_184355\_b8b2e9f7} & mecanisme & g067\_meca & 1 & 0.667 & 30 & 4000 & completed\\
+\code{20260727\_184355\_a1bca015} & mecanisme & g060\_meca & 1 & 0.600 & 30 & 4000 & completed\\
+\code{20260727\_184355\_1e0896c8} & mecanisme & g050\_meca & 1 & 0.500 & 30 & 4000 & completed\\
+\code{20260727\_184355\_6a568c58} & mecanisme & g040\_meca & 1 & 0.400 & 30 & 4000 & completed\\
+\code{20260727\_184355\_e31165e7} & mecanisme & g033\_meca & 1 & 0.333 & 30 & 4000 & completed\\
+\code{20260727\_185754\_f69d6fd3} & hypothese\_K0 & k0\_match\_g067 & 1 & 0.500 & 30 & 4000 & completed\\
+\code{20260727\_185754\_873a545d} & hypothese\_K0 & k0\_match\_g067 & 2 & 0.500 & 30 & 4000 & completed\\
+\code{20260727\_185754\_c39807ce} & hypothese\_K0 & k0\_match\_g067 & 3 & 0.500 & 30 & 4000 & completed\\
+\code{20260727\_185754\_bb75a633} & hypothese\_K0 & k0\_match\_g033 & 1 & 0.500 & 30 & 4000 & completed\\
+\code{20260727\_185754\_849aa693} & hypothese\_K0 & k0\_match\_g033 & 2 & 0.500 & 30 & 4000 & completed\\
+\code{20260727\_185754\_f48f5035} & hypothese\_K0 & k0\_match\_g033 & 3 & 0.500 & 30 & 4000 & completed\\
+\bottomrule
+\end{longtable}
+\end{small}
+\noindent Total : 117 exécutions de cellule (102 runs Simulation Lab distincts ; 15 partagés entre plans par identifiant de cellule). Condensat(s) moteur : 932e58643e522d7b (version \code{m4\_2-1}). Rôles des plans : \emph{benchmark} = calibrage de coût (volet 0) ; \emph{pilotes} = exploration grille $\gamma$ (volet 1) ; \emph{taille\_finie} = taille finie $\lambda$ (volet 2) ; \emph{horizon\_double} = robustesse horizon (volet 3) ; \emph{confirm} = confirmation graines 11-15 (volet 4) ; \emph{ablation\_A} = contrôle d'échelle $A_{\mathrm{norm}}$ (volet 5, exploration) ; \emph{ablation\_A\_confirm} = contrôle d'échelle $A_{\mathrm{norm}}$, graines 11-15 (volet 5 étendu) ; \emph{mecanisme} = chaîne causale (volet 6) ; \emph{hypothese\_K0} = hypothèse structurelle $K_0/K^*_{\mathrm{aut}}$ (test ciblé).

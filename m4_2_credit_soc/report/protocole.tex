@@ -1,0 +1,447 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[french]{babel}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb}
+\usepackage[margin=2.35cm]{geometry}
+\usepackage{booktabs,longtable,tabularx}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{microtype}
+\usepackage{hyperref}
+
+\hypersetup{colorlinks=true,linkcolor=blue!45!black,urlcolor=blue!45!black}
+\setlist{nosep}
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\Kaut}{K^{*}_{\mathrm{aut}}}
+
+\title{Protocole pré-enregistré de la campagne M4.2\\
+\large effet de l'exposant de concavité $\gamma$ sur la statistique des
+avalanches de faillites}
+\author{Programme M4.2 --- dossier \code{m4\_2\_credit\_soc}}
+\date{Version 1.1 --- 27 juillet 2026, figée avant tout run scientifique\\
+\normalsize (v1 figée le 27 juillet avant le volet 0 ; v1.1 intègre les
+corrections de l'audit statistique indépendant du même jour, \emph{avant}
+le volet 1 : conditions de confirmation 2, 4, 5, 7 chiffrées, convention
+\og coupure hors portée \fg{} implémentée dans le code, bootstrap rendu
+obligatoire en confirmation, limites méthodologiques documentées ;
+aucun critère n'a été modifié après observation d'un résultat de
+campagne --- seuls les 2 runs de coût du volet 0 avaient été lancés)}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Ce protocole fige, avant l'exécution de tout run de campagne (pilotes
+compris), les hypothèses, les grilles, les panels de graines, les fenêtres,
+les méthodes d'ajustement et les critères de décision de l'étude M4.2. La
+stratégie adaptative autorisée après les pilotes est pré-écrite ici : toute
+autre modification devra faire l'objet d'un amendement daté, ajouté avant
+les runs concernés, et les analyses effectuées hors protocole seront
+étiquetées exploratoires. Le modèle est spécifié dans
+\code{report/spec\_m4\_2.pdf} ; le cahier des charges est
+\code{prompts/PROMPT\_M4\_2.md}.
+\end{abstract}
+
+\tableofcontents
+
+\section{Objet et question}
+
+M4.2 généralise la production de M4B en $F_\gamma(K)=A\,K^\gamma$
+($0<\gamma<1$, $A=1$ hors ablation) et dérive les taux d'intérêt des
+rendements marginaux $m_\gamma(K)=A\gamma K^{\gamma-1}$ (moyenne
+géométrique). La question : \emph{la pente $\tau$ de la distribution des
+tailles d'avalanches est-elle modulable par $\gamma$, de façon causalement
+intelligible et statistiquement robuste, sans détruire le régime
+stationnaire d'accumulation--relaxation ?}
+
+Distinctions imposées par le cahier des charges : un changement de $\tau$
+n'est ni un déplacement de la coupure $s_c$, ni une variation du taux de
+mortalité ou du rapport de branchement $b$, ni un changement d'échelle du
+capital, ni une extinction, une croissance non stationnaire ou une censure.
+
+\section{Hypothèses}
+
+\begin{description}
+\item[H1 (principale).] $\tau$ --- exposant de la loi de puissance
+tronquée ajustée sur les tailles $s\ge s_{\min}=2$ --- dépend de $\gamma$
+de façon reproductible au sens des critères du §\ref{sec:criteres}.
+Aucune forme (linéaire, monotone) n'est présupposée.
+\item[H0 (nulle).] $\tau$ est institutionnel dans la plage stationnaire
+--- fixé par les règles ($k\equiv2$, $\eta=\mathrm{Id}$, cancel+destroy)
+comme $b\approx0{,}30$ l'était dans M4B --- et $\gamma$ ne contrôle que
+des échelles : $s_c$, taux d'intérêt, démographie, capital.
+\item[H2 (secondaire).] $b$ reste épinglé $\approx0{,}30$ pour tout
+$\gamma$ (le volume d'appariement, un round par tête, est inchangé).
+\item[H3 (secondaire, prédiction dimensionnelle).] La charge d'intérêts
+relative croît comme $\gamma$ ($m_\gamma(\Kaut)=\gamma\,\delta/(1-\delta)$) :
+durées de vie plus courtes, davantage de racines de liquidité et population
+stationnaire $N/\lambda$ plus faible à grand $\gamma$.
+\item[H4 (secondaire).] Le taux contractuel médian du réseau final suit
+l'ordre de grandeur $\gamma\,\delta/(1-\delta)$.
+\end{description}
+
+Ces hypothèses sont falsifiables séparément ; le rapport final rendra un
+verdict par hypothèse, en distinguant exploration et confirmation.
+
+\section{Paramètres}
+
+\subsection{Fixes (toute la campagne)}
+
+$\delta=0{,}05$, $\sigma=0{,}25$, $K_0=25$, $A=1$ (sauf bras d'ablation
+\ref{sec:ablation}), $\code{pop\_max}=30\,000$, moteur \code{m4\_2-1}
+(condensat inscrit dans chaque manifeste), règles institutionnelles de la
+réduction minimale (spec §2--3).
+
+\subsection{Variables}
+
+$\gamma$ (levier scientifique), $\lambda\in\{10,30,100\}$ (taille de
+système), graine, horizon $T$, et --- uniquement dans le bras d'ablation ---
+$A=A_{\mathrm{norm}}(\gamma)$.
+
+\subsection{Panels de graines}
+
+\begin{itemize}
+\item exploration (benchmark, pilotes, taille finie, horizon, ablation,
+mécanisme) : graines $\{1,2,3\}$ (graine 1 seule pour benchmark, sonde et
+mécanisme) ;
+\item confirmation : graines $\{11,\dots,15\}$, disjointes de
+l'exploration ; extension pré-autorisée à $\{11,\dots,20\}$ si l'écart-type
+inter-graines du contraste principal dépasse la moitié de l'effet estimé ;
+\item aucun pooling inter-graines : tous les ajustements sont faits par
+run, puis agrégés (moyenne $\pm$ écart-type inter-graines ; contrastes
+appariés par graine).
+\end{itemize}
+
+\section{Plan d'expérience}
+
+Tous les runs de campagne sont exécutés et stockés comme runs Simulation
+Lab (décision utilisateur du 27 juillet 2026), étiquetés
+\og M4.2 --- \code{<plan>} --- \code{<cellule>} \fg, avec manifeste
+\code{manifests/<plan>.json} associant chaque cellule à ses \code{run\_id}
+lab. Les 28 figures par run ne sont générées que pour la confirmation et
+les cellules centrales ; les runs d'exploration écrivent
+\code{snapshot\_every=0} (instantané final seul) et
+\code{individual\_every=0}, options sans effet sur les trajectoires
+(testé).
+
+\subsection{Volet 0 --- benchmark de coût}
+
+$\gamma\in\{1/3,\,2/3\}$, $\lambda=30$, $T=4000$, graine 1 (2 runs).
+Objectif : mesurer le coût réel M4.2 (les 75\,s/run à $T=2000$, $k=2$ de
+M4B ne préjugent pas du coût à $\gamma\neq1/2$). Si un run dépasse
+30\,minutes, le plan de taille finie est re-budgété par amendement avant
+lancement.
+
+\subsection{Volet 1 --- pilotes (exploratoire)}
+
+Grille $\gamma\in\{1/3,\ 0{,}4,\ 1/2,\ 0{,}6,\ 2/3\}$, $\lambda=30$,
+$T=4000$, graines $\{1,2,3\}$ (15 runs), plus une sonde $\gamma=0{,}75$,
+graine 1 (run exploratoire déclaré, jamais confirmatoire : transitoire
+$\Kaut\approx1{,}3\cdot10^{5}$ jugé coûteux a priori). Diagnostics :
+statut, stationnarité (§\ref{sec:stationnarite}), échelles numériques,
+comptages d'avalanches $s\ge2$, activité du marché, durée des runs.
+
+\subsection{Stratégie adaptative pré-autorisée après pilotes}
+\label{sec:adaptatif}
+
+Sur la base des seuls diagnostics ci-dessus (pas des valeurs de $\tau$),
+il est pré-autorisé de :
+\begin{enumerate}
+\item exclure une cellule $\gamma$ non stationnaire, éteinte, censurée ou
+numériquement instable (documentée comme résultat négatif) ;
+\item doubler l'horizon ($T=8000$) d'une cellule lente (transitoire
+mangeant le burn-in) ou pauvre en avalanches ($<100$ tailles $s\ge2$ dans
+la fenêtre par défaut) avant de la déclarer indéterminée ;
+\item resserrer ou étendre la grille \emph{dans} $[0{,}25,\ 0{,}75]$ ---
+par exemple ajouter des points intermédiaires là où un contraste apparaît
+--- avec justification écrite datée dans le journal \emph{avant} les runs
+ajoutés ;
+\item re-budgéter les volets si le benchmark l'exige.
+\end{enumerate}
+Il est interdit de choisir les cellules selon les valeurs de $\tau$
+observées, et toute autre adaptation exige un amendement daté du présent
+protocole.
+
+\subsection{Volet 2 --- taille finie (production)}
+
+$\gamma$ retenus après pilotes (a priori les cinq) $\times$
+$\lambda\in\{10,\,30,\,100\}$ $\times$ graines $\{1,2,3\}$, avec
+$T=8000$ à $\lambda=10$ (statistique d'avalanches) et $T=4000$ à
+$\lambda\in\{30,100\}$ ($\approx45$ runs).
+
+\subsection{Volet 3 --- horizon doublé}
+
+$T=8000$, $\lambda=30$, graines $\{1,2,3\}$ sur au moins les deux cellules
+$\gamma$ extrêmes retenues et la cellule centrale $\gamma=1/2$ (robustesse
+à l'horizon ; sert aussi de contrôle de transitoire à grand $\gamma$).
+
+\subsection{Volet 4 --- confirmation (graines 11--15)}
+
+Contrastes principaux : les cellules $\gamma$ extrêmes retenues contre le
+centre $\gamma=1/2$, à $\lambda=30$, $T=4000$, graines $\{11,\dots,15\}$,
+exécutées en lots Simulation Lab marqués \code{keep} avec les 28 figures
+et les figures agrégées de lot. Si l'effet observé en exploration dépend
+de $\lambda$ (signe ou ordre de grandeur différents entre $\lambda=30$ et
+$\lambda=100$), les mêmes contrastes sont répétés à $\lambda=100$ en
+confirmation. Analyse par contrastes appariés par graine
+(cellule $-$ centre), intervalle de Student à 95\,\%.
+
+\subsection{Volet 5 --- ablation de contrôle d'échelle}
+\label{sec:ablation}
+
+$K_{\mathrm{ref}}=\Kaut(1/2)=361$ J ;
+$A_{\mathrm{norm}}(\gamma)=19^{\,1-2\gamma}$ (spec §7). Cellules :
+$\gamma\in\{1/3,\,2/3\}$ (ou les extrêmes retenus) avec
+$A=A_{\mathrm{norm}}(\gamma)$, $\lambda=30$, $T=4000$, graines $\{1,2,3\}$.
+Si le contraste principal de $\tau$ est confirmé au volet 4, l'ablation du
+$\gamma$ le plus contrasté est répétée avec les graines $\{11,\dots,15\}$.
+Rapport séparé : effet total de $\gamma$ à $A=1$ ; effet résiduel à
+échelle autarcique égalisée. Si l'effet résiduel perd le signe de l'effet
+total, la conclusion attribue l'effet à l'échelle, pas à la courbure.
+
+\subsection{Volet 6 --- mécanisme}
+
+$\gamma\in$ grille retenue, $\lambda=30$, $T=4000$, graine 1,
+\code{snapshot\_every=50}, \code{individual\_every=5} : instantanés denses
+pour les taux contractuels, le levier, les degrés, les durées de vie et
+les expositions. Volet descriptif : il n'entre pas dans les critères de
+confirmation mais dans l'histoire causale.
+
+\section{Métriques}
+
+\subsection{Primaire}
+
+$\hat\tau$ : exposant de la loi de puissance discrète \emph{tronquée}
+$p(s)\propto s^{-\tau}e^{-s/s_c}$, MLE sur les tailles $s\ge s_{\min}=2$
+de la fenêtre par défaut (burn-in $T/4$), par run. C'est la métrique du
+verdict H1/H0. ($s_{\min}=2$ primaire pour la comparabilité avec la
+campagne M4B ; les singletons sont décrits séparément par leur taux.)
+
+\subsection{Secondaires}
+
+Par run et fenêtre : exposant pur $\hat\alpha_{\mathrm{pur}}$ et coupure
+$\hat s_c$ ; scan CSN de $s_{\min}\in[1,10]$ (estimateur
+\code{fit\_tail\_discrete}, KS minimal) ; log-normale discrète ; LRT
+tronquée/pure ($p$ conservatrice $\tfrac12\chi^2_1$) ; Vuong pure/log-normale ;
+rapport de branchement $b=1-\sum n_{\mathrm{roots}}/\sum s$ ; fraction
+racines/taille ; profondeur (moyenne, max) ; volume (moyenne, max) ;
+susceptibilité $\langle s^2\rangle/\langle s\rangle$ ; taux de singletons ;
+quantiles $q_{50},q_{90},q_{99}$ et maximum ; scaling de $\hat s_c$,
+$s_{\max}$ et $\chi$ avec $\lambda$ ; démographie ($N/\lambda$, taux de
+mortalité, âges au décès, parts de causes) ; crédit et réseau (contrats
+par tête, dette/capital, taux médian et $q_{90}$ du carnet final,
+concentration des principaux) ; fonctionnement de $\eta$ (taux de succès
+des rounds, part des fusions, pool/population) ; intégrité (résidu de
+bilan, erreurs de carnet).
+
+\subsection{Incertitudes}
+
+Bootstrap par run (rééchantillonnage des tailles avec remise,
+$n_{\mathrm{boot}}=200$, percentile 2{,}5--97{,}5\,\%) pour
+$(\hat\tau,\hat s_c,\hat s_{\min})$ ; le scan de $s_{\min}$ est refait par
+réplicat. Le bootstrap est \textbf{obligatoire} pour l'extraction des
+runs confirmatoires (\code{extract\_metrics.py --bootstrap} ; l'analyse
+confirmatoire refuse un run sans bloc bootstrap), facultatif en
+exploration. Agrégation inter-graines par moyenne $\pm$ écart-type et,
+pour les contrastes confirmatoires, intervalle de Student à 95\,\% des
+différences appariées par graine.
+
+\section{Méthodes d'ajustement et de comparaison}
+
+Bibliothèque : \code{scripts/lib\_metrics.py} (MLE discrètes normalisées
+par zêta de Hurwitz ; support étendu $[s_{\min},\ \max(4\,s_{\max},500)]$
+pour la tronquée et la log-normale ; validées sur données synthétiques par
+\code{tests/test\_stats.py} : biais $<0{,}05$ sur $\tau$ pur, récupération
+de $(\tau,s_c)$, sélection de $s_{\min}$ implanté, préférence LRT/Vuong
+pour la famille génératrice). Interdits : conclusion tirée d'une seule
+régression log-log ou d'un $R^2$ ; pooling inter-graines.
+
+Conventions d'identifiabilité :
+\begin{itemize}
+\item ajustement tenté seulement si $\ge100$ tailles $s\ge2$ dans la
+fenêtre ; sinon la cellule-fenêtre est \emph{indéterminée} ;
+\item coupure déclarée \og hors portée \fg{} si $\hat s_c>10\,s_{\max}$
+(implémentée : drapeau \code{s\_c\_out\_of\_range} et champ
+\code{tau\_hat} de \code{compare\_laws}) ;
+\item l'exposant primaire est celui de la tronquée ; le rapport cite
+toujours le couple $(\hat\tau,\hat s_c)$, jamais $\hat\tau$ seul ;
+\item le scan de $s_{\min}$ descend à 50 événements de queue
+(\code{min\_tail=50}, hérité de l'estimateur M4) : sous le plancher
+primaire de 100, sinon le scan serait tronqué aux petits $s_{\min}$ ; ses
+résultats sont diagnostiques, jamais primaires.
+\end{itemize}
+
+L'exigence du cahier des charges \og estime conjointement $\tau$, $s_c$
+et $s_{\min}$ \fg{} est satisfaite de façon \emph{décomposée}, pas par un
+MLE joint à trois paramètres : $(\tau,s_c)$ sont estimés conjointement à
+$s_{\min}=2$ figé ; $s_{\min}$ est estimé séparément par le scan CSN sur
+la loi pure (et re-scanné par réplicat bootstrap). Justification :
+l'identifiabilité jointe des trois paramètres dans une loi à coupure est
+notoirement instable ; la décomposition est contrôlée par la condition de
+confirmation n°4, qui exige la cohérence des deux voies.
+
+\subsection*{Limites méthodologiques assumées (documentées d'avance)}
+\begin{itemize}
+\item \textbf{Bootstrap iid intra-run} : le rééchantillonnage des tailles
+ignore leur dépendance temporelle éventuelle au sein d'un run ; les IC
+\emph{par run} peuvent être trop étroits. La variance décisionnelle est
+inter-graines (runs indépendants), correctement traitée par les
+contrastes appariés.
+\item \textbf{LRT légèrement anticonservateur} : la loi pure est
+normalisée sur support infini (zêta de Hurwitz), la tronquée et la
+log-normale sur support fini $[s_{\min},\max(4s_{\max},500)]$ — les
+familles ne sont pas exactement emboîtées. Taux de faux positifs
+\og coupure \fg{} mesuré $\approx15\,\%$ (au lieu de 5\,\%) sur données
+pures à $n=10^4$ ; la direction favorise la \emph{détection} d'une
+coupure, bénin pour l'usage (la condition n°5 ne repose jamais sur le
+LRT seul, et le régime attendu — hérité de M4B — est franchement
+tronqué).
+\item \textbf{Fenêtres emboîtées} : $T/8$, $T/4$, $T/2$ partagent
+l'essentiel de leurs données ; leur accord est un contrôle faible. Les
+contrôles réellement indépendants sont l'horizon doublé (volet 3) et les
+demi-fenêtres disjointes.
+\item \textbf{IC de Student à 5 graines} (df$=4$) : normalité
+invérifiable, sensibilité à une graine aberrante — d'où la clause
+d'extension du panel à 10 graines.
+\end{itemize}
+
+\section{Stationnarité, censure et arrêt}
+\label{sec:stationnarite}
+
+\begin{itemize}
+\item \textbf{Stationnarité} (sur la fenêtre par défaut) : dérive relative
+de la population $|\widehat{\mathrm{drift}}|\le4\,\%$ par fenêtre (pente
+OLS corrigée de l'autocorrélation intégrée), \emph{et} demi-fenêtres
+cohérentes ($|\Delta N/N|\le5\,\%$ et $|\Delta N|\le2$ écarts-types
+poolés), \emph{et} mêmes contrôles sur $K_{\mathrm{tot}}$
+($|\Delta K/K|\le10\,\%$ entre demi-fenêtres --- l'échelle de capital
+converge plus lentement que la démographie à grand $\gamma$). Une cellule
+non stationnaire à $T=4000$ est rejouée à $T=8000$ (clause
+\ref{sec:adaptatif}) avant exclusion.
+\item \textbf{Censure} : \code{status=explosion} (population
+$>\code{pop\_max}$) déclenche le diagnostic obligatoire multi-plafonds
+($\{30, 60, 120\}\times10^3$) et l'examen des pentes avant toute
+conclusion ; un run censuré n'entre jamais dans $\tau(\gamma)$.
+Inversement, une trajectoire arrêtée par le plafond n'est jamais déclarée
+stationnaire.
+\item \textbf{Extinction} : \code{status=extinction} ; documentée avec son
+pas. (Dans M4B, l'extinction n'existait qu'à l'amorçage, probabilité
+$e^{-\lambda}$.)
+\item \textbf{Arrêt de campagne} : budget plafonné à $\sim$200 runs de
+campagne et $\sim$6 h de calcul cumulé (8 cœurs, $\le6$ processus) ; toute
+extension est un amendement daté.
+\end{itemize}
+
+\section{Critères de décision}
+\label{sec:criteres}
+
+\subsection{Confirmation de H1 (\og $\tau$ est pilotable par $\gamma$ \fg)}
+
+Toutes les conditions suivantes, sur le(s) contraste(s) principal(aux)
+$\gamma$ extrême vs $1/2$ :
+\begin{enumerate}
+\item signe et ordre de grandeur du contraste $\Delta\hat\tau$ reproduits
+sur les graines confirmatoires $\{11,\dots,15\}$ (IC de Student à 95\,\%
+des différences appariées excluant zéro) ;
+\item persistance en taille : même signe à $\lambda=100$, \emph{et}
+($|\Delta\hat\tau(\lambda{=}100)|\ge\tfrac12|\Delta\hat\tau(\lambda{=}30)|$
+\emph{ou} IC apparié à $\lambda=100$ excluant zéro) ;
+\item stabilité aux fenêtres $T/8$, $T/4$, $T/2$ et à l'horizon doublé
+(variations $<$ la moitié de l'effet) ;
+\item non-réductibilité au seuil et à la coupure : (a) le contraste des
+exposants du scan de $s_{\min}$ ($\hat\alpha_{\mathrm{scan}}$,
+\code{fit\_tail\_discrete}) a le même signe que $\Delta\hat\tau$ ;
+(b) le contraste subsiste, en signe et à $\ge50\,\%$ de son amplitude,
+quand $\tau$ est ré-ajusté par profil de vraisemblance \emph{à coupure
+commune} $\bar s_c=\sqrt{\hat s_c^{(1)}\hat s_c^{(2)}}$
+(\code{fit\_powerlaw\_cutoff\_fixed\_sc}) dans les deux cellules ;
+\item famille défendable dans chaque cellule comparée : LRT tronquée/pure
+$p<0{,}05$, \emph{ou} coupure hors portée (convention ci-dessous) avec
+Vuong $z>2$ en faveur de la loi de puissance ; et dans aucune cellule la
+log-normale n'est strictement préférée (Vuong $z<-2$) ;
+\item cellules stationnaires, non censurées, non éteintes ;
+\item $|\Delta\hat\tau|>2\sqrt{s_d^2/n_g+\overline{\mathrm{SE}}^2_{\mathrm{boot}}}$,
+où $s_d$ est l'écart-type inter-graines des différences appariées, $n_g$
+le nombre de graines et $\overline{\mathrm{SE}}_{\mathrm{boot}}$ la
+moyenne des écarts-types bootstrap par run de $\hat\tau$ (condition
+largement redondante avec la n°1 ; elle garde un rôle si le bootstrap
+par run domine) ;
+\item l'ablation $A_{\mathrm{norm}}$ attribue à la courbure une part de
+l'effet de même signe (sinon la conclusion est requalifiée en effet
+d'échelle).
+\end{enumerate}
+
+Convention \og coupure hors portée \fg{} (implémentée dans
+\code{lib\_metrics.compare\_laws}) : si $\hat s_c>10\,s_{\max}$, la
+tronquée dégénère en pure ; le drapeau \code{s\_c\_out\_of\_range} est levé
+et $\hat\tau$ (champ \code{tau\_hat}) est lu sur la loi pure. Le rapport
+cite toujours le couple $(\hat\tau,\hat s_c)$ ou le drapeau.
+
+\subsection{Infirmation de H1 / soutien de H0}
+
+IC à 95\,\% du contraste apparié $\Delta\hat\tau$ contenant zéro avec une
+demi-largeur $\le0{,}15$ (précision suffisante pour exclure un effet de
+l'ordre de celui de $\lambda$ dans M4B), \emph{alors que} les grandeurs
+d'échelle ($\hat s_c$, taux, démographie, réseau) varient de façon
+confirmée avec $\gamma$. Verdict : exposant institutionnel, échelles
+pilotables --- et ouverture de la recherche mécanique (§\ref{sec:ouverture}).
+
+\subsection{Indétermination et clause de complétude}
+
+Identifiabilité insuffisante malgré la clause d'horizon doublé, ou
+incohérence entre fenêtres/tailles non résolue, ou variance inter-graines
+dominante après extension du panel. L'indétermination est un résultat
+documenté, pas un échec à masquer.
+
+\textbf{Clause de complétude} : tout contraste qui ne satisfait ni
+l'ensemble des conditions de confirmation ni le critère d'infirmation est
+rapporté comme \emph{partiellement établi / indéterminé}, en nommant
+explicitement la ou les conditions défaillantes. L'arbre de décision est
+ainsi partitionnant : confirmé / infirmé / indéterminé-partiel (avec
+motifs).
+
+\subsection{Ouverture structurelle (conditionnelle)}
+\label{sec:ouverture}
+
+Si H1 est infirmée ou si l'effet est requalifié en échelle, le programme
+poursuit --- conformément au cahier des charges --- par l'identification
+du verrou mécanique (invariance de la cible $\sqrt{K_\ell K_b}$, plateau
+de $b$, densité imposée par $\eta=\mathrm{Id}$, convention de taux,
+fragmentation des expositions\dots) \emph{mesuré} sur les volets 2--6,
+puis par la formulation et le test d'\emph{une} hypothèse structurelle
+minimale (la plus explicative), avec ablation appariée contre la baseline.
+Ce volet sera pré-enregistré par amendement daté avant ses runs, une fois
+le verrou identifié ; les contraintes sanctuarisées ($k\equiv2$, dérivation
+économique des contrats, notations, définition d'avalanche) s'y appliquent.
+
+\section{Infrastructure et traçabilité}
+
+\begin{itemize}
+\item Orchestration : \code{scripts/lib\_lab.py} et
+\code{scripts/run\_campaign.py} --- un lot Simulation Lab par cellule,
+$\le6$ processus simultanés, \code{OMP\_NUM\_THREADS=1} ; reprise par
+manifeste (cellule $\to$ \code{run\_id}, statut, condensat moteur).
+\item Identification : \code{cell\_id} = SHA-256 tronqué de la
+configuration complète $+$ condensat du moteur ; inscrit dans le manifeste
+et rappelé dans l'annexe de traçabilité du rapport final (règle : toute
+valeur citée est reliable à un \code{run\_id}).
+\item Métriques : \code{scripts/extract\_metrics.py} $\to$
+\code{results/metrics/<run\_id>.json} ; tables agrégées dans
+\code{results/tables/} ; figures régénérables par
+\code{scripts/make\_figures.py}.
+\item Journal : \code{JOURNAL.md}, entrée datée par volet (chiffres clés,
+décisions, amendements).
+\item Environnement : Python 3.12.3, numpy 2.4.3, scipy 1.17.1 ;
+moteur \code{m4\_2-1} ; machine 8 cœurs / 31 Go.
+\end{itemize}
+
+\section*{Engagement de figement}
+
+Ce protocole est figé avant l'exécution du volet 0. Les seuls degrés de
+liberté post-pilotes sont ceux du §\ref{sec:adaptatif}. Les critères du
+§\ref{sec:criteres} ne seront pas modifiés après observation des
+résultats ; toute analyse supplémentaire sera étiquetée exploratoire.
+
+\end{document}

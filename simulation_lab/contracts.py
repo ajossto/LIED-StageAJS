@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any
@@ -124,7 +125,11 @@ def _coerce_value(spec: ParameterSpec, raw_value: Any) -> Any:
     if spec.param_type == "int":
         return int(raw_value)
     if spec.param_type == "float":
-        return float(raw_value)
+        value = float(raw_value)
+        # NaN passe tous les tests de bornes (toute comparaison est fausse).
+        if not math.isfinite(value):
+            raise ValueError(f"{spec.name}: nombre fini attendu")
+        return value
     return str(raw_value)
 
 
@@ -139,7 +144,11 @@ def collect_artifacts(root: Path) -> list[Artifact]:
         if path.name == "run.json":
             continue
         suffix = path.suffix.lower()
-        if suffix in {".png", ".jpg", ".jpeg", ".gif"}:
+        # .svg : les figures M4.3 sont écrites en PNG *et* en SVG (vectoriel,
+        # destiné à l'article). Le SVG est une image à part entière ici ;
+        # l'interface l'attache à son jumeau PNG plutôt que d'ouvrir une
+        # seconde carte, pour ne pas doubler la galerie.
+        if suffix in {".png", ".jpg", ".jpeg", ".gif", ".svg"}:
             kind = "image"
         elif suffix == ".csv":
             kind = "csv"

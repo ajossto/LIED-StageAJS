@@ -102,13 +102,13 @@
 		\vspace{0.2em}
 		% ── Frise (slides 2–26 : frise_0X change à chaque groupe d'overlays) ────
 		\begin{center}%
-			\only<1>{\includegraphics[width=0.75\linewidth]{frise/frise_01}}%  % slide 2
-			\only<2>{\includegraphics[width=0.75\linewidth]{frise/frise_02}}%  % slide 3
-			\only<3>{\includegraphics[width=0.75\linewidth]{frise/frise_03}}%  % slide 4
-			\only<4-11>{\includegraphics[width=0.75\linewidth]{frise/frise_04}}% % slides 5–12
-			\only<12>{\includegraphics[width=0.75\linewidth]{frise/frise_05}}%  % slide 13
-			\only<13-15>{\includegraphics[width=0.75\linewidth]{frise/frise_06}}% % slides 14–16
-			\only<16->{\includegraphics[width=0.75\linewidth]{frise/frise_07}}%  % slides 17–28
+			\only<1>{\includegraphics[width=0.75\linewidth]{frise/frisee1}}%  % slide 2
+			\only<2>{\includegraphics[width=0.75\linewidth]{frise/frisee2}}%  % slide 3
+			\only<3>{\includegraphics[width=0.75\linewidth]{frise/frisee3}}%  % slide 4
+			\only<4-11>{\includegraphics[width=0.75\linewidth]{frise/frisee4}}% % slides 5–12
+			\only<12>{\includegraphics[width=0.75\linewidth]{frise/frisee5}}%  % slide 13
+			\only<13-15>{\includegraphics[width=0.75\linewidth]{frise/frisee6}}% % slides 14–16
+			\only<16->{\includegraphics[width=0.75\linewidth]{frise/frisee7}}%  % slides 17–28
 		\end{center}%
 		%
 		% ── ENS — 3 images sujets  slides 6–8  (overlays 5–7) ────────────────────
@@ -725,41 +725,44 @@
 	% ─────────────────────────────────────────────────────────────────────────
 	% SLIDE 4d — Objectifs de la thèse
 	% 1 : logo LIED
-	% 2 : + Herbert / Giraud (empilés)
-	% 3 : + 2 images recherche
+	% 2 : + Herbert (photo, titre, spécialités)
+	% 3 : + Giraud côte à côte (photo, titre, spécialités)
 	% 4 : + ENS logo (gauche) + Maths logo (droite) [petits]
 	% 5 : + Phys. Stat. (centre, plus grand)
 	% 6 : + cercle rouge autour Phys. Stat.
-	% 7 : remplace logos/phys.stat. → Goupil (dir.) + JP-Bruneton (co-dir.)
+	% 7 : remplace logos/phys.stat. → Goupil (dir.) + JP-Bruneton (co-dir.) côte à côte
 	% 8 : "Ce projet a un début, un milieu, et une fin."
 	% 9 : + Début | 10 : + Milieu | 11 : + Fin
 	% ─────────────────────────────────────────────────────────────────────────
-	\begin{frame}[t]{Objectifs de la thèse}
-		
-		% ── Ligne 1 : LIED | Herbert/Giraud | Recherches (overlays 1–7) ──────────
+	\begin{frame}[t,shrink=8]{Objectifs de la thèse}
+
+		% ── Ligne 1 : LIED | Herbert | Giraud côte à côte (overlays 1–7) ─────────
 		\only<1-7>{%
 			\begin{columns}[T]
-				\begin{column}{0.18\textwidth}
+				\begin{column}{0.16\textwidth}
 					\centering\vspace{0.3em}%
 					\imgcell[1.7cm]{placed_images/lied}%
 				\end{column}
-				\begin{column}{0.28\textwidth}
+				\begin{column}{0.40\textwidth}
 					\only<2->{%
 						\centering
-						\imgcell[1.15cm]{placed_images/herbert}\\[-0.1em]%
-						{\scriptsize\textbf{Éric Herbert}\\chercheur LIED}\\[0.25em]%
-						\imgcell[1.15cm]{placed_images/giraud}\\[-0.1em]%
-						{\scriptsize\textbf{Gaël Giraud}\\chercheur LIED}%
+						\imgcell[1.4cm]{placed_images/herbert}\\[-0.1em]%
+						{\small\textbf{Éric Herbert}}\\[0.1em]%
+						{\scriptsize MCF, LIED}\\[0.15em]%
+						{\scriptsize Thermo.\ à temps fini\\Systèmes adaptatifs}%
 					}%
 				\end{column}
-				\begin{column}{0.48\textwidth}
+				\begin{column}{0.40\textwidth}
 					\only<3->{%
-						\vspace{0.1em}%
-						\includegraphics[width=\linewidth,height=0.46\textheight,keepaspectratio]{placed_images/recherche_1_full}%
+						\centering
+						\imgcell[1.4cm]{placed_images/giraud}\\[-0.1em]%
+						{\small\textbf{Gaël Giraud}}\\[0.1em]%
+						{\scriptsize DR CNRS, LIED}\\[0.15em]%
+						{\scriptsize Économie mathématique\\Finance verte}%
 					}%
 				\end{column}
 		\end{columns}}%
-		
+
 		% ── Ligne 2 : logos ENS + Phys.Stat. + Maths, puis cercle (overlays 4–6) ─
 		\only<4-6>{%
 			\vspace{0.4em}%
@@ -772,24 +775,29 @@
 					\only<6>{\draw[mainred, line width=2.5pt] (0,0) circle (1.1cm);}
 				\end{tikzpicture}
 		\end{center}}%
-		
-		% ── Ligne 2 variante : Goupil + JP-Bruneton (overlay 7) ───────────────────
+
+		% ── Ligne 2 variante : Goupil + JP-Bruneton côte à côte (overlay 7) ──────
 		\only<7>{%
-			\vspace{-0.5em}%
-			\begin{center}%
-				\begin{minipage}{0.30\textwidth}
+			\vspace{0.1em}%
+			\begin{columns}[T]
+				\begin{column}{0.48\textwidth}
 					\centering
-					\imgcell[1.25cm]{placed_images/goupil}\\[-0.1em]
-					{\tiny\textbf{Christophe Goupil}\\professeur LIED\\directeur de thèse}
-				\end{minipage}%
-				\hspace{2.5em}%
-				\begin{minipage}{0.30\textwidth}
+					\imgcell[1.4cm]{placed_images/goupil}\\[-0.1em]%
+					{\small\textbf{Christophe Goupil}}\\[0.05em]%
+					{\scriptsize Professeur, Directeur-adjoint LIED}\\[0.1em]%
+					{\scriptsize Thermoélectricité\\Thermo.\ hors-équilibre}\\[0.15em]%
+					{\footnotesize\textit{directeur de thèse}}
+				\end{column}%
+				\begin{column}{0.48\textwidth}
 					\centering
-					\imgcell[1.25cm]{placed_images/bruneton}\\[-0.1em]
-					{\tiny\textbf{J.-P. Bruneton}\\professeur\\co-directeur de thèse}
-				\end{minipage}%
-		\end{center}}%
-		
+					\imgcell[1.4cm]{placed_images/bruneton}\\[-0.1em]%
+					{\small\textbf{J.-P.\ Bruneton}}\\[0.05em]%
+					{\scriptsize MCF, LIED}\\[0.1em]%
+					{\scriptsize Gravitation\\Théories scalaire-tenseur}\\[0.15em]%
+					{\footnotesize\textit{co-directeur de thèse}}
+				\end{column}%
+		\end{columns}}%
+
 	\end{frame}
 	
 	% Slides avalanche déplacées — voir entre frame 4A et frame 4B

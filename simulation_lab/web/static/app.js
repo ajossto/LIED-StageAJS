@@ -19,7 +19,25 @@ const state = {
   filterKeep: false,
   multiSeedMode: false,
   selectedGroupKey: null,
+  galleryMode: readStoredFlag("simulationLab.galleryMode"),
+  thumbnailPrefs: {},
 };
+
+function readStoredFlag(key) {
+  try {
+    return window.localStorage.getItem(key) === "true";
+  } catch (_) {
+    return false;
+  }
+}
+
+function writeStoredFlag(key, value) {
+  try {
+    window.localStorage.setItem(key, String(value));
+  } catch (_) {
+    // stockage indisponible : la préférence ne survit pas au rechargement
+  }
+}
 
 const PARAMETER_HELP = {
   lam: "Intensité moyenne λ des naissances de Poisson par pas.",
@@ -115,9 +133,27 @@ async function fetchJSON(url, options = {}) {
     ...options,
   });
   if (!response.ok) {
-    throw new Error(await response.text() || `HTTP ${response.status}`);
+    const text = await response.text();
+    let message = text;
+    try {
+      message = JSON.parse(text).error || text;
+    } catch (_) {
+      // corps non JSON : on garde le texte brut
+    }
+    throw new Error(message || `HTTP ${response.status}`);
   }
   return response.json();
+}
+
+// Exécute une action déclenchée par l'utilisateur en affichant l'erreur au
+// lieu de la laisser devenir une promesse rejetée silencieuse.
+async function reportErrors(action) {
+  try {
+    return await action();
+  } catch (error) {
+    setMessage(`Erreur : ${error.message}`);
+    return undefined;
+  }
 }
 
 function currentModel() {
@@ -191,6 +227,9 @@ function groupParameters(parameters) {
 
 function readParameters() {
   const model = currentModel();
+  if (!model) {
+    throw new Error("Aucun modèle lançable sélectionné.");
+  }
   const values = {};
   model.parameters.forEach((parameter) => {
     const element = document.querySelector(`[data-param="${parameter.name}"]`);
@@ -206,7 +245,7 @@ async function loadModels() {
   if (!select) {
     return;
   }
-  select.innerHTML = state.models.map((model) => `<option value="${model.model_id}">${model.display_name}</option>`).join("");
+  select.innerHTML = state.models.map((model) => `<option value="${escapeAttr(model.model_id)}">${escapeHtml(model.display_name)}</option>`).join("");
   if (state.models.length > 0) {
     state.selectedModelId = state.models[0].model_id;
   }
@@ -226,6 +265,10 @@ async function loadSystemInfo() {
   }
   if (cpuHint) {
     cpuHint.textContent = `Machine détectée: ${info.cpu_count} cœurs logiques. Recommandation par défaut: ${info.recommended_workers} workers, ${info.reserved_cores} cœurs laissés libres.`;
+  }
+  const loadErrors = Object.entries(info.model_load_errors || {});
+  if (loadErrors.length) {
+    setMessage(`Modèles ignorés (erreur de chargement) :\n${loadErrors.map(([source, error]) => `- ${source} : ${error}`).join("\n")}`);
   }
 }
 
@@ -262,16 +305,35 @@ async function refreshJobs() {
   if (!container) {
     return;
   }
-  state.jobs = await fetchJSON("/api/jobs");
-  renderJobs();
-  const hasActive = state.jobs.some((job) => job.status === "running" || job.status === "queued");
   if (state.jobPollTimer) {
     window.clearTimeout(state.jobPollTimer);
     state.jobPollTimer = null;
   }
+  const hadActive = state.jobs.some((job) => job.status === "running" || job.status === "queued");
+  try {
+    state.jobs = await fetchJSON("/api/jobs");
+  } catch (error) {
+    // Une requête ratée ne doit pas arrêter le suivi : on réessaie.
+    setMessage(`Suivi des jobs indisponible : ${error.message}`);
+    state.jobPollTimer = window.setTimeout(refreshJobs, 3000);
+    return;
+  }
+  renderJobs();
+  const hasActive = state.jobs.some((job) => job.status === "running" || job.status === "queued");
   if (hasActive) {
     state.jobPollTimer = window.setTimeout(refreshJobs, 1000);
+  } else if (hadActive) {
+    // Un job vient de se terminer : ses runs doivent apparaître dans la liste.
+    await reportErrors(refreshRuns);
   }
+}
+
+// Le polling reconstruit les cartes chaque seconde ; sans cela, tout volet
+// <details> ouvert par l'utilisateur se refermait immédiatement.
+function openJobDetailKeys(list) {
+  return new Set(
+    Array.from(list.querySelectorAll("details[data-detail-key][open]")).map((node) => node.dataset.detailKey)
+  );
 }
 
 function renderJobs() {
@@ -282,21 +344,25 @@ function renderJobs() {
     return;
   }
   const jobs = state.jobs.slice(0, 12);
+  // Reconstruit chaque seconde : conserver le défilement du cadre des jobs.
+  const jobsScrollTop = list.scrollTop;
   if (!jobs.length) {
     list.innerHTML = `<div class="muted">Aucune simulation lancée depuis ce démarrage du serveur.</div>`;
     if (legacyCard) legacyCard.innerHTML = `<div class="muted">Aucun lancement en cours.</div>`;
     if (legacyBar) legacyBar.style.width = "0%";
     return;
   }
-  list.innerHTML = jobs.map(renderJobCard).join("");
+  const openKeys = openJobDetailKeys(list);
+  list.innerHTML = jobs.map((job) => renderJobCard(job, openKeys)).join("");
+  list.scrollTop = jobsScrollTop;
   list.querySelectorAll("[data-cancel-job]").forEach((button) => {
-    button.addEventListener("click", async () => {
+    button.addEventListener("click", () => reportErrors(async () => {
       await fetchJSON(`/api/jobs/${encodeURIComponent(button.dataset.cancelJob)}/cancel`, {
         method: "POST",
         body: JSON.stringify({}),
       });
       await refreshJobs();
-    });
+    }));
   });
   list.querySelectorAll("[data-open-run]").forEach((button) => {
     button.addEventListener("click", () => {
@@ -312,17 +378,19 @@ function renderJobs() {
   }
 }
 
-function renderJobCard(job) {
+function renderJobCard(job, openKeys = new Set()) {
   const active = job.status === "running" || job.status === "queued";
+  const liveKey = `${job.job_id}:live`;
+  const logKey = `${job.job_id}:log`;
   const resultButtons = [
-    job.run_id ? `<button class="secondary compact-button" data-open-run="${job.run_id}">Voir le résultat</button>` : "",
-    ...(job.run_ids || []).slice(0, 3).map((runId) => `<button class="secondary compact-button" data-open-run="${runId}">Run ${runId.slice(-8)}</button>`),
+    job.run_id ? `<button class="secondary compact-button" data-open-run="${escapeAttr(job.run_id)}">Voir le résultat</button>` : "",
+    ...(job.run_ids || []).slice(0, 3).map((runId) => `<button class="secondary compact-button" data-open-run="${escapeAttr(runId)}">Run ${escapeHtml(runId.slice(-8))}</button>`),
   ].join("");
   return `
     <article class="job-card ${active ? "active" : ""}">
       <div class="job-head">
-        <strong>${modelDisplayName(job.model_id)}</strong>
-        <span class="pill ${job.status === "failed" ? "trash" : active ? "important" : "readonly"}">${job.status}</span>
+        <strong>${escapeHtml(modelDisplayName(job.model_id))}</strong>
+        <span class="pill ${job.status === "failed" ? "trash" : active ? "important" : "readonly"}">${escapeHtml(job.status)}</span>
       </div>
       <div class="run-meta">${escapeHtml(job.label || job.job_type)} | ${escapeHtml(job.created_at)}</div>
       <div>${escapeHtml(job.message || "-")}</div>
@@ -331,13 +399,13 @@ function renderJobCard(job) {
       ${renderTelemetrySummary(job)}
       ${renderJobAlerts(job.alerts)}
       ${job.telemetry && Object.keys(job.telemetry).length ? `
-        <details class="live-details">
+        <details class="live-details" data-detail-key="${escapeAttr(liveKey)}" ${openKeys.has(liveKey) ? "open" : ""}>
           <summary>Déroulé et bilan en direct</summary>
           ${renderTelemetryDetails(job)}
         </details>` : ""}
-      ${job.logs?.length ? `<details class="job-log"><summary>Derniers logs</summary><pre>${escapeHtml(job.logs.slice(-8).join("\n"))}</pre></details>` : ""}
+      ${job.logs?.length ? `<details class="job-log" data-detail-key="${escapeAttr(logKey)}" ${openKeys.has(logKey) ? "open" : ""}><summary>Derniers logs</summary><pre>${escapeHtml(job.logs.slice(-8).join("\n"))}</pre></details>` : ""}
       <div class="inline-actions job-actions">
-        ${active ? `<button class="secondary compact-button" data-cancel-job="${job.job_id}" ${job.cancel_requested ? "disabled" : ""}>${job.cancel_requested ? "Annulation demandée" : "Avorter"}</button>` : ""}
+        ${active ? `<button class="secondary compact-button" data-cancel-job="${escapeAttr(job.job_id)}" ${job.cancel_requested ? "disabled" : ""}>${job.cancel_requested ? "Annulation demandée" : "Avorter"}</button>` : ""}
         ${resultButtons}
       </div>
     </article>
@@ -357,18 +425,18 @@ function renderJob(job) {
     cancelButton.classList.toggle("hidden", !cancellable);
     cancelButton.disabled = !!job.cancel_requested;
     cancelButton.textContent = job.cancel_requested ? "Annulation demandée" : "Avorter la simulation";
-    cancelButton.onclick = async () => {
+    cancelButton.onclick = () => reportErrors(async () => {
       await fetchJSON(`/api/jobs/${encodeURIComponent(job.job_id)}/cancel`, {
         method: "POST",
         body: JSON.stringify({}),
       });
       await refreshJobs();
-    };
+    });
   }
   card.innerHTML = `
     <div><strong>${escapeHtml(modelDisplayName(job.model_id))}</strong></div>
     <div>${escapeHtml(job.message || "-")}</div>
-    <div class="run-meta">Statut: ${job.status} | Progression: ${Math.round(job.progress || 0)}%</div>
+    <div class="run-meta">Statut: ${escapeHtml(job.status)} | Progression: ${Math.round(job.progress || 0)}%</div>
     ${renderJobAlerts(job.alerts)}
     ${renderTelemetryDetails(job)}
     ${job.logs?.length ? `<div class="run-meta">${escapeHtml(job.logs.slice(-5).join("\n")).replaceAll("\n", "<br>")}</div>` : ""}
@@ -405,14 +473,14 @@ function renderTelemetryDetails(job) {
     ["Temps restant estimé", formatDuration(metric.eta_seconds)],
     ["Vitesse", metric.steps_per_second !== undefined ? `${formatLiveNumber(metric.steps_per_second)} pas/s` : "—"],
     ["Population", metric.population !== undefined ? `${formatLiveNumber(metric.population)} / ${formatLiveNumber(metric.population_limit)}` : "—"],
-    ["Charge de la limite", metric.population_load_pct !== undefined ? `${metric.population_load_pct.toFixed(1)} %` : "—"],
+    ["Charge de la limite", Number.isFinite(metric.population_load_pct) ? `${metric.population_load_pct.toFixed(1)} %` : "—"],
     ["Variation population (20 pas)", signedValue(metric.population_change_20)],
     ["Prêts actifs", formatLiveNumber(metric.loans)],
     ["Capital", joules(metric.capital_j)],
     ["Valeur nette", joules(metric.net_worth_j)],
     ["Variation valeur nette (20 pas)", signedValue(metric.net_worth_change_20_j, " J")],
     ["Dette", joules(metric.debt_j)],
-    ["Dette / actifs", metric.debt_assets_ratio !== undefined ? `${(100 * metric.debt_assets_ratio).toFixed(1)} %` : "—"],
+    ["Dette / actifs", Number.isFinite(metric.debt_assets_ratio) ? `${(100 * metric.debt_assets_ratio).toFixed(1)} %` : "—"],
     ["Naissances cumulées", formatLiveNumber(metric.births_total)],
     ["Décès cumulés / dernier pas", `${formatLiveNumber(metric.deaths_total)} / ${formatLiveNumber(metric.deaths_step)}`],
     ["Avalanches cumulées / dernier pas", `${formatLiveNumber(metric.avalanches_total)} / ${formatLiveNumber(metric.avalanches_step)}`],
@@ -496,11 +564,75 @@ async function refreshRuns() {
   renderRuns();
 }
 
+// La liste et le détail sont reconstruits (innerHTML) après chaque action, et
+// le passage liste plein écran / liste + détail change la mise en page : sans
+// ces deux fonctions, le défilement revenait en haut. On mémorise une carte
+// visible (l'ancre) et on la remet à la même hauteur à l'écran.
+function captureListView() {
+  const list = document.getElementById("runs-list");
+  if (!list) return null;
+  const listRect = list.getBoundingClientRect();
+  const top = Math.max(listRect.top, 0);
+  const bottom = Math.min(listRect.bottom, window.innerHeight);
+  const cards = Array.from(list.querySelectorAll(".run-card, .multiseed-seed-item"));
+  const isVisible = (node) => {
+    const rect = node.getBoundingClientRect();
+    return rect.height > 0 && rect.bottom > top && rect.top < bottom;
+  };
+  const anchor = cards.find((node) => node.dataset.runId === state.selectedRunId && isVisible(node))
+    || cards.find(isVisible);
+  return {
+    windowY: window.scrollY,
+    listScrollTop: list.scrollTop,
+    anchorId: anchor ? anchor.dataset.runId : null,
+    anchorTop: anchor ? anchor.getBoundingClientRect().top : 0,
+  };
+}
+
+function restoreListView(snapshot) {
+  const list = document.getElementById("runs-list");
+  if (!snapshot || !list) return;
+  window.scrollTo(0, snapshot.windowY);
+  list.scrollTop = snapshot.listScrollTop;
+  if (!snapshot.anchorId) return;
+  const anchor = Array.from(list.querySelectorAll(".run-card, .multiseed-seed-item"))
+    .find((node) => node.dataset.runId === snapshot.anchorId && node.getBoundingClientRect().height > 0);
+  if (!anchor) return;
+  const listScrolls = list.scrollHeight > list.clientHeight + 1;
+  let delta = anchor.getBoundingClientRect().top - snapshot.anchorTop;
+  if (Math.abs(delta) > 1 && listScrolls) {
+    const before = list.scrollTop;
+    list.scrollTop += delta;
+    delta -= list.scrollTop - before;
+  }
+  if (Math.abs(delta) > 1) window.scrollBy(0, delta);
+  // Après un changement de mise en page, l'ancre peut être entièrement masquée
+  // par le cadre de la liste ou hors de l'écran : la ramener au plus près.
+  // (Une carte à moitié visible est laissée telle quelle.)
+  if (listScrolls) {
+    const listRect = list.getBoundingClientRect();
+    const rect = anchor.getBoundingClientRect();
+    if (rect.bottom <= listRect.top) list.scrollTop -= listRect.top - rect.top;
+    else if (rect.top >= listRect.bottom) list.scrollTop += Math.min(rect.bottom - listRect.bottom, rect.top - listRect.top);
+  }
+  const rect = anchor.getBoundingClientRect();
+  if (rect.bottom < 0 || rect.top > window.innerHeight) window.scrollBy(0, rect.top - window.innerHeight / 3);
+}
+
+// Sélection d'un run : seule la surbrillance change, la liste n'est pas
+// reconstruite (images rechargées, groupes multi-seeds refermés sinon).
+function markSelectedRun(list) {
+  list.querySelectorAll(".run-card, .multiseed-seed-item").forEach((node) => {
+    node.classList.toggle("active", node.dataset.runId === state.selectedRunId);
+  });
+}
+
 function renderRuns() {
   const list = document.getElementById("runs-list");
   if (!list) {
     return;
   }
+  const view = captureListView();
   const trashActions = document.getElementById("trash-actions");
   if (trashActions) {
     trashActions.classList.toggle("hidden", state.scope !== "trash");
@@ -510,6 +642,7 @@ function renderRuns() {
 
   const afterStudyFilter = filterStudyRuns(state.runs);
   const visibleRuns = filterAllRuns(afterStudyFilter);
+  document.querySelector("main.results-grid")?.classList.toggle("gallery-mode", state.galleryMode && !state.multiSeedMode);
 
   if (state.multiSeedMode) {
     const groups = buildMultiSeedGroups(visibleRuns);
@@ -519,6 +652,7 @@ function renderRuns() {
     list.innerHTML = renderRunsGrouped(visibleRuns, { compact: list.dataset.compact === "true" });
     bindRunListInteractions(list);
   }
+  restoreListView(view);
 }
 
 function studyGroupOf(run) {
@@ -611,9 +745,14 @@ function buildMultiSeedGroups(runs) {
     groups.get(fp).runs.push(run);
   }
   // Keep only groups with ≥2 runs (otherwise not multi-seed)
+  // Représentant du groupe = la plus petite graine (choix utilisateur du
+  // 2026-09-17) : c'est lui qui porte les figures montrées pour le groupe.
   const result = [];
   for (const g of groups.values()) {
-    if (g.runs.length >= 2) result.push(g);
+    if (g.runs.length < 2) continue;
+    g.runs.sort((a, b) => (a.seed ?? Infinity) - (b.seed ?? Infinity));
+    g.representative = g.runs[0];
+    result.push(g);
   }
   result.sort((a, b) => b.runs.length - a.runs.length);
   return result;
@@ -693,6 +832,17 @@ async function renderCompactTimeseries(run) {
   }
 }
 
+// Identifiant DOM stable et unique d'un groupe. Les 32 premiers caractères
+// de l'empreinte (« model_id||K0=…|T=… ») étaient partagés par de nombreux
+// groupes, si bien que les trajectoires s'affichaient dans le mauvais groupe.
+function overlayPlotId(fingerprint) {
+  let hash = 5381;
+  for (let index = 0; index < fingerprint.length; index += 1) {
+    hash = ((hash * 33) ^ fingerprint.charCodeAt(index)) >>> 0;
+  }
+  return `overlay-${hash.toString(16)}-${fingerprint.length}`;
+}
+
 function renderMultiSeedGroups(groups) {
   if (!groups.length) {
     return `<div class="muted">Aucun groupe multi-seeds trouvé avec les filtres actuels.</div>`;
@@ -712,7 +862,7 @@ function renderMultiSeedGroups(groups) {
       <details class="multiseed-group" data-fp="${escapeAttr(g.fp)}" ${isOpen ? "open" : ""}>
         <summary class="multiseed-summary">
           <div class="multiseed-summary-main">
-            <strong>${modelName}</strong>
+            <strong>${escapeHtml(modelName)}</strong>
             <span class="run-count">${g.runs.length} seeds</span>
             <span class="convergence-badge ${convergentPct >= 50 ? "conv-good" : "conv-low"}">${convergentPct}% stat.</span>
           </div>
@@ -723,13 +873,14 @@ function renderMultiSeedGroups(groups) {
           <div class="multiseed-seed-list">
             ${g.runs.map((r) => `
               <div class="multiseed-seed-item ${r.run_id === state.selectedRunId ? "active" : ""}" data-run-id="${escapeAttr(r.run_id)}" data-fp="${escapeAttr(g.fp)}" role="button" tabindex="0">
-                <span>seed ${r.seed ?? "?"}</span>
+                <span>seed ${escapeHtml(r.seed ?? "?")}</span>
+                ${r.run_id === g.representative?.run_id ? `<span class="pill readonly" title="Figures montrées pour ce groupe">représentant</span>` : ""}
                 ${(r.summary || {}).stationary ? `<span class="pill readonly">stat.</span>` : ""}
                 ${r.important ? `<span class="pill important">!!</span>` : ""}
               </div>
             `).join("")}
           </div>
-          <div class="multiseed-overlay-plot" id="overlay-${escapeAttr(g.fp.slice(0, 32).replace(/[^a-z0-9]/gi, "_"))}">
+          <div class="multiseed-overlay-plot" id="${overlayPlotId(g.fp)}">
             <div class="muted" style="font-size:0.8rem">Cliquez sur un groupe pour charger les trajectoires superposées.</div>
           </div>
         </div>
@@ -745,17 +896,30 @@ function bindMultiSeedInteractions(list) {
         state.selectedGroupKey = el.dataset.fp;
         const groups = buildMultiSeedGroups(filterAllRuns(filterStudyRuns(state.runs)));
         const g = groups.find((g) => g.fp === el.dataset.fp);
-        if (g) await loadMultiSeedOverlay(g);
+        if (g) {
+          // Ouvrir un groupe affiche les figures de son représentant (la plus
+          // petite graine) : c'est la « présentation unique » demandée pour un
+          // jeu de paramètres donné. Une sélection déjà faite à l'intérieur du
+          // groupe est respectée — on ne ramène pas l'utilisateur de force sur
+          // le représentant s'il consulte une autre graine.
+          if (g.representative && !g.runs.some((r) => r.run_id === state.selectedRunId)) {
+            state.selectedRunId = g.representative.run_id;
+            window.history.replaceState(null, "", `/results?run=${encodeURIComponent(state.selectedRunId)}`);
+            markSelectedRun(list);
+            await loadRunDetail();
+          }
+          await loadMultiSeedOverlay(g);
+        }
       }
     });
   });
   list.querySelectorAll(".multiseed-seed-item").forEach((item) => {
-    const select = async () => {
+    const select = () => reportErrors(async () => {
       state.selectedRunId = item.dataset.runId;
       window.history.replaceState(null, "", `/results?run=${encodeURIComponent(state.selectedRunId)}`);
-      renderRuns();
+      markSelectedRun(list);
       await loadRunDetail();
-    };
+    });
     item.addEventListener("click", select);
     item.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); select(); } });
   });
@@ -764,7 +928,7 @@ function bindMultiSeedInteractions(list) {
 const SEED_COLORS = ["#4e9af1", "#e07b39", "#57a64b", "#b07aa1", "#e05c5c", "#5cb8b0", "#c4a240", "#888888"];
 
 async function loadMultiSeedOverlay(group) {
-  const plotId = "overlay-" + group.fp.slice(0, 32).replace(/[^a-z0-9]/gi, "_");
+  const plotId = overlayPlotId(group.fp);
   const container = document.getElementById(plotId);
   if (!container) return;
   container.innerHTML = `<div class="muted">Chargement des trajectoires…</div>`;
@@ -812,7 +976,7 @@ async function loadMultiSeedOverlay(group) {
   const convergentCount = group.runs.filter((r) => (r.summary || {}).stationary).length;
   const legend = runSeries
     .filter((rs) => rs.rows.length > 0)
-    .map((rs, i) => `<span style="color:${SEED_COLORS[i % SEED_COLORS.length]}">■ seed ${rs.run.seed ?? "?"} ${(rs.run.summary || {}).stationary ? "(stat.)" : ""}</span>`)
+    .map((rs, i) => `<span style="color:${SEED_COLORS[i % SEED_COLORS.length]}">■ seed ${escapeHtml(rs.run.seed ?? "?")} ${(rs.run.summary || {}).stationary ? "(stat.)" : ""}</span>`)
     .join(" ");
 
   container.innerHTML = `
@@ -842,9 +1006,10 @@ function renderRunsGrouped(runs, { compact = false } = {}) {
     return `
       <details class="model-run-group" data-model-id="${escapeAttr(modelId)}" ${isRunGroupOpen(modelId, items, index) ? "open" : ""}>
         <summary>
-          <span>${modelDisplayName(modelId)}</span>
+          <span>${escapeHtml(modelDisplayName(modelId))}</span>
           <span class="run-count">${items.length}</span>
         </summary>
+        ${compact ? "" : renderThumbnailPicker(modelId, items)}
         <div class="model-run-items">
           ${items.map((run) => renderRunCard(run, compact)).join("")}
         </div>
@@ -882,14 +1047,57 @@ function renderStudyModelGroup(modelId, items, index, compact) {
   return `
     <details class="model-run-group" data-model-id="${escapeAttr(modelId)}" ${open ? "open" : ""}>
       <summary>
-        <span>${modelDisplayName(modelId)}</span>
+        <span>${escapeHtml(modelDisplayName(modelId))}</span>
         <span class="run-count">${items.length}</span>
       </summary>
+      ${compact ? "" : renderThumbnailPicker(modelId, items)}
       <div class="model-run-items study-subgroups">
         ${subGroupHtml}
       </div>
     </details>
   `;
+}
+
+// Sélecteur de la miniature d'une classe : les noms d'images présents dans
+// ses runs, les plus fréquents d'abord (une image présente partout donne une
+// galerie homogène).
+function renderThumbnailPicker(modelId, runs) {
+  const counts = new Map();
+  for (const run of runs) {
+    // Le SVG d'une figure n'est pas une miniature candidate : il double le
+    // choix (une entrée .png et une .svg pour la même figure) sans rien ajouter.
+    const labels = new Set((run.artifacts || []).filter((a) => a.kind === "image" && !a.label.toLowerCase().endsWith(".svg")).map((a) => a.label));
+    labels.forEach((label) => counts.set(label, (counts.get(label) || 0) + 1));
+  }
+  const current = state.thumbnailPrefs[modelId] || "";
+  if (current && !counts.has(current)) counts.set(current, 0);
+  if (!counts.size) return "";
+  const options = Array.from(counts.entries())
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .map(([label, count]) => `<option value="${escapeAttr(label)}" ${label === current ? "selected" : ""}>${escapeHtml(label)} (${count}/${runs.length})</option>`)
+    .join("");
+  return `<div class="thumb-picker">
+    <span>Miniature de la classe</span>
+    <select data-thumb-model="${escapeAttr(modelId)}">
+      <option value="" ${current ? "" : "selected"}>Automatique</option>
+      ${options}
+    </select>
+  </div>`;
+}
+
+async function loadThumbnailPrefs() {
+  state.thumbnailPrefs = await fetchJSON("/api/thumbnails");
+}
+
+async function setClassThumbnail(modelId, label) {
+  state.thumbnailPrefs = await fetchJSON("/api/thumbnails", {
+    method: "POST",
+    body: JSON.stringify({ model_id: modelId, label: label || null }),
+  });
+  await refreshRuns();
+  if (state.selectedRunId && page() === "results") {
+    await loadRunDetail();
+  }
 }
 
 function isRunGroupOpen(modelId, runs, index) {
@@ -910,19 +1118,30 @@ function renderRunCard(run, compact = false) {
         <button class="icon-action ${run.important ? "is-active" : ""}" data-action="important" data-run-id="${escapeAttr(run.run_id)}" title="Important">!!</button>
         <button class="icon-action ${run.keep ? "is-active" : ""}" data-action="keep" data-run-id="${escapeAttr(run.run_id)}" title="À garder"><3</button>
       </div>
-      ${run.preview_artifact && !compact ? `<img class="run-thumb" src="/api/runs/${encodeURIComponent(run.run_id)}/artifact?path=${encodeURIComponent(run.preview_artifact)}" alt="preview">` : ""}
+      ${compact ? "" : run.preview_artifact
+        ? `<img class="run-thumb" loading="lazy" src="/api/runs/${encodeURIComponent(run.run_id)}/artifact?path=${encodeURIComponent(run.preview_artifact)}" alt="preview">`
+        : state.galleryMode ? `<div class="run-thumb run-thumb-empty">Pas d’image</div>` : ""}
       <div class="pill-row">
         ${run.important ? `<span class="pill important">Importante</span>` : ""}
         ${run.archived ? `<span class="pill readonly">Archivée</span>` : ""}
         ${run.trashed ? `<span class="pill trash">Corbeille</span>` : ""}
         ${run.origin === "external" ? `<span class="pill readonly">Historique</span>` : ""}
       </div>
-      <strong>${run.label || run.run_id}</strong>
-      <div>${run.model_id}</div>
-      <div class="run-meta">Seed ${run.seed ?? "-"} | ${run.status}</div>
-      <div class="run-meta">${run.created_at}</div>
+      <strong class="run-title" title="${escapeAttr(run.label || run.run_id)}">${escapeHtml(run.label || run.run_id)}</strong>
+      <div class="run-model">${escapeHtml(run.model_id)}</div>
+      <div class="run-meta">Seed ${escapeHtml(run.seed ?? "-")} | ${escapeHtml(run.status)}</div>
+      <div class="run-meta" title="${escapeAttr(run.created_at ?? "")}">${escapeHtml(formatRunDate(run.created_at))}</div>
     </div>
   `;
+}
+
+// Date lisible (« 24/08/2026 04:55 », heure locale) ; la valeur ISO brute
+// reste dans l'infobulle. Une date illisible est affichée telle quelle.
+function formatRunDate(value) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value);
+  return date.toLocaleString("fr-FR", { dateStyle: "short", timeStyle: "short" });
 }
 
 function bindRunListInteractions(list) {
@@ -940,24 +1159,32 @@ function bindRunListInteractions(list) {
       }
     });
   });
+  list.querySelectorAll("[data-thumb-model]").forEach((select) => {
+    select.addEventListener("change", () => reportErrors(() => setClassThumbnail(select.dataset.thumbModel, select.value)));
+  });
   list.querySelectorAll(".run-card").forEach((card) => {
-    const selectRun = async (event) => {
+    const selectRun = (event) => reportErrors(async () => {
       event.stopPropagation();
-      if (card.dataset.ignoreClick === "true") {
-        card.dataset.ignoreClick = "";
-        return;
-      }
       state.selectedRunId = card.dataset.runId;
       if (page() === "results") {
         window.history.replaceState(null, "", `/results?run=${encodeURIComponent(state.selectedRunId)}`);
-        renderRuns();
+        markSelectedRun(list);
         await loadRunDetail();
+        if (state.galleryMode) {
+          // En galerie, le détail est sous la grille : l'amener à l'écran.
+          document.getElementById("run-detail")?.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
       } else {
         window.location.href = `/results?run=${encodeURIComponent(state.selectedRunId)}`;
       }
-    };
+    });
     card.addEventListener("click", selectRun);
     card.addEventListener("keydown", async (event) => {
+      // Entrée sur un bouton d'action interne remonte jusqu'ici : ne pas
+      // l'intercepter, sinon l'action est remplacée par la sélection du run.
+      if (event.target !== card) {
+        return;
+      }
       if (event.key === "Enter" || event.key === " ") {
         event.preventDefault();
         await selectRun(event);
@@ -965,13 +1192,9 @@ function bindRunListInteractions(list) {
     });
   });
   list.querySelectorAll(".icon-action").forEach((button) => {
-    button.addEventListener("click", async (event) => {
+    button.addEventListener("click", (event) => {
       event.stopPropagation();
-      const parent = button.closest(".run-card");
-      if (parent) {
-        parent.dataset.ignoreClick = "true";
-      }
-      await handleQuickAction(button.dataset.runId, button.dataset.action);
+      reportErrors(() => handleQuickAction(button.dataset.runId, button.dataset.action));
     });
   });
 }
@@ -1012,7 +1235,16 @@ async function loadRunDetail() {
     renderRunDetail(null);
     return;
   }
-  const run = await fetchJSON(`/api/runs/${encodeURIComponent(state.selectedRunId)}`);
+  let run;
+  try {
+    run = await fetchJSON(`/api/runs/${encodeURIComponent(state.selectedRunId)}`);
+  } catch (error) {
+    // Lien périmé (run supprimé, id erroné) : l'afficher au lieu d'échouer en silence.
+    state.selectedRunId = null;
+    renderRunDetail(null);
+    setMessage(`Simulation introuvable : ${error.message}`);
+    return;
+  }
   if (run.archived && state.scope === "active") {
     state.scope = "archived";
     await refreshRuns();
@@ -1027,34 +1259,52 @@ function renderRunDetail(run) {
   if (!detail) {
     return;
   }
+  const view = captureListView();
   const main = document.querySelector("main.results-grid");
   if (main) main.classList.toggle("list-expanded", !run);
   const list = document.getElementById("runs-list");
   if (list) list.classList.toggle("compact-runs", !run);
   if (!run) {
     detail.innerHTML = "Sélectionnez une simulation.";
+    delete detail.dataset.runId;
     detail.classList.add("muted");
     if (tabNav) tabNav.innerHTML = "";
-    if (tabContent) tabContent.innerHTML = "";
+    if (tabContent) {
+      tabContent.innerHTML = "";
+      delete tabContent.dataset.signature;
+    }
+    restoreListView(view);
     return;
   }
+  // Nouveau rendu du même run (après une action) : garder les menus ouverts,
+  // les annotations en cours de saisie et la trajectoire déjà tracée.
+  const sameRun = detail.dataset.runId === run.run_id;
+  const openDetails = sameRun ? Array.from(detail.querySelectorAll("details")).map((node) => node.open) : [];
+  const drafts = sameRun
+    ? ["annotation-label", "annotation-comment"]
+      .map((id) => document.getElementById(id))
+      .filter((field) => field && field.value !== field.defaultValue)
+      .map((field) => [field.id, field.value])
+    : [];
+  const previousPlot = sameRun ? document.getElementById("compact-timeseries-plot") : null;
   detail.classList.remove("muted");
+  detail.dataset.runId = run.run_id;
   detail.innerHTML = `
     <div class="detail-split">
       <section>
         <h3>Note rapide</h3>
         ${renderRunQuickNote(run)}
         <dl>
-          <dt>Run ID</dt><dd>${run.run_id}</dd>
-          <dt>Modèle</dt><dd>${run.model_id}</dd>
-          <dt>Origine</dt><dd>${run.origin}</dd>
-          <dt>Seed</dt><dd>${run.seed ?? "-"}</dd>
-          <dt>Statut</dt><dd>${run.status}</dd>
+          <dt>Run ID</dt><dd>${escapeHtml(run.run_id)}</dd>
+          <dt>Modèle</dt><dd>${escapeHtml(run.model_id)}</dd>
+          <dt>Origine</dt><dd>${escapeHtml(run.origin)}</dd>
+          <dt>Seed</dt><dd>${escapeHtml(run.seed ?? "-")}</dd>
+          <dt>Statut</dt><dd>${escapeHtml(run.status)}</dd>
           <dt>Archivée</dt><dd>${run.archived ? "oui" : "non"}</dd>
           <dt>Importante</dt><dd>${run.important ? "oui" : "non"}</dd>
           <dt>Corbeille</dt><dd>${run.trashed ? "oui" : "non"}</dd>
           <dt>Commentaire</dt><dd><pre>${escapeHtml(run.comment || "")}</pre></dd>
-          <dt>Résumé</dt><dd><pre>${JSON.stringify(run.summary || {}, null, 2)}</pre></dd>
+          <dt>Résumé</dt><dd><pre>${escapeHtml(JSON.stringify(run.summary || {}, null, 2))}</pre></dd>
         </dl>
       </section>
       <aside class="parameter-note">
@@ -1079,10 +1329,21 @@ function renderRunDetail(run) {
     ${renderRunActions(run)}
     <div id="compact-timeseries-plot"></div>
   `;
+  const details = detail.querySelectorAll("details");
+  if (details.length === openDetails.length) {
+    details.forEach((node, index) => { node.open = openDetails[index]; });
+  }
+  drafts.forEach(([id, value]) => { document.getElementById(id).value = value; });
   bindRunActions(run);
   bindAnnotationSave(run);
   renderArtifacts(run);
-  renderCompactTimeseries(run);
+  const plot = document.getElementById("compact-timeseries-plot");
+  if (previousPlot && previousPlot.childElementCount && plot) {
+    plot.replaceWith(previousPlot);
+  } else {
+    renderCompactTimeseries(run);
+  }
+  restoreListView(view);
 }
 
 function renderRunQuickNote(run) {
@@ -1173,19 +1434,20 @@ function bindRunActions(run) {
     });
   }
   if (run.trashed) {
-    document.getElementById("restore-run").addEventListener("click", async () => {
+    document.getElementById("restore-run").addEventListener("click", () => reportErrors(async () => {
       await fetchJSON(`/api/trash/${encodeURIComponent(run.run_id)}/restore`, { method: "POST", body: JSON.stringify({}) });
       state.scope = "active";
       await refreshRuns();
       state.selectedRunId = run.run_id;
       await loadRunDetail();
-    });
-    document.getElementById("purge-run").addEventListener("click", async () => {
+    }));
+    document.getElementById("purge-run").addEventListener("click", () => reportErrors(async () => {
+      if (!window.confirm("Supprimer définitivement cette simulation ? Cette action est irréversible.")) return;
       await fetchJSON(`/api/trash/${encodeURIComponent(run.run_id)}`, { method: "DELETE" });
       state.selectedRunId = null;
       await refreshRuns();
       renderRunDetail(null);
-    });
+    }));
     return;
   }
   document.getElementById("toggle-important").addEventListener("click", async () => {
@@ -1299,12 +1561,47 @@ function _artifactGroupKey(relativePath) {
   return parent;
 }
 
-function _artifactCard(artifact, runId) {
+// Jumeau vectoriel d'une figure : « figures/macro_overview.png » a pour
+// jumeau « figures/macro_overview.svg » quand les deux sont présents. Le SVG
+// est la version destinée à l'article (texte éditable, donc traduisible) ;
+// il s'ouvre depuis la carte du PNG au lieu d'occuper une carte à lui.
+function _svgTwinPath(artifact, run) {
+  if (!/\.(png|jpg|jpeg)$/i.test(artifact.relative_path)) return null;
+  const candidate = artifact.relative_path.replace(/\.(png|jpg|jpeg)$/i, ".svg");
+  return (run.artifacts || []).some((a) => a.relative_path === candidate) ? candidate : null;
+}
+
+function _hasRasterTwin(artifact, run) {
+  if (!/\.svg$/i.test(artifact.relative_path)) return false;
+  const candidate = artifact.relative_path.replace(/\.svg$/i, ".png");
+  return (run.artifacts || []).some((a) => a.relative_path === candidate);
+}
+
+function _artifactCard(artifact, run) {
+  const runId = run.run_id;
   const url = `/api/runs/${encodeURIComponent(runId)}/artifact?path=${encodeURIComponent(artifact.relative_path)}`;
+  const label = escapeHtml(artifact.label);
   if (artifact.kind === "image") {
-    return `<div class="artifact-card"><strong>${artifact.label}</strong><img src="${url}" alt="${artifact.label}"><div><a href="${url}" target="_blank">ouvrir</a></div></div>`;
+    const twin = _svgTwinPath(artifact, run);
+    const svgLink = twin
+      ? `<a href="/api/runs/${encodeURIComponent(runId)}/artifact?path=${encodeURIComponent(twin)}" target="_blank">SVG</a>`
+      : "";
+    const isClassThumb = state.thumbnailPrefs[run.model_id] === artifact.label;
+    const thumbButton = page() === "results"
+      ? `<button class="compact-button ${isClassThumb ? "" : "secondary"}" data-thumb-label="${escapeAttr(artifact.label)}" ${isClassThumb ? "disabled" : ""}>${isClassThumb ? "✓ miniature de la classe" : "▣ miniature de la classe"}</button>`
+      : "";
+    return `<div class="artifact-card"><strong>${label}</strong><img loading="lazy" src="${url}" alt="${escapeAttr(artifact.label)}"><div class="inline-actions artifact-actions"><a href="${url}" target="_blank">ouvrir</a>${svgLink}${thumbButton}</div></div>`;
   }
-  return `<div class="artifact-card"><strong>${artifact.label}</strong><div class="artifact-kind">${artifact.kind}</div><div><a href="${url}" target="_blank">ouvrir</a></div></div>`;
+  return `<div class="artifact-card"><strong>${label}</strong><div class="artifact-kind">${escapeHtml(artifact.kind)}</div><div><a href="${url}" target="_blank">ouvrir</a></div></div>`;
+}
+
+function syncThumbButtons(content, run) {
+  content.querySelectorAll("[data-thumb-label]").forEach((button) => {
+    const isClassThumb = state.thumbnailPrefs[run.model_id] === button.dataset.thumbLabel;
+    button.disabled = isClassThumb;
+    button.classList.toggle("secondary", !isClassThumb);
+    button.textContent = isClassThumb ? "✓ miniature de la classe" : "▣ miniature de la classe";
+  });
 }
 
 function renderArtifacts(run) {
@@ -1313,6 +1610,14 @@ function renderArtifacts(run) {
   if (!nav || !content) return;
 
   const artifacts = run.artifacts || [];
+  // Artefacts inchangés : ne pas reconstruire, sinon les images se rechargent
+  // (la page rétrécit et le défilement saute) et l'onglet actif est perdu.
+  const signature = JSON.stringify([run.run_id, artifacts.map((a) => [a.relative_path, a.kind, a.label])]);
+  if (content.dataset.signature === signature) {
+    syncThumbButtons(content, run);
+    return;
+  }
+  content.dataset.signature = signature;
   if (artifacts.length === 0) {
     nav.innerHTML = "";
     content.innerHTML = "<p class='muted'>Aucun artefact.</p>";
@@ -1320,8 +1625,10 @@ function renderArtifacts(run) {
   }
 
   // Group by subfolder
+  // Un SVG qui double un PNG n'a pas sa propre carte : il est accessible par
+  // le lien « SVG » de la carte du PNG (cf. _svgTwinPath).
   const groups = {};
-  for (const artifact of artifacts) {
+  for (const artifact of artifacts.filter((a) => !_hasRasterTwin(a, run))) {
     const key = _artifactGroupKey(artifact.relative_path);
     if (!groups[key]) groups[key] = [];
     groups[key].push(artifact);
@@ -1337,19 +1644,26 @@ function renderArtifacts(run) {
   });
 
   // Build nav buttons
+  // Onglets indexés par position : un nom de dossier contenant des guillemets
+  // cassait le sélecteur CSS construit à partir du nom.
   nav.innerHTML = sortedKeys.map((groupName, i) =>
-    `<button class="artifact-tab-btn${i === 0 ? " active" : ""}" data-group="${groupName}">
-      ${groupName} <span class="artifact-count">${groups[groupName].length}</span>
+    `<button class="artifact-tab-btn${i === 0 ? " active" : ""}" data-tab-index="${i}">
+      ${escapeHtml(groupName)} <span class="artifact-count">${groups[groupName].length}</span>
     </button>`
   ).join("");
 
   // Build content panes
   content.innerHTML = sortedKeys.map((groupName, i) => {
-    const cards = groups[groupName].map((a) => _artifactCard(a, run.run_id)).join("");
-    return `<div class="artifact-tab-pane${i === 0 ? " active" : ""}" data-group="${groupName}">
+    const cards = groups[groupName].map((a) => _artifactCard(a, run)).join("");
+    return `<div class="artifact-tab-pane${i === 0 ? " active" : ""}" data-tab-index="${i}">
       <div class="artifact-section-grid">${cards}</div>
     </div>`;
   }).join("");
+
+  content.querySelectorAll("[data-thumb-label]").forEach((button) => {
+    button.addEventListener("click", () => reportErrors(() => setClassThumbnail(run.model_id, button.dataset.thumbLabel)));
+  });
+  syncThumbButtons(content, run);
 
   // Wire up tab clicks
   nav.querySelectorAll(".artifact-tab-btn").forEach((btn) => {
@@ -1357,7 +1671,7 @@ function renderArtifacts(run) {
       nav.querySelectorAll(".artifact-tab-btn").forEach((b) => b.classList.remove("active"));
       content.querySelectorAll(".artifact-tab-pane").forEach((p) => p.classList.remove("active"));
       btn.classList.add("active");
-      content.querySelector(`.artifact-tab-pane[data-group="${btn.dataset.group}"]`).classList.add("active");
+      content.querySelector(`.artifact-tab-pane[data-tab-index="${btn.dataset.tabIndex}"]`)?.classList.add("active");
     });
   });
 }
@@ -1367,15 +1681,70 @@ async function initLaunchPage() {
   await loadSystemInfo();
   await refreshJobs();
   await refreshRuns();
-  document.getElementById("run-single").addEventListener("click", createSingleRun);
-  document.getElementById("run-batch").addEventListener("click", createBatch);
-  document.getElementById("refresh-launch-runs").addEventListener("click", refreshRuns);
+  document.getElementById("run-single").addEventListener("click", () => reportErrors(createSingleRun));
+  document.getElementById("run-batch").addEventListener("click", () => reportErrors(createBatch));
+  document.getElementById("refresh-launch-runs").addEventListener("click", () => reportErrors(refreshRuns));
+}
+
+const RESULTS_VIEW_KEY = "simulationLab.resultsView";
+
+function saveResultsView() {
+  try {
+    const list = document.getElementById("runs-list");
+    window.sessionStorage.setItem(RESULTS_VIEW_KEY, JSON.stringify({
+      scope: state.scope,
+      searchQuery: state.searchQuery,
+      filterImportant: state.filterImportant,
+      filterKeep: state.filterKeep,
+      multiSeedMode: state.multiSeedMode,
+      openRunGroups: Array.from(state.openRunGroups),
+      runGroupsTouched: state.runGroupsTouched,
+      selectedRunId: state.selectedRunId,
+      listScrollTop: list ? list.scrollTop : 0,
+      windowY: window.scrollY,
+    }));
+  } catch (_) {
+    // stockage indisponible : la vue repart de zéro au prochain chargement
+  }
+}
+
+function readResultsView() {
+  try {
+    return JSON.parse(window.sessionStorage.getItem(RESULTS_VIEW_KEY) || "null");
+  } catch (_) {
+    return null;
+  }
 }
 
 async function initResultsPage() {
   await loadModels();
+  await reportErrors(loadThumbnailPrefs);
   const params = new URLSearchParams(window.location.search);
   state.selectedRunId = params.get("run");
+  // ?view=gallery ou ?view=list : lien direct vers une vue, prioritaire sur la préférence mémorisée.
+  if (params.get("view") === "gallery" || params.get("view") === "list") {
+    state.galleryMode = params.get("view") === "gallery";
+  }
+  // Retour sur Résultats depuis Lancement (ou par « précédent ») : reprendre
+  // la vue quittée, sauf si le lien désigne explicitement un run ou une recherche.
+  const saved = params.has("run") || params.has("search") ? null : readResultsView();
+  if (saved) {
+    state.scope = saved.scope || state.scope;
+    state.searchQuery = saved.searchQuery || "";
+    state.filterImportant = Boolean(saved.filterImportant);
+    state.filterKeep = Boolean(saved.filterKeep);
+    state.multiSeedMode = Boolean(saved.multiSeedMode);
+    state.openRunGroups = new Set(saved.openRunGroups || []);
+    state.runGroupsTouched = Boolean(saved.runGroupsTouched);
+    state.selectedRunId = saved.selectedRunId || null;
+    const searchField = document.getElementById("search-runs");
+    if (searchField) searchField.value = state.searchQuery;
+    const importantField = document.getElementById("filter-important");
+    if (importantField) importantField.checked = state.filterImportant;
+    const keepField = document.getElementById("filter-keep");
+    if (keepField) keepField.checked = state.filterKeep;
+  }
+  window.addEventListener("pagehide", saveResultsView);
   await refreshJobs();
   await refreshRuns();
   if (state.selectedRunId) {
@@ -1383,25 +1752,35 @@ async function initResultsPage() {
   } else {
     renderRunDetail(null);
   }
-  document.getElementById("refresh-runs").addEventListener("click", async () => {
+  if (saved) {
+    const runsList = document.getElementById("runs-list");
+    if (runsList) runsList.scrollTop = saved.listScrollTop || 0;
+    window.scrollTo(0, saved.windowY || 0);
+  }
+  document.getElementById("refresh-runs").addEventListener("click", () => reportErrors(async () => {
     await refreshJobs();
     await refreshRuns();
     await loadRunDetail();
-  });
+  }));
   document.querySelectorAll("[data-scope]").forEach((button) => {
-    button.addEventListener("click", async () => {
+    button.addEventListener("click", () => reportErrors(async () => {
       state.scope = button.dataset.scope;
       state.selectedRunId = null;
+      setMessage(state.scope === "active" ? "" : "Chargement…");
       await refreshRuns();
+      setMessage("");
       renderRunDetail(null);
-    });
+    }));
   });
-  document.getElementById("empty-trash").addEventListener("click", async () => {
-    await fetchJSON("/api/trash", { method: "DELETE" });
+  document.getElementById("empty-trash").addEventListener("click", () => reportErrors(async () => {
+    if (!window.confirm("Vider la corbeille ? Les simulations qu'elle contient seront supprimées définitivement, sauf celles marquées « à garder » ou « importantes ».")) return;
+    const result = await fetchJSON("/api/trash", { method: "DELETE" });
+    const spared = (result.spared_run_ids || []).length;
+    setMessage(`${result.deleted_count} simulation(s) supprimée(s)${spared ? `, ${spared} épargnée(s) (à garder / importantes)` : ""}.`);
     state.selectedRunId = null;
     await refreshRuns();
     renderRunDetail(null);
-  });
+  }));
   const groupSelect = document.getElementById("study-group");
   if (groupSelect) {
     groupSelect.addEventListener("change", () => {
@@ -1458,8 +1837,25 @@ async function initResultsPage() {
     });
   }
 
+  const toggleGallery = document.getElementById("toggle-gallery");
+  if (toggleGallery) {
+    const syncGalleryButton = () => {
+      toggleGallery.classList.toggle("secondary", !state.galleryMode);
+      toggleGallery.classList.toggle("active-mode", state.galleryMode);
+    };
+    syncGalleryButton();
+    toggleGallery.addEventListener("click", () => {
+      state.galleryMode = !state.galleryMode;
+      writeStoredFlag("simulationLab.galleryMode", state.galleryMode);
+      syncGalleryButton();
+      renderRuns();
+    });
+  }
+
   const toggleMultiseed = document.getElementById("toggle-multiseed");
   if (toggleMultiseed) {
+    toggleMultiseed.classList.toggle("secondary", !state.multiSeedMode);
+    toggleMultiseed.classList.toggle("active-mode", state.multiSeedMode);
     toggleMultiseed.addEventListener("click", () => {
       state.multiSeedMode = !state.multiSeedMode;
       toggleMultiseed.classList.toggle("secondary", !state.multiSeedMode);

@@ -1,0 +1,98 @@
+{
+ "plan": "ablation_A",
+ "cells": [
+  {
+   "cell": "g060_Anorm",
+   "cell_id": "0d8ef484e528",
+   "plan": "ablation_A",
+   "parameters": {
+    "A": 0.5549441528283544,
+    "lam": 30.0,
+    "delta": 0.05,
+    "sigma": 0.25,
+    "K0": 25.0,
+    "pop_max": 30000,
+    "snapshot_every": 0,
+    "individual_every": 0,
+    "figures": false,
+    "gamma": 0.6,
+    "T": 4000
+   },
+   "n_runs": 3,
+   "base_seed": 1,
+   "label": "M4.2 — ablation_A — g060_Anorm",
+   "keep": false,
+   "engine_hash": "932e58643e522d7b",
+   "batch_id": "20260727_183204_74b7ef35",
+   "run_ids": [
+    "20260727_183204_0c234778",
+    "20260727_183204_7fea484e",
+    "20260727_183204_0bc048a2"
+   ],
+   "duration_seconds": 364.6,
+   "launched_at": "2026-07-27T18:38:07+0200"
+  },
+  {
+   "cell": "g033_Anorm",
+   "cell_id": "b93b26d3cae1",
+   "plan": "ablation_A",
+   "parameters": {
+    "A": 2.668401648721946,
+    "lam": 30.0,
+    "delta": 0.05,
+    "sigma": 0.25,
+    "K0": 25.0,
+    "pop_max": 30000,
+    "snapshot_every": 0,
+    "individual_every": 0,
+    "figures": false,
+    "gamma": 0.3333333333333333,
+    "T": 4000
+   },
+   "n_runs": 3,
+   "base_seed": 1,
+   "label": "M4.2 — ablation_A — g033_Anorm",
+   "keep": false,
+   "engine_hash": "932e58643e522d7b",
+   "batch_id": "20260727_183204_ff2ea1db",
+   "run_ids": [
+    "20260727_183204_b7c8fd58",
+    "20260727_183204_bbb241d1",
+    "20260727_183204_13506a8c"
+   ],
+   "duration_seconds": 369.4,
+   "launched_at": "2026-07-27T18:38:12+0200"
+  },
+  {
+   "cell": "g067_Anorm",
+   "cell_id": "2f46a54867ca",
+   "plan": "ablation_A",
+   "parameters": {
+    "A": 0.37475617678431555,
+    "lam": 30.0,
+    "delta": 0.05,
+    "sigma": 0.25,
+    "K0": 25.0,
+    "pop_max": 30000,
+    "snapshot_every": 0,
+    "individual_every": 0,
+    "figures": false,
+    "gamma": 0.6666666666666666,
+    "T": 4000
+   },
+   "n_runs": 3,
+   "base_seed": 1,
+   "label": "M4.2 — ablation_A — g067_Anorm",
+   "keep": false,
+   "engine_hash": "932e58643e522d7b",
+   "batch_id": "20260727_183808_64366ee9",
+   "run_ids": [
+    "20260727_183808_16957da0",
+    "20260727_183808_f4780243",
+    "20260727_183808_5ebeae50"
+   ],
+   "duration_seconds": 347.1,
+   "launched_at": "2026-07-27T18:43:54+0200"
+  }
+ ]
+}

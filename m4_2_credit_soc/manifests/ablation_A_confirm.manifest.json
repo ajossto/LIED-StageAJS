@@ -1,0 +1,38 @@
+{
+ "plan": "ablation_A_confirm",
+ "cells": [
+  {
+   "cell": "g033_Anorm_confirm",
+   "cell_id": "dbeda9343cac",
+   "plan": "ablation_A_confirm",
+   "parameters": {
+    "A": 2.668401648721946,
+    "lam": 30.0,
+    "delta": 0.05,
+    "sigma": 0.25,
+    "K0": 25.0,
+    "pop_max": 30000,
+    "snapshot_every": 0,
+    "individual_every": 0,
+    "figures": false,
+    "gamma": 0.3333333333333333,
+    "T": 4000
+   },
+   "n_runs": 5,
+   "base_seed": 11,
+   "label": "M4.2 — ablation_A_confirm — g033_Anorm_confirm",
+   "keep": true,
+   "engine_hash": "932e58643e522d7b",
+   "batch_id": "20260729_143545_381ddc72",
+   "run_ids": [
+    "20260729_143545_56cf0dee",
+    "20260729_143546_0f543b0a",
+    "20260729_143546_08c4a4d0",
+    "20260729_143546_0bf46b26",
+    "20260729_143546_ccb0ded4"
+   ],
+   "duration_seconds": 441.3,
+   "launched_at": "2026-07-29T14:43:04+0200"
+  }
+ ]
+}

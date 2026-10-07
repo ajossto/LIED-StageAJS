@@ -1,0 +1,86 @@
+{
+  "plan": "benchmark",
+  "engine_hash": "f3a7ce02cd9185c7",
+  "notes": "Benchmark de coût CPU/disque avant protocole ; 6 cellules, seed=0, T=2000.",
+  "created_at": "2026-07-17T16:50:43+0200",
+  "cells": [
+    {
+      "run_id": "m4b_797485073afe",
+      "lam": 10.0,
+      "delta": 0.05,
+      "sigma": 0.25,
+      "K0": 25.0,
+      "k": 3,
+      "seed": 0,
+      "T": 2000,
+      "pop_max": 30000,
+      "snapshot_every": 0,
+      "individual_every": 0
+    },
+    {
+      "run_id": "m4b_8efd385078ae",
+      "lam": 30.0,
+      "delta": 0.05,
+      "sigma": 0.25,
+      "K0": 25.0,
+      "k": 3,
+      "seed": 0,
+      "T": 2000,
+      "pop_max": 30000,
+      "snapshot_every": 0,
+      "individual_every": 0
+    },
+    {
+      "run_id": "m4b_392895f517cd",
+      "lam": 100.0,
+      "delta": 0.05,
+      "sigma": 0.25,
+      "K0": 25.0,
+      "k": 3,
+      "seed": 0,
+      "T": 2000,
+      "pop_max": 30000,
+      "snapshot_every": 0,
+      "individual_every": 0
+    },
+    {
+      "run_id": "m4b_2cb7bc83f1d9",
+      "lam": 30.0,
+      "delta": 0.05,
+      "sigma": 0.25,
+      "K0": 25.0,
+      "k": 3,
+      "seed": 0,
+      "T": 2000,
+      "pop_max": 30000,
+      "snapshot_every": 100,
+      "individual_every": 0
+    },
+    {
+      "run_id": "m4b_04c4cd570599",
+      "lam": 10.0,
+      "delta": 0.02,
+      "sigma": 0.1,
+      "K0": 25.0,
+      "k": 3,
+      "seed": 0,
+      "T": 2000,
+      "pop_max": 30000,
+      "snapshot_every": 0,
+      "individual_every": 0
+    },
+    {
+      "run_id": "m4b_36486750246d",
+      "lam": 10.0,
+      "delta": 0.05,
+      "sigma": 0.25,
+      "K0": 25.0,
+      "k": 3,
+      "seed": 0,
+      "T": 2000,
+      "pop_max": 30000,
+      "snapshot_every": 50,
+      "individual_every": 1
+    }
+  ]
+}

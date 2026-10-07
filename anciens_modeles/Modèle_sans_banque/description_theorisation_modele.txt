@@ -1,0 +1,595 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{geometry}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{xcolor}
+
+\geometry{margin=2.5cm}
+
+\newtheorem{proposition}{Proposition}
+\newtheorem{lemma}[proposition]{Lemme}
+\newtheorem{remark}{Remarque}
+
+\title{\textbf{Modélisation autocritique d'une société industrielle}\\
+\large Description intégrale, théorisation et analyse comportementale}
+\author{Simulation multi-agents — Blocs 1–8}
+\date{Avril 2026}
+
+\begin{document}
+
+\maketitle
+\tableofcontents
+\newpage
+
+% =========================================================================
+\part{Description complète du modèle}
+% =========================================================================
+
+\section{Architecture générale}
+
+Le modèle est une simulation multi-agents à temps discret. L'univers est peuplé
+d'un ensemble d'entités hétérogènes, chacune dotée d'un bilan comptable complet.
+Les entités interagissent via un marché du crédit décentralisé, se prêtent et
+s'empruntent des ressources, et peuvent faire faillite, propageant des pertes à
+leurs contreparties. L'objectif est de reproduire les propriétés d'un système
+\textit{auto-critique} (SOC), caractérisé par une distribution de taille de cascades
+de faillite suivant une loi de puissance.
+
+% -------------------------------------------------------------------------
+\section{Bilan comptable d'une entité}
+
+Chaque entité $i$ est caractérisée à chaque pas $t$ par son bilan :
+
+\subsection{Actifs}
+
+\begin{align}
+A_i &= L_i + R_i + K_i^{\text{endo}} + K_i^{\text{exo}}
+\end{align}
+
+où :
+\begin{itemize}
+  \item $L_i$ : actif \textbf{liquide} (numéraire instantanément mobilisable) ;
+  \item $R_i$ : créances prêtées (\textit{actif prêté}), somme nominale des prêts accordés ;
+  \item $K_i^{\text{endo}}$ : capital \textbf{endo-investi} (auto-investissement du surplus liquide) ;
+  \item $K_i^{\text{exo}}$ : capital \textbf{exo-investi} (principal reçu de prêteurs externes).
+\end{itemize}
+
+\subsection{Passifs}
+
+\begin{align}
+P_i^{\text{bilan}} &= B_i + P_i^{\text{endo}} + P_i^{\text{exo}} + C_i
+\end{align}
+
+où :
+\begin{itemize}
+  \item $B_i$ : passif \textbf{inné} (dette d'amorçage, constante tant qu'elle n'est pas éteinte) ;
+  \item $P_i^{\text{endo}}$ : contrepartie passive de $K_i^{\text{endo}}$ (symétrique) ;
+  \item $P_i^{\text{exo}}$ : contrepartie passive de $K_i^{\text{exo}}$ (crédits reçus au passif) ;
+  \item $C_i$ : passif miroir des créances détenues ($C_i = R_i$ par construction comptable).
+\end{itemize}
+
+\subsection{Passif productif et valeur nette}
+
+On pose $P_i = B_i + P_i^{\text{endo}} + P_i^{\text{exo}}$, le \textbf{passif productif total}
+(hors passif miroir). Par symétrie $K_i^{\text{endo}} = P_i^{\text{endo}}$ et
+$K_i^{\text{exo}} = P_i^{\text{exo}}$, le bilan se simplifie :
+
+\begin{align}
+A_i - P_i^{\text{bilan}} &= (L_i + R_i + K_i^{\text{endo}} + K_i^{\text{exo}})
+                            - (B_i + P_i^{\text{endo}} + P_i^{\text{exo}} + C_i) \notag \\
+&= L_i + R_i - B_i - C_i \quad (\text{car } K^{\text{endo}}=P^{\text{endo}},\; K^{\text{exo}}=P^{\text{exo}}) \notag \\
+&\equiv \mathrm{NW}_i
+\end{align}
+
+La \textbf{valeur nette} $\mathrm{NW}_i = L_i + R_i - B_i - C_i$ est l'invariant bilanciel :
+elle est nulle à la création ($L_0 = B_0 + \varepsilon$, $R_0 = C_0 = 0$) et n'évolue que
+via l'extraction nette, les intérêts reçus et les pertes de défaut.
+
+\subsection{Critère de faillite}
+
+Une entité $i$ fait faillite si et seulement si :
+\begin{align}
+A_i < P_i^{\text{bilan}} \quad \Leftrightarrow \quad \mathrm{NW}_i < 0
+\end{align}
+
+% -------------------------------------------------------------------------
+\section{Paramètre de productivité et taux interne}
+
+\subsection{Extraction depuis la nature}
+
+À chaque pas, l'entité $i$ extrait un flux de ressources de la nature :
+\begin{align}
+\Pi_i = \alpha_i \sqrt{P_i}
+\end{align}
+
+La fonction d'extraction est concave : rendements décroissants à l'échelle.
+$\alpha_i$ est un paramètre d'efficacité hétérogène, initialisé uniformément dans
+$[\alpha_{\min}, \alpha_{\max}] = [0.8, 1.2]$ et animé d'un mouvement brownien géométrique
+(volatilité $\sigma_\alpha = 0.005$) :
+\begin{align}
+\alpha_i(t+1) = \alpha_i(t) \cdot \exp(\sigma_\alpha \cdot \xi_t), \quad \xi_t \sim \mathcal{N}(0,1)
+\end{align}
+
+\subsection{Taux interne marginal}
+
+Le taux de rendement marginal de $P_i$ est la dérivée de $\Pi_i$ par rapport à $P_i$ :
+\begin{align}
+r_i^* = \frac{\partial \Pi_i}{\partial P_i} = \frac{\alpha_i}{2\sqrt{P_i}}
+\end{align}
+
+Ce taux est \textbf{décroissant en taille} : les grandes entités ont un taux interne faible
+et sont donc naturellement prêteuses ; les petites ont un taux élevé et sont naturellement
+emprunteuses. Il constitue le seul signal de prix du modèle.
+
+% -------------------------------------------------------------------------
+\section{Séquence d'un pas de simulation}
+
+Chaque pas $t$ exécute les étapes suivantes dans l'ordre :
+
+\begin{enumerate}
+  \item \textbf{Mouvement brownien des $\alpha$} : mise à jour géométrique de tous les $\alpha_i$.
+  \item \textbf{Création d'entités} : tirage Poisson($\lambda$) nouvelles entités.
+  \item \textbf{Extraction} : $L_i \leftarrow L_i + \Pi_i$ pour toutes les entités vivantes.
+  \item \textbf{Paiement des intérêts} : chaque prêt actif génère un flux $r \cdot q$ de l'emprunteur vers le prêteur.
+  \item \textbf{Amortissement du principal} : remboursement géométrique $\tau \cdot q$ (désactivé par défaut, $\tau=0$).
+  \item \textbf{Dépréciation} : dépréciation géométrique de tous les actifs.
+  \item \textbf{Marché du crédit} : appariement itératif prêteur/emprunteur.
+  \item \textbf{Résolution des cascades de faillite} : détection et traitement des insolvabilités.
+  \item \textbf{Auto-investissement} : conversion du surplus liquide en capital endogène.
+\end{enumerate}
+
+% -------------------------------------------------------------------------
+\subsection{Création d'entités}
+
+À chaque pas, $n \sim \mathrm{Poisson}(\lambda_{\text{création}})$ nouvelles entités
+sont créées, chacune avec :
+\begin{align}
+L_0 = 200, \quad B_0 = 190, \quad K_0^{\text{endo}} = K_0^{\text{exo}} = 0
+\end{align}
+
+La valeur nette initiale est $\mathrm{NW}_0 = 200 - 190 = 10 > 0$.
+Le paramètre $\lambda_{\text{création}} = 2$ est calibré pour stabiliser la taille de population.
+
+% -------------------------------------------------------------------------
+\subsection{Paiement des intérêts et mobilisation de liquidité}
+
+Pour chaque prêt actif $(i \to j,\, q,\, r)$, l'emprunteur $j$ doit payer $r \cdot q$ au prêteur $i$.
+Si $L_j < r \cdot q$, l'emprunteur mobilise sa capacité de paiement selon un ordre de priorité :
+
+\begin{enumerate}
+  \item \textbf{Liquidité disponible} : $\min(L_j,\, \text{dû})$.
+  \item \textbf{Cession des créances sous $r_j^*$} : ventes prioritaires car rendement relatif faible.
+  \item \textbf{Reliquéfaction endogène} : conversion de $K^{\text{endo}}$ en liquide avec
+        coefficient de décote $c = 0.5$ (destruction irréversible de capacité productive).
+  \item \textbf{Cession des créances au-dessus de $r_j^*$} : dernier recours.
+\end{enumerate}
+
+La valeur réelle d'une créance est réévaluée avant cession :
+\begin{align}
+q_{\text{réel}} = q_{\text{nominal}} \cdot (1 - \delta_{\text{exo}})^{\text{âge}}
+\end{align}
+
+% -------------------------------------------------------------------------
+\subsection{Dépréciation}
+
+À chaque pas, tous les actifs se déprécient géométriquement :
+\begin{align}
+L_i &\leftarrow L_i \cdot (1 - \delta_L), \quad \delta_L = 0.01 \\
+K_i^{\text{endo}} &\leftarrow K_i^{\text{endo}} \cdot (1 - \delta_{\text{endo}}),\quad
+P_i^{\text{endo}} \leftarrow P_i^{\text{endo}} \cdot (1 - \delta_{\text{endo}}),\quad
+\delta_{\text{endo}} = 0.1 \\
+K_i^{\text{exo}} &\leftarrow K_i^{\text{exo}} \cdot (1 - \delta_{\text{exo}}),\quad
+P_i^{\text{exo}} \leftarrow P_i^{\text{exo}} \cdot (1 - \delta_{\text{exo}}),\quad
+\delta_{\text{exo}} = 0.1
+\end{align}
+
+Le passif productif total se recalcule après dépréciation :
+$P_i \leftarrow B_i + P_i^{\text{endo}} + P_i^{\text{exo}}$.
+
+% -------------------------------------------------------------------------
+\subsection{Marché du crédit — Appariement aléatoire (Bloc 8)}
+
+\subsubsection{Sélection des participants}
+
+Participent au marché les entités $i$ avec $P_i > 0$ et $L_i/P_i > s$
+(seuil de ratio liquidité/passif $s = 0.05$).
+
+\subsubsection{Mécanisme de matching aléatoire}
+
+À chaque itération du marché, le moteur :
+\begin{enumerate}
+  \item Tire un échantillon de $\min(N_{\text{actifs}},\, 2k)$ entités uniformément.
+  \item Les trie par $r^*$ croissant.
+  \item Sépare la moitié basse (prêteurs potentiels, $r^*$ faible) et haute (emprunteurs potentiels, $r^*$ élevé).
+  \item Tire \textbf{aléatoirement} un prêteur et un emprunteur dans leurs pools respectifs.
+\end{enumerate}
+
+Le paramètre $k = n_{\text{candidats\_pool}} = 3$ contrôle la taille du pool.
+Pour $k=1$, le matching est \textbf{déterministe} (meilleur prêteur × meilleur emprunteur) ;
+pour $k \geq 3$, la stochasticité permet à une entité médiane d'être simultanément
+prêteuse d'une petite et emprunteuse d'une grande : les \textbf{intermédiaires financiers} émergent naturellement.
+
+\subsubsection{Conditions d'une transaction}
+
+La transaction $(i \to j,\, q,\, r)$ est exécutée si et seulement si :
+\begin{align}
+r_j^* &> r_i^* \quad \text{(surplus de rendement positif)} \\
+o_i &> 0 \quad \text{(offre non nulle) où } o_i = \max(0, L_i - \max(s \cdot P_i,\, B_i)) \\
+q &= \min(o_i,\, \theta \cdot q_{\max}) > 0 \\
+\text{gain\_avec} &\geq (1 + \mu) \cdot \text{gain\_sans}, \quad \mu = 0.05 \\
+\frac{c_j + r \cdot q}{\Pi_j + \text{revenus}_j} &\leq \bar{d} \quad \text{(contrainte d'endettement)}
+\end{align}
+
+où $q_{\max} = (\alpha_j / 2r)^2 - P_j - \text{surplus}_j$ est le volume optimal à emprunter,
+$\theta = 0.35$ la fraction effectivement demandée, et $c_j$ les charges d'intérêts existantes.
+
+Le taux de transaction est l'interpolation :
+\begin{align}
+r = (1 - f) \cdot r_i^* + f \cdot r_j^*, \quad f = 0.2
+\end{align}
+
+\subsubsection{Arrêt et réinitialisation}
+
+Après chaque transaction réussie, le pool est réinitialisé (\texttt{need\_resort = true}).
+La boucle s'arrête après $\max(20, k^2)$ tentatives consécutives infructueuses.
+
+\subsubsection{Effets sur les bilans}
+
+Lors d'un prêt $q$ au taux $r$ de $i$ vers $j$ :
+\begin{align}
+&L_i \leftarrow L_i - q, \quad R_i \leftarrow R_i + q, \quad C_i \leftarrow C_i + q \\
+&K_j^{\text{exo}} \leftarrow K_j^{\text{exo}} + q, \quad P_j^{\text{exo}} \leftarrow P_j^{\text{exo}} + q,
+\quad P_j \leftarrow P_j + q
+\end{align}
+
+% -------------------------------------------------------------------------
+\subsection{Résolution des cascades de faillite}
+
+\subsubsection{Traitement d'une faillite individuelle}
+
+Quand $A_i < P_i^{\text{bilan}}$, l'entité $i$ fait faillite. Le traitement s'opère en trois phases :
+
+\textbf{Phase 1 — Poids des créanciers :} chaque créancier $k$ (prêteur à $i$) reçoit un poids
+$w_k = q_{ki} / \sum_j q_{ji}$ proportionnel à son encours.
+
+\textbf{Phase 2 — Redistribution des créances prêtées :} pour chaque prêt actif $i \to m$,
+la créance est évaluée à sa valeur réelle $q \cdot (1-\delta)^{\text{âge}}$, puis
+fractionnée entre créanciers éligibles au prorata $w_k$. Si aucun créancier n'est éligible,
+la créance est annulée symétriquement (réduction de $K_m^{\text{exo}}$ et $P_m^{\text{exo}}$).
+
+\textbf{Phase 3 — Annulation des emprunts de $i$ :} chaque prêteur $k$ subit une perte
+sur ses créances envers $i$ ($R_k \leftarrow R_k - q_{ki}$, $C_k \leftarrow C_k - q_{ki}$).
+
+\subsubsection{Propagation en cascade}
+
+La résolution est itérative : tant qu'une entité solvable au début d'un pas devient
+insolvable suite aux annulations de créances, elle entre à son tour en faillite.
+La taille d'une cascade est le nombre d'entités \textbf{contagiées} (solvables avant,
+insolvables après la première défaillance endogène).
+
+% -------------------------------------------------------------------------
+\subsection{Auto-investissement}
+
+À la fin de chaque pas, chaque entité convertit une fraction $\phi = 0.5$ de son
+surplus liquide en capital endogène :
+\begin{align}
+\text{surplus}_i &= \max(0,\, L_i - \max(s \cdot P_i,\, B_i)) \\
+x_i &= \phi \cdot \text{surplus}_i \\
+L_i &\leftarrow L_i - x_i, \quad K_i^{\text{endo}} \leftarrow K_i^{\text{endo}} + x_i, \quad
+P_i^{\text{endo}} \leftarrow P_i^{\text{endo}} + x_i
+\end{align}
+
+La réserve minimale $\max(s \cdot P_i, B_i)$ garantit que $L_i \geq B_i$ après conversion.
+
+% -------------------------------------------------------------------------
+\section{Paramètres calibrés (Bloc 8)}
+
+\begin{table}[h!]
+\centering
+\begin{tabular}{lll}
+\toprule
+Paramètre & Valeur & Rôle \\
+\midrule
+$\alpha \in [\alpha_{\min}, \alpha_{\max}]$ & $[0.8,\, 1.2]$ & Hétérogénéité des productivités \\
+$\sigma_\alpha$ & $0.005$ & Volatilité brownienne de $\alpha$ \\
+$s$ & $0.05$ & Seuil de liquidité relative \\
+$\theta$ & $0.35$ & Fraction de $q_{\max}$ effectivement empruntée \\
+$\mu$ & $0.05$ & Prime de rendement minimal à l'emprunt \\
+$f$ & $0.2$ & Partage du surplus vers l'emprunteur \\
+$\tau$ & $0$ & Taux d'amortissement (désactivé) \\
+$\delta_L$ & $0.01$ & Dépréciation du liquide \\
+$\delta_{\text{endo}}$ & $0.1$ & Dépréciation endo \\
+$\delta_{\text{exo}}$ & $0.1$ & Dépréciation exo \\
+$c$ & $0.5$ & Coefficient de reliquéfaction \\
+$\phi$ & $0.5$ & Fraction d'auto-investissement \\
+$\lambda_{\text{création}}$ & $2$ & Arrivée de nouvelles entités (Poisson) \\
+$k$ & $3$ & Taille du pool de matching \\
+$n_0$ & $100$ & Population initiale \\
+$(L_0, B_0)$ & $(200, 190)$ & Dotation initiale \\
+\bottomrule
+\end{tabular}
+\caption{Paramètres par défaut calibrés (Bloc 8).}
+\end{table}
+
+% =========================================================================
+\part{Théorisation mathématique de la dynamique}
+% =========================================================================
+
+\section{Taux d'intérêt d'équilibre partiel}
+
+\begin{proposition}[Condition de gain à l'échange]
+Une transaction $(i \to j, q, r)$ crée un surplus total si et seulement si
+$r_j^* > r_i^*$, soit $\alpha_j / \sqrt{P_j} > \alpha_i / \sqrt{P_i}$.
+En l'absence d'une prime $\mu$, le surplus est intégralement capturé au taux
+$r^* = r_i^*$ (côté prêteur) ou $r^* = r_j^*$ (côté emprunteur). Le paramètre $f$
+réalise un partage convexe.
+\end{proposition}
+
+\begin{remark}
+Le taux de transaction $r = (1-f) r_i^* + f r_j^*$ est une moyenne pondérée des taux
+internes. Pour $f \to 0$, le prêteur capture tout le surplus (condition de prêt neutre
+pour lui) ; pour $f \to 1$, c'est l'emprunteur.
+\end{remark}
+
+% -------------------------------------------------------------------------
+\section{Équilibre extractif sans crédit}
+
+En l'absence de crédit ($P_i = B_i$ constant), le bilan se réduit à :
+\begin{align}
+L_i(t+1) = L_i(t) \cdot (1 - \delta_L) + \alpha_i \sqrt{B_i} - r \cdot q_{\text{existants}}
+            - x_i(t)
+\end{align}
+
+Le flux stationnaire (sans dépréciation, sans emprunts, sans auto-investissement) :
+\begin{align}
+L_i^* = \frac{\alpha_i \sqrt{B_i}}{\delta_L}
+\end{align}
+
+L'auto-investissement crée une dynamique d'accumulation de $P_i^{\text{endo}}$ jusqu'à
+un équilibre où $\delta_{\text{endo}} \cdot K_i^{\text{endo}} = \phi \cdot \text{surplus}_i$,
+ce qui donne un passif productif endogène stationnaire :
+\begin{align}
+P_i^{\text{endo},*} \approx \frac{\phi}{\delta_{\text{endo}}} \cdot \text{surplus}_i^*
+\end{align}
+
+% -------------------------------------------------------------------------
+\section{Gain marginal à l'emprunt et volume optimal}
+
+La production marginale d'une unité supplémentaire de passif productif est $r_j^*$.
+Pour un emprunt $q$ au taux $r$ (avec auto-investissement préalable du surplus),
+le gain net est :
+
+\begin{align}
+G(q) &= \alpha_j \left(\sqrt{P_j + s_j + q} - \sqrt{P_j + s_j}\right) - r \cdot q
+\end{align}
+
+où $s_j$ est le surplus planifié. Le volume optimal $q_{\max}$ annule la dérivée :
+\begin{align}
+G'(q_{\max}) = 0 \quad \Rightarrow \quad \frac{\alpha_j}{2\sqrt{P_j + s_j + q_{\max}}} = r
+\quad \Rightarrow \quad q_{\max} = \left(\frac{\alpha_j}{2r}\right)^2 - P_j - s_j
+\end{align}
+
+Le modèle n'emprunte qu'une fraction $\theta = 0.35$ de ce volume optimal, ce qui
+correspond à une hypothèse de \textbf{prudence exogène} dans la demande de crédit.
+
+% -------------------------------------------------------------------------
+\section{Dynamique du réseau de crédit et émergence des intermédiaires}
+
+\subsection{Structure du graphe de crédit}
+
+Définissons le graphe orienté $\mathcal{G}(t)$ où les nœuds sont les entités vivantes
+et il existe un arc $(i \to j)$ si $i$ prête à $j$. Une entité $m$ est un
+\textbf{intermédiaire financier} si elle apparaît à la fois comme prêteur dans un arc
+et comme emprunteur dans un autre : $\exists\, i,j$ tels que $(i \to m)$ et $(m \to j)$.
+
+\subsection{Condition d'émergence d'un intermédiaire}
+
+Avec le matching déterministe ($k=1$), le tri strict par $r^*$ implique que
+le meilleur prêteur ne peut jamais être emprunteur dans la même session de marché.
+Avec $k \geq 2$, la stochasticité permet à une entité de rang médian $m$
+d'être tirée comme prêteur face à une entité plus petite (à $r^*$ plus élevé)
+et comme emprunteur face à une entité plus grande (à $r^*$ plus faible) dans
+des itérations successives du même pas.
+
+\begin{proposition}[Probabilité d'intermédiaire]
+Dans un pool de taille $k$, la probabilité qu'une entité médiane (classée $k/2$-ième)
+soit successivement tirée comme prêteur puis emprunteur est :
+\begin{align}
+\mathbb{P}(\text{intermédiaire}) \propto 1 - \left(\frac{1}{k}\right)^2
+\end{align}
+Cette probabilité croît vers 1 quand $k \to \infty$.
+\end{proposition}
+
+\subsection{Contagion par les intermédiaires}
+
+Soit $m$ un intermédiaire tel que $\exists\, i : i \to m$ et $m \to j$.
+Si $j$ fait défaut, $m$ subit une perte $\Delta_m$ sur sa créance envers $j$.
+Si cette perte est suffisante pour rendre $m$ insolvable, alors $i$ subit à son
+tour une perte, générant une cascade.
+
+La condition de contagion de $m$ vers $i$ est :
+\begin{align}
+\Delta_m > \mathrm{NW}_m \quad \Leftrightarrow \quad q_{mj} > L_m + R_m - B_m - C_m
+\end{align}
+
+% -------------------------------------------------------------------------
+\section{Transition de phase et criticalité auto-organisée}
+
+\subsection{Paramètre d'ordre}
+
+On définit la taille moyenne des cascades $\langle s \rangle(k)$ comme paramètre d'ordre.
+Les simulations révèlent une transition abrupte :
+
+\begin{table}[h!]
+\centering
+\begin{tabular}{ccc}
+\toprule
+$k$ & Régime & Caractère \\
+\midrule
+1 & Stable : $\langle s \rangle \approx 0$ & Pas d'intermédiaires \\
+2 & Stable : $\langle s \rangle \approx 0$ & Intermédiaires rares \\
+\textbf{3} & \textbf{Critique} & \textbf{Point de bifurcation} \\
+$\geq 4$ & Sur-critique & Cascades explosives \\
+\bottomrule
+\end{tabular}
+\caption{Transition de phase à $k=3$.}
+\end{table}
+
+\subsection{Hypothèse SOC}
+
+Le système à $k=3$ est conjecturalement un SOC : la distribution de taille de cascades
+$P(s) \propto s^{-\beta}$ suit une loi de puissance, avec un exposant $\beta \approx 1.5$–$2$.
+Ce comportement est associé à une \textbf{auto-organisation} vers le point critique sans
+paramètre de contrôle extérieur.
+
+\subsection{Mécanisme de rétroaction}
+
+Le cycle d'auto-organisation peut être décrit comme suit :
+\begin{enumerate}
+  \item L'accumulation de crédit (auto-investissement + nouveaux prêts) augmente $P_i$
+        et réduit les taux internes $r_i^*$, réduisant les surplus marginaux.
+  \item La pression concurrentielle du marché pousse les entités vers leur frontière
+        de solvabilité.
+  \item Une perturbation (défaut d'une entité sur-endettée) se propage via les
+        intermédiaires, mais la taille de la cascade est auto-limitée par la dynamique
+        de dépréciation et de création d'entités.
+  \item Le système se maintient spontanément près du point critique.
+\end{enumerate}
+
+% =========================================================================
+\part{Critique comportementale : les mécanismes simples qui dominent}
+% =========================================================================
+
+\section{Préambule}
+
+Cette section analyse les comportements observés dans les simulations et cherche à
+les expliquer par des mécanismes élémentaires, faisant \textit{court-circuit} à la
+complexité apparente du modèle. L'enjeu est de déterminer quelles hypothèses sont
+\textit{essentielles} et lesquelles sont des \textit{ornements}.
+
+% -------------------------------------------------------------------------
+\section{L'extraction domine tout le reste}
+
+\subsection{Observation}
+
+Les entités qui survivent à long terme ne sont pas celles qui optimisent leur stratégie
+de crédit, mais celles dont le ratio $\alpha_i / \sqrt{P_i}$ reste élevé. En d'autres termes,
+les petites entités à productivité élevée survivent mieux que les grandes entités endettées,
+quelle que soit la sophistication de leur comportement sur le marché du crédit.
+
+\subsection{Mécanisme simple}
+
+La loi d'extraction $\Pi_i = \alpha_i \sqrt{P_i}$ implique que le flux entrant est proportionnel
+à la racine carrée de la taille. Une entité de passif $P_i = 100$ extrait $\Pi = 10$ par pas
+(avec $\alpha = 1$). Une entité de passif $P_i = 400$ n'extrait que $\Pi = 20$ : doublement du
+revenu pour quadruplement de la taille. Le \textbf{rendement sur taille est décroissant au carré}.
+
+\subsection{Conséquence}
+
+La solvabilité d'une entité est déterminée principalement par son ratio $\mathrm{NW}_i / B_i$
+plutôt que par sa position dans le réseau de crédit. Le réseau n'est qu'un mécanisme de
+redistribution de flux déjà déterminés par l'extraction.
+
+% -------------------------------------------------------------------------
+\section{Le levier exo crée de l'équité sans coût (avec $\tau=0$)}
+
+\subsection{Observation}
+
+Avec $\tau = 0$ (amortissement désactivé), les prêts sont \textbf{perpétuels}. L'emprunteur
+reçoit un flux d'extraction supplémentaire $\alpha \sqrt{P+q} - \alpha \sqrt{P}$ à chaque pas,
+net des intérêts $r \cdot q$. Si $r < r^*$, ce gain est positif \textit{indéfiniment}.
+
+\subsection{Mécanisme simple}
+
+La combinaison (prêt perpétuel + extraction concave + dépréciation exo) constitue une machine
+à équité : $K^{\text{exo}}$ décroît de $\delta_{\text{exo}} = 10\%$ par pas, mais $P^{\text{exo}}$
+décroît symétriquement. Après $t$ pas, le principal résiduel est $q \cdot (1-\delta)^t \to 0$,
+mais l'entité a conservé l'équipement (déprécié) ET les flux d'extraction cumulés.
+L'emprunteur s'est progressivement \textbf{dés-endetté sans rembourser}.
+
+\subsection{Conséquence}
+
+Les faillites ne proviennent pas de l'accumulation de dette perpétuelle, mais d'une
+\textbf{instabilité transitoire} : une entité qui s'endette trop rapidement avant que
+son $P^{\text{exo}}$ ait le temps de déprécier peut se retrouver temporairement insolvable.
+Le modèle détecte cette insolvabilité instantanée, ce qui génère des faillites non pas
+par surendettement structurel mais par \textbf{manque de liquidité à court terme}.
+
+% -------------------------------------------------------------------------
+\section{La faillite est un problème de liquidité, pas de solvabilité fondamentale}
+
+\subsection{Observation}
+
+Le critère de faillite est $A_i < P_i^{\text{bilan}}$. Mais $A_i$ inclut $K^{\text{endo}}$
+et $K^{\text{exo}}$ qui ont leurs contreparties symétriques au passif. La faillite est donc
+déclenchée par :
+\begin{align}
+L_i + R_i - B_i - C_i < 0 \quad \Leftrightarrow \quad L_i + R_i < B_i + C_i
+\end{align}
+
+C'est une \textbf{crise de valeur nette} : l'entité a perdu des créances ($R_i$ a baissé)
+ou sa liquidité ($L_i$) sans que son passif de crédit ($C_i$) ait diminué.
+
+\subsection{Mécanisme simple}
+
+La cause directe de la plupart des faillites est le paiement d'intérêts en présence d'une
+illiquidité : l'entité vend ses créances à décote ou reliquéfie ses actifs endogènes, réduisant
+$R_i$ ou $K^{\text{endo}}$, jusqu'à ce que la valeur nette devienne négative.
+
+Le mécanisme de contagion fonctionne alors ainsi : la faillite de $j$ annule les créances
+$q_{ij}$ au bilan de $i$, réduisant $R_i$. Si $R_i < B_i + C_i - L_i$, $i$ fait faillite à son tour.
+
+% -------------------------------------------------------------------------
+\section{Le matching aléatoire est le seul générateur de topologie}
+
+\subsection{Observation}
+
+Sans matching aléatoire ($k=1$), le graphe de crédit est un graphe bipartite strict :
+les entités se divisent en prêteurs permanents (grandes) et emprunteurs permanents (petites).
+La cascade s'arrête immédiatement car aucune entité n'est à la fois prêteuse et emprunteuse.
+
+\subsection{Mécanisme simple}
+
+L'intermédiaire financier naturel émerge lorsqu'une entité médiane $m$ est tirée comme
+prêteur par rapport à une petite entité dans un pas, et comme emprunteur par rapport à
+une grande dans un autre pas du même pas de simulation. Cette double position est purement
+un artefact du tirage aléatoire dans le pool de $k$ candidats.
+
+La cascade est alors une simple chaîne de dépendances : $j \to m \to i$ dans le graphe de crédit.
+La longueur de la cascade est bornée par la longueur maximale des chemins dans ce graphe.
+
+\subsection{Conséquence}
+
+Toute la richesse phénoménologique du modèle SOC repose sur un mécanisme trivial :
+le tirage aléatoire dans un pool de 3 entités. Le reste du modèle (extraction, dépréciation,
+bilans comptables complexes) est le \textbf{substrat} qui détermine les paramètres des arcs,
+mais la topologie critique est entièrement produite par ce seul paramètre $k$.
+
+% -------------------------------------------------------------------------
+\section{La distribution de taille comme conséquence d'une hétérogénéité aléatoire}
+
+\subsection{Observation}
+
+Les entités ont des valeurs nettes $\mathrm{NW}_i$ hétérogènes. Une entité à faible
+$\mathrm{NW}_i$ est \textit{fragile} : une petite perte suffit à la rendre insolvable.
+Une entité à fort $\mathrm{NW}_i$ est \textit{robuste} : elle absorbe des pertes importantes.
+
+\subsection{Mécanisme simple}
+
+La taille d'une cascade est déterminée par le chemin emprunté dans le réseau de crédit
+et par les fragilités rencontrées en chemin. Plus le chemin traverse d'entités fragiles,
+plus la cascade est longue. La distribution de taille de cascade est donc une convolution
+de la distribution de fragilité des entités avec la distribution de longueur des chemins
+dans le graphe aléatoire.
+
+La loi de puissance observée émerge de la combinaison de ces deux distributions,
+sans nécessiter de mécanisme complexe supplémentaire. Elle serait probablement observée
+pour tout modèle avec un graphe de crédit aléatoire et une distribution hétérogène
+de fragilités, indépendamment des détails du bilan comptable.
+
+\end{document}

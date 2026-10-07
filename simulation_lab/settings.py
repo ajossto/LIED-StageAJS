@@ -11,9 +11,11 @@ RUNS_DIR = DATA_DIR / "runs"
 BASKET_DIR = DATA_DIR / "trash"
 BATCHES_DIR = DATA_DIR / "batches"
 CATALOG_FILE = DATA_DIR / "catalog.json"
+# Choix de miniature par classe de run : {model_id: nom de fichier image}.
+THUMBNAILS_FILE = DATA_DIR / "thumbnails.json"
 DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = 8777
-ACTIVE_MODEL_IDS = frozenset({"m4b_credit_soc_mini", "m4_2_credit_soc", "m4_2b_credit_soc", "m4_3_credit_soc", "m4_3live_credit_soc"})
+ACTIVE_MODEL_IDS = frozenset({"m4b_credit_soc_mini", "m4_2_credit_soc", "m4_2b_credit_soc", "m4_3_credit_soc", "m4_3live_credit_soc", "m4_3live_v2_credit_soc", "m4_4_rebond_credit_soc"})
 LEGACY_RESULT_SOURCES = {
     "modele_sans_banque_wip": [
         ROOT_DIR / "anciens_modeles" / "Modèle_sans_banque" / "resultats",
@@ -26,7 +28,13 @@ LEGACY_RESULT_SOURCES = {
 
 
 def model_is_archived(model_id: str | None) -> bool:
-    """Classe tous les modèles hors cibles actives (M4B, M4.2) dans les archives."""
+    """Classe dans les archives tout modèle absent de ``ACTIVE_MODEL_IDS``.
+
+    Le statut est recalculé à chaque lecture (``RunStorage._apply_catalog``) :
+    le champ ``archived`` écrit dans run.json est ignoré. Un programme dont
+    les runs sont importés dans le lab doit donc figurer ici, sinon ils
+    n'apparaissent que sous « Archivées ».
+    """
     return model_id not in ACTIVE_MODEL_IDS
 
 

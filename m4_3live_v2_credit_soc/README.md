@@ -94,6 +94,41 @@ python3 scripts/make_traceability.py
 bash scripts/nonregression.sh             # non-régression de simulation_lab, exécutée
 ```
 
+## Les figures des rapports
+
+Les 23 figures des deux rapports sont **engendrées**, jamais dessinées à la
+main — même règle que les nombres (`make_numbers.py` → macros LaTeX).
+
+```bash
+python3 scripts/amplitude.py      # mesure les 4 leviers -> results/analysis/amplitude.csv
+python3 scripts/make_numbers.py   # toutes les macros -> report/numbers.tex
+python3 scripts/make_figures.py   # 23 figures -> report/figures/*.pdf
+python3 tests/test_figures.py     # confronte les figures au texte
+```
+
+Trois règles, et elles sont **testées** :
+
+1. **Les figures vont dans `report/figures/`, qui est versionné.** `results/`
+   ne l'est pas (`.gitignore:2`) : une figure incluse depuis là ferait échouer
+   la compilation du rapport sur un clone propre. Toute figure qui trace des
+   données dépose donc la série *réellement tracée* — l'agrégat dessiné, pas
+   la source de 8000 lignes — dans `report/figures/data/`, et un test l'exige
+   (seule `g04_ordre_phases`, purement analytique, en est dispensée).
+2. **Aucune figure incluse sans PDF, aucune figure engendrée sans lecteur.**
+   26 inclusions pour 23 figures ; trois sont partagées par les deux rapports.
+3. **Aucune dérive entre figure et texte.** Chaque valeur *annotée* sur une
+   figure est enregistrée dans `report/figures/manifest.json` par `save()`, et
+   confrontée à la macro correspondante de `numbers.tex` — plus de quatre-vingt-dix
+   valeurs sont vérifiées ainsi. Un quatrième test refuse toute valeur annotée
+   qui n'aurait pas d'entrée dans la table de contrôle, sans quoi le garde-fou
+   se viderait à mesure qu'on ajoute des figures.
+
+Ce qui a été corrigé en installant ce dispositif : le tableau d'amplitude du
+rapport de résultats portait quatre nombres recopiés à la main depuis la sortie
+d'un test (`scripts/amplitude.py` les persiste maintenant), et les deux
+corrélations de diagnostic étaient citées en **écart relatif** alors qu'elles
+sont signées et changent de signe — elles le sont désormais en niveau.
+
 ## Consulter les simulations
 
 Les **203 runs** du programme (5 amorçages, 45 bras de campagne,

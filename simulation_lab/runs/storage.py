@@ -11,7 +11,7 @@ from uuid import uuid4
 
 from simulation_lab.contracts import Artifact, SimulationResult
 from simulation_lab.contracts import collect_artifacts
-from simulation_lab.settings import BASKET_DIR, BATCHES_DIR, CATALOG_FILE, LEGACY_RESULT_SOURCES, ROOT_DIR, RUNS_DIR, ensure_directories, model_is_archived
+from simulation_lab.settings import BASKET_DIR, BATCHES_DIR, CATALOG_FILE, LEGACY_RESULT_SOURCES, ROOT_DIR, RUNS_DIR, THUMBNAILS_FILE, ensure_directories, model_is_archived
 
 
 def utc_now() -> str:
@@ -22,6 +22,28 @@ class RunStorage:
     def __init__(self) -> None:
         ensure_directories()
         self._catalog = self._load_catalog()
+        self._thumbnails: dict[str, str] = _load_json_dict(THUMBNAILS_FILE)
+
+    def class_thumbnails(self) -> dict[str, str]:
+        return dict(self._thumbnails)
+
+    def set_class_thumbnail(self, model_id: str, label: str | None) -> dict[str, str]:
+        """Choisit le nom d'image servant de miniature à tous les runs d'une classe.
+
+        ``label`` est un nom de fichier (``Artifact.label``) et non un chemin :
+        les chemins relatifs diffèrent d'un run à l'autre. ``None`` ou ``""``
+        rétablit le choix automatique (``_select_preview_artifact``).
+        """
+        if not isinstance(model_id, str) or not model_id:
+            raise ValueError("model_id est requis")
+        if label is not None and not isinstance(label, str):
+            raise ValueError("label doit être un nom de fichier image ou null")
+        if label:
+            self._thumbnails[model_id] = label
+        else:
+            self._thumbnails.pop(model_id, None)
+        _write_json_atomic(THUMBNAILS_FILE, self._thumbnails)
+        return self.class_thumbnails()
 
     def create_run(
         self,
@@ -110,7 +132,7 @@ class RunStorage:
                 payload.setdefault("origin", "managed")
                 payload.setdefault("deletable", True)
                 payload.setdefault("keep_supported", True)
-                payload.setdefault("preview_artifact", (_select_preview_artifact(payload.get("artifacts", [])) or {}).get("relative_path"))
+                _fill_preview_artifact(payload)
                 payload = self._apply_catalog(payload)
                 if archived is None or payload["archived"] is archived:
                     runs.append(payload)
@@ -132,7 +154,7 @@ class RunStorage:
                 payload.setdefault("origin", "managed")
                 payload.setdefault("deletable", True)
                 payload.setdefault("keep_supported", True)
-                payload.setdefault("preview_artifact", (_select_preview_artifact(payload.get("artifacts", [])) or {}).get("relative_path"))
+                _fill_preview_artifact(payload)
                 payload.setdefault("trashed", True)
                 payload = self._apply_catalog(payload)
                 runs.append(payload)
@@ -148,7 +170,7 @@ class RunStorage:
         payload.setdefault("origin", "managed")
         payload.setdefault("deletable", True)
         payload.setdefault("keep_supported", True)
-        payload.setdefault("preview_artifact", (_select_preview_artifact(payload.get("artifacts", [])) or {}).get("relative_path"))
+        _fill_preview_artifact(payload)
         return self._apply_catalog(payload)
 
     def set_keep(self, run_id: str, keep: bool) -> dict[str, Any]:
@@ -238,12 +260,24 @@ class RunStorage:
         return self.read_metadata(run_id)
 
     def empty_trash(self) -> dict[str, Any]:
+        """Vide la corbeille en épargnant les runs marqués « à garder » ou « importants »."""
         count = 0
+        spared: list[str] = []
         for path in list(BASKET_DIR.glob("*")):
-            if path.is_dir():
-                shutil.rmtree(path)
-                count += 1
-        return {"deleted_count": count}
+            if not path.is_dir():
+                continue
+            try:
+                metadata = json.loads((path / "run.json").read_text(encoding="utf-8"))
+                metadata.setdefault("run_id", path.name)
+                metadata = self._apply_catalog(metadata)
+            except (OSError, ValueError):
+                metadata = {}
+            if metadata.get("keep") or metadata.get("important"):
+                spared.append(path.name)
+                continue
+            shutil.rmtree(path)
+            count += 1
+        return {"deleted_count": count, "spared_run_ids": spared}
 
     def permanently_delete_from_trash(self, run_id: str) -> None:
         trash_dir = BASKET_DIR / run_id
@@ -258,18 +292,16 @@ class RunStorage:
         base_dir = self._external_path_from_run_id(run_id) if run_id.startswith("external__") else self._managed_run_dir(run_id)
         candidate = (base_dir / relative_path).resolve()
         base_resolved = base_dir.resolve()
-        if not str(candidate).startswith(str(base_resolved)):
+        # ``str.startswith`` laisserait passer un dossier voisin (``run_1`` → ``run_10``).
+        if not candidate.is_relative_to(base_resolved):
             raise ValueError("Chemin d'artefact invalide")
         return candidate
 
     def write_metadata(self, run_dir: Path, metadata: dict[str, Any]) -> None:
-        (run_dir / "run.json").write_text(json.dumps(metadata, indent=2, ensure_ascii=False), encoding="utf-8")
+        _write_json_atomic(run_dir / "run.json", metadata)
 
     def write_batch(self, payload: dict[str, Any]) -> None:
-        (BATCHES_DIR / f"{payload['batch_id']}.json").write_text(
-            json.dumps(payload, indent=2, ensure_ascii=False),
-            encoding="utf-8",
-        )
+        _write_json_atomic(BATCHES_DIR / f"{payload['batch_id']}.json", payload)
 
     def read_batch(self, batch_id: str) -> dict[str, Any]:
         return json.loads((BATCHES_DIR / f"{batch_id}.json").read_text(encoding="utf-8"))
@@ -277,7 +309,7 @@ class RunStorage:
     def list_external_runs(self) -> list[dict[str, Any]]:
         runs: list[dict[str, Any]] = []
         seen: set[Path] = set()
-        for meta_path in sorted(ROOT_DIR.rglob("meta.json"), reverse=True):
+        for meta_path in sorted(_find_meta_files(ROOT_DIR), reverse=True):
             path = meta_path.parent
             if path in seen:
                 continue
@@ -334,7 +366,12 @@ class RunStorage:
 
     def _external_path_from_run_id(self, run_id: str) -> Path:
         _, encoded = run_id.split("external__", 1)
-        return Path(encoded.replace("__", "/"))
+        path = Path(encoded.replace("__", "/")).resolve()
+        # L'identifiant vient de l'URL : sans ce contrôle, ``external____etc``
+        # donnerait accès à n'importe quel fichier de la machine.
+        if not path.is_relative_to(ROOT_DIR) or not (path / "meta.json").is_file():
+            raise FileNotFoundError(run_id)
+        return path
 
     def _detect_model_id_from_path(self, path: Path) -> str:
         lower = path.as_posix().lower()
@@ -372,7 +409,7 @@ class RunStorage:
             return {}
 
     def _save_catalog(self) -> None:
-        CATALOG_FILE.write_text(json.dumps(self._catalog, indent=2, ensure_ascii=False), encoding="utf-8")
+        _write_json_atomic(CATALOG_FILE, self._catalog)
 
     def _set_catalog_fields(self, run_id: str, updates: dict[str, Any]) -> None:
         entry = self._catalog.get(run_id, {})
@@ -402,6 +439,19 @@ class RunStorage:
             payload["important"] = entry["important"]
         if "keep" in entry:
             payload["keep"] = entry["keep"]
+        preferred = self._thumbnails.get(payload.get("model_id"))
+        if preferred:
+            # Un run sans cette image garde sa miniature automatique.
+            match = next(
+                (
+                    artifact
+                    for artifact in payload.get("artifacts", [])
+                    if artifact.get("kind") == "image" and artifact.get("label") == preferred
+                ),
+                None,
+            )
+            if match:
+                payload["preview_artifact"] = match["relative_path"]
         return payload
 
     def _looks_like_external_simulation(self, path: Path, meta_path: Path) -> bool:
@@ -476,6 +526,48 @@ class RunStorage:
         raise RuntimeError(f"Impossible d'ouvrir automatiquement {path}")
 
 
+def _fill_preview_artifact(payload: dict[str, Any]) -> None:
+    # ``setdefault`` ne remplaçait pas un ``"preview_artifact": null`` déjà
+    # écrit dans run.json : la plupart des runs M4B restaient sans miniature.
+    if not payload.get("preview_artifact"):
+        payload["preview_artifact"] = (_select_preview_artifact(payload.get("artifacts", [])) or {}).get("relative_path")
+
+
+def _load_json_dict(path: Path) -> dict[str, Any]:
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+    return payload if isinstance(payload, dict) else {}
+
+
+def _write_json_atomic(path: Path, payload: Any) -> None:
+    """Écrit via un fichier temporaire puis ``os.replace``.
+
+    Le serveur lit les ``run.json`` pendant que les jobs les réécrivent : une
+    écriture directe expose un fichier tronqué, que ``list_runs`` ignore
+    silencieusement et que ``read_metadata`` transforme en erreur.
+    """
+    tmp_path = path.with_name(f".{path.name}.{uuid4().hex[:8]}.tmp")
+    tmp_path.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
+    os.replace(tmp_path, path)
+
+
+# Dossiers jamais explorés à la recherche de simulations externes : sans cet
+# élagage, le parcours de ``.venv``, ``.git`` et des runs gérés prenait ~19 s
+# à chaque affichage des archives.
+_EXTERNAL_SCAN_PRUNED = {".git", ".venv", "node_modules", "__pycache__", "tmp_runs", "simulation_lab_data"}
+
+
+def _find_meta_files(root: Path) -> list[Path]:
+    found: list[Path] = []
+    for dirpath, dirnames, filenames in os.walk(root):
+        dirnames[:] = [name for name in dirnames if name not in _EXTERNAL_SCAN_PRUNED]
+        if "meta.json" in filenames:
+            found.append(Path(dirpath) / "meta.json")
+    return found
+
+
 def _select_preview_artifact(artifacts: list[dict[str, Any]]) -> dict[str, Any] | None:
     images = [item for item in artifacts if item.get("kind") == "image"]
     if not images:
@@ -491,4 +583,8 @@ def _select_preview_artifact(artifacts: list[dict[str, Any]]) -> dict[str, Any] 
         match = next((item for item in images if item.get("label") == preferred_name), None)
         if match:
             return match
-    return images[0]
+    # À défaut de figure connue, prendre une image matricielle : depuis que les
+    # figures M4.3 sont écrites aussi en SVG, le repli pouvait élire le jumeau
+    # vectoriel d'une figure — lourd à charger en vignette de galerie.
+    raster = [item for item in images if not str(item.get("label", "")).lower().endswith(".svg")]
+    return (raster or images)[0]

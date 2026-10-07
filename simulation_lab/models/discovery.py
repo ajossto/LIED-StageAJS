@@ -13,14 +13,24 @@ class ModelRegistry:
         ensure_directories()
         self.models_dir = models_dir or MODELS_DIR
         self._models: dict[str, BaseSimulationModel] = {}
+        self.load_errors: dict[str, str] = {}
         self.reload()
 
     def reload(self) -> None:
+        # Un model.py cassé est écarté et consigné dans ``load_errors`` :
+        # auparavant, sa seule erreur empêchait le serveur de démarrer.
         self._models = {}
+        self.load_errors = {}
         for model_file in sorted(self.models_dir.glob("*/model.py")):
-            model = _load_model_from_file(model_file)
+            source = str(model_file.relative_to(self.models_dir))
+            try:
+                model = _load_model_from_file(model_file)
+            except Exception as exc:  # noqa: BLE001 - tout échec d'import d'un modèle tiers
+                self.load_errors[source] = f"{exc.__class__.__name__}: {exc}"
+                continue
             if model.model_id in self._models:
-                raise ValueError(f"model_id dupliqué: {model.model_id}")
+                self.load_errors[source] = f"model_id dupliqué: {model.model_id}"
+                continue
             model.archived = model_is_archived(model.model_id)
             self._models[model.model_id] = model
 

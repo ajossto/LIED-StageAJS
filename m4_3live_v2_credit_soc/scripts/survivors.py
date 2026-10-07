@@ -39,7 +39,6 @@ from m4_3live_v2.live import load_snapshot  # noqa: E402
 from m4_3live_v2.model import Config, Intervention, net_worth  # noqa: E402
 
 ANALYSIS = ROOT / "results" / "analysis"
-FIGURES = ROOT / "report" / "figures"
 CAMPAIGN = ROOT / "results" / "campaign"
 
 T0 = 2000
@@ -138,92 +137,6 @@ def summarise(rows: list[dict]) -> list[dict]:
     return out
 
 
-def figure(rows: list[dict], summary: list[dict], path: Path) -> None:
-    import matplotlib
-
-    matplotlib.use("Agg")
-    import matplotlib.pyplot as plt
-
-    try:
-        from simulation_lab.plot_utils import apply_style
-
-        apply_style()
-    except Exception:
-        pass
-
-    figure, axes = plt.subplots(1, 3, figsize=(13, 4))
-    colours = {("free", 0): "#c1440e", ("free", 1): "#294c60",
-               ("richest_lends", 0): "#e8a87c", ("richest_lends", 1): "#7a9e9f"}
-    names = {0: "ancienne technologie (A = 1,0)", 1: "nouvelle technologie (A = 1,5)"}
-
-    # (a) effectif survivant de l'ancienne technologie, par graine et par règle
-    seeds = sorted({row["seed"] for row in summary})
-    width = 0.35
-    for index, direction in enumerate(("free", "richest_lends")):
-        counts = []
-        for seed in seeds:
-            match = [s for s in summary if s["seed"] == seed
-                     and s["direction"] == direction and s["tech"] == 0]
-            counts.append(match[0]["n"] if match else 0)
-        positions = [s + (index - 0.5) * width for s in seeds]
-        axes[0].bar(positions, counts, width=width, color=colours[(direction, 0)],
-                    label="sens libre" if direction == "free" else "règle v1")
-        # Un effectif nul ne dessine aucune barre : on l'écrit, sinon un
-        # lecteur croit à une donnée manquante.
-        for x, value in zip(positions, counts):
-            if value == 0:
-                axes[0].text(x, 0.15, "0", ha="center", va="bottom", fontsize=8,
-                             color=colours[(direction, 0)], fontweight="bold")
-    axes[0].set_xticks(seeds)
-    axes[0].set_xlabel("graine")
-    axes[0].set_ylabel("ancienne technologie :\neffectif encore vivant")
-    axes[0].set_title(r"(a) à $t_0 + 2000$, la cohorte d'origine", fontsize=9)
-    axes[0].legend(fontsize=7)
-
-    # (b) position nette contre capital, état final, sens libre
-    subset = [r for r in rows if r["direction"] == "free" and r["seed"] == seeds[0]]
-    for tech in (1, 0):
-        group = [r for r in subset if r["tech"] == tech]
-        if not group:
-            continue
-        axes[1].scatter([r["K"] for r in group], [r["net_position"] for r in group],
-                        s=18 if tech == 0 else 5, alpha=0.85 if tech == 0 else 0.25,
-                        color=colours[("free", tech)], label=names[tech],
-                        zorder=3 if tech == 0 else 1)
-    axes[1].axhline(0.0, color="black", lw=0.8)
-    axes[1].set_xscale("symlog")
-    axes[1].set_xlabel("capital $K$")
-    axes[1].set_ylabel("position nette (créances $-$ dettes)")
-    axes[1].set_title("(b) qui détient les créances, sens libre", fontsize=9)
-    axes[1].legend(fontsize=7)
-
-    # (c) part du revenu venant des intérêts
-    labels, values, colour_list = [], [], []
-    for direction in ("free", "richest_lends"):
-        for tech in (0, 1):
-            match = [s for s in summary if s["direction"] == direction and s["tech"] == tech]
-            if not match:
-                continue
-            labels.append(("libre" if direction == "free" else "v1") + f"\ntech {tech}")
-            values.append(100.0 * sum(m["part_du_revenu_en_interets"] for m in match) / len(match))
-            colour_list.append(colours[(direction, tech)])
-    axes[2].bar(range(len(labels)), values, color=colour_list)
-    axes[2].set_xticks(range(len(labels)))
-    axes[2].set_xticklabels(labels, fontsize=7)
-    axes[2].set_ylabel("part du revenu venant des intérêts (%)")
-    axes[2].set_title("(c) vivre de sa production, ou de l'intérêt", fontsize=9)
-
-    for axis in axes:
-        axis.grid(True, alpha=0.2)
-    figure.suptitle(
-        "Le régime que le sens libre rend possible — bras new_A150, état à $t_0+2000$"
-    )
-    figure.tight_layout()
-    path.parent.mkdir(parents=True, exist_ok=True)
-    figure.savefig(path, dpi=130, bbox_inches="tight")
-    plt.close(figure)
-
-
 def main() -> int:
     ANALYSIS.mkdir(parents=True, exist_ok=True)
     jobs = [(seed, direction) for seed in SEEDS for direction in ("free", "richest_lends")]
@@ -246,7 +159,6 @@ def main() -> int:
         writer = csv.DictWriter(handle, fieldnames=list(summary[0]))
         writer.writeheader()
         writer.writerows(summary)
-    figure(rows, summary, FIGURES / "survivors.png")
 
     print(json.dumps(summary, indent=2, ensure_ascii=False))
     print(f"# {len(jobs)} rejeux en {time.time() - started:.0f} s ; "

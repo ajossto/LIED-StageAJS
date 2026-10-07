@@ -1,0 +1,229 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[french]{babel}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb}
+\usepackage[margin=2.6cm]{geometry}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true,linkcolor=blue!50!black}
+
+\newcommand{\NW}{\mathrm{NW}}
+\newcommand{\code}[1]{\texttt{#1}}
+
+\title{Spécification technique de l'implémentation M2\\
+\large (workspace \code{m2\_fable})}
+\author{Agent de réplication (workspace \code{m2\_fable})}
+\date{3 juillet 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Cette spécification fige, \emph{avant} l'implémentation, les structures de
+données, les conventions laissées ambiguës par le document de conception, les
+invariants, les tests, les formats de sortie et le protocole de validation.
+Toute convention tranchée ici est marquée \textbf{[C$n$]} et sera rappelée
+dans les rapports de résultats : ce sont des choix, pas des faits.
+\end{abstract}
+
+\section{Arborescence et environnement}
+
+\begin{itemize}[nosep]
+\item Code : \code{m2\_fable/src/m2/\{config, entities, contracts, market,
+  bankruptcy, simulation, metrics, analysis, plots\}.py}
+\item Expériences : \code{m2\_fable/experiments/m2/\{run\_baseline,
+  run\_validation, run\_grid, run\_ablation\}.py}
+\item Tests : \code{m2\_fable/tests/test\_*.py} (style pytest) + runner
+  stdlib \code{tests/run\_all.py} (pytest absent du venv, installation
+  interdite).
+\item Python : \code{/home/anatole/jupyter/.venv/bin/python3}
+  (numpy 2.4.3, scipy 1.17.1, matplotlib 3.10.8).
+\item Résultats : \code{m2\_fable/experiments/m2/results/<run\_id>/}.
+\end{itemize}
+
+\section{Structures de données}
+
+\paragraph{Entités (structure de tableaux).} Les entités sont stockées en
+« struct of arrays » (listes Python homogènes, index $=$ identifiant entier
+croissant, jamais réutilisé) :
+\code{w[i]}, \code{alive[i]}, \code{birth[i]}, \code{claims[i]},
+\code{debts[i]} (agrégats de contrats, maintenus incrémentalement),
+\code{int\_in[i]}, \code{int\_out[i]} (flux d'intérêts du pas courant),
+\code{defaulted[i]} (défaut de service au pas courant).
+Justification : $10^3$--$10^4$ entités, accès par index dominant ; les
+dataclasses par entité coûteraient cher sans rien apporter ici. Le module
+\code{entities.py} encapsule ces tableaux dans une classe \code{Population}
+avec méthodes \code{born()}, \code{kill()}, \code{nw(i)}.
+
+\paragraph{Contrats.} \code{contracts.py} : classe \code{LoanBook}.
+Un contrat $=$ enregistrement \code{[lender, borrower, q, r]} dans un dict
+\code{loans[loan\_id]}, avec index inverses \code{by\_lender[i]} et
+\code{by\_borrower[i]} (sets d'ids). Toutes les mutations passent par
+\code{add(l,b,q,r)}, \code{remove(lid)}, \code{set\_principal(lid,q)} qui
+maintiennent \code{claims}/\code{debts}. Aucun autre code ne touche à ces
+agrégats.
+
+\paragraph{Config.} \code{config.py} : dataclass gelée \code{M2Config}
+(\code{alpha=1.0, delta=0.05, lam=10.0, k=6, sigma=0.25, w0=30.0, d0=28.0,
+seed, T}, tolérances \code{tol\_nw=1e-9, q\_min=1e-9}, variantes nommées :
+\code{rate\_rule='geom'|'arith'}, \code{fail\_lender\_loans='transfer'|'cancel'},
+\code{fail\_residual='prorata'|'destroy'}, \code{credit=True|False}).
+Sérialisée en JSON dans chaque run. Toute variante expérimentale passe par un
+champ nommé de la config — jamais par une constante modifiée à la main.
+
+\section{Conventions tranchées}
+
+\begin{description}[style=nextline]
+\item[C1 — Choc « commun en loi », i.i.d. par entité.] $\eta_i$ est tiré
+  indépendamment pour chaque entité à chaque pas, de la même loi
+  $\mathcal N(-\sigma^2/2,\sigma^2)$. (Lecture confirmée par le prototype ;
+  un choc agrégé serait une variante distincte, non implémentée ici.)
+\item[C2 — Ordre de service des intérêts.] Contrats parcourus par
+  \code{loan\_id} croissant (ordre de création, déterministe). Paiement
+  intégral si $w_b \ge rq$ ; sinon transfert de tout $w_b$, $w_b \gets 0$,
+  marquage \code{defaulted[b]}. Les contrats suivants du même emprunteur
+  reçoivent 0 (et le marquent aussi en défaut, idempotent). Alternative au
+  prorata documentée, non retenue (coût : deux passes ; bénéfice attendu
+  nul au premier ordre — à re-examiner si les défauts partiels s'avèrent
+  fréquents).
+\item[C3 — Exclusion des défaillants du marché.] Une entité marquée
+  \code{defaulted} au pas courant ne participe pas au marché du crédit de ce
+  pas (elle fera faillite en phase 7). Suit le prototype.
+\item[C4 — Garde de gain à l'échange.] Un round ne crée un contrat que si
+  $w_\ell > w_b$ strictement et $q \ge $ \code{q\_min}. Si $w_b = 0$,
+  $r^*_b$ est évalué avec le garde $\max(w_b, 10^{-9})$.
+\item[C5 — Faillite : créances de la faillie transférées au prorata.]
+  Chaque contrat $(i, b, q, r)$ où $i$ est prêteuse est scindé entre les
+  créanciers contractuels $c$ de $i$ au prorata de leurs créances $q_c$ :
+  principal $q \cdot q_c / \sum q_c$, même taux, même emprunteur. Parts
+  $<$ \code{q\_min} abandonnées (perte sèche de l'emprunteur… en fait
+  réduction de sa dette : voir invariant I7). Si un créancier $c$ est
+  l'emprunteur $b$ du contrat transféré, la part est annulée (dette envers
+  soi-même). Variante \code{cancel} : contrats prêtés simplement annulés
+  (c'est ce que fait le prototype E7c — ablation obligatoire, §7).
+\item[C6 — Faillite : capital résiduel.] $w_i$ résiduel réparti aux
+  créanciers contractuels \emph{vivants} au prorata ; s'il n'y a aucun
+  créancier contractuel (seule $d_0$ au passif), le résiduel est détruit.
+  Variante \code{destroy} : détruit dans tous les cas.
+\item[C7 — Ordre de résolution des cascades.] File des insolvables triée par
+  identifiant croissant ; on traite une faillite entièrement (annulations,
+  transferts, distribution), puis on re-balaie les vivantes pour
+  $\NW < -$\code{tol\_nw}. Itération jusqu'à point fixe. Les créanciers déjà
+  morts au moment d'une distribution ne reçoivent rien (leur part est
+  détruite).
+\item[C8 — Revenu.] $y_i$ du pas $=$ montant d'extraction effectivement
+  ajouté en phase 3 ($\alpha\sqrt{w_i}$ évalué après choc) $+$ intérêts
+  reçus en phase 4. Mesuré dans le snapshot de fin de pas. Revenu net $=$
+  $y_i -$ intérêts payés.
+\item[C9 — Les nouveau-nés du pas participent à tout le pas] (choc,
+  extraction, marché). Âge $=$ $t_{\mathrm{snapshot}} - t_{\mathrm{naissance}}$.
+\item[C10 — RNG.] Un unique \code{numpy.random.default\_rng(seed)} par
+  simulation ; aucun usage de \code{random} global. Ordre des tirages fixé
+  par la séquence des phases (reproductibilité bit à bit à seed donné).
+\end{description}
+
+\section{Invariants (vérifiés par tests, certains par assertions runtime)}
+
+\begin{enumerate}[nosep]
+\item[I1.] $w_i \ge 0$ pour toute entité vivante, à toute phase (clamp à 0
+  autorisé uniquement pour absorber l'erreur flottante $|w| <$ 1e-12).
+\item[I2.] Tout contrat actif a $q \ge$ \code{q\_min} $> 0$ et lie deux
+  entités \emph{vivantes} distinctes ; aucun contrat orphelin (index
+  inverses cohérents avec \code{loans}).
+\item[I3.] \code{claims[i]} $= \sum_{\ell=i} q$ et \code{debts[i]}
+  $= \sum_{b=i} q$ exactement (reconstruction périodique comparée aux
+  agrégats incrémentaux, tolérance 1e-6 relative).
+\item[I4.] Création d'un prêt : $w_\ell + w_b$ inchangé (conservation du
+  principal).
+\item[I5.] Service d'intérêts sans défaut : $\sum_i w_i$ inchangé.
+\item[I6.] Contrats et $d_0$ jamais dépréciés ; seule la phase 5 multiplie
+  $w$ par $(1-\delta)$.
+\item[I7.] Bilan de faillite : la somme des pertes sèches des prêteurs
+  $+$ parts détruites $=$ dettes contractuelles annulées $-$ résiduel
+  distribué (loggé par cascade, vérifié en test).
+\item[I8.] Fin de pas : aucune vivante avec $\NW < -$\code{tol\_nw}.
+\item[I9.] Aucune borne exogène sur $N$ : seuls garde-fous d'\emph{arrêt}
+  (extinction $N=0$, explosion $N > 3\cdot 10^4$) qui terminent la
+  simulation avec un statut explicite, sans modifier la dynamique.
+\item[I10.] Deux runs de même config et seed produisent des séries et
+  snapshots identiques bit à bit.
+\end{enumerate}
+
+\section{Risques numériques identifiés}
+(i)~Prolifération de contrats par scission C5 : suivi du nombre de contrats
+par pas, seuil d'alerte ; les parts $<$ \code{q\_min} sont abandonnées.
+(ii)~$\sqrt{w}$ pour $w$ minuscule : sans danger ; $r^* = \alpha/(2\sqrt w)$
+pour $w \to 0$ : gardé par C4. (iii)~Accumulation d'erreur flottante dans
+\code{claims}/\code{debts} incrémentaux : reconstruction de contrôle en fin
+de run (et dans les tests), pas à chaque pas. (iv)~Cascades longues :
+plafond d'itérations $=$ nombre de vivantes $+ 1$ (une faillite au moins par
+itération sinon point fixe) — dépassement $=$ bug, exception.
+
+\section{Conventions de temps et d'unités}
+$\alpha = 1$ fixe l'unité de flux ; $\delta$ est l'inverse de l'unité de
+temps (un pas $=$ un « pas de marché » : chaque vivante échantillonnée en
+moyenne une fois par le marché) ; $\lambda$ fixe l'échelle de $N^*$.
+Transitoire exclu des mesures : $t < 500$. Fenêtres de mesure :
+$[500,1000)$, $[1000,1500)$, $[1500,2000)$, instantanés poolés tous les 50
+pas \emph{au sein d'une fenêtre, d'un seed} ; jamais de pooling inter-seed.
+
+\section{Sorties}
+\paragraph{Séries par pas (CSV \code{series.csv}).} \code{t, births, deaths,
+pop, w\_tot, nw\_tot, n\_loans, loan\_volume\_new, interest\_paid,
+defaults, cascade\_iters, top\_decile\_deaths}.
+\paragraph{Snapshots (NPZ \code{snap\_t<t>.npz}).} Vecteurs alignés
+\code{id, w, claims, debts, nw, income, income\_net, age} des vivantes.
+Cadence : tous les 50 pas à partir de $t=500$, plus $t \in \{100, 250\}$
+pour le transitoire.
+\paragraph{Config et résumé.} \code{config.json} (dataclass + seed + version
+du code) ; \code{summary.json} (statut de fin, durée, compteurs).
+\paragraph{Figures (PNG 150 dpi, \code{figures/}).} Générées par
+\code{plots.py} à partir des fichiers ci-dessus (jamais depuis l'état en
+mémoire) : séries temporelles ; histogrammes/CCDF log-log de $w$, $\NW$,
+revenu ; QQ-plot exponentiel du corps ; âge vs $\log \NW$ ; distribution des
+tailles de cascade.
+
+\section{Protocole de validation (résumé opérationnel)}
+\begin{enumerate}[nosep]
+\item \textbf{Baseline} : config du rapport ($\delta=0{,}05$, $k=6$,
+  $\sigma=0{,}25$, $\lambda=10$, $w_0=30$, $d_0=28$, $N(0)=0$, $T=2000$),
+  3 seeds.
+\item \textbf{Corps} (sur $\NW$, $y$, $w$ ; par fenêtre, par seed) : MLE
+  exponentielle vs gamma, log-normale, Fisk sur les 95\,\% inférieurs
+  (AIC/BIC) ; QQ-plot ; med/mean ; test mécanistique $T \approx B_0/A_0$ sur
+  les incréments de $\NW$ des entités du corps (fenêtre de $\NW$ fixe).
+\item \textbf{Queue} : CSN ($x_{\min}$ par KS, MLE, bootstrap $\ge 200$
+  rééchantillonnages), LR Vuong contre log-normale, par fenêtre et par
+  seed ; exposants comparés à $x_{\min}$ commun (médiane des $x_{\min}$).
+\item \textbf{Anti-cohorte} : corr(âge, $\log \NW$) ; âges par décile de
+  $\NW$ ; CSN à âge contrôlé ($[50,150)$, $[150,400)$) \emph{sur $\NW$} ;
+  renouvellement du top décile entre fenêtres (fraction née récemment,
+  survie, mortalité du top).
+\item \textbf{SOC} : distribution des faillites par pas et par $k \in
+  \{2,3,4,6\}$ ; concentration du crédit (part du top décile des créances)
+  vs taille de cascade ; réponse de l'exposant à
+  $\sigma \in \{0{,}15, 0{,}25, 0{,}35\}$.
+\item \textbf{Grille de robustesse} : $\sigma \in \{0{,}15,0{,}25,0{,}35\}
+  \times \varepsilon_0/w_0 \in \{0{,}05,0{,}25,0{,}5\} \times k \in \{3,6\}$
+  ($w_0 = 30$ fixe, $d_0$ ajusté), 1 seed/case.
+\item \textbf{Ablations} : \code{fail\_lender\_loans=cancel} (réplication du
+  prototype E7c), \code{fail\_residual=destroy} (contrôle anti-condensation),
+  \code{credit=False} (modèle nul GBM+extraction+$d_0$).
+\end{enumerate}
+
+\section{Tests unitaires (liste normative)}
+Création d'entité (dotation, $d_0$, $\NW = \varepsilon_0$) ; calcul de
+$\NW$ avec contrats ; création de contrat (conservation I4, index I2/I3) ;
+service complet (I5) ; service partiel (transfert du disponible, défaut,
+$w_b = 0$) ; dépréciation (I6) ; règle de marché (cas $q_{\mathrm{dem}}$
+limitant, $q_{\mathrm{off}}$ limitant, $w_\ell \le w_b$, $N < k$, $N \in
+\{0,1\}$) ; faillite simple (annulation, perte sèche, transfert C5,
+résiduel C6, $d_0$ éteinte) ; cascade à deux niveaux construite à la main ;
+part au borrower-créancier (annulation C5) ; créancier mort (C7) ;
+invariants I1--I3 après un run court ; reproductibilité I10 ; cas limites
+$w = 0$, $q \le$ \code{q\_min} ; garde-fous I9.
+
+\end{document}

@@ -1,0 +1,9 @@
+maillon,colonne,moyenne_pct,demi_intervalle_pct,t
+1. contrats vivants,n_loans,24.3444,2.0194,26.5336
+2. intérêts versés,interest_paid,2.96133,1.17912,5.52775
+3. mortalité,deaths_per_pop,2.12464,0.664142,7.04116
+"4. capital détruit,
+rapporté au stock",destroyed_per_K,7.52138,0.863128,19.1797
+5. population,pop,-2.09966,1.01322,-4.56103
+6. capital total,K_tot,-10.1051,1.12218,-19.8196
+7. production,prod_tot,-5.20181,1.01885,-11.2373

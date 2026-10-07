@@ -2,6 +2,10 @@
 
 Ce dossier regroupe les documents de cadrage qui encombraient la racine du dépôt.
 
+Le point d'entrée courant du dépôt est désormais `../README.md`. Les documents
+ci-dessous incluent des notes historiques et ne désignent pas tous la version
+active actuelle.
+
 - `ORGANISATION_ACTIVE_27_MARS.md` : décision historique datée du 27 mars 2026
 - `RAPPORT_COMPARAISON_VERSIONS.md` : audit comparatif des lignées de modèles
 - `README_simulation_lab.md` : documentation de l'outil local `simulation_lab`

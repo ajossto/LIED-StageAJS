@@ -18,6 +18,20 @@ from simulation_lab.runs.storage import RunStorage
 from simulation_lab.settings import APP_NAME, DEFAULT_HOST, DEFAULT_PORT, ROOT_DIR, cpu_count, recommended_workers
 
 
+def _exception_message(exc: BaseException) -> str:
+    # ``str(KeyError("x"))`` renvoie « 'x' » avec les guillemets.
+    if isinstance(exc, KeyError) and exc.args:
+        return str(exc.args[0])
+    return str(exc) or exc.__class__.__name__
+
+
+def _required_int(body: dict, name: str) -> int:
+    value = body.get(name)
+    if value is None or value == "":
+        raise ValueError(f"{name} est requis (entier)")
+    return int(value)
+
+
 def _json_safe(value):
     """Convertit les flottants non finis en ``null`` JSON.
 
@@ -48,7 +62,40 @@ class SimulationLabHTTPServer(ThreadingHTTPServer):
 class SimulationLabHandler(BaseHTTPRequestHandler):
     server: SimulationLabHTTPServer
 
+    # Toute exception qui s'échappe d'un handler fait fermer la connexion par
+    # ``socketserver`` sans aucune réponse : le navigateur ne voit qu'une
+    # erreur réseau. Les trois méthodes HTTP passent donc par ``_guarded``.
     def do_GET(self) -> None:
+        self._guarded(self._handle_get)
+
+    def do_POST(self) -> None:
+        self._guarded(self._handle_post)
+
+    def do_DELETE(self) -> None:
+        self._guarded(self._handle_delete)
+
+    def _guarded(self, handler) -> None:
+        try:
+            handler()
+        except (BrokenPipeError, ConnectionResetError):
+            return
+        except (KeyError, FileNotFoundError) as exc:
+            self._send_error_json(HTTPStatus.NOT_FOUND, _exception_message(exc))
+        except (ValueError, TypeError) as exc:
+            self._send_error_json(HTTPStatus.BAD_REQUEST, _exception_message(exc))
+        except Exception as exc:  # noqa: BLE001 - le serveur doit toujours répondre
+            self._send_error_json(HTTPStatus.INTERNAL_SERVER_ERROR, _exception_message(exc))
+
+    def send_error(self, code, message=None, explain=None) -> None:
+        # ``BaseHTTPRequestHandler.send_error`` écrit ``message`` dans la ligne
+        # de statut encodée en latin-1 strict : un « — » ou un « ’ » y lève
+        # UnicodeEncodeError. On répond en JSON, statut sans texte libre.
+        self._send_error_json(HTTPStatus(code), message or HTTPStatus(code).phrase)
+
+    def _send_error_json(self, status: HTTPStatus, message: str) -> None:
+        self._json_response({"error": message}, status=status)
+
+    def _handle_get(self) -> None:
         parsed = urlparse(self.path)
         # M4.3Live : aiguillage additif, isolé, avant toute branche existante.
         if live_routes.owns(parsed.path):
@@ -68,7 +115,12 @@ class SimulationLabHandler(BaseHTTPRequestHandler):
         if parsed.path == "/results":
             return self._serve_file(ROOT_DIR / "simulation_lab" / "web" / "templates" / "results.html", "text/html; charset=utf-8")
         if parsed.path.startswith("/static/"):
-            return self._serve_file(ROOT_DIR / "simulation_lab" / "web" / parsed.path.lstrip("/"))
+            static_root = (ROOT_DIR / "simulation_lab" / "web" / "static").resolve()
+            candidate = (static_root / unquote(parsed.path[len("/static/"):])).resolve()
+            if not candidate.is_relative_to(static_root):
+                self.send_error(HTTPStatus.NOT_FOUND)
+                return
+            return self._serve_file(candidate)
         if parsed.path == "/api/models":
             scope = parse_qs(parsed.query).get("scope", ["all"])[0]
             try:
@@ -82,6 +134,7 @@ class SimulationLabHandler(BaseHTTPRequestHandler):
                 "cpu_count": cpu_count(),
                 "recommended_workers": recommended_workers(),
                 "reserved_cores": max(0, cpu_count() - recommended_workers()),
+                "model_load_errors": self.server.registry.load_errors,
             })
         if parsed.path == "/api/runs":
             scope = parse_qs(parsed.query).get("scope", ["active"])[0]
@@ -95,6 +148,8 @@ class SimulationLabHandler(BaseHTTPRequestHandler):
                 return self._json_response(self.server.storage.list_runs(archived=False))
             self.send_error(HTTPStatus.BAD_REQUEST, f"Périmètre de runs inconnu: {scope}")
             return
+        if parsed.path == "/api/thumbnails":
+            return self._json_response(self.server.storage.class_thumbnails())
         if parsed.path == "/api/jobs":
             return self._json_response(self.server.jobs.list_jobs())
         if parsed.path.startswith("/api/jobs/"):
@@ -107,7 +162,7 @@ class SimulationLabHandler(BaseHTTPRequestHandler):
             return self._json_response(self.server.storage.read_metadata(run_id))
         self.send_error(HTTPStatus.NOT_FOUND)
 
-    def do_POST(self) -> None:
+    def _handle_post(self) -> None:
         parsed = urlparse(self.path)
         # M4.3Live : aiguillage AVANT la lecture du corps, que le routeur
         # lit lui-même (aucune branche existante n'est modifiée).
@@ -122,16 +177,19 @@ class SimulationLabHandler(BaseHTTPRequestHandler):
         except ValueError as exc:
             self.send_error(HTTPStatus.BAD_REQUEST, str(exc))
             return
+        if parsed.path == "/api/thumbnails":
+            payload = self.server.storage.set_class_thumbnail(body.get("model_id"), body.get("label"))
+            return self._json_response(payload)
         if parsed.path == "/api/jobs/run":
             try:
                 payload = self.server.jobs.submit_single(
                     model_id=body["model_id"],
                     parameters=body.get("parameters", {}),
-                    seed=int(body["seed"]),
+                    seed=_required_int(body, "seed"),
                     label=body.get("label", ""),
                 )
-            except (KeyError, ValueError) as exc:
-                self.send_error(HTTPStatus.BAD_REQUEST, str(exc))
+            except (KeyError, ValueError, TypeError) as exc:
+                self.send_error(HTTPStatus.BAD_REQUEST, _exception_message(exc))
                 return
             return self._json_response(payload, status=HTTPStatus.CREATED)
         if parsed.path == "/api/jobs/batch":
@@ -139,13 +197,13 @@ class SimulationLabHandler(BaseHTTPRequestHandler):
                 payload = self.server.jobs.submit_batch(
                     model_id=body["model_id"],
                     parameters=body.get("parameters", {}),
-                    run_count=int(body["run_count"]),
-                    max_workers=int(body["max_workers"]),
-                    base_seed=body.get("base_seed"),
+                    run_count=_required_int(body, "run_count"),
+                    max_workers=_required_int(body, "max_workers"),
+                    base_seed=None if body.get("base_seed") is None else int(body["base_seed"]),
                     label=body.get("label", ""),
                 )
-            except (KeyError, ValueError) as exc:
-                self.send_error(HTTPStatus.BAD_REQUEST, str(exc))
+            except (KeyError, ValueError, TypeError) as exc:
+                self.send_error(HTTPStatus.BAD_REQUEST, _exception_message(exc))
                 return
             return self._json_response(payload, status=HTTPStatus.CREATED)
         if parsed.path.startswith("/api/jobs/") and parsed.path.endswith("/cancel"):
@@ -206,7 +264,7 @@ class SimulationLabHandler(BaseHTTPRequestHandler):
             return self._json_response(payload)
         self.send_error(HTTPStatus.NOT_FOUND)
 
-    def do_DELETE(self) -> None:
+    def _handle_delete(self) -> None:
         parsed = urlparse(self.path)
         if parsed.path == "/api/trash":
             return self._json_response(self.server.storage.empty_trash())

@@ -1,0 +1,8 @@
+# Résultats CSV (regénérables)
+experiments/results/*.csv
+
+# Runs temporaires
+tmp_runs/
+
+# Fichiers de profil binaires (volumineux, regénérables)
+profiling/*.prof

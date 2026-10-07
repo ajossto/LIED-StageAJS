@@ -1,0 +1,166 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[french]{babel}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb}
+\usepackage[margin=2.6cm]{geometry}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true,linkcolor=blue!50!black}
+
+\newcommand{\NW}{\mathrm{NW}}
+\newcommand{\code}[1]{\texttt{#1}}
+
+\title{Rapport d'implémentation du modèle M2\\
+\large (workspace \code{m2\_fable})}
+\author{Agent de réplication (workspace \code{m2\_fable})}
+\date{3 juillet 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Le modèle M2 a été implémenté conformément à la séquence à 7 phases du
+document de conception (§2.2), avec les conventions C1--C10 de la
+spécification technique. La suite de 31 tests passe intégralement. Deux
+résultats méthodologiques importants sont apparus \emph{pendant les tests de
+l'outillage statistique} : (1)~le critère « l'exponentielle gagne l'AIC sur
+le corps » du protocole §6.1, tel qu'opérationnalisé dans le prototype, est
+structurellement biaisé \emph{contre} l'exponentielle (sur un échantillon
+exponentiel pur tronqué à 95\,\%, gamma gagne avec $\Delta$AIC $\approx 31$) ;
+(2)~le test LR loi de puissance / log-normale du script historique
+\code{tail\_test.py} — celui qui fonde l'affirmation « LR $+566$ à $+694$,
+$p<10^{-3}$ » de [E7c] — conclut aussi « loi de puissance, $R \approx +575$,
+$p \approx 0$ » sur des données \emph{log-normales pures}. Les deux outils ont
+été corrigés (MLE tronqués). Par ailleurs, un premier run baseline révèle que
+la règle M2 de transfert des créances au prorata rend le carnet de contrats
+\emph{non stationnaire} (prolifération combinatoire), alors même que la
+population et la richesse totale sont stationnaires.
+\end{abstract}
+
+\section{Objectifs}
+Implémenter fidèlement M2 (sans casser l'existant, dans un workspace isolé),
+le tester, et préparer l'infrastructure d'expériences du protocole §6.
+
+\section{Méthode : architecture}
+
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+Module & Rôle \\
+\midrule
+\code{src/m2/config.py} & dataclass gelée, variantes nommées, sérialisation \\
+\code{src/m2/entities.py} & population en structure de tableaux, id jamais réutilisé \\
+\code{src/m2/contracts.py} & carnet de prêts, agrégats créances/dettes (I2--I3) \\
+\code{src/m2/market.py} & phase 6 : rounds, règle $w^*(\rho)$, taux géométrique \\
+\code{src/m2/bankruptcy.py} & phase 7 : cascades, conventions C5--C7, variantes \\
+\code{src/m2/simulation.py} & séquence des 7 phases, séries, snapshots \\
+\code{src/m2/metrics.py} & E/S : \code{series.csv}, \code{snap\_*.npz}, JSON \\
+\code{src/m2/analysis.py} & corps (MLE tronqué), CSN, LR corrigé, anti-cohorte \\
+\code{src/m2/plots.py} & figures standard depuis les fichiers d'un run \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Expériences : \code{experiments/m2/run\_\{baseline,validation,grid,ablation\}.py}.
+Tests : \code{tests/test\_\{core,step\_and\_bankruptcy,analysis\}.py}, exécutés
+par \code{python3 tests/run\_all.py} (pytest absent du venv partagé ;
+les tests sont pytest-compatibles).
+
+\section{Fidélité à la spécification et écarts assumés}
+Toutes les règles du §2.2 du rapport de conception sont implémentées telles
+qu'écrites : naissances Poisson à bilan $(w_0, d_0)$, choc
+$\eta \sim \mathcal N(-\sigma^2/2, \sigma^2)$ i.i.d. par entité, extraction
+$\alpha\sqrt w$, service des intérêts avec défaut sur paiement partiel,
+dépréciation du seul capital réel, marché à $\lfloor N/k\rfloor$ rounds avec
+règle symétrique $w^*(\rho)$, faillites en cascade avec transfert au prorata.
+Les points laissés ouverts par le rapport ont été tranchés par les
+conventions C1--C10 (spécification, §3) ; aucune n'ajoute de paramètre libre.
+Contrairement au prototype E7c, \emph{aucun} héritage du WIP
+($\theta$, \code{offer\_frac}) n'est présent.
+
+\section{Résultats}
+
+\subsection{Tests}
+31 tests, 0 échec : entités et $\NW$ ; conservation du principal (I4) et des
+intérêts (I5) ; défaut sur paiement partiel ; faillite simple (résiduel au
+prorata, extinction de $d_0$) ; transfert C5 (y compris part au
+débiteur-créancier, créancier mort) ; variante \code{cancel} ; cascade à deux
+niveaux ; invariants I1--I3 et I8 sur run court ; reproductibilité bit à bit
+par seed (I10) ; cas limites $N \in \{0,1\}$, $N<k$, $w=0$, richesse égale,
+défaillants exclus du marché ; récupération d'exposants et de familles sur
+données synthétiques contrôlées.
+
+\subsection{Découverte 1 : le critère AIC du corps était biaisé}
+Le protocole §6.1 ajuste exponentielle/gamma/log-normale/Fisk sur les
+95\,\% inférieurs. Or ajuster des familles \emph{non tronquées} sur un
+échantillon \emph{tronqué} pénalise la vraie famille : sur $5000$ tirages
+exponentiels purs ($\theta=5$), la méthode du prototype donne
+gamma $<$ exponentielle avec $\Delta$AIC $= 31$. Autrement dit, le verdict
+[E7c] « le corps n'est pas exponentiel, gamma gagne l'AIC » pouvait être en
+partie un artefact de la méthode d'ajustement. Correction : MLE tronqué
+(pdf renormalisée par $F(c)$ au seuil de troncature $c$), vérifié par test
+($\Delta$AIC $\le 2$ sur exponentielle pure, la bonne famille gagne sur
+log-normale pure).
+
+\subsection{Découverte 2 : le test LR historique est biaisé pro-Pareto}
+\label{sec:lr}
+\code{tail\_test.py} (réutilisé par le prototype et cité par le protocole
+§6.2) compare la Pareto MLE à une log-normale ajustée \emph{par les moments
+de $\ln x$ de la queue}, sans renormalisation par la troncature en
+$x_{\min}$. Sur $20\,000$ tirages \emph{log-normaux purs}
+($\mu=0$, $\sigma=1$), il conclut « loi de puissance » avec
+$R = +575$, $p \approx 0$ — du même ordre que les valeurs $+566$ à $+694$
+rapportées par [E7c] comme preuve de queue de Pareto. La correction (MLE de
+la log-normale \emph{tronquée à gauche} en $x_{\min}$) rend le test sain sur
+données log-normales ; sa puissance sur données Pareto pures est en revanche
+faible (une log-normale tronquée à grand $\sigma$ imite une Pareto), ce qui
+est une limite connue de l'approche (Clauset et al.). Conséquence :
+\textbf{la préférence « loi de puissance $\gg$ log-normale » revendiquée par
+[E7c] n'est pas établie par les logs existants} ; la validation devra
+s'appuyer sur la stabilité de l'exposant et les diagnostics mécanistiques
+plus que sur ce LR.
+
+\subsection{Découverte 3 : la règle de transfert au prorata fait proliférer
+les contrats}
+Premier run baseline (seed 0, $T=2000$, $\lambda=10$) : population
+stationnaire ($\approx 1630$), richesse totale plate… mais contrats actifs
+$1244 \to 3736 \to 43\,977$ entre $t=1000$, $1500$ et $2000$. Cause : à
+chaque faillite, chaque contrat prêté de la faillie est scindé entre tous
+ses créanciers (règle §2.2 phase 7) ; les grosses créancières accumulent des
+milliers de micro-contrats qui sont re-scindés à leur mort — croissance
+combinatoire. Le prototype E7c ne l'a jamais vue parce qu'il \emph{annule}
+ces contrats au lieu de les transférer. C'est un vice de la spécification
+M2 telle qu'écrite : le carnet n'est pas stationnaire, le coût par pas croît,
+et la microstructure du réseau de crédit dérive. L'ablation
+\code{fail\_lender\_loans=cancel} est donc élevée au rang de variante de
+référence, et la comparaison des deux règles devient un résultat à part
+entière (rapport de validation).
+
+\section{Limites}
+Le runner de tests est un substitut minimal de pytest (pas de fixtures ni de
+paramétrage). Les assertions runtime coûteuses (I3 complet) ne sont
+vérifiées qu'en fin de run et dans les tests, pas à chaque pas. Le test
+mécanistique $T \approx B_0/A_0$ repose sur des incréments à 1 pas entre
+snapshots denses $[1500, 1520]$ et exclut les entités mortes dans
+l'intervalle (biais de survie près du plancher, discuté dans le rapport de
+validation).
+
+\section{Prochaines expériences}
+Baseline 3 seeds ($T=2000$), ablations (\code{cancel}, \code{destroy},
+\code{nocredit}, \code{arith}, $\lambda=30$), grille §6.5
+($\sigma \times \varepsilon_0/w_0 \times k$), balayage $k \in \{2,3,4,6\}$,
+puis protocole §6 complet par fenêtres et par seed.
+
+\section{Conclusion}
+L'implémentation est conforme, testée et reproductible. Trois découvertes
+faites \emph{avant} toute validation montrent la valeur de la position
+sceptique : deux outils statistiques hérités biaisaient les conclusions dans
+le sens de la thèse (corps « non exponentiel », queue « Pareto prouvée »),
+et une règle de la spécification produit une non-stationnarité structurelle
+que le prototype masquait. La validation qui suit utilisera les outils
+corrigés et comparera systématiquement les deux règles de faillite.
+
+\end{document}

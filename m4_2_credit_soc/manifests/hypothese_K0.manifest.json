@@ -1,0 +1,67 @@
+{
+ "plan": "hypothese_K0",
+ "cells": [
+  {
+   "cell": "k0_match_g067",
+   "cell_id": "c0770d202605",
+   "plan": "hypothese_K0",
+   "parameters": {
+    "A": 1.0,
+    "lam": 30.0,
+    "delta": 0.05,
+    "sigma": 0.25,
+    "K0": 1.31,
+    "pop_max": 30000,
+    "snapshot_every": 0,
+    "individual_every": 0,
+    "figures": false,
+    "gamma": 0.5,
+    "T": 4000
+   },
+   "n_runs": 3,
+   "base_seed": 1,
+   "label": "M4.2 — hypothese_K0 — k0_match_g067",
+   "keep": false,
+   "engine_hash": "932e58643e522d7b",
+   "batch_id": "20260727_185754_db8c32a6",
+   "run_ids": [
+    "20260727_185754_f69d6fd3",
+    "20260727_185754_873a545d",
+    "20260727_185754_c39807ce"
+   ],
+   "duration_seconds": 298.3,
+   "launched_at": "2026-07-27T19:02:52+0200"
+  },
+  {
+   "cell": "k0_match_g033",
+   "cell_id": "b5d30ce058b5",
+   "plan": "hypothese_K0",
+   "parameters": {
+    "A": 1.0,
+    "lam": 30.0,
+    "delta": 0.05,
+    "sigma": 0.25,
+    "K0": 108.7,
+    "pop_max": 30000,
+    "snapshot_every": 0,
+    "individual_every": 0,
+    "figures": false,
+    "gamma": 0.5,
+    "T": 4000
+   },
+   "n_runs": 3,
+   "base_seed": 1,
+   "label": "M4.2 — hypothese_K0 — k0_match_g033",
+   "keep": false,
+   "engine_hash": "932e58643e522d7b",
+   "batch_id": "20260727_185754_c72954e3",
+   "run_ids": [
+    "20260727_185754_bb75a633",
+    "20260727_185754_849aa693",
+    "20260727_185754_f48f5035"
+   ],
+   "duration_seconds": 417.6,
+   "launched_at": "2026-07-27T19:04:51+0200"
+  }
+ ]
+}

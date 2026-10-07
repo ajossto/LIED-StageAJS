@@ -333,6 +333,107 @@ qui casse l'anti-corrélation avec cette solidité statistique.** Mécanisme :
 γ et la compensation K0/K*_aut(γ) sont DÉJÀ dans le moteur — aucune
 ablation de mécanisme n'est nécessaire pour ce résultat spécifique.
 
+### Complément (2026-08-11) : ŝc(λ) ré-établi à k≡2, exigé par §5 du prompt
+
+Limite listée en §12 (« la coupure d'avalanche ŝc(λ) n'a pas encore été
+ré-établie sur ce moteur ») — close ici, par analyse pure sur les données
+déjà sur disque (`avalanches.csv` conservé pour les 18 runs D3, §7.6),
+**aucune nouvelle simulation**. `campaign_d1._run_and_analyze` calculait
+déjà `powerlaw_cutoff` (MLE de la coupure ŝc) en interne mais ne
+persistait pas sa valeur dans `analysis.json` (seul le drapeau
+`s_c_out_of_range` l'était) — `scripts/d3_cutoff_scaling.py` recalcule le
+même ajustement sur la même fenêtre `[lo,hi]` déjà figée par le run
+original, vérifié bit-identique sur `branching_ratio`/`tau_hat` avant
+d'en tirer quoi que ce soit de nouveau (`_sanity_check`).
+
+| branche | λ | ŝc | graines in-range/3 | fiable ? | α (tronqué) | α (pur) |
+|---|---|---|---|---|---|---|
+| baseline | 10 | 34,55±0,33 | 3 | oui | 1,175 | 1,734 |
+| baseline | 30 | 106,40±1,70 | 3 | oui | 1,424 | 1,711 |
+| baseline | 100 | non calculable | 1 | **non** | — | 1,783 |
+| gamma_comp_0.6667 | 10 | 38,12±3,02 | 3 | oui | 1,140 | 1,699 |
+| gamma_comp_0.6667 | 30 | 108,89±3,15 | 3 | oui | 1,357 | 1,668 |
+| gamma_comp_0.6667 | 100 | 1919,01±173,70 | 3 | oui | 1,660 | 1,716 |
+
+**Convention appliquée, importante pour ne pas se tromper de sens** : ŝc
+n'est moyenné sur une cellule que si les 3/3 graines sont in-range à la
+fois (unanime) — une cellule partiellement hors-portée (baseline λ=100 :
+1/3 seulement) n'a PAS de ŝc moyen rapporté, ses graines individuelles
+divergent sur 6 à 8 ordres de grandeur (623 142 / 2 401 / 485 163 671) et
+moyenner sur le seul survivant in-range aurait été une sélection après
+coup (interdite §6 du prompt). Motif qualitativement cohérent avec M4B
+(« à λ=100 la coupure sort de la fenêtre observable ») mais **pas unanime
+sur les 3 graines ici**, contrairement au 5/5 rapporté par M4B — signal
+plus bruyant à k=2 qu'à k=3.
+
+**Pentes log-log LOCALES (jambe à jambe, pas un ajustement global sur 3
+points qui masquerait une éventuelle convexité), uniquement entre cellules
+fiables** :
+
+| jambe | baseline | gamma_comp_0.6667 |
+|---|---|---|
+| λ=10→30 | **1,024** | **0,955** |
+| λ=30→100 | non calculable (λ=100 non fiable) | 2,383 |
+| repère M4B k=3, λ=10→30 (seule jambe mesurée par M4B, 10,0→51,6) | **1,494** | (même repère) |
+
+**Sur la jambe directement comparable au repère M4B (10→30, la seule que
+M4B ait mesurée, §5 du prompt), la pente à k=2 (≈1,0/0,96) est INFÉRIEURE
+à celle de M4B à k=3 (≈1,49)** — la coupure croît plus lentement avec λ à
+k=2 sur cette jambe. Conformément à l'instruction du prompt (§5 : « si
+elle diverge de 1,5, le documenter, ne pas forcer l'accord »), ce résultat
+est rapporté tel quel. La jambe 30→100 (mesurable seulement côté
+gamma_comp) montre une pente locale bien plus raide (≈2,4) — pas la même
+jambe que M4B a mesurée, donc pas directement comparable à 1,5, mais le
+contraste avec la jambe 10→30 indique une forte convexité (pas une loi de
+puissance simple sur toute la plage λ∈[10,100]) plutôt qu'une pente
+constante. **Cohérent avec la réserve déjà explicite du rapport M4B**
+(coupure à k=2 non confirmée en amplitude) : k=2 et k=3 ne partagent pas
+la même loi d'échelle de coupure, même si le mécanisme d'avalanche est
+hérité sans changement — la réserve était justifiée, elle est maintenant
+vérifiée plutôt que supposée, dans le sens que M4B anticipait.
+
+*(Correction du 2026-08-11, même cycle : une première version de cette
+sous-section rapportait par erreur une pente « plus forte » côté k=2, à
+cause d'un biais de sélection de graine dans l'agrégation — trouvé et
+corrigé avant diffusion, détail complet dans `JOURNAL.md` §35bis.)*
+
+**Test tronquée-vs-pure : LRT (pas Vuong), choix délibéré.** Le prompt
+(§5) parle de « Vuong tronquée-vs-pure », mais tronquée et pure sont
+EMBOÎTÉES (pure = tronquée avec ŝc→∞) — Vuong est conçu pour des modèles
+NON emboîtés (c'est l'usage qu'en fait déjà `compare_laws` pour
+tronquée/pure **contre log-normale**, §protocole). Pour tronquée-vs-pure,
+le test statistiquement correct est le LRT avec correction de frontière
+(`0,5·χ²(1)`, déjà implémenté et utilisé par tout le programme
+`lib_metrics.py::lrt_cutoff_vs_pure`) — utilisé ici, pas de nouveau test
+écrit. p < 1e-70 sur les 18 runs, y compris ceux hors-portée : cohérent
+avec le fait que M4B rapporte déjà « loi tronquée partout (LRT p<10⁻⁶,
+pas de loi pure) » comme méthodologie de référence (§5 du prompt) — le
+drapeau `s_c_out_of_range` (pas le LRT seul) reste le bon critère
+opérationnel pour juger si la coupure est *exploitable*, distinct de la
+question « la coupure existe-t-elle au sens statistique » que le LRT
+tranche déjà, systématiquement, en faveur de la tronquée.
+
+τ̂ (exposant tronqué) ajouté comme métrique de confirmation à la table D1
+complète (`results/d1/d1_verdict_cells.csv`, colonnes `tau_hat_mean/std`)
+et à une figure complémentaire (`figures/d1_plan_dagum_c_vs_tau.png`) —
+absent jusqu'ici de l'agrégation bien qu'il soit calculé et stocké par
+run depuis le début de la campagne (`analysis.json::avalanche.tau_hat`),
+exigé par §5 (« b et l'exposant tronqué α̂... métriques primaires »).
+Sur la branche `gamma_comp`, τ̂ diminue de façon monotone avec γ
+(1,510→1,484→1,378→1,357, γ=1/3→0,4→0,6→2/3) — queue d'avalanches DE
+PLUS EN PLUS ÉPAISSE avec γ croissant, **même sens que `b` croissant**
+(0,760→0,770→0,802→0,804) et que `dagum_c` décroissant : les trois
+métriques indépendantes s'accordent, confirmation supplémentaire du
+verdict D2/D3 déjà établi (aucun changement de conclusion, `dagum_c`
+reste la statistique gelée qui pilote la décision, §2).
+
+Tables et scripts : `results/d3_size/d3_cutoff_scaling_{runs,cells}.csv`,
+`scripts/d3_cutoff_scaling.py`, `figures/sc_vs_lambda.png`. Analyse pure
+sur données déjà sur disque (aucun nouveau run, aucun budget de calcul
+engagé) — distincte des options (a)/(b)/(c) du §11 ci-dessous (qui, elles,
+engageraient de nouveaux runs) : **ne préempte pas la décision
+d'ablation**, toujours en attente (§11).
+
 ## 10. Ce que le résultat D3 signifie pour D2
 
 **Le levier existe.** `target_rule` seul (§5) est D2-négatif, mais
@@ -386,8 +487,15 @@ répondre, sans engager de nouveau code.
 - D1 mesure `dagum_c`/`b` en fin de fenêtre post-convergence ; la
   robustesse temporelle (§9) n'a été vérifiée que sur la paire
   baseline/gamma_comp_0.6667 à λ=30, pas sur les 28 cellules de D1.
-- La coupure d'avalanche ŝc(λ) n'a pas encore été ré-établie sur ce
-  moteur (§5 du prompt, pertinent maintenant que D2 est positif).
+- ~~La coupure d'avalanche ŝc(λ) n'a pas encore été ré-établie sur ce
+  moteur~~ **close (2026-08-11), voir §9 complément** : ŝc(λ) ré-établie
+  par analyse pure (aucune nouvelle simulation). Sur la jambe λ=10→30
+  (la seule mesurée par M4B), pente ≈1,0/0,96 à k=2 contre ≈1,49 à k=3 —
+  **plus lente**, pas plus forte, documenté tel quel (§5 du prompt).
+  λ=100 non mesurable proprement côté baseline (2/3 graines dégénèrent
+  hors-portée) ; côté gamma_comp, jambe λ=30→100 fiable mais bien plus
+  raide (≈2,4) — forte convexité, pas une pente unique sur toute la
+  plage. Vindique la réserve déjà posée par M4B sur l'amplitude à k=2.
 - Rapport de branchement `b` et `τ̂` utilisent `s_min=2` (convention
   M4B/M4.2B) sans re-test de sensibilité à ce choix dans M4.3.
 - Le mécanisme de reprise depuis checkpoint (sauvegarde testée et

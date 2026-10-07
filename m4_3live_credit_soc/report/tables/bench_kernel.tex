@@ -1,0 +1,16 @@
+\begin{center}
+\begin{tabular}{@{}lrl@{}}
+\toprule
+\textbf{Chemin} & \textbf{Mreq/s} & \textbf{Erreur max sur $\delta$} \\
+\midrule
+(a) même technologie & 3,23 & exacte \\
+(b) $\gamma$ égaux, forme fermée & 2,04 & exacte \\
+(c) Newton exact (froid) & 0,13 & référence \\
+(c) tiède, une étape de Newton & 0,42 & $2,99\cdot10^{-1}$ unité de capital \\
+(c) table Hermite, 33 nœuds & 0,84 & $3,03\cdot10^{-7}$ unité de capital \\
+(c) table Hermite, 65 nœuds & 0,83 & $1,84\cdot10^{-8}$ unité de capital \\
+\midrule
+\multicolumn{3}{@{}l@{}}{\footnotesize 300\,000 appels, meilleur de 5 répétitions ; compilation d'une ligne de table : 0,45\,ms} \\
+\bottomrule
+\end{tabular}
+\end{center}

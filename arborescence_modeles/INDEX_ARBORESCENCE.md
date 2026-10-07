@@ -1,6 +1,8 @@
 # Arborescence de liaison des modèles (sans modification des sources)
 
-Objectif : trier/organiser le repo en créant des **liens symboliques** vers les versions existantes, sans déplacer ni modifier les dossiers d'origine.
+Objectif historique : proposer des **liens symboliques** vers quelques versions
+anciennes. Le point d'entrée courant est désormais `../README.md` et les sources
+jusqu'à M3 sont regroupées dans `../anciens_modeles/`.
 
 ## Structure
 
@@ -10,8 +12,8 @@ Objectif : trier/organiser le repo en créant des **liens symboliques** vers les
 
 ## Liaisons actives
 
-- `stable/v1_monolithique` → `claude/`
-- `stable/v2_modulaire_stable` → `claude3-v2/`
+- `stable/v1_monolithique` → `anciens_modeles/claude/`
+- `stable/v2_modulaire_stable` → `anciens_modeles/claude3-v2/`
 
 ## Archives
 

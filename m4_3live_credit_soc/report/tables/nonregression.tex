@@ -1,0 +1,36 @@
+\begin{quote}\footnotesize\begin{verbatim}
+Non-régression simulation_lab — 2026-08-18T13:40:43+02:00
+
+## CLI
+list-models        : 11 modèles
+list-runs (active) : 544 runs
+run  (m4b_credit_soc_mini, T=60, seed 424242)
+  statut       : completed
+  run_id       : 20260818_134047_6a1748fe
+  artefacts    : 51
+batch (2 runs, 2 workers)
+  batch_id     : 20260818_134122_b8d4644e
+  run_ids      : 2
+  postprocess  : completed []
+
+## Serveur (routes existantes ET /live)
+/                            200
+/launch                      200
+/results                     200
+/static/app.css              200
+/static/app.js               200
+/api/models                  200
+/api/system                  200
+/api/runs?scope=active       200
+/api/jobs                    200
+/live                        200
+/live/static/live.js         200
+/live/static/live.css        200
+/api/live/meta               200
+/api/live/sessions           200
+/inexistant                  404
+
+(404 attendu sur /inexistant ; tout le reste doit être 200.)
+
+Terminé.
+\end{verbatim}\end{quote}

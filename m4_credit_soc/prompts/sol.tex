@@ -1,0 +1,73 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[french]{babel}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{tabularx}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true,linkcolor=blue!50!black}
+
+\newcommand{\NW}{\mathrm{NW}}
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\Workspace}{\code{m4\_credit\_soc\_sol}}
+\newcommand{\OtherWorkspace}{\code{m4\_credit\_soc\_fable}}
+
+\title{Prompt de recherche M4 — avalanches auto-organisées\\
+\large Version pour Codex Sol / GPT-5.6 (workspace \Workspace{})}
+\author{Anatole Joseph Stouls}
+\date{13 juillet 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Fork de M3 (\code{m3\_credit\_soc}) : société de crédit multi-agents en
+recherche d'un régime d'avalanches de faillites auto-organisé (SOC), robuste
+en loi de puissance, dépassant nettement les tailles obtenues jusqu'ici
+(max$=7$), avec un code aussi simple que possible. Ce document est le brief
+de recherche remis à Codex Sol pour cette phase~; les règles d'exécution
+propres au modèle sont en fin de document.
+\end{abstract}
+
+\input{body}
+
+\section*{Instructions d'exécution — Codex Sol (GPT-5.6)}
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Chaque règle une seule fois.} Ce document ne répète pas une
+    consigne déjà énoncée plus haut~; ne la redemandez pas non plus dans vos
+    propres notes de travail.
+  \item \textbf{Condition de conclusion explicite avant chaque run non
+    trivial, pas condition d'arrêt du travail.} Formulez, avant de lancer,
+    la réponse à~: « qu'est-ce qui, dans le résultat attendu, permettrait de
+    conclure sans lancer un run supplémentaire~? ». Si la réponse n'est pas
+    claire, le run n'est pas encore bien spécifié — mais ceci ne veut pas
+    dire attendre une confirmation~: notifiez et continuez (voir « Quand
+    s'arrêter et demander »).
+  \item \textbf{Fait vérifié vs inférence.} Dans les livrables (journal,
+    résumé de run, figures), séparez explicitement ce qui est établi par un
+    test ou un run de ce qui est une inférence ou une hypothèse non
+    testée.
+  \item \textbf{Périmètre.} Pour les questions d'analyse, de diagnostic ou
+    de choix de mécanisme~: inspectez et rapportez. Pour l'implémentation~:
+    faites les changements en périmètre, lancez la validation non
+    destructive disponible (tests, invariants) — ne pas attendre de
+    confirmation pour continuer tant que c'est réversible et dans le
+    périmètre de ce brief.
+  \item \textbf{Preuve avant conclusion.} N'annoncez un résultat de succès
+    (taille d'avalanche, loi de puissance, scaling) que si le critère
+    correspondant de la section « Critères de succès » est effectivement
+    vérifié par un test ou une figure produite dans cette session — pas par
+    inspection visuelle seule.
+  \item \textbf{Dossier de travail indépendant.} Travaillez exclusivement
+    dans \Workspace{}. Ne modifiez pas \OtherWorkspace{} (l'autre agent y
+    travaille en parallèle sur le même sujet, indépendamment).
+\end{itemize}
+
+\end{document}

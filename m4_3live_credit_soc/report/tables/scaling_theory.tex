@@ -1,0 +1,23 @@
+\begin{center}\footnotesize
+\begin{tabular}{@{}llrrrr@{}}
+\toprule
+$\gamma$ & compensation & $c$ & écart max & écart max & $\varepsilon$ \\
+ & & & \code{prod\_tot} & \code{pop} & mesuré \\
+\midrule
+0{,}4 & $K_0 \times c$ \quad\emph{(covariant)} & 1{,}966 & $8{,}2\cdot 10^{-15}$ & $0$ & 1{,}6667 \\
+ & $K_0$ inchangé & 1{,}966 & $4{,}6\cdot 10^{-1}$ & $4{,}1\cdot 10^{-1}$ & 0{,}6318 \\
+ & $K_0 \times 1{,}5$ \quad\emph{(mauvais exposant)} & 1{,}966 & $2{,}4\cdot 10^{-1}$ & $2{,}2\cdot 10^{-1}$ & 1{,}2904 \\
+\addlinespace
+0{,}5 & $K_0 \times c$ \quad\emph{(covariant)} & 2{,}250 & $5{,}2\cdot 10^{-15}$ & $0$ & 2{,}0000 \\
+ & $K_0$ inchangé & 2{,}250 & $5{,}8\cdot 10^{-1}$ & $4{,}7\cdot 10^{-1}$ & 0{,}7109 \\
+ & $K_0 \times 1{,}5$ \quad\emph{(mauvais exposant)} & 2{,}250 & $3{,}9\cdot 10^{-1}$ & $2{,}9\cdot 10^{-1}$ & 1{,}3412 \\
+\addlinespace
+0{,}6 & $K_0 \times c$ \quad\emph{(covariant)} & 2{,}756 & $3{,}3\cdot 10^{-15}$ & $0$ & 2{,}5000 \\
+ & $K_0$ inchangé & 2{,}756 & $6{,}9\cdot 10^{-1}$ & $5{,}2\cdot 10^{-1}$ & 0{,}8292 \\
+ & $K_0 \times 1{,}5$ \quad\emph{(mauvais exposant)} & 2{,}756 & $5{,}3\cdot 10^{-1}$ & $3{,}9\cdot 10^{-1}$ & 1{,}4843 \\
+\addlinespace
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent\footnotesize Écart maximal, sur les 800 pas et toutes les graines, entre la trajectoire du bras et celle de la référence multipliée par $c$ (par 1 pour \code{pop}, qui doit être identique et non proportionnelle). Seule la compensation covariante atteint la précision machine ; les deux autres s'en écartent de plusieurs ordres de grandeur. La colonne $\varepsilon$ est l'élasticité mesurée sur les 200 derniers pas ; elle vaut $1/(1-\gamma)$ pour la compensation covariante par construction du test.\normalsize

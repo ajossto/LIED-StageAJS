@@ -72,7 +72,7 @@ par entité. Ce que le script rapporte est l'écart à cette prédiction, quel
 qu'il soit.
 
     python3 scripts/rotation.py sweep     # balayage instrumenté (λ, ρ, σ, K0, δ)
-    python3 scripts/rotation.py analyse   # décomposition + fermeture + figures
+    python3 scripts/rotation.py analyse   # décomposition, fermeture, régime hétérogène
 """
 
 from __future__ import annotations
@@ -95,7 +95,6 @@ from m4_3live_v2.live import write_series  # noqa: E402
 from m4_3live_v2.model import Config, Simulation  # noqa: E402
 
 ANALYSIS = ROOT / "results" / "analysis"
-FIGURES = ROOT / "report" / "figures"
 TABLES = ROOT / "report" / "tables"
 SWEEP_DIR = ROOT / "results" / "rotation_sweep"
 
@@ -337,219 +336,26 @@ def _write_csv(path: Path, rows: list[dict]) -> None:
             writer.writerow({key: row.get(key, "") for key in keys})
 
 
-def figure_decomposition(records: list[dict], path: Path) -> None:
-    import matplotlib
-
-    matplotlib.use("Agg")
-    import matplotlib.pyplot as plt
-
-    try:
-        from simulation_lab.plot_utils import apply_style
-
-        apply_style()
-    except Exception:
-        pass
-
-    figure, axes = plt.subplots(1, 3, figsize=(13, 4))
-    families = sorted({row["family"] for row in records})
-    colours = {"v1": "#c1440e", "v2": "#294c60", "balayage v2": "#7a9e9f"}
-    for family in families:
-        subset = [row for row in records if row["family"] == family]
-        colour = colours.get(family, "#888888")
-        axes[0].scatter([row["rho"] for row in subset],
-                        [row["f1_rounds_per_entity"] for row in subset],
-                        s=12, alpha=0.6, color=colour, label=family)
-        axes[1].scatter([row["rotation"] for row in subset],
-                        [row["f2_trade_probability"] for row in subset],
-                        s=12, alpha=0.6, color=colour, label=family)
-        axes[2].scatter([row["f3_transfer_over_Kmean"] for row in subset],
-                        [row["rotation"] / row["rho"] for row in subset],
-                        s=12, alpha=0.6, color=colour, label=family)
-    lo = min(row["f3_transfer_over_Kmean"] for row in records)
-    hi = max(row["f3_transfer_over_Kmean"] for row in records)
-    axes[2].plot([lo, hi], [lo, hi], color="black", lw=0.8, ls="--", label="identité")
-
-    axes[0].set_xlabel(r"$\rho$ (paramètre)")
-    axes[0].set_ylabel(r"$f_1$ = rondes / entité")
-    axes[0].set_title(r"(a) $f_1 = \lfloor \rho N\rfloor / N$ : combinatoire pure", fontsize=9)
-    axes[1].set_xlabel("rotation du crédit")
-    axes[1].set_ylabel(r"$f_2$ = prêts conclus / rondes")
-    axes[1].set_title("(b) $f_2$ : probabilité de traiter", fontsize=9)
-    axes[2].set_xlabel(r"$f_3 = \mathbb{E}|\delta| / \bar K$")
-    axes[2].set_ylabel(r"rotation $/\ \rho$")
-    axes[2].set_title(r"(c) toute la variation est dans $f_3$", fontsize=9)
-    for axis in axes:
-        axis.grid(True, alpha=0.2)
-        axis.legend(fontsize=7)
-    figure.suptitle("Décomposition de la rotation du crédit en trois facteurs")
-    figure.tight_layout()
-    path.parent.mkdir(parents=True, exist_ok=True)
-    figure.savefig(path, dpi=130, bbox_inches="tight")
-    plt.close(figure)
-
-
-def figure_closure(records: list[dict], path: Path, fit: dict) -> None:
-    import matplotlib
-
-    matplotlib.use("Agg")
-    import matplotlib.pyplot as plt
-
-    try:
-        from simulation_lab.plot_utils import apply_style
-
-        apply_style()
-    except Exception:
-        pass
-
-    with_gini = [row for row in records if "gini_logmean" in row]
-    figure, axes = plt.subplots(1, 2, figsize=(11, 4.2))
-
-    if with_gini:
-        for row in with_gini:
-            pass
-        axes[0].scatter([row["gini_logmean"] for row in with_gini],
-                        [row["f3_transfer_over_Kmean"] for row in with_gini],
-                        s=22, color="#294c60", label=r"$\bar G$ (moyenne logarithmique)")
-        axes[0].scatter([row["gini_before"] for row in with_gini],
-                        [row["f3_transfer_over_Kmean"] for row in with_gini],
-                        s=16, color="#c1440e", marker="^", alpha=0.7,
-                        label=r"$G$ avant la phase de marché")
-        lo = min(row["gini_logmean"] for row in with_gini) * 0.9
-        hi = max(row["gini_before"] for row in with_gini) * 1.05
-        axes[0].plot([lo, hi], [lo, hi], color="black", lw=0.8, ls="--", label="identité")
-    axes[0].set_xlabel("coefficient de Gini des capitaux")
-    axes[0].set_ylabel(r"$f_3 = \mathbb{E}|\delta|/\bar K$ mesuré")
-    axes[0].set_title(r"(a) $f_3$ EST le Gini des capitaux", fontsize=9)
-
-    if with_gini:
-        # Couleur par FAMILLE DE LEVIER : c'est ce qui rend visible que
-        # l'ajustement groupé joint les lignes de base des familles plutôt
-        # qu'il ne mesure une réponse (§14.2 du prompt).
-        palette = {"base": "#1c252b", "lam": "#c1440e", "rho": "#294c60",
-                   "sigma": "#7a9e9f", "K0": "#8f6b9e", "delta": "#b58b3c"}
-        groups: dict[str, list[dict]] = {}
-        for row in with_gini:
-            groups.setdefault(row["run"].split("/")[0].split("_")[0], []).append(row)
-        xs = [predicted_cv(row) for row in with_gini]
-        ys = [row["f3_transfer_over_Kmean"] for row in with_gini]
-        for lever, group in sorted(groups.items()):
-            axes[1].scatter([predicted_cv(r) for r in group],
-                            [r["f3_transfer_over_Kmean"] for r in group],
-                            s=26, color=palette.get(lever, "#888888"),
-                            label=f"levier {lever}", zorder=3)
-        if fit.get("n", 0) >= 3:
-            grid = [min(xs), max(xs)]
-            axes[1].plot(grid, [fit["factor"] * x ** fit["slope"] for x in grid],
-                         color="#c1440e", lw=1.2, ls="-", alpha=0.7,
-                         label=(f"ajustement groupé : pente {fit['slope']:.3f}, "
-                                f"$R^2$ = {fit['r2']:.4f}"))
-        axes[1].plot([min(xs), max(xs)],
-                     [x / math.sqrt(math.pi) for x in (min(xs), max(xs))],
-                     color="black", lw=0.9, ls="--", label=r"prédiction $CV/\sqrt{\pi}$")
-        axes[1].legend(fontsize=6, loc="upper left")
-    axes[1].set_xlabel(r"$CV$ prédit $= \sqrt{[(\lambda/N)(1-K_0/\bar K)^2 + \sigma^2]/\rho}$")
-    axes[1].set_ylabel(r"$f_3$ mesuré")
-    axes[1].set_title("(b) la fermeture par le bilan de variance", fontsize=9)
-    axes[0].legend(fontsize=7)
-    for axis in axes:
-        axis.grid(True, alpha=0.2)
-        axis.set_xscale("log")
-        axis.set_yscale("log")
-    figure.suptitle("Ce qui détermine la rotation du crédit")
-    figure.tight_layout()
-    figure.savefig(path, dpi=130, bbox_inches="tight")
-    plt.close(figure)
-
-
-def figure_service_ratio(path: Path) -> None:
-    """Distribution du rapport capital/dû, avec la fenêtre de bascule ombrée.
-
-    C'est la figure qui rend visible, d'un coup d'œil, que la fenêtre est vide
-    — et de combien. Elle précède le tableau des quantiles, conformément à la
-    règle de rédaction « tout tableau de plus de quatre colonnes est d'abord
-    une figure »."""
-    import matplotlib
-
-    matplotlib.use("Agg")
-    import matplotlib.pyplot as plt
-
-    try:
-        from simulation_lab.plot_utils import apply_style
-
-        apply_style()
-    except Exception:
-        pass
-
-    source = ANALYSIS / "service_ratio.csv"
-    if not source.exists():
-        return
-    with open(source, newline="", encoding="utf-8") as handle:
-        values = [float(row["rapport_capital_sur_du"]) for row in csv.DictReader(handle)]
-    if not values:
-        return
-    values.sort()
-    delta = 0.01
-    threshold = 1.0 / (1.0 - delta)
-    figure, axis = plt.subplots(figsize=(9, 3.6))
-    bins = [10 ** (x / 40.0) for x in range(0, 130)]
-    axis.hist(values, bins=bins, color="#294c60", alpha=0.85)
-    axis.axvspan(1.0, threshold, color="#c1440e", alpha=0.45, zorder=3)
-    axis.axvline(values[0], color="#c1440e", lw=1.2, ls="--")
-    axis.annotate(
-        "fenêtre de bascule : [1 ; "
-        + f"{threshold:.4f}".replace(".", ",")
-        + "]\n(un cheveu, à cette échelle)",
-        xy=(1.0, axis.get_ylim()[1] * 0.55), xytext=(1.35, axis.get_ylim()[1] * 0.82),
-        fontsize=7, color="#c1440e",
-        arrowprops=dict(arrowstyle="->", color="#c1440e", lw=0.8))
-    axis.annotate(
-        "minimum observé : " + f"{values[0]:.2f}".replace(".", ",")
-        + ", soit " + f"{values[0] / threshold:.2f}".replace(".", ",") + " fois le seuil",
-        xy=(values[0], axis.get_ylim()[1] * 0.25),
-        xytext=(values[0] * 1.4, axis.get_ylim()[1] * 0.45),
-        fontsize=7, arrowprops=dict(arrowstyle="->", lw=0.8))
-    axis.set_xscale("log")
-    axis.set_xlabel(r"rapport capital / dû à l'instant du service (échelle log)")
-    axis.set_ylabel("nombre de débitrices")
-    axis.set_title(
-        f"{len(values)} observations de débitrices sur les snapshots d'amorçage — "
-        "aucune dans la fenêtre", fontsize=9)
-    axis.grid(True, alpha=0.2)
-    figure.tight_layout()
-    path.parent.mkdir(parents=True, exist_ok=True)
-    figure.savefig(path, dpi=130, bbox_inches="tight")
-    plt.close(figure)
-
-
-def figure_hetero(path: Path) -> dict:
+def hetero_statistics() -> dict:
     """f₃ contre le Gini en régime HÉTÉROGÈNE, sous les deux règles de sens.
 
-    Retourne les écarts mesurés, qui sont le contenu du test."""
-    import matplotlib
-
-    matplotlib.use("Agg")
-    import matplotlib.pyplot as plt
-
-    try:
-        from simulation_lab.plot_utils import apply_style
-
-        apply_style()
-    except Exception:
-        pass
-
+    Rend les écarts mesurés — qui sont le contenu du test — et persiste la
+    série pas à pas dans `results/analysis/hetero_gap.csv`. Le dessin vit
+    dans `scripts/make_figures.py` et relit ce fichier : une fonction qui
+    dessine ET calcule la statistique du rapport est un piège, parce que
+    déplacer la figure ferait disparaître le nombre.
+    """
     root = ROOT / "results" / "rotation_hetero"
     if not root.exists():
         return {}
-    colours = {"free": "#294c60", "richest_lends": "#c1440e"}
-    labels = {"free": "sens libre", "richest_lends": "règle v1"}
-    figure, axes = plt.subplots(1, 2, figsize=(11, 4))
     out: dict = {}
+    series: list[list] = []
     for direction in ("free", "richest_lends"):
         gaps_all, gaps_late = [], []
         for seed_dir in sorted((root / direction).glob("seed*")):
+            seed = int(seed_dir.name.replace("seed", ""))
             rows = read_csv(seed_dir / "market_stats.csv")
             rows = [r for r in rows if int(r["t"]) > 2000]
-            steps, ratios = [], []
             for row in rows:
                 before = float(row["gini_before"])
                 after = float(row["gini_after"])
@@ -563,14 +369,13 @@ def figure_hetero(path: Path) -> dict:
                 if rounds <= 0 or pool <= 0:
                     continue
                 f3 = (volume / float(row["new_loans"])) / (capital / pool)
-                steps.append(int(row["t"]))
-                ratios.append(f3 / bar - 1.0)
-            if not steps:
-                continue
-            axes[0].plot(steps, [100 * r for r in ratios], lw=0.5, alpha=0.5,
-                         color=colours[direction])
-            gaps_all += ratios
-            gaps_late += [r for step, r in zip(steps, ratios) if step > 3000]
+                step = int(row["t"])
+                gap = f3 / bar - 1.0
+                series.append([direction, seed, step, f"{bar:.10g}",
+                               f"{f3:.10g}", f"{gap:.10g}"])
+                gaps_all.append(gap)
+                if step > 3000:
+                    gaps_late.append(gap)
         if not gaps_all:
             continue
         gaps_all.sort()
@@ -582,24 +387,11 @@ def figure_hetero(path: Path) -> dict:
             "p95": gaps_all[int(0.95 * len(gaps_all))],
             "median_residuel": gaps_late[len(gaps_late) // 2] if gaps_late else float("nan"),
         }
-        axes[1].hist([100 * r for r in gaps_all], bins=60, alpha=0.6,
-                     color=colours[direction], label=labels[direction])
-    axes[0].axhline(0.0, color="black", lw=0.8)
-    axes[0].axvspan(2000, 2200, color="#d9d0c1", alpha=0.5, zorder=0)
-    axes[0].set_xlabel("t (pas)")
-    axes[0].set_ylabel("$f_3/\\bar G - 1$  (%)")
-    axes[0].set_title("(a) régime hétérogène : la relation tient-elle ?", fontsize=9)
-    axes[1].axvline(0.0, color="black", lw=0.8)
-    axes[1].set_xlabel("$f_3/\\bar G - 1$  (%)")
-    axes[1].set_ylabel("pas")
-    axes[1].set_title("(b) distribution de l'écart", fontsize=9)
-    axes[1].legend(fontsize=7)
-    for axis in axes:
-        axis.grid(True, alpha=0.2)
-    figure.suptitle("$f_3 = \\bar G$ hors du régime homogène — bras « new A150 »")
-    figure.tight_layout()
-    figure.savefig(path, dpi=130, bbox_inches="tight")
-    plt.close(figure)
+    if series:
+        with open(ANALYSIS / "hetero_gap.csv", "w", newline="", encoding="utf-8") as handle:
+            writer = csv.writer(handle)
+            writer.writerow(["direction", "graine", "t", "gini_logmean", "f3", "ecart"])
+            writer.writerows(series)
     return out
 
 
@@ -762,13 +554,10 @@ def cmd_analyse(window: int = 1000) -> int:
     (ANALYSIS / "rotation_summary.json").write_text(
         json.dumps(summary, indent=2, ensure_ascii=False), encoding="utf-8"
     )
-    figure_decomposition(records, FIGURES / "rotation_decomposition.png")
-    figure_service_ratio(FIGURES / "service_ratio.png")
-    summary["hetero"] = figure_hetero(FIGURES / "rotation_hetero.png")
+    summary["hetero"] = hetero_statistics()
     (ANALYSIS / "rotation_summary.json").write_text(
         json.dumps(summary, indent=2, ensure_ascii=False), encoding="utf-8"
     )
-    figure_closure(records, FIGURES / "rotation_closure.png", closure)
     write_table(TABLES / "rotation.tex", {"fits": fits})
 
     print(json.dumps(summary, indent=2, ensure_ascii=False))

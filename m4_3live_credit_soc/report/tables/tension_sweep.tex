@@ -1,0 +1,23 @@
+\begin{center}\footnotesize
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+ & \textbf{tension $T$} & \textbf{tension $T$} & \textbf{rotation du crédit} \\
+ & tous leviers & $\delta$ fixé & tous leviers \\
+\midrule
+nombre de runs & 109 & 100 & 109 \\
+exposant ajusté & 0{,}407 & 0{,}668 & 1{,}337 \\
+$R^2$ (log-log) & \textbf{0{,}5804} & \textbf{0{,}9885} & \textbf{0{,}9982} \\
+écart médian & 3{,}34\,\% & 1{,}38\,\% & 0{,}41\,\% \\
+\midrule
+\multicolumn{4}{@{}l}{\emph{biais moyen par levier}} \\
+\quad contrôle & -2{,}30\,\% & +1{,}24\,\% & -0{,}27\,\% \\
+\quad $A$ seul & +2{,}52\,\% & -0{,}72\,\% & -0{,}24\,\% \\
+\quad $K_0$ seul & -6{,}28\,\% & -4{,}32\,\% & -0{,}36\,\% \\
+\quad $\delta$ seul & +36{,}15\,\% & --- & -1{,}70\,\% \\
+\quad A (campagne) & +0{,}80\,\% & +1{,}69\,\% & +0{,}73\,\% \\
+\quad A et K0 (ablation) & -1{,}56\,\% & +0{,}42\,\% & -0{,}28\,\% \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent\footnotesize Ajustement en loi de puissance du taux de mortalité, $\gamma = 0{,}5$, régime établi. Un prédicteur est un paramètre d'état si le biais est petit \emph{pour chaque levier} : un levier qui s'écarte signale que la grandeur ne résume pas ce que ce levier a changé.\normalsize
