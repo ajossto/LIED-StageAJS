@@ -6,8 +6,9 @@
     {
       "figure": "art_technologie",
       "file": "figures/art_technologie.pdf",
-      "sha256": "582198d41c0aef461fb8c91cfe5d3f999d440146fd840ce69b0d59ccd1acfa09",
-      "identical_source": "recherche/note_resultats/latex/figures/art_technologie.pdf"
+      "sha256": "0ebc67fc0d3b96c087b16fad426a743fad4383b9d442d207c059a4a498ea24c3",
+      "derived_from": "recherche/note_resultats/latex/figures/art_technologie.pdf",
+      "generated_by": "recherche/note_communication_encadrants/scripts/figures_lisibles.py (taille du canevas ×0,8, polices inchangées)"
     },
     {
       "figure": "m01_reseau_credit",
@@ -78,8 +79,9 @@
     {
       "figure": "art_lorenz",
       "file": "figures/art_lorenz.pdf",
-      "sha256": "4f98104c2dda69af1fb5aca766dd6b4d88e7d2a5b6a2021ffb81410878610de3",
-      "identical_source": "recherche/note_resultats/latex/figures/art_lorenz.pdf"
+      "sha256": "04ce52672c49a25563ab1d795ba78afc3f0c6d59292eb3d163f912ff4b2e729f",
+      "derived_from": "recherche/note_resultats/latex/figures/art_lorenz.pdf",
+      "generated_by": "recherche/note_communication_encadrants/scripts/figures_lisibles.py (taille du canevas ×0,8, polices inchangées)"
     },
     {
       "figure": "p03_vie_par_taille",
@@ -108,8 +110,9 @@
     {
       "figure": "art_avalanches",
       "file": "figures/art_avalanches.pdf",
-      "sha256": "c617d69a947d6560b22b149218019b61eae24044033cf9d26991f1da1bf17d7c",
-      "identical_source": "recherche/note_resultats/latex/figures/art_avalanches.pdf"
+      "sha256": "6e2e5b2c76ed0ebfb4e2b949b9ef37709d55d6980aa017b38f86f33d9540844e",
+      "derived_from": "recherche/note_resultats/latex/figures/art_avalanches.pdf",
+      "generated_by": "recherche/note_communication_encadrants/scripts/figures_lisibles.py (taille du canevas ×0,8, polices inchangées)"
     },
     {
       "figure": "p07_hierarchie_prcc",
@@ -150,8 +153,9 @@
     {
       "figure": "art_cycles",
       "file": "figures/art_cycles.pdf",
-      "sha256": "73c0b9d0d8aaf1609329cb52807ecda77f7b6ea425ff431ac968eadf21d35d08",
-      "identical_source": "recherche/note_resultats/latex/figures/art_cycles.pdf"
+      "sha256": "484e12ff4c6c5e0dc872dbf278179409a4479538444fa83d56d9e02cf7ff114d",
+      "derived_from": "recherche/note_resultats/latex/figures/art_cycles.pdf",
+      "generated_by": "recherche/note_communication_encadrants/scripts/figures_lisibles.py (taille du canevas ×0,8, polices inchangées)"
     },
     {
       "figure": "p12_revenu_empirique",
@@ -216,20 +220,23 @@
     {
       "figure": "art_reponse",
       "file": "figures/art_reponse.pdf",
-      "sha256": "ed540237a920fb07c7b69ba23694baa12e94bb2005cfd83a8c2f6861835aa741",
-      "identical_source": "recherche/note_resultats/latex/figures/art_reponse.pdf"
+      "sha256": "af25ca766f7873abbdc1ba2b5d254b48f8a7900d90fe52be4fff0df981e2c904",
+      "derived_from": "recherche/note_resultats/latex/figures/art_reponse.pdf",
+      "generated_by": "recherche/note_communication_encadrants/scripts/figures_lisibles.py (taille du canevas ×0,8, polices inchangées)"
     },
     {
       "figure": "art_quantiles",
       "file": "figures/art_quantiles.pdf",
-      "sha256": "2cac359eb60f3bf8e28ea4054279902825b9c4e7c3f4ec7fcff44b36e59de4c9",
-      "identical_source": "recherche/note_resultats/latex/figures/art_quantiles.pdf"
+      "sha256": "872108b55deebfaa623a7e8b8e561858d9ded74c7902b19b642ebfb8fde96466",
+      "derived_from": "recherche/note_resultats/latex/figures/art_quantiles.pdf",
+      "generated_by": "recherche/note_communication_encadrants/scripts/figures_lisibles.py (taille du canevas ×0,8, polices inchangées)"
     },
     {
       "figure": "art_deciles",
       "file": "figures/art_deciles.pdf",
-      "sha256": "c5e75a89695b3c0f6659d0a1a78b287e7a3a67dbea8f3520f006c2350d1cbf3a",
-      "identical_source": "recherche/note_resultats/latex/figures/art_deciles.pdf"
+      "sha256": "c0fc59e3a9ddecbdb238f5cca8a637c6fec6f8e5e17a7aa7b0156a7fc2735c5e",
+      "derived_from": "recherche/note_resultats/latex/figures/art_deciles.pdf",
+      "generated_by": "recherche/note_communication_encadrants/scripts/figures_lisibles.py (taille du canevas ×0,8, polices inchangées)"
     },
     {
       "figure": "f05_position_nette",
@@ -288,14 +295,16 @@
     {
       "figure": "art_institutions",
       "file": "figures/art_institutions.pdf",
-      "sha256": "f197681a599a62ef8fb8ebed3f69b76bca120227d3d1fdd7b16e16541054c1fe",
-      "identical_source": "recherche/note_resultats/latex/figures/art_institutions.pdf"
+      "sha256": "3d011cb41b18fa36b14b0afa7bc953fbcca076f3a609ccbceb75c14b9de9a2d4",
+      "derived_from": "recherche/note_resultats/latex/figures/art_institutions.pdf",
+      "generated_by": "recherche/note_communication_encadrants/scripts/figures_lisibles.py (taille du canevas ×0,8, polices inchangées)"
     },
     {
       "figure": "art_charge",
       "file": "figures/art_charge.pdf",
-      "sha256": "1aa005dd9406e7c25b25917488780229da4d54bd9d20eaa62ff5e091bc5c61d0",
-      "identical_source": "recherche/note_resultats/latex/figures/art_charge.pdf"
+      "sha256": "45f7347d53351369dbf7afb6e8dcddc32f46618ea06de675fc717ebb000c4513",
+      "derived_from": "recherche/note_resultats/latex/figures/art_charge.pdf",
+      "generated_by": "recherche/note_communication_encadrants/scripts/figures_lisibles.py (taille du canevas ×0,8, polices inchangées)"
     },
     {
       "figure": "f16_bargain_systeme",
@@ -306,8 +315,9 @@
     {
       "figure": "art_rho",
       "file": "figures/art_rho.pdf",
-      "sha256": "424e3c170813602543ca275db6ce82f118efa37e71845039aa155ac0bae2d6e9",
-      "identical_source": "recherche/note_resultats/latex/figures/art_rho.pdf"
+      "sha256": "54b63b0a861005cf345f1745319199b4d980edd701da8cfeefcd16eb4f640c9f",
+      "derived_from": "recherche/note_resultats/latex/figures/art_rho.pdf",
+      "generated_by": "recherche/note_communication_encadrants/scripts/figures_lisibles.py (taille du canevas ×0,8, polices inchangées)"
     },
     {
       "figure": "f18_rotation_rho",
@@ -324,8 +334,9 @@
     {
       "figure": "art_temps",
       "file": "figures/art_temps.pdf",
-      "sha256": "0ddb9bd3883df51cf87318be12e160a1e5a3e126b6b51c49a599f58685ba58ad",
-      "identical_source": "recherche/note_resultats/latex/figures/art_temps.pdf"
+      "sha256": "21707ae90866279ecc3e2c3b66b29260c46ee22720bc007c452b6520a4fc6921",
+      "derived_from": "recherche/note_resultats/latex/figures/art_temps.pdf",
+      "generated_by": "recherche/note_communication_encadrants/scripts/figures_lisibles.py (taille du canevas ×0,8, polices inchangées)"
     },
     {
       "file": "data_article/ages_graines.csv",
