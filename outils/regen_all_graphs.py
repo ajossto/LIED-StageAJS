@@ -17,7 +17,7 @@ import time
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 
-JUPYTER_ROOT = Path(__file__).parent
+JUPYTER_ROOT = Path(__file__).resolve().parent.parent
 LEGACY_ROOT = JUPYTER_ROOT / "anciens_modeles"
 MSB_SRC  = LEGACY_ROOT / "Modèle_sans_banque" / "src"
 WIP_SRC  = LEGACY_ROOT / "modele-27-04-WIP" / "src"
