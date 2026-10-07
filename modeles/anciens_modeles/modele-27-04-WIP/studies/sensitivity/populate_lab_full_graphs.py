@@ -27,7 +27,7 @@ from typing import Any
 
 
 STUDY_DIR = Path(__file__).resolve().parent
-JUPYTER_DIR = STUDY_DIR.parents[3]
+JUPYTER_DIR = STUDY_DIR.parents[4]
 PROJECT_DIR = STUDY_DIR.parents[1]
 SRC_DIR = PROJECT_DIR / "src"
 LAB_RUNS_DIR = JUPYTER_DIR / "simulation_lab_data" / "runs"

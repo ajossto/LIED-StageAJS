@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Lance l'explorateur web des simulations M3 (anciens_modeles/m3_credit_soc/webapp).
+# Lance l'explorateur web des simulations M3 (modeles/anciens_modeles/m3_credit_soc/webapp).
 # Lecture seule sur experiments/m3/results ; s'arrête tout seul à la
 # fermeture du navigateur. Options passées telles quelles à serve.py
 # (ex. : ./lancer_explorateur_m3.sh --port 8800 --no-auto-shutdown).
@@ -13,5 +13,5 @@ if [ -n "$OLD_PID" ]; then
   sleep 1
 fi
 
-cd /home/anatole/jupyter/anciens_modeles/m3_credit_soc/webapp
+cd /home/anatole/jupyter/modeles/anciens_modeles/m3_credit_soc/webapp
 exec "$PYTHON" serve.py --port "$PORT" --open-browser "$@"

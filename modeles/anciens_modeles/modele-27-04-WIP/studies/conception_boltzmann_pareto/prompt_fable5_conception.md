@@ -12,7 +12,7 @@ agent (Opus 4.8 + agents Sonnet), à partir de ton document.
 Travaille dans `/home/anatole/jupyter`. Python du venv :
 `/home/anatole/jupyter/.venv/bin/python3` (numpy/scipy autorisés). Tu peux
 **lancer des simulations d'exploration** pour étayer ta conception, mais
-**sans modifier `anciens_modeles/modele-27-04-WIP/src/`**.
+**sans modifier `modeles/anciens_modeles/modele-27-04-WIP/src/`**.
 
 ## Thèse de recherche et objectif unique
 
@@ -179,7 +179,7 @@ forme de la distribution.
 
 Si un mécanisme d'échange type crédit est conservé, il doit être reformulé de
 façon minimale et à règles identiques. Les notes inline de l'auteur dans
-`anciens_modeles/modele-27-04-WIP/src/simulation.py::credit_market_iteration` (l.854) indiquent
+`modeles/anciens_modeles/modele-27-04-WIP/src/simulation.py::credit_market_iteration` (l.854) indiquent
 la direction : tirage aléatoire d'un nombre de contreparties par round avec
 plusieurs rounds par pas (l.867), pool unique au lieu de deux (l.900),
 suppression des paramètres cachés `MAX_IDLE = max(20, k²)` (l.870). À relier
@@ -188,11 +188,11 @@ au terme d'échange `J_ij` de Bouchaud-Mézard (matrice de couplage, mean-field
 
 ## Fichiers du modèle actuel à lire
 
-- `anciens_modeles/modele-27-04-WIP/src/config.py` — les ~18 paramètres exogènes actuels
-- `anciens_modeles/modele-27-04-WIP/src/models.py` — bilan `Entity`, `Loan`
-- `anciens_modeles/modele-27-04-WIP/src/simulation.py` — dynamique complète
-- `anciens_modeles/modele-27-04-WIP/RAPPORT_ELAGAGE_MODELE.md` — ablations déjà faites
-- `anciens_modeles/modele-27-04-WIP/analyse_des_equations_de_la_vie_d_une_entite.pdf` — ODE
+- `modeles/anciens_modeles/modele-27-04-WIP/src/config.py` — les ~18 paramètres exogènes actuels
+- `modeles/anciens_modeles/modele-27-04-WIP/src/models.py` — bilan `Entity`, `Loan`
+- `modeles/anciens_modeles/modele-27-04-WIP/src/simulation.py` — dynamique complète
+- `modeles/anciens_modeles/modele-27-04-WIP/RAPPORT_ELAGAGE_MODELE.md` — ablations déjà faites
+- `modeles/anciens_modeles/modele-27-04-WIP/analyse_des_equations_de_la_vie_d_une_entite.pdf` — ODE
   effective `dx/dt = −δx + b√x + c`, seuil de viabilité
 
 ## Inventaire des paramètres à classer

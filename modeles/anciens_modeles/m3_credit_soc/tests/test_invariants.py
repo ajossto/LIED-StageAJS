@@ -8,7 +8,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 from m3.config import M3Config
 from m3.simulation import Simulation
 
-M2_SRC = "/home/anatole/jupyter/anciens_modeles/m2_fable/src"
+M2_SRC = "/home/anatole/jupyter/modeles/anciens_modeles/m2_fable/src"
 
 
 def test_I1_nonnegative():

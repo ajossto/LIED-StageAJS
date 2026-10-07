@@ -23,10 +23,10 @@ from pathlib import Path
 
 SCRIPTS_DIR = Path(__file__).resolve().parent
 CAMPAIGN_ROOT = SCRIPTS_DIR.parent  # m4_2b_credit_soc/
-ROOT = CAMPAIGN_ROOT.parent  # jupyter/
+ROOT = CAMPAIGN_ROOT.parents[1]  # jupyter/
 CAMPAIGN_DIR = CAMPAIGN_ROOT / "results" / "campaign"
 MAP_PATH = CAMPAIGN_DIR / "simlab_import_map.json"
-ADAPTER_DIR = ROOT / "modeles-systeme-physicoeconomique" / "m4_2b_credit_soc"
+ADAPTER_DIR = ROOT / "modeles" / "adaptateurs" / "m4_2b_credit_soc"
 
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ADAPTER_DIR))

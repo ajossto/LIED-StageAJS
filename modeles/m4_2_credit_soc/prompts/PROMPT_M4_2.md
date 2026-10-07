@@ -62,12 +62,12 @@ d’informations pour agir, agis.
 Lis intégralement les sources pertinentes avant de modifier quoi que ce soit :
 
 - `README.md` et `CODEX.md` à la racine du dépôt ;
-- `m4_credit_soc_fable/reports/01_soc_final/main.pdf` et sa source LaTeX ;
-- `m4_credit_soc_fable/PROMPT_M4_SOC.md`, pour comprendre l’ouverture de la
+- `modeles/m4_credit_soc_fable/reports/01_soc_final/main.pdf` et sa source LaTeX ;
+- `modeles/m4_credit_soc_fable/PROMPT_M4_SOC.md`, pour comprendre l’ouverture de la
   recherche qui a permis la refonte réussie de M4 ;
-- `m4b_credit_soc_mini/README.md` ;
-- `m4b_credit_soc_mini/report/mecanique_m4b.pdf` et sa source LaTeX ;
-- `m4b_credit_soc_mini/m4b/`, qui fait foi sur la mécanique exécutée ;
+- `modeles/m4b_credit_soc_mini/README.md` ;
+- `modeles/m4b_credit_soc_mini/report/mecanique_m4b.pdf` et sa source LaTeX ;
+- `modeles/m4b_credit_soc_mini/m4b/`, qui fait foi sur la mécanique exécutée ;
 - `recherche/sensibilite_m4b/report/rapport_final.pdf` et sa source LaTeX ;
 - le protocole, le journal, les scripts et les résultats de
   `recherche/sensibilite_m4b/` lorsqu’ils sont utiles ;
@@ -491,7 +491,7 @@ vient surtout du changement d’échelle, révise la conclusion.
 ## Implémentation
 
 Crée le moteur et tous les nouveaux matériaux scientifiques dans
-`m4_2_credit_soc/`. Une intégration à Simulation Lab peut ajouter le seul
+`modeles/m4_2_credit_soc/`. Une intégration à Simulation Lab peut ajouter le seul
 adaptateur minimal nécessaire dans le dossier de découverte des modèles, mais
 elle ne doit pas modifier M4B.
 

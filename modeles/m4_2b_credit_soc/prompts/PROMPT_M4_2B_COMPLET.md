@@ -92,7 +92,7 @@ Avant toute modification, lis intégralement les sources pertinentes du dépôt,
 
 - `README.md` et `CODEX.md` à la racine ;
 - les sources de M4 et M4B nécessaires à la compréhension historique ;
-- `m4b_credit_soc_mini/` ;
+- `modeles/m4b_credit_soc_mini/` ;
 - le moteur M4.2 actuellement exécuté ;
 - la spécification mathématique de M4.2 ;
 - le rapport scientifique et les expériences de M4.2 ;
@@ -1227,7 +1227,7 @@ Pour une configuration M4.2 de référence, vérifie que le pipeline graphique r
 
 Livre au minimum :
 
-1. un moteur autonome `m4_2b_credit_soc/` ;
+1. un moteur autonome `modeles/m4_2b_credit_soc/` ;
 2. une configuration sérialisable complète ;
 3. les tests unitaires et d'invariants ;
 4. l’intégration ou l’adaptateur nécessaire à `simulation_lab` ;

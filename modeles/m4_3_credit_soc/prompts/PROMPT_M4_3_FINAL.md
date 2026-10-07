@@ -1,6 +1,6 @@
 # Prompt de recherche M4.3 (nom provisoire) — l'anti-corrélation entre queue des revenus d'intérêt et criticité des avalanches est-elle structurelle, et quel mécanisme la brise ?
 
-Successeur direct de M4.2B (`m4_2b_credit_soc/`), dont le prompt
+Successeur direct de M4.2B (`modeles/m4_2b_credit_soc/`), dont le prompt
 (`prompts/PROMPT_M4_2B.md`) et le rapport final
 (`report/rapport_final.md`) sont des lectures préalables obligatoires
 — ce document ne répète pas ce qui y est déjà établi.
@@ -9,7 +9,7 @@ Version : 2026-08-06, document de référence final (voir §12 —
 provenance et statut ; consolide `PROMPT_M4_3.tex`/`.pdf` et
 `PROMPT_M4_3.md`, conservés tels quels dans ce dossier).
 
-> **Point disque, mis à jour le 2026-08-06 (soir)** : `/home` est passé de 93 % d'occupation (16 Gio libres) à **87 % (28 Gio libres, `df -h`)** après une action de l'utilisateur. Ce n'est plus un point bloquant, mais ça ne dispense pas du préflight chiffré exigé en §3/§7.4 : sur un travail autonome de trois jours avec plusieurs cellules à 5 graines et un checkpoint complet par run, la marge peut encore se réduire significativement sans surveillance active — le préflight reste la protection opérationnelle, ce simple constat n'en est qu'une photo à un instant donné. Marge supplémentaire disponible mais **pas encore libérée** : §7 point 6 autorise désormais le nettoyage des journaux bruts de M4.2B (`m4_2b_credit_soc/results/`, 76 Go mesurés, presque intégralement reproductibles par relance plutôt que strictement nécessaires à conserver), sous conditions strictes — à exécuter tôt dans le programme, avant d'en avoir besoin sous pression.
+> **Point disque, mis à jour le 2026-08-06 (soir)** : `/home` est passé de 93 % d'occupation (16 Gio libres) à **87 % (28 Gio libres, `df -h`)** après une action de l'utilisateur. Ce n'est plus un point bloquant, mais ça ne dispense pas du préflight chiffré exigé en §3/§7.4 : sur un travail autonome de trois jours avec plusieurs cellules à 5 graines et un checkpoint complet par run, la marge peut encore se réduire significativement sans surveillance active — le préflight reste la protection opérationnelle, ce simple constat n'en est qu'une photo à un instant donné. Marge supplémentaire disponible mais **pas encore libérée** : §7 point 6 autorise désormais le nettoyage des journaux bruts de M4.2B (`modeles/m4_2b_credit_soc/results/`, 76 Go mesurés, presque intégralement reproductibles par relance plutôt que strictement nécessaires à conserver), sous conditions strictes — à exécuter tôt dans le programme, avant d'en avoir besoin sous pression.
 
 ## 0. Ce que M4.2B a établi, et pourquoi ce prompt existe
 
@@ -205,7 +205,7 @@ M4.2B n'a jamais testé l'indépendance de taille de l'exposant
 d'avalanche correctement (λ=30 fixe, K0 confondu comme proxy de
 taille, §8 de son rapport final). `recherche/sensibilite_m4b/`
 (campagne M4B, 594 runs, outils `lib_metrics.py`/`lib_screening.py`
-déjà copiés sans changement dans `m4_2b_credit_soc/scripts/`) a résolu
+déjà copiés sans changement dans `modeles/m4_2b_credit_soc/scripts/`) a résolu
 cette question **pour k=3** (`rapport_final.tex` §« Avalanches : loi
 tronquée… » et table `tab:lois`, vérifié directement dans le source
 LaTeX, pas de mémoire) :
@@ -285,7 +285,7 @@ qu'une convention documentée (JOURNAL.md, mémoire de session) n'est
 **pas** suffisant — il doit être appliqué par le code lui-même, pas
 seulement respecté par discipline. Les cinq points ci-dessous comblent
 des lacunes concrètes, identifiées sur incidents réels de M4.2B
-(`m4_2b_credit_soc/JOURNAL.md` §10, §12, §15), pas des précautions
+(`modeles/m4_2b_credit_soc/JOURNAL.md` §10, §12, §15), pas des précautions
 génériques.
 
 1. **Coupe-circuit sur la mémoire système, pas seulement par worker.**
@@ -368,7 +368,7 @@ génériques.
    les runs déjà terminés) — ne pas la reconstruire.
 6. **Ménage autorisé sur les données brutes de M4.2B, avant tout
    lancement de campagne M4.3.** Mesuré le 2026-08-06 :
-   `m4_2b_credit_soc/results/` pèse 76 Go, dont ≈46 Go dans
+   `modeles/m4_2b_credit_soc/results/` pèse 76 Go, dont ≈46 Go dans
    `loan_events.csv.gz` (132 runs) et ≈30 Go dans les dossiers
    `snapshots/*.npz` — ensemble, l'essentiel du poids est constitué de
    journaux bruts par pas de temps, contre quelques Mo pour les
@@ -378,12 +378,12 @@ génériques.
    autorise explicitement (2026-08-06) le nettoyage de ces journaux
    bruts, sous les conditions suivantes, non négociables :
    - **Portée strictement limitée** à
-     `m4_2b_credit_soc/results/{campaign,confirmation,pilot_*}/.../`
-     (fichiers par run) — ne jamais toucher `m4_2b_credit_soc/report/`
+     `modeles/m4_2b_credit_soc/results/{campaign,confirmation,pilot_*}/.../`
+     (fichiers par run) — ne jamais toucher `modeles/m4_2b_credit_soc/report/`
      (figures et rapports déjà générés), ni les fichiers agrégés à la
      racine de `results/` (`*.csv`, `*.json` — c'est le registre
      scientifique du programme, cité dans le rapport final), ni quoi
-     que ce soit dans `m4_3_credit_soc/`.
+     que ce soit dans `modeles/m4_3_credit_soc/`.
    - **Toujours conserver, pour chaque run** : `config.json`
      (paramètres + graine — condition suffisante pour relancer
      intégralement ce run, RNG déterministe, §"relancer si
@@ -396,7 +396,7 @@ génériques.
      `entities.csv`, `avalanche_members.csv`, `snapshots/*.npz`.
    - **Traçabilité obligatoire** : avant toute suppression, écrire un
      manifeste (chemins, tailles, date) dans
-     `m4_2b_credit_soc/results/CLEANUP_MANIFEST.md` ; exécuter d'abord
+     `modeles/m4_2b_credit_soc/results/CLEANUP_MANIFEST.md` ; exécuter d'abord
      un passage à blanc (dry-run, espace total qui serait libéré) et
      le faire figurer au point d'étape quotidien suivant (§9) avant
      d'exécuter la suppression réelle.
@@ -409,7 +409,7 @@ génériques.
    d'environ 87 % à environ 51 % d'occupation.
 
 Ces six points sont des exigences pour le code de campagne à écrire
-au démarrage du programme (`m4_3_credit_soc/` ne contient pour l'instant
+au démarrage du programme (`modeles/m4_3_credit_soc/` ne contient pour l'instant
 que ce dossier `prompts/`, pas encore de moteur ni de scripts) — pas
 une implémentation à livrer avec ce document. Aucun des six n'est
 optionnel compte tenu du contexte d'autonomie de §9.
@@ -517,5 +517,5 @@ Deux annotations manuscrites portées sur le PDF (2026-08-06,
   garde k=2. »
 
 La question ouverte du tout premier brouillon (« nom et emplacement de
-dossier ») est close : `m4_3_credit_soc/` est confirmé, en suivant la
+dossier ») est close : `modeles/m4_3_credit_soc/` est confirmé, en suivant la
 convention M4→M4B→M4.2→M4.2B→M4.3 déjà en place.

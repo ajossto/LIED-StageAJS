@@ -33,7 +33,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-JUPYTER_ROOT = ROOT.parent
+JUPYTER_ROOT = ROOT.parent.parent
 sys.path.insert(0, str(JUPYTER_ROOT))
 
 from simulation_lab.contracts import collect_artifacts  # noqa: E402

@@ -1,7 +1,7 @@
 # M4.3Live-v2 — feuille de route
 
 **Origine** : 28 notes manuscrites portées sur
-`m4_3live_credit_soc/report/rapport_final.pdf` le 18 août 2026 entre 14 h 23
+`modeles/m4_3live_credit_soc/report/rapport_final.pdf` le 18 août 2026 entre 14 h 23
 et 15 h 40. Chaque ligne de cette feuille de route cite la ou les notes dont
 elle procède, entre crochets : `[n]` renvoie à la n-ième note dans l'ordre de
 lecture du document (extraction complète dans `notes/notes_rapport_final.md`).
@@ -490,7 +490,7 @@ attribuable.
 ## 8. Traité dans la v1, sans attendre v2
 
 Les notes ci-dessous ne demandaient pas de fork : elles ont été traitées
-dans `m4_3live_credit_soc/` le 18 août 2026, et le rapport final a été
+dans `modeles/m4_3live_credit_soc/` le 18 août 2026, et le rapport final a été
 recompilé. Elles figurent ici pour que v2 hérite de l'état corrigé et non de
 l'état annoté.
 

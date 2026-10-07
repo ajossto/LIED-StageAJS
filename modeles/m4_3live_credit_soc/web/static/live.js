@@ -1,6 +1,6 @@
 "use strict";
 /* M4.3Live — direct : IHM vanilla (aucune dépendance externe).
- * Contrat serveur : voir m4_3live_credit_soc/web/router.py.
+ * Contrat serveur : voir modeles/m4_3live_credit_soc/web/router.py.
  * Point d'attention du contrat : GET /api/live/sessions/<id>?since=<t> ne
  * renvoie que les lignes de `series` dont t > since. Le client accumule
  * donc les lignes localement par session (voir `getCursor`).

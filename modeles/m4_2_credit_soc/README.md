@@ -47,7 +47,7 @@ JOURNAL.md             journal de recherche chronologique
 ## Démarrage rapide
 
 ```bash
-cd /home/anatole/jupyter/m4_2_credit_soc
+cd /home/anatole/jupyter/modeles/m4_2_credit_soc
 
 # Tests (moteur + parité + estimateurs)
 /home/anatole/jupyter/.venv/bin/python3 tests/test_engine.py
@@ -68,7 +68,7 @@ cd /home/anatole/jupyter/m4_2_credit_soc
 ## Simulation Lab
 
 Le modèle est actif dans l'interface (`model_id = m4_2_credit_soc`,
-adaptateur `modeles-systeme-physicoeconomique/m4_2_credit_soc/`) avec les
+adaptateur `modeles/adaptateurs/m4_2_credit_soc/`) avec les
 28 figures M4B adaptées (taux marginal r* = A·γ·K^(γ−1) lu depuis la
 config du run). Lancement :
 

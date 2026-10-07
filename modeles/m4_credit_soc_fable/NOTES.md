@@ -543,7 +543,7 @@ des lots. Les figures de synthèse du rapport sont recalculées sur les
 3 lots de campagne exclusivement (la synthèse du lab, régénérée le 16/07
 par l'autre session, inclut des lots exploratoires supplémentaires —
 pente max∝N^0,55 au lieu de 0,59 et un point pop/λ≈19,8 issus de ces
-lots). Successeur du modèle : `m4b_credit_soc_mini/` (réduction minimale,
+lots). Successeur du modèle : `modeles/m4b_credit_soc_mini/` (réduction minimale,
 voir son README) — m4_credit_soc_fable passe en référence lecture seule.
 
 ### 2026-07-17 (soir) — Retouches sur annotations PDF d'Anatole : le revenu est corps exponentiel × queue Pareto ; K en Burr XII ; NW en gamma généralisée ; figures cascades/volume sans analyse de coupure

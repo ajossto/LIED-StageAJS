@@ -36,17 +36,17 @@ attribués à la présente réplication.
 
 ## Ancien modèle WIP et lignées historiques
 
-- `modeles-systeme-physicoeconomique/modele_sans_banque_wip/model.py` : adaptateur
+- `modeles/adaptateurs/modele_sans_banque_wip/model.py` : adaptateur
   actuellement branché au laboratoire ; il pointe vers `Modèle_sans_banque/src`.
 - `Modèle_sans_banque/src/` : lignée WIP active selon `CODEX.md`, avec état riche,
   prêts, faillites et analyses. Réutilisable pour des idées de journalisation ou
   de graphiques, mais dangereux comme base métier : M2 réduit volontairement
   l'état et modifie le coût du crédit, les chocs, la dette d'amorçage et les
   transferts de faillite.
-- `anciens_modeles/modele-27-04-WIP/src/` et `anciens_modeles/4-05-dynamique/src{,_v2}/` : autres versions riches,
+- `modeles/anciens_modeles/modele-27-04-WIP/src/` et `modeles/anciens_modeles/4-05-dynamique/src{,_v2}/` : autres versions riches,
   partiellement modifiées dans l'arbre de travail. Elles sont historiques ou
   expérimentales et ne seront pas modifiées.
-- `anciens_modeles/claude/`, `anciens_modeles/claude3-v2/`, `archives/modeles/` et `banque_versions_zip/` :
+- `modeles/anciens_modeles/claude/`, `modeles/anciens_modeles/claude3-v2/`, `archives/modeles/` et `banque_versions_zip/` :
   archives. Elles sont impropres à une réutilisation non critique et certaines
   sont explicitement déclarées non modifiables.
 - `arborescence_modeles/INDEX_ARBORESCENCE.md` et
@@ -65,7 +65,7 @@ attribués à la présente réplication.
   de support, des domaines ajustés et du pooling.
 - `recherche/analyse_distributions_taille_revenu/latex/rapport.tex` : exemple de
   rapport statistique et discussion des familles candidates.
-- `anciens_modeles/modele-27-04-WIP/studies/sensitivity/` et ses nombreux JSON/figures : exemples
+- `modeles/anciens_modeles/modele-27-04-WIP/studies/sensitivity/` et ses nombreux JSON/figures : exemples
   de campagnes de sensibilité et de stockage. Ils portent sur un autre modèle et
   ne constituent pas des données de validation de M2.
 - `PLOTTING_GUIDE.md` et `regen_all_graphs.py` : conventions graphiques et

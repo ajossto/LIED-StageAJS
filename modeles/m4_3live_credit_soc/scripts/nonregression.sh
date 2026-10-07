@@ -5,7 +5,7 @@
 set -u
 PY=/home/anatole/jupyter/.venv/bin/python3
 PORT=8898
-OUT=/home/anatole/jupyter/m4_3live_credit_soc/results/analysis
+OUT=/home/anatole/jupyter/modeles/m4_3live_credit_soc/results/analysis
 mkdir -p "$OUT"
 cd /home/anatole/jupyter
 REPORT="$OUT/nonregression.txt"

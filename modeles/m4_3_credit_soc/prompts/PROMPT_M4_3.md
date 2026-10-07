@@ -1,6 +1,6 @@
 # Prompt de recherche M4.3 (nom provisoire) — l'anti-corrélation entre queue des revenus d'intérêt et criticité des avalanches est-elle structurelle, et quel mécanisme la brise ?
 
-Successeur direct de M4.2B (`m4_2b_credit_soc/`), dont le prompt
+Successeur direct de M4.2B (`modeles/m4_2b_credit_soc/`), dont le prompt
 (`prompts/PROMPT_M4_2B.md`) et le rapport final
 (`report/rapport_final.md`) sont des lectures préalables obligatoires
 — ce document ne répète pas ce qui y est déjà établi.
@@ -204,7 +204,7 @@ M4.2B n'a jamais testé l'indépendance de taille de l'exposant
 d'avalanche correctement (λ=30 fixe, K0 confondu comme proxy de
 taille, §8 de son rapport final). `recherche/sensibilite_m4b/`
 (campagne M4B, 594 runs, outils `lib_metrics.py`/`lib_screening.py`
-déjà copiés sans changement dans `m4_2b_credit_soc/scripts/`) a résolu
+déjà copiés sans changement dans `modeles/m4_2b_credit_soc/scripts/`) a résolu
 cette question **pour k=3** (`rapport_final.tex` §« Avalanches : loi
 tronquée… » et table `tab:lois`, vérifié directement dans le source
 LaTeX, pas de mémoire) :
@@ -284,7 +284,7 @@ qu'une convention documentée (JOURNAL.md, mémoire de session) n'est
 **pas** suffisant — il doit être appliqué par le code lui-même, pas
 seulement respecté par discipline. Les quatre points ci-dessous
 comblent des lacunes concrètes, identifiées sur incidents réels de
-M4.2B (`m4_2b_credit_soc/JOURNAL.md` §10, §12, §15), pas des précautions
+M4.2B (`modeles/m4_2b_credit_soc/JOURNAL.md` §10, §12, §15), pas des précautions
 génériques.
 
 1. **Coupe-circuit sur la mémoire système, pas seulement par worker.**
@@ -351,7 +351,7 @@ génériques.
    plusieurs jours.
 
 Ces quatre points sont des exigences pour le code de campagne à écrire
-au démarrage du programme (`m4_3_credit_soc/` ne contient pour l'instant
+au démarrage du programme (`modeles/m4_3_credit_soc/` ne contient pour l'instant
 que ce dossier `prompts/`, pas encore de moteur ni de scripts) — pas
 une implémentation à livrer avec ce document. Aucun des quatre n'est
 optionnel compte tenu du contexte d'autonomie de §9.
@@ -438,5 +438,5 @@ supprimer). Deux annotations manuscrites portées sur le PDF
   document) : « On garde k=2. »
 
 La question ouverte du brouillon précédent (« nom et emplacement de
-dossier ») est close : `m4_3_credit_soc/` est confirmé, en suivant la
+dossier ») est close : `modeles/m4_3_credit_soc/` est confirmé, en suivant la
 convention M4→M4B→M4.2→M4.2B→M4.3 déjà en place.

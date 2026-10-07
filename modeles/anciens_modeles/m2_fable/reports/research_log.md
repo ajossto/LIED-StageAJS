@@ -6,7 +6,7 @@
 - Consigne : réplication critique du document de conception M2
   (`recherche/conception_boltzmann_pareto_soc/conception_modele_M2.md`).
 - Un agent concurrent travaille dans `jupyter/reports/` ; tout mon travail est
-  isolé sous `anciens_modeles/m2_fable/` (consigne utilisateur explicite). Aucun fichier hors
+  isolé sous `modeles/anciens_modeles/m2_fable/` (consigne utilisateur explicite). Aucun fichier hors
   de ce dossier n'est modifié ; le venv partagé est utilisé sans installation.
 
 ### Fichiers produits

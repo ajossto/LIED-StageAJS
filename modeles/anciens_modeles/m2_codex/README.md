@@ -5,7 +5,7 @@ travaux du dépôt. Les anciennes lignées sont uniquement lues comme sources.
 
 ## Commandes
 
-Depuis `anciens_modeles/m2_codex/` avec le venv du dépôt :
+Depuis `modeles/anciens_modeles/m2_codex/` avec le venv du dépôt :
 
 ```bash
 PYTHONPATH=src /home/anatole/jupyter/.venv/bin/python3 -m unittest discover -s tests -v

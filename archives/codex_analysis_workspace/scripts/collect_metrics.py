@@ -97,12 +97,12 @@ def main():
     repo = Path("/home/anatole/jupyter")
     data = {
         "model_identification": {
-            "first_documented_stable": "arborescence_modeles/stable/v2_modulaire_stable_A_documenter_DONE -> claude3-v2",
+            "first_documented_stable": "archives/arborescence_modeles/stable/v2_modulaire_stable_A_documenter_DONE -> claude3-v2",
             "latest_committed_model": "HEAD:claude3-v3-27-mars",
             "current_wip": "Modèle_sans_banque_wip",
         },
         "v2_simulation_1000": simulate_model(
-            repo / "anciens_modeles" / "claude3-v2" / "src", steps=1000
+            repo / "modeles" / "anciens_modeles" / "claude3-v2" / "src", steps=1000
         ),
         "wip_existing_run_1000": compute_existing_run_metrics(
             repo

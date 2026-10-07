@@ -35,7 +35,7 @@ from matplotlib.ticker import FixedLocator, FormatStrFormatter, NullLocator  # n
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
-sys.path.insert(0, str(ROOT.parent))
+sys.path.insert(0, str(ROOT.parent.parent))
 
 from simulation_lab.plot_utils import apply_style  # noqa: E402
 

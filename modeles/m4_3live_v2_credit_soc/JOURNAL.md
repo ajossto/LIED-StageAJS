@@ -28,11 +28,11 @@ décisions, et les inférences qu'elle a dû retirer.
 
 ### Ce qui a été fait
 
-Fork par COPIE de `m4_3live_credit_soc/` vers `m4_3live_v2_credit_soc/` :
+Fork par COPIE de `modeles/m4_3live_credit_soc/` vers `modeles/m4_3live_v2_credit_soc/` :
 paquet moteur `m4_3live/` → `m4_3live_v2/`, plus `driver/`, `web/`, `tests/`
 et la partie de `scripts/` que v2 réutilise. Aucun import de v1 dans le code
 de v2. Le paquet v1 n'a pas été touché — vérifié par `git status` : les seuls
-fichiers modifiés hors de `m4_3live_v2_credit_soc/` sont
+fichiers modifiés hors de `modeles/m4_3live_v2_credit_soc/` sont
 `simulation_lab/web/app.py` (deux aiguillages additifs) et le nouveau
 `simulation_lab/live_v2/`.
 

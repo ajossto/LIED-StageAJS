@@ -7,11 +7,11 @@ agent sont en fin de document.
 
 ## Lecture préalable obligatoire
 
-- `/home/anatole/jupyter/anciens_modeles/m3_credit_soc/NOTES.md` — journal complet du
+- `/home/anatole/jupyter/modeles/anciens_modeles/m3_credit_soc/NOTES.md` — journal complet du
   programme M3. C'est la source de vérité sur ce qui a déjà été testé et
   fermé. Ne pas relancer un test que ce journal a déjà tranché sans le citer
   et expliquer pourquoi le refaire apporte quelque chose de nouveau.
-- `/home/anatole/jupyter/anciens_modeles/m3_credit_soc/reports/05_negative_results/main.tex`
+- `/home/anatole/jupyter/modeles/anciens_modeles/m3_credit_soc/reports/05_negative_results/main.tex`
   et `reports/07_income_rule/main.tex` — synthèses rédigées des résultats
   négatifs et du mini-protocole X1.
 - `src/m4/*.py` (ce dépôt) — moteur actuel, fork de M3. `config.py` documente
@@ -196,7 +196,7 @@ manipulable en augmentant la taille du système). Le signal SOC recherché est :
   et `webapp/mpl_figures.py` — log-binning adaptatif, erreur bootstrap,
   double régression avec/sans taille 1, écrites pour `cascades_rank_size.png`
   dans m3_credit_soc — à copier/adapter, pas à réinventer).
-- Une entrée de journal dans `m4_credit_soc/NOTES.md` (à créer sur le modèle
+- Une entrée de journal dans `modeles/m4_credit_soc/NOTES.md` (à créer sur le modèle
   de celui de M3 : un résumé d'une ligne en tête de chaque entrée, confirmé
   ou infirmé, et pourquoi) pour chaque hypothèse testée, y compris les
   échecs — les négatifs sont aussi précieux que les positifs dans ce
@@ -218,7 +218,7 @@ manipulable en augmentant la taille du système). Le signal SOC recherché est :
 
 ## Deltas spécifiques par agent
 
-**Claude Fable 5** : tenir `m4_credit_soc/NOTES.md` comme mémoire de travail
+**Claude Fable 5** : tenir `modeles/m4_credit_soc/NOTES.md` comme mémoire de travail
 au fil de l'eau (une entrée par hypothèse testée, cf. Livrables). Avant de
 rapporter un résultat comme acquis, auditer chaque affirmation contre une
 sortie d'outil réelle de cette session (pas de statut de progression

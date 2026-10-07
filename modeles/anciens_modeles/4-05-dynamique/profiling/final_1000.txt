@@ -1,4 +1,4 @@
-# Profil sauvé dans : anciens_modeles/modele-27-04-WIP/profiling/final_1000.prof
+# Profil sauvé dans : modeles/anciens_modeles/modele-27-04-WIP/profiling/final_1000.prof
 # Simulation : target=wip, n_steps=1000, seed=42
 
 

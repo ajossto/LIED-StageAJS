@@ -1,4 +1,4 @@
-# Profil sauvé dans : anciens_modeles/modele-27-04-WIP/profiling/post_opt5.prof
+# Profil sauvé dans : modeles/anciens_modeles/modele-27-04-WIP/profiling/post_opt5.prof
 # Simulation : target=wip, n_steps=500, seed=42
 
 

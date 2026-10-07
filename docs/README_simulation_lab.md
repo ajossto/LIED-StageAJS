@@ -22,7 +22,7 @@ Le choix retenu est une interface web locale en Python standard library :
 
 ```text
 ~/jupyter/
-├── modeles-systeme-physicoeconomique/
+├── modeles/adaptateurs/
 │   ├── exemple_modele_lineaire/
 │   │   └── model.py
 │   ├── exemple_modele_marche/
@@ -158,9 +158,9 @@ Les simulations supprimées par l’interface ne sont pas effacées immédiateme
 En plus des runs lancés via l’outil, l’interface détecte aussi les anciens dossiers
 de résultats déjà présents dans :
 
-- `anciens_modeles/Modèle_sans_banque/resultats/`
-- `anciens_modeles/Modèle_sans_banque/src/resultats/`
-- `anciens_modeles/claude3-v2/src/resultats/`
+- `modeles/anciens_modeles/Modèle_sans_banque/resultats/`
+- `modeles/anciens_modeles/Modèle_sans_banque/src/resultats/`
+- `modeles/anciens_modeles/claude3-v2/src/resultats/`
 
 et, plus généralement, tout dossier de `~/jupyter` contenant un `meta.json` de simulation
 reconnaissable.
@@ -306,7 +306,7 @@ Cela permettra plus tard d’ajouter :
 
 ### Conseils d’ajout d’un nouveau modèle
 
-1. Créer un sous-dossier dans `modeles-systeme-physicoeconomique/`.
+1. Créer un sous-dossier dans `modeles/adaptateurs/`.
 2. Ajouter un `model.py`.
 3. Définir une classe héritant de `BaseSimulationModel`.
 4. Déclarer proprement les paramètres avec `ParameterSpec`.

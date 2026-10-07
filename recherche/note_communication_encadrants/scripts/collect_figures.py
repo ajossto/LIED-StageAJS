@@ -67,19 +67,19 @@ CATALOGUE: dict[str, tuple[Path, str, str]] = {
         "dérive avec l'horizon d'observation.",
     ),
     "t03_branchement_m4": (
-        DEPOT / "m4_credit_soc_fable/reports/01_soc_final/figures/lot100_branching_ratio.png",
+        DEPOT / "modeles/m4_credit_soc_fable/reports/01_soc_final/figures/lot100_branching_ratio.png",
         "m4_credit_soc_fable, rapport 01_soc_final",
         "M4 : le rapport de branchement se stabilise vers 0,30 une fois la "
         "règle annulation–destruction en place.",
     ),
     "t04_taille_finie_m4": (
-        DEPOT / "m4_credit_soc_fable/reports/01_soc_final/figures/lots_scaling_finite_size.png",
+        DEPOT / "modeles/m4_credit_soc_fable/reports/01_soc_final/figures/lots_scaling_finite_size.png",
         "m4_credit_soc_fable, rapport 01_soc_final",
         "M4 : la coupure des avalanches croît avec la taille du système — "
         "signature de taille finie, condition nécessaire d'un candidat SOC.",
     ),
     "t05_effet_echelle_m42": (
-        DEPOT / "m4_2_credit_soc/figures/ablation_scale.png",
+        DEPOT / "modeles/m4_2_credit_soc/figures/ablation_scale.png",
         "m4_2_credit_soc, campagne M4.2",
         "M4.2 : l'effet attribué naïvement à la concavité γ est dominé par un "
         "déplacement d'échelle du capital.",
@@ -163,13 +163,13 @@ CATALOGUE: dict[str, tuple[Path, str, str]] = {
         "observable.",
     ),
     "p13_queue_interets": (
-        DEPOT / "m4_2b_credit_soc/report/figures/sim_interets_baseline.png",
+        DEPOT / "modeles/m4_2b_credit_soc/report/figures/sim_interets_baseline.png",
         "m4_2b_credit_soc, campagne M4.2B",
         "La queue d'intérêts telle qu'elle se voit sur les graphiques — "
         "l'observation qui a motivé le test de Pareto.",
     ),
     "p14_erreur_seuil": (
-        DEPOT / "m4_2b_credit_soc/report/figures/fig7_seuil_exemple_travaille.png",
+        DEPOT / "modeles/m4_2b_credit_soc/report/figures/fig7_seuil_exemple_travaille.png",
         "m4_2b_credit_soc, campagne M4.2B",
         "Le contrôle d'autosimilarité mal orienté, puis corrigé : à seuil×2 "
         "la queue médiane tombe de 113 à 17 points. L'existence de Pareto "

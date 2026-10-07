@@ -9,14 +9,14 @@ faillite en cascade.
 
 **Fichiers de travail :**
 - Rapport à modifier :
-  `/home/anatole/jupyter/anciens_modeles/modele-27-04-WIP/studies/sensitivity/report/rapport_final_sensibilite.tex`
+  `/home/anatole/jupyter/modeles/anciens_modeles/modele-27-04-WIP/studies/sensitivity/report/rapport_final_sensibilite.tex`
 - Annexe traçabilité (incluse via `\input`) :
-  `/home/anatole/jupyter/anciens_modeles/modele-27-04-WIP/studies/sensitivity/report/annexe_tracabilite.tex`
+  `/home/anatole/jupyter/modeles/anciens_modeles/modele-27-04-WIP/studies/sensitivity/report/annexe_tracabilite.tex`
 - Figures disponibles sur disque :
   - `report/figures/` — figures déjà référencées + heatmaps adaptatives
   - `studies/sensitivity/figures/` — surfaces 3D : `map_*_3d.png`
 - Données sources (JSON) :
-  `/home/anatole/jupyter/anciens_modeles/modele-27-04-WIP/studies/sensitivity/results/`
+  `/home/anatole/jupyter/modeles/anciens_modeles/modele-27-04-WIP/studies/sensitivity/results/`
   - `adaptive_lambda_k_extended.json` (417 runs)
   - `adaptive_k_mu_extended.json` (327 runs)
   - `adaptive_sigma_k_extended.json` (267 runs)

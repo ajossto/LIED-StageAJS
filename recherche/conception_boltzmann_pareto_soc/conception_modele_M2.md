@@ -7,9 +7,9 @@ Auteur : Claude (Fable 5), à la demande d'Anatole Joseph-Stouls, 2 juillet 2026
 Sources lues à l'appui (citées dans le texte) :
 - Bouchaud & Mézard 2000 (*Wealth condensation…*, arXiv:cond-mat/0002374) — noté **[BM]**, équations numérotées comme dans l'article.
 - Yakovenko & Rosser 2009 (*Colloquium: Statistical mechanics of money, wealth, and income*, Rev. Mod. Phys. 81, 1703) — noté **[YR]**.
-- `anciens_modeles/modele-27-04-WIP/src/{config,models,simulation}.py` — noté **[WIP]**.
-- `anciens_modeles/modele-27-04-WIP/RAPPORT_ELAGAGE_MODELE.md` — noté **[ÉLAGAGE]**.
-- `anciens_modeles/modele-27-04-WIP/analyse_des_equations_de_la_vie_d_une_entite.pdf` — noté **[ODE]**.
+- `modeles/anciens_modeles/modele-27-04-WIP/src/{config,models,simulation}.py` — noté **[WIP]**.
+- `modeles/anciens_modeles/modele-27-04-WIP/RAPPORT_ELAGAGE_MODELE.md` — noté **[ÉLAGAGE]**.
+- `modeles/anciens_modeles/modele-27-04-WIP/analyse_des_equations_de_la_vie_d_une_entite.pdf` — noté **[ODE]**.
 - `recherche/analyse_distributions_taille_revenu/latex/rapport.pdf` — noté **[DISTRIB]**.
 - Explorations numériques faites pour ce document :
   `recherche/conception_boltzmann_pareto_soc/exploration/` (prototype `proto_m1.py`,

@@ -11,11 +11,11 @@ document.
 
 ## Lecture préalable obligatoire
 
-- `anciens_modeles/m3_credit_soc/NOTES.md` — journal complet du programme M3. Utile comme
+- `modeles/anciens_modeles/m3_credit_soc/NOTES.md` — journal complet du programme M3. Utile comme
   historique de ce qui a déjà été essayé, **pas comme verdict à respecter**
   (voir plus bas). Ne relancez pas un test déjà fait sans le citer et dire
   pourquoi le refaire apporte quelque chose de nouveau.
-- `anciens_modeles/m3_credit_soc/reports/05_negative_results/main.tex` et
+- `modeles/anciens_modeles/m3_credit_soc/reports/05_negative_results/main.tex` et
   `reports/07_income_rule/main.tex` — synthèses rédigées des résultats
   négatifs et du mini-protocole X1, même remarque.
 - `src/m4/*.py` (dans `m4_credit_soc_sol`) — moteur actuel, fork de M3.
@@ -255,7 +255,7 @@ intangibles)
   double régression avec/sans taille 1, écrites pour
   `cascades_rank_size.png` dans `m3_credit_soc` — à copier/adapter, pas à
   réinventer).
-- Une entrée de journal dans `m4_credit_soc_sol/NOTES.md` (sur le modèle de
+- Une entrée de journal dans `modeles/m4_credit_soc_sol/NOTES.md` (sur le modèle de
   celui de M3 : un résumé d'une ligne en tête de chaque entrée, confirmé ou
   infirmé, et pourquoi) pour chaque hypothèse testée, y compris les
   échecs — les négatifs sont aussi précieux que les positifs dans ce

@@ -17,7 +17,7 @@ Spécification pré-enregistrée : `reports/02_m3_specification/main.pdf`.
 
 ## Commandes
 
-Depuis `anciens_modeles/m3_credit_soc/`, avec le venv du dépôt :
+Depuis `modeles/anciens_modeles/m3_credit_soc/`, avec le venv du dépôt :
 
 ```bash
 # Tests (assertions simples, pas de pytest)

@@ -1,7 +1,7 @@
 # Explorations pour la conception M2 (Boltzmann-Pareto auto-critique)
 
 Support numérique du document `../conception_modele_M2.md` (voir son annexe A pour
-l'interprétation). Prototype jetable, indépendant de `anciens_modeles/modele-27-04-WIP/src/`.
+l'interprétation). Prototype jetable, indépendant de `modeles/anciens_modeles/modele-27-04-WIP/src/`.
 
 ## Fichiers
 

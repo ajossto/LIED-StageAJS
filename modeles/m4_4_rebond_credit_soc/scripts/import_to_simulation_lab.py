@@ -33,7 +33,7 @@ import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
-JUPYTER_ROOT = ROOT.parent
+JUPYTER_ROOT = ROOT.parent.parent
 sys.path.insert(0, str(JUPYTER_ROOT))
 sys.path.insert(0, str(ROOT))
 

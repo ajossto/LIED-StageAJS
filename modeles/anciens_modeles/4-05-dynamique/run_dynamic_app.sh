@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-cd /home/anatole/jupyter/anciens_modeles/4-05-dynamique
+cd /home/anatole/jupyter/modeles/anciens_modeles/4-05-dynamique
 
 PORT="${1:-8766}"
 PYTHON="${PYTHON:-/home/anatole/jupyter/.venv/bin/python3}"

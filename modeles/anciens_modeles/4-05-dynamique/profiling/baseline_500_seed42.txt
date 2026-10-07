@@ -1,4 +1,4 @@
-# Profil sauvé dans : /home/anatole/jupyter/anciens_modeles/modele-27-04-WIP/profiling/run.prof
+# Profil sauvé dans : /home/anatole/jupyter/modeles/anciens_modeles/modele-27-04-WIP/profiling/run.prof
 # Simulation : target=wip, n_steps=500, seed=42
 
 

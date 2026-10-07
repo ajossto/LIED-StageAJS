@@ -5,9 +5,9 @@ production, dans quelle classe de loi, et peut-on piloter la queue et le
 rapport de branchement ?**
 
 Version : 23 août 2026, révision 1. Lignée : succède à **M4.3Live-v2**
-(`m4_3live_v2_credit_soc/`), programme terminé — 2 rapports PDF, 153 runs
+(`modeles/m4_3live_v2_credit_soc/`), programme terminé — 2 rapports PDF, 153 runs
 enregistrés, parité bit à bit reconduite trois fois. Convention de dossier :
-`m4_4_rebond_credit_soc/`.
+`modeles/m4_4_rebond_credit_soc/`.
 
 Ce document joue le rôle de spécification complète : il donne le *quoi*, le
 *pourquoi* et l'*ordre*. Il est écrit avec les règles de discipline du prompt
@@ -21,13 +21,13 @@ M4.3Live-v2 et s'y substitue pour cette lignée.
 
 | document | ce qu'on y prend |
 |---|---|
-| `m4_3live_v2_credit_soc/report/rapport_final.pdf` (28 p.) | le verdict rebond sous sens libre, la rotation = ρ·Ḡ, les deux fenêtres, le contrôle de stationnarité recalibré |
-| `m4_3live_v2_credit_soc/report/conception_m4_3live_v2.pdf` (23 p.) | l'architecture du moteur, les trois sémantiques de parité, les décisions tranchées |
-| `m4_3live_v2_credit_soc/m4_3live_v2/model.py` (~1560 l.) | le moteur de référence ; **ce plan cite ses numéros de ligne**, à revérifier s'il a bougé |
-| `m4_3live_v2_credit_soc/JOURNAL.md` (471 l.) | les inférences retirées en cours de route, et pourquoi |
-| **`m4_2b_credit_soc/report/rapport_final.pdf`** | **la queue de Pareto des revenus d'intérêt : programme entier, verdict de non-décidabilité, épistémologie de remplacement** — §2 ci-dessous |
+| `modeles/m4_3live_v2_credit_soc/report/rapport_final.pdf` (28 p.) | le verdict rebond sous sens libre, la rotation = ρ·Ḡ, les deux fenêtres, le contrôle de stationnarité recalibré |
+| `modeles/m4_3live_v2_credit_soc/report/conception_m4_3live_v2.pdf` (23 p.) | l'architecture du moteur, les trois sémantiques de parité, les décisions tranchées |
+| `modeles/m4_3live_v2_credit_soc/m4_3live_v2/model.py` (~1560 l.) | le moteur de référence ; **ce plan cite ses numéros de ligne**, à revérifier s'il a bougé |
+| `modeles/m4_3live_v2_credit_soc/JOURNAL.md` (471 l.) | les inférences retirées en cours de route, et pourquoi |
+| **`modeles/m4_2b_credit_soc/report/rapport_final.pdf`** | **la queue de Pareto des revenus d'intérêt : programme entier, verdict de non-décidabilité, épistémologie de remplacement** — §2 ci-dessous |
 | `recherche/sensibilite_m4b/report/rapport_final.pdf` | valeur nette, cycle débiteur→créancier, avalanches tronquées, rôles de σ/k/K0/δ/λ |
-| `m4_credit_soc_fable/reports/01_soc_final/main.pdf` | régime SOC atteint, classes de lois ajustées, levier du branchement |
+| `modeles/m4_credit_soc_fable/reports/01_soc_final/main.pdf` | régime SOC atteint, classes de lois ajustées, levier du branchement |
 | `recherche/sensibilite_m4b/scripts/lib_metrics.py` | estimateurs discrets, Vuong, susceptibilité — **réutilisables tels quels** |
 
 ### Règle de confiance à 95 %
@@ -40,9 +40,9 @@ non vérifié. Traduction typographique obligatoire dans les rapports :
 
 ### La règle du fork
 
-`m4_3live_v2_credit_soc/m4_3live_v2/` est **gelé** : 153 runs enregistrés et
+`modeles/m4_3live_v2_credit_soc/m4_3live_v2/` est **gelé** : 153 runs enregistrés et
 deux rapports publiés en dépendent. M4.4 **forke** ce paquet par copie dans
-`m4_4_rebond_credit_soc/m4_4/`, jamais par import — sauf en lecture, pour les
+`modeles/m4_4_rebond_credit_soc/m4_4/`, jamais par import — sauf en lecture, pour les
 tests d'équivalence. C'est la troisième application de cette règle dans la
 lignée ; elle n'est pas négociable.
 
@@ -524,7 +524,7 @@ la suite v2 (12 fichiers, tous verts) et l'étendre.
 
 | # | question | recommandation | pourquoi elle est ouverte |
 |---|---|---|---|
-| 1 | nom du dossier et du paquet | `m4_4_rebond_credit_soc/`, paquet `m4_4` | convention de l'utilisateur ; trivialement changeable |
+| 1 | nom du dossier et du paquet | `modeles/m4_4_rebond_credit_soc/`, paquet `m4_4` | convention de l'utilisateur ; trivialement changeable |
 | 2 | **portée partielle** | **maintenir l'interdiction** | l'interdiction était formulée « pour la v2 » et ce programme n'est pas v2. Mais v1 a montré que le dénominateur de toute élasticité y disparaît, et §1 se traite entièrement en portée globale et `new`. **Aucun lot ne dépend de la réponse** — c'est à l'utilisateur de la rouvrir s'il le veut |
 | 3 | **σ devient-il un axe balayé ?** | **pas dans les lots A–E** | c'est le plus grand écart de régime entre les lignées (0,01 ici, 0,25 au centre M4B) et le candidat n°1 pour l'écart de b. Mais un balayage en σ est un programme en soi : M4B en a fait un. Le lot F l'aborde par une **ablation**, pas par un balayage |
 | 4 | pas d'échantillonnage k des panneaux | **à mesurer**, pas à choisir | porte du lot A |
@@ -571,7 +571,7 @@ la suite v2 (12 fichiers, tous verts) et l'étendre.
 
 Les mêmes que v2, sans négociation :
 
-- **code complet et fonctionnel** dans `m4_4_rebond_credit_soc/` — un système
+- **code complet et fonctionnel** dans `modeles/m4_4_rebond_credit_soc/` — un système
   qui tourne, pas un squelette ;
 - **rapport de conception** (`report/conception_m4_4.pdf`) : décisions
   d'architecture justifiées avec `fichier.py:ligne`, statut de la parité après
@@ -597,7 +597,7 @@ jamais aux numéros de figure.
 ## 11. Arborescence attendue
 
 ```
-m4_4_rebond_credit_soc/
+modeles/m4_4_rebond_credit_soc/
 +-- PLAN_M4_4_REBOND.md          (ce document)
 +-- m4_4/                        (paquet moteur FORKE de m4_3live_v2)
 |   +-- model.py                 (+ persistance, panneaux, checkpoint)

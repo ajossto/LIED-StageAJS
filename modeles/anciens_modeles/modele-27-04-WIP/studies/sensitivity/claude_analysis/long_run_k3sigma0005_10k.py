@@ -28,7 +28,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 HERE = Path(__file__).resolve().parent.parent
-JUPYTER_DIR = HERE.parents[3]
+JUPYTER_DIR = HERE.parents[4]
 sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(JUPYTER_DIR))
 

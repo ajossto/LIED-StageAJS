@@ -2,7 +2,7 @@
 
 Tu es Claude. Tu reprends l'etude dans :
 
-`/home/anatole/jupyter/anciens_modeles/modele-27-04-WIP/studies/sensitivity`
+`/home/anatole/jupyter/modeles/anciens_modeles/modele-27-04-WIP/studies/sensitivity`
 
 Lis d'abord :
 

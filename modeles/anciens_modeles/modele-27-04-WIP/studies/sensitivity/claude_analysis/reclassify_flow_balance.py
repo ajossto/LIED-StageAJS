@@ -19,7 +19,7 @@ import sys
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent.parent
-JUPYTER_DIR = HERE.parents[3]
+JUPYTER_DIR = HERE.parents[4]
 RUNS_DIR = JUPYTER_DIR / "simulation_lab_data" / "runs"
 
 FLOW_THRESHOLD = 0.15

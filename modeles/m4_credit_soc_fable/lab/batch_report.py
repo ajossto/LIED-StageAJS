@@ -67,7 +67,7 @@ import numpy as np
 _SRC = str(Path(__file__).resolve().parent.parent / "src")
 if _SRC not in sys.path:
     sys.path.insert(0, _SRC)
-JUPYTER = Path(__file__).resolve().parents[2]
+JUPYTER = Path(__file__).resolve().parents[3]
 if str(JUPYTER) not in sys.path:
     sys.path.insert(0, str(JUPYTER))
 

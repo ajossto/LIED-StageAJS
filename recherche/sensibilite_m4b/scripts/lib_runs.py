@@ -18,7 +18,7 @@ import time
 from pathlib import Path
 
 CAMPAIGN_ROOT = Path(__file__).resolve().parents[1]
-ENGINE_ROOT = Path("/home/anatole/jupyter/m4b_credit_soc_mini")
+ENGINE_ROOT = Path("/home/anatole/jupyter/modeles/m4b_credit_soc_mini")
 RESULTS_ROOT = CAMPAIGN_ROOT / "results" / "runs"
 MANIFESTS_ROOT = CAMPAIGN_ROOT / "manifests"
 

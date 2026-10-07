@@ -120,6 +120,6 @@ phase SOC robuste n'est identifiée.
 Commande de test :
 
 ```bash
-cd /home/anatole/jupyter/anciens_modeles/m2_codex
+cd /home/anatole/jupyter/modeles/anciens_modeles/m2_codex
 PYTHONPATH=src /home/anatole/jupyter/.venv/bin/python3 -m unittest discover -s tests -v
 ```

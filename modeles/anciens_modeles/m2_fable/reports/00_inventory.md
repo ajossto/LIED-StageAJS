@@ -1,12 +1,12 @@
-# Inventaire du projet — réplication M2 (workspace `anciens_modeles/m2_fable/`)
+# Inventaire du projet — réplication M2 (workspace `modeles/anciens_modeles/m2_fable/`)
 
 Date : 3 juillet 2026.
-Agent : Claude Fable 5, workspace isolé `/home/anatole/jupyter/anciens_modeles/m2_fable/`.
+Agent : Claude Fable 5, workspace isolé `/home/anatole/jupyter/modeles/anciens_modeles/m2_fable/`.
 
 **Contexte de concurrence** : un autre agent travaille en parallèle sur la même
 tâche dans `jupyter/reports/` (fichiers `00_inventory.md` et `research_log.md`
 datés du même jour, non produits par moi). Par consigne de l'utilisateur, tous
-mes livrables vivent sous `anciens_modeles/m2_fable/` et je ne modifie **aucun** fichier hors de
+mes livrables vivent sous `modeles/anciens_modeles/m2_fable/` et je ne modifie **aucun** fichier hors de
 ce dossier. Le venv partagé `/home/anatole/jupyter/.venv` est utilisé en lecture
 seule (aucune installation).
 
@@ -54,19 +54,19 @@ l'AIC), stabilité de μ = hypothèse H2 non prouvée, conventions non testées
   `src/m2/analysis.py` avec bootstrap en plus, pour ne pas dépendre d'un chemin
   hors workspace et pour le tester.
 - `scripts/families.py` : échelle AIC/BIC — mais importe
-  `anciens_modeles/modele-27-04-WIP/src/analysis.py` (dépendance dangereuse, hors périmètre).
+  `modeles/anciens_modeles/modele-27-04-WIP/src/analysis.py` (dépendance dangereuse, hors périmètre).
   Je réimplémente localement le sous-ensemble requis (expon/gamma/lognorm/Fisk
   à `floc=0`).
 
 ## 4. Lignées historiques (non réutilisées comme base métier)
 
 - `Modèle_sans_banque/src/` + adaptateur
-  `modeles-systeme-physicoeconomique/modele_sans_banque_wip/model.py` : WIP
+  `modeles/adaptateurs/modele_sans_banque_wip/model.py` : WIP
   actuellement branché au laboratoire. Bilan à 8 postes, règles que M2 élimine.
-- `anciens_modeles/modele-27-04-WIP/src/` : la référence [WIP] du rapport (config/models/
+- `modeles/anciens_modeles/modele-27-04-WIP/src/` : la référence [WIP] du rapport (config/models/
   simulation cités ligne à ligne). Utile pour vérifier les affirmations du
   rapport sur l'origine des règles ; pas une base de code pour M2.
-- `anciens_modeles/claude/`, `anciens_modeles/claude3-v2/`, `archives/`, `banque_versions_zip/` : archives
+- `modeles/anciens_modeles/claude/`, `modeles/anciens_modeles/claude3-v2/`, `archives/`, `banque_versions_zip/` : archives
   déclarées non modifiables.
 - `simulation_lab/` : orchestration locale. Intégration possible *a
   posteriori* ; le noyau M2 reste autonome pour être testable seul.
@@ -95,12 +95,12 @@ l'AIC), stabilité de μ = hypothèse H2 non prouvée, conventions non testées
 
 ## 7. Décisions d'architecture
 
-- Paquet autonome `anciens_modeles/m2_fable/src/m2/` (config, entities, contracts, market,
+- Paquet autonome `modeles/anciens_modeles/m2_fable/src/m2/` (config, entities, contracts, market,
   bankruptcy, simulation, metrics, analysis, plots), expériences sous
-  `anciens_modeles/m2_fable/experiments/m2/`, tests sous `anciens_modeles/m2_fable/tests/`, rapports sous
-  `anciens_modeles/m2_fable/reports/`.
+  `modeles/anciens_modeles/m2_fable/experiments/m2/`, tests sous `modeles/anciens_modeles/m2_fable/tests/`, rapports sous
+  `modeles/anciens_modeles/m2_fable/reports/`.
 - Arborescence identique à celle demandée dans le brief, simplement enracinée
-  dans `anciens_modeles/m2_fable/` (justification : consigne d'isolement vis-à-vis de l'agent
+  dans `modeles/anciens_modeles/m2_fable/` (justification : consigne d'isolement vis-à-vis de l'agent
   concurrent ; le dépôt `jupyter/` n'impose pas d'autre organisation).
 - RNG : `numpy.random.default_rng(seed)` unique par simulation (le brief
   CLAUDE.md impose un RNG isolé ; numpy est autorisé par la mémoire projet).

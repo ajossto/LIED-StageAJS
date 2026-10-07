@@ -25,7 +25,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 ROOT = Path(__file__).resolve().parent.parent            # m4_credit_soc/
-JUPYTER = ROOT.parent                                     # jupyter/
+JUPYTER = ROOT.parent.parent                                     # jupyter/
 for p in (str(JUPYTER), str(ROOT / "src")):
     if p not in sys.path:
         sys.path.insert(0, p)

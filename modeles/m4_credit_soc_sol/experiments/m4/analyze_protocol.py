@@ -19,7 +19,7 @@ import numpy as np
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent.parent
-JUPYTER = ROOT.parent
+JUPYTER = ROOT.parent.parent
 sys.path.insert(0, str(ROOT / "src"))
 sys.path.insert(0, str(JUPYTER / "recherche/analyse_distributions_taille_revenu/scripts"))
 

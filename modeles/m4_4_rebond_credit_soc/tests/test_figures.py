@@ -34,7 +34,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
-sys.path.insert(0, str(ROOT.parent))
+sys.path.insert(0, str(ROOT.parent.parent))
 
 REPORTS = (ROOT / "report" / "rapport_final.tex",
            ROOT / "report" / "conception_m4_4.tex")

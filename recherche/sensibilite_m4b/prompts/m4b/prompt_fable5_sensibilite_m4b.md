@@ -19,13 +19,13 @@ L'objectif n'est ni de chercher la configuration qui "donne le plus de SOC", ni 
 
 Le modele etudie est :
 
-`/home/anatole/jupyter/m4b_credit_soc_mini/`
+`/home/anatole/jupyter/modeles/m4b_credit_soc_mini/`
 
 M4B n'est pas traite comme un simple auxiliaire de M4 : il constitue l'objet scientifique de cette campagne. Les simulations de sensibilite, les cartes de regime, les conclusions et les recommandations de reduction doivent etre obtenues depuis M4B.
 
 ### Recours exceptionnel a M4
 
-Le dossier `m4_credit_soc_fable/` est une reference historique et de provenance, pas un second modele a balayer. Il n'y a aucune campagne M4 a mener en parallele.
+Le dossier `modeles/m4_credit_soc_fable/` est une reference historique et de provenance, pas un second modele a balayer. Il n'y a aucune campagne M4 a mener en parallele.
 
 Tout nouveau recours executable a M4 doit satisfaire les quatre conditions suivantes :
 
@@ -46,17 +46,17 @@ Travaille dans `/home/anatole/jupyter`. Utilise le Python du venv :
 
 Lis integralement avant de figer le protocole :
 
-- guide Fable : `/home/anatole/jupyter/m4_credit_soc/Prompting Claude Fable.md`
-- presentation et usage de M4B : `m4b_credit_soc_mini/README.md`
-- rapport mecanique M4B : `m4b_credit_soc_mini/report/mecanique_m4b.pdf` et sa source `mecanique_m4b.tex`
-- moteur et formats de sortie : `m4b_credit_soc_mini/m4b/`, `run.py` et `tests/`
-- integration de M4B dans Simulation Lab : `modeles-systeme-physicoeconomique/m4b_credit_soc_mini/` et `simulation_lab/`
+- guide Fable : `/home/anatole/jupyter/modeles/m4_credit_soc/Prompting Claude Fable.md`
+- presentation et usage de M4B : `modeles/m4b_credit_soc_mini/README.md`
+- rapport mecanique M4B : `modeles/m4b_credit_soc_mini/report/mecanique_m4b.pdf` et sa source `mecanique_m4b.tex`
+- moteur et formats de sortie : `modeles/m4b_credit_soc_mini/m4b/`, `run.py` et `tests/`
+- integration de M4B dans Simulation Lab : `modeles/adaptateurs/m4b_credit_soc_mini/` et `simulation_lab/`
 
 Creer tous les scripts, donnees derivees, figures, notes techniques et rapports de l'etude dans :
 
 `/home/anatole/jupyter/recherche/sensibilite_m4b/`
 
-Traite comme source en lecture seule le moteur `m4b_credit_soc_mini/m4b/`, ses tests, son rapport et les resultats anterieurs. Une lacune d'instrumentation doit etre contournee dans les scripts de campagne ou signalee ; elle ne justifie pas silencieusement une nouvelle version de la dynamique.
+Traite comme source en lecture seule le moteur `modeles/m4b_credit_soc_mini/m4b/`, ses tests, son rapport et les resultats anterieurs. Une lacune d'instrumentation doit etre contournee dans les scripts de campagne ou signalee ; elle ne justifie pas silencieusement une nouvelle version de la dynamique.
 
 ## Parametres et statut experimental
 

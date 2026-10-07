@@ -1,6 +1,6 @@
 # M4.3Live-v2 — moteur M4.3 pilotable en direct
 
-Successeur structurel de M4.3 (`m4_3_credit_soc/`), mais **fork indépendant** :
+Successeur structurel de M4.3 (`modeles/m4_3_credit_soc/`), mais **fork indépendant** :
 aucun module de ce dossier n'importe un autre moteur du dépôt. L'institution de
 principal change de nature — le transfert d'une paire n'est plus la moitié de
 l'écart de capital, c'est le transfert qui **maximise la production jointe** des
@@ -25,7 +25,7 @@ rejouable par `tests/test_parity_m4_3.py --full`.
 ## Arborescence
 
 ```
-m4_3live_v2_credit_soc/
+modeles/m4_3live_v2_credit_soc/
 ├── m4_3live/            moteur autonome
 │   ├── kernel.py        institution de principal : 3 régimes, Newton (t,u,z), LUT 1D frexp
 │   ├── model.py         Config / Population / LoanBook / Simulation, interventions
@@ -55,10 +55,10 @@ cd /home/anatole/jupyter
 
 # Tests (assertions Python simples, pas de pytest)
 for t in institution scopes replay resume_divergence surplus_rate parity_m4_3; do
-  /home/anatole/jupyter/.venv/bin/python3 m4_3live_v2_credit_soc/tests/test_$t.py
+  /home/anatole/jupyter/.venv/bin/python3 modeles/m4_3live_v2_credit_soc/tests/test_$t.py
 done
 # La parité complète (8000 pas, ~17 min) :
-/home/anatole/jupyter/.venv/bin/python3 m4_3live_v2_credit_soc/tests/test_parity_m4_3.py --full
+/home/anatole/jupyter/.venv/bin/python3 modeles/m4_3live_v2_credit_soc/tests/test_parity_m4_3.py --full
 
 # Pilote sans tête
 cd m4_3live_v2_credit_soc
@@ -308,4 +308,4 @@ de naissance laissé derrière.
 traçabilité en recense 207 avec les runs M4.3 cités.
 
 La feuille de route de la suite est dans
-`../m4_3live_v2_credit_soc/ROADMAP.md`.
+`./ROADMAP.md`.

@@ -7,10 +7,10 @@ ci-dessous ; les points explicitement laissés ouverts (§11) sont à trancher e
 documenter toi-même, pas à retourner à l'utilisateur avant d'avoir essayé.
 
 Version : 17 août 2026, révision 2. Lignée : succède à M4.3
-(`m4_3_credit_soc/`, lu comme référence structurelle — **pas une
+(`modeles/m4_3_credit_soc/`, lu comme référence structurelle — **pas une
 dépendance**, §3.5) mais n'est plus une extension au sens strict :
 l'institution de principal elle-même change de nature (§3). Convention de
-dossier `m4_3live_credit_soc/` inchangée.
+dossier `modeles/m4_3live_credit_soc/` inchangée.
 
 **Provenance de cette révision** : ce document remplace la révision 1 du
 17 août (matin). Il intègre (a) les annotations manuscrites de
@@ -31,27 +31,27 @@ circonstance.
 
 Avant d'écrire une ligne de code, lire dans cet ordre :
 
-- `m4_3_credit_soc/m4_3/model.py` (référence structurelle, ~800 lignes,
+- `modeles/m4_3_credit_soc/m4_3/model.py` (référence structurelle, ~800 lignes,
   **pas une dépendance à importer**, §3.5) — c'est le fichier dont ce
   prompt cite les numéros de ligne ci-dessous ; si le fichier a changé
   depuis, revérifier les citations, ne pas les croire sur parole.
-- `m4_3_credit_soc/m4_3/io.py` et
-  `m4_3_credit_soc/report/rapport_final.md` (contexte scientifique de
+- `modeles/m4_3_credit_soc/m4_3/io.py` et
+  `modeles/m4_3_credit_soc/report/rapport_final.md` (contexte scientifique de
   M4.3 : pourquoi `loan_events`, pourquoi la règle de principal
   historique était arithmétique).
 - `simulation_lab/contracts.py`, `simulation_lab/jobs.py`,
   `simulation_lab/web/app.py`, `docs/README_simulation_lab.md` — l'outil
   d'orchestration existant, dont ce prompt étend l'usage sans le casser.
 - `CLAUDE.md` (racine du dépôt) — règles de travail du dépôt.
-- **`m4_3live_credit_soc/prompts/rapport_architecture_offline_online.pdf`**
+- **`modeles/m4_3live_credit_soc/prompts/rapport_architecture_offline_online.pdf`**
   — étude commandée par l'utilisateur sur le calcul efficace, à l'échelle
   de millions de résolutions, du transfert optimal introduit en §3.
   Lecture obligatoire avant d'écrire une ligne du §3 : ce prompt en
   reprend les équations et l'architecture recommandée sans les
   redémontrer.
 - Optionnel mais utile, pas bloquant : les rapports des autres lignées du
-  dépôt (`m4_credit_soc/`, `m4b_credit_soc_mini/`, `m4_2_credit_soc/`,
-  `m4_2b_credit_soc/`, chacun avec son `report/`) donnent une vision du
+  dépôt (`modeles/m4_credit_soc/`, `modeles/m4b_credit_soc_mini/`, `modeles/m4_2_credit_soc/`,
+  `modeles/m4_2b_credit_soc/`, chacun avec son `report/`) donnent une vision du
   fonctionnement intrinsèque de cette classe de modèle au-delà de M4.3
   (ex. tension entre taille moyenne et taille autarcique du système,
   effet d'une multiplication scalaire des paramètres) — ne pas
@@ -60,10 +60,10 @@ Avant d'écrire une ligne de code, lire dans cet ordre :
 **Deux passages de `CLAUDE.md` et de `docs/README_simulation_lab.md` sont
 obsolètes et vont t'induire en erreur si tu les suis sans vérifier :**
 
-1. `CLAUDE.md` désigne `m4b_credit_soc_mini/` comme « moteur actif » et
+1. `CLAUDE.md` désigne `modeles/m4b_credit_soc_mini/` comme « moteur actif » et
    donne `random.Random(seed)` comme convention RNG. **Faux pour ce
    travail** : le moteur de référence structurelle est
-   `m4_3_credit_soc/m4_3/model.py`, et son RNG est
+   `modeles/m4_3_credit_soc/m4_3/model.py`, et son RNG est
    `numpy.random.default_rng(seed)` (`Simulation.__init__`,
    `m4_3/model.py:525`) — convention à reproduire dans le fork
    indépendant de M4.3Live (§3.5).
@@ -193,7 +193,7 @@ silence :**
   explicite de l'utilisateur) : modifier $A$ ou $\gamma$ pour une
   cohorte change son rendement marginal, donc son échelle de capital
   naturelle (l'échelle autarcique déjà documentée dans la lignée
-  M4.2/M4.2B --- voir `m4_2_credit_soc/` ou `m4_2b_credit_soc/` si la
+  M4.2/M4.2B --- voir `modeles/m4_2_credit_soc/` ou `modeles/m4_2b_credit_soc/` si la
   formule doit être retrouvée). Faire varier $A$/$\gamma$ pour une
   cohorte **sans** ajuster `K0` en proportion peut changer la tension du
   système (taille relative à l'échelle autarcique) en même temps que
@@ -246,7 +246,7 @@ sans pause --- invariant à tester (§8).
 
 **Ce point remplace intégralement la §3 de la révision précédente de ce
 prompt.** L'utilisateur abandonne la règle arithmétique littérale de
-M4.3 ($q_A=(K_\ell-K_b)/2$, `m4_3_credit_soc/m4_3/model.py:269-291`)
+M4.3 ($q_A=(K_\ell-K_b)/2$, `modeles/m4_3_credit_soc/m4_3/model.py:269-291`)
 comme institution première de M4.3Live : cette formule n'était qu'un cas
 particulier d'un problème plus général, celui du montant à échanger
 entre deux entités pour **maximiser leur puissance de production jointe
@@ -339,7 +339,7 @@ conception, §9) :
 **Contrainte institutionnelle à fixer explicitement, pas seulement
 numérique** (rapport §2, éq.9) : le marché ne prête aujourd'hui que de
 la plus riche vers la plus pauvre
-(`K[lender] >= K[borrower]`, `m4_3_credit_soc/m4_3/model.py:357-361`,
+(`K[lender] >= K[borrower]`, `modeles/m4_3_credit_soc/m4_3/model.py:357-361`,
 comportement structurel hérité sans changement, §3.3). Deux choix
 possibles pour la borne supérieure de $\delta^{*}$ : (i) autoriser le
 transfert jusqu'à l'optimum général $h(C)$, qui peut dépasser
@@ -358,7 +358,7 @@ rapport de conception, et listée en §11.
   `Population`, fixées à la naissance, jamais retirées ni réutilisées
   après une mort --- même convention que les listes existantes de
   `Population` (`K`, `alive`, `birth`, ...) dans le moteur de référence.
-- `_pair_rate` (`m4_3_credit_soc/m4_3/model.py:258-266`,
+- `_pair_rate` (`modeles/m4_3_credit_soc/m4_3/model.py:258-266`,
   $m=A\gamma K^{\gamma-1}$, $\mathit{rate}=\sqrt{m_\ell m_b}$) reste le
   mécanisme de taux **par défaut** de M4.3Live --- voir §3.4, ce n'est
   pas remplacé par défaut, et sa généralisation par entité (chaque côté
@@ -381,7 +381,7 @@ résolue.
 **Ce qu'un candidat $p$ devrait produire, précisément.** Le carnet de
 prêts a besoin d'un taux scalaire `rate` tel que
 $\mathit{due} = \mathit{principal} \times \mathit{rate}$ à chaque pas,
-perpétuellement (`m4_3_credit_soc/m4_3/model.py:166-187` pour l'agrégat
+perpétuellement (`modeles/m4_3_credit_soc/m4_3/model.py:166-187` pour l'agrégat
 `due`, `model.py:572-594` pour le service payé chaque pas --- mécanique
 à reproduire à l'identique dans le fork, §3.5). Le surplus coopératif,
 lui, est une quantité **ponctuelle**, calculée une seule fois au moment
@@ -426,7 +426,7 @@ lui-même, qui est la vraie question ouverte à trancher.
 laissée ouverte dans la révision précédente de ce prompt (« import
 direct vs fork »). Ne **pas** importer `m4_3_credit_soc.m4_3` comme
 dépendance : écrire le moteur de M4.3Live comme un paquet autonome dans
-le nouveau dossier (§10), qui lit `m4_3_credit_soc/m4_3/model.py` comme
+le nouveau dossier (§10), qui lit `modeles/m4_3_credit_soc/m4_3/model.py` comme
 référence structurelle (mêmes conventions : `Population`/`LoanBook` à
 listes parallèles jamais réindexées, RNG
 `numpy.random.default_rng(seed)`, ordre des phases) sans en dépendre au
@@ -567,7 +567,7 @@ science.
   caractéristique du système, pas une valeur arbitraire). **Ne pas
   relancer de mesure de temps de relaxation à partir de zéro** : M4.3 a
   déjà estimé ce temps à sa baseline
-  (`m4_3_credit_soc/scripts/renewal_relaxation_all_runs.py`, résultats
+  (`modeles/m4_3_credit_soc/scripts/renewal_relaxation_all_runs.py`, résultats
   cités dans son rapport final) --- partir de cette estimation existante
   pour fixer $t_0$ (avec une marge de sécurité raisonnable), et ne
   remesurer que si les paramètres retenus pour §7 s'écartent trop de la
@@ -589,7 +589,7 @@ science.
   non tranchable avec le budget de calcul disponible (§1 --- l'objectif
   de cette itération est l'observation, pas l'attribution causale).
 - Réutiliser l'outillage statistique existant du dépôt
-  (`m4_3_credit_soc/scripts/lib_metrics.py` et voisins) si pertinent
+  (`modeles/m4_3_credit_soc/scripts/lib_metrics.py` et voisins) si pertinent
   plutôt que le récrire ; le dire si rien ne s'applique.
 
 ## 8. Tests exigés
@@ -628,7 +628,7 @@ science.
 
 ## 9. Livrables
 
-- Code complet et fonctionnel dans `m4_3live_credit_soc/` (§10 pour
+- Code complet et fonctionnel dans `modeles/m4_3live_credit_soc/` (§10 pour
   l'arborescence attendue) --- un système qui tourne réellement, pas un
   squelette : démarrer le serveur, piloter une session en direct dans un
   vrai navigateur, vérifier visuellement que les graphiques et le
@@ -646,15 +646,15 @@ science.
 - **Rapport de résultats**, LaTeX compilé en PDF
   (`report/rapport_final.pdf`) : protocole du §7, résultats, figures,
   verdict d'observation sur l'effet rebond, limites --- même discipline
-  scientifique que `m4_3_credit_soc/report/rapport_final.tex`.
+  scientifique que `modeles/m4_3_credit_soc/report/rapport_final.tex`.
 - Compilation PDF vérifiée (le `.tex` seul ne suffit pas).
 - Un `README.md` et un `JOURNAL.md` courts dans
-  `m4_3live_credit_soc/`, cohérents avec la convention du dépôt.
+  `modeles/m4_3live_credit_soc/`, cohérents avec la convention du dépôt.
 
 ## 10. Arborescence attendue
 
 ```
-m4_3live_credit_soc/
+modeles/m4_3live_credit_soc/
 +-- prompts/PROMPT_M4_3LIVE.md      (ce document, source markdown)
 +-- prompts/PROMPT_M4_3LIVE.tex/.pdf (cette version LaTeX/PDF)
 +-- prompts/rapport_architecture_offline_online.pdf (etude du S3, lecture obligatoire)

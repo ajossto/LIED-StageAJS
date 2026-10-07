@@ -22,7 +22,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-JUPYTER_ROOT = ROOT.parent
+JUPYTER_ROOT = ROOT.parent.parent
 sys.path.insert(0, str(JUPYTER_ROOT))
 
 from simulation_lab.settings import RUNS_DIR  # noqa: E402

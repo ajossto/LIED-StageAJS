@@ -14,7 +14,7 @@ Référence : tous les nombres sont mesurés sur la même machine. CPython 3.12.
 
 ## OPT-0 — Clone fidèle (baseline)
 
-- Copie strictement identique de `anciens_modeles/Modèle_sans_banque/src/` → `anciens_modeles/modele-27-04-WIP/src/`.
+- Copie strictement identique de `modeles/anciens_modeles/Modèle_sans_banque/src/` → `modeles/anciens_modeles/modele-27-04-WIP/src/`.
 - Test de non-régression : ✓ (3 seeds × 400 pas).
 
 | size  | seed | n_steps | elapsed_s | ms/step |

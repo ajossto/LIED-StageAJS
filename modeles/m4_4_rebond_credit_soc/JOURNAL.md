@@ -13,8 +13,8 @@ non tranché.
 
 ### Le fork
 
-`m4_4_rebond_credit_soc/m4_4/` est une COPIE de
-`m4_3live_v2_credit_soc/m4_3live_v2/`, jamais un import (plan §0, règle du
+`modeles/m4_4_rebond_credit_soc/m4_4/` est une COPIE de
+`modeles/m4_3live_v2_credit_soc/m4_3live_v2/`, jamais un import (plan §0, règle du
 fork). Copiés aussi : `driver/`, `web/`, `tests/`.
 
 Renommages mécaniques appliqués par `sed` sur les `.py`, `.html`, `.js`,
@@ -246,7 +246,7 @@ referait une identité.
 `m4_3__d1__baseline__seed0` : **écart maximal NUL**, égalité bit à bit, en
 762 s. 9 369 224 appels au noyau, tous sur le chemin identité — le MÊME
 compte, à l'unité près, que la parité finale de v2
-(`m4_3live_v2_credit_soc/results/analysis/parity_final_full.log`). Le fork
+(`modeles/m4_3live_v2_credit_soc/results/analysis/parity_final_full.log`). Le fork
 instrumenté est donc bit à bit le moteur v2, et le moteur v2 est bit à bit
 M4.3 dans le régime homogène.
 
@@ -301,7 +301,7 @@ impossible à commettre en silence.
 
 | # | question | tranchée ? |
 |---|---|---|
-| 1 | nom du dossier et du paquet | oui : `m4_4_rebond_credit_soc/`, paquet `m4_4`, routes `/live3` — avec la nuance additive ci-dessus |
+| 1 | nom du dossier et du paquet | oui : `modeles/m4_4_rebond_credit_soc/`, paquet `m4_4`, routes `/live3` — avec la nuance additive ci-dessus |
 | 4 | pas d'échantillonnage k | oui : **k = 10**, par le critère écrit plus haut, sur mesure et non sur goût |
 | 2 | portée partielle | **non**, et aucun lot n'en dépend : à l'utilisateur de rouvrir s'il le veut |
 | 3 | σ comme axe balayé | **non** dans les lots A–E, par le plan ; le lot F l'aborde par ablation |

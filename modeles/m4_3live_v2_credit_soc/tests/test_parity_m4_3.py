@@ -84,7 +84,7 @@ def test_bit_parity(steps: int):
             )
         deviations.append((index + 1, worst, worst_column,
                            float(row["prod_tot"]), float(row["K_tot"])))
-    output = Path("/home/anatole/jupyter/m4_3live_v2_credit_soc/results/analysis")
+    output = Path("/home/anatole/jupyter/modeles/m4_3live_v2_credit_soc/results/analysis")
     output.mkdir(parents=True, exist_ok=True)
     with open(output / f"parity_deviations_{steps}.csv", "w", newline="",
               encoding="utf-8") as handle:

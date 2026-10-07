@@ -4,7 +4,7 @@ Tu reprends le travail dans `/home/anatole/jupyter`, principalement :
 
 - code du lab : `/home/anatole/jupyter/simulation_lab`
 - donnees du lab : `/home/anatole/jupyter/simulation_lab_data`
-- etude WIP : `/home/anatole/jupyter/anciens_modeles/modele-27-04-WIP/studies/sensitivity`
+- etude WIP : `/home/anatole/jupyter/modeles/anciens_modeles/modele-27-04-WIP/studies/sensitivity`
 
 Objectif : adapter Simulation Lab pour que toutes les simulations de l'etude de sensibilite/OAT soient observables comme les simulations classiques, mais sans conserver les CSV lourds une fois les figures generees.
 

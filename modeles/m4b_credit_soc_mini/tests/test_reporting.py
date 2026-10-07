@@ -10,7 +10,7 @@ import numpy as np
 
 PATH = (
     Path(__file__).resolve().parents[2]
-    / "modeles-systeme-physicoeconomique/m4b_credit_soc_mini/reporting.py"
+    / "adaptateurs/m4b_credit_soc_mini/reporting.py"
 )
 SPEC = importlib.util.spec_from_file_location("m4b_reporting_tests", PATH)
 REPORTING = importlib.util.module_from_spec(SPEC)

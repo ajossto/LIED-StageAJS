@@ -33,7 +33,7 @@ import time
 from dataclasses import dataclass, field
 from pathlib import Path
 
-RESULTS = Path("/home/anatole/jupyter/m4_2b_credit_soc/results")
+RESULTS = Path("/home/anatole/jupyter/modeles/m4_2b_credit_soc/results")
 MANIFEST_PATH = RESULTS / "CLEANUP_MANIFEST.md"
 
 DELETABLE_NAMES = (

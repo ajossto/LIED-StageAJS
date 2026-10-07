@@ -19,7 +19,7 @@ import matplotlib.pyplot as plt
 
 
 STUDY_DIR = Path(__file__).resolve().parent
-JUPYTER_DIR = STUDY_DIR.parents[3]
+JUPYTER_DIR = STUDY_DIR.parents[4]
 LAB_RUNS_DIR = JUPYTER_DIR / "simulation_lab_data" / "runs"
 FIGURES_DIR = STUDY_DIR / "report" / "figures"
 MODEL_ID = "etude_sensibilite_27_04_wip"

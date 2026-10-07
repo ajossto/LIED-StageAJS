@@ -24,7 +24,7 @@ from http import HTTPStatus
 
 from simulation_lab.settings import ROOT_DIR
 
-ROUTER_PATH = ROOT_DIR / "m4_4_rebond_credit_soc" / "web" / "router.py"
+ROUTER_PATH = ROOT_DIR / "modeles" / "m4_4_rebond_credit_soc" / "web" / "router.py"
 MODULE_NAME = "m4_4_web_router"
 
 _module = None
@@ -60,7 +60,7 @@ def dispatch(handler, parsed, method: str) -> None:
     if not available():
         handler.send_error(
             HTTPStatus.SERVICE_UNAVAILABLE,
-            "M4.4Rebond n'est pas installé dans ce dépôt (m4_4_rebond_credit_soc/web/router.py absent)",
+            "M4.4Rebond n'est pas installé dans ce dépôt (modeles/m4_4_rebond_credit_soc/web/router.py absent)",
         )
         return
     module = _load()

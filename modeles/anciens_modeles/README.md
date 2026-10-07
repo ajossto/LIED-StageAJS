@@ -23,10 +23,10 @@ les tests de filiation scientifique.
 | `4-05-dynamique/` | Variante dynamique issue de la lignée 27 avril |
 
 Les identifiants scientifiques et noms de modules restent inchangés. Les
-chemins depuis la racine commencent désormais par `anciens_modeles/`.
+chemins depuis la racine commencent désormais par `modeles/anciens_modeles/`.
 
 Les archives déjà conditionnées restent dans `../archives/` et
 `../banque_versions_zip/`. Les adaptateurs historiques restent dans
-`../modeles-systeme-physicoeconomique/` afin que Simulation Lab puisse encore
+`../adaptateurs/` afin que Simulation Lab puisse encore
 identifier les anciens résultats.
 

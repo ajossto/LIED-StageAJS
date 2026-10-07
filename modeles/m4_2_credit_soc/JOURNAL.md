@@ -13,7 +13,7 @@ les 28 figures M4B n'étant générées que pour les runs confirmatoires et les
 cellules centrales ; (2) `prompts/PROMPT_M4_2.md` est le document d'autorité.
 
 **Moteur écrit** (`m4_2/model.py`, `m4_2/io.py`, `run.py`) — copie adaptée
-ligne à ligne de `m4b_credit_soc_mini/m4b/` (diffable). Changements
+ligne à ligne de `modeles/m4b_credit_soc_mini/m4b/` (diffable). Changements
 constitutifs : gamma et A dans la Config (validés 0<γ<1, A>0, défauts
 γ=0,5, A=1, λ=30) ; k retiré de la Config (POOL_SIZE=2 constitutif) ;
 fonction η(N)=N nommée et instrumentée (colonnes series : mkt_pool,
@@ -91,7 +91,7 @@ config.json enregistre l'ordre des phases comme la spec l'affirmait.
 Tests relancés après retouches : 18+2 OK.
 
 **Intégration Simulation Lab (27/07)** : adaptateur
-modeles-systeme-physicoeconomique/m4_2_credit_soc/ (model.py, figures.py,
+modeles/adaptateurs/m4_2_credit_soc/ (model.py, figures.py,
 reporting.py — copie M4B, taux marginal généralisé A·γ·K^(γ-1) lu depuis
 config.json, reporting.py:462) ; "m4_2_credit_soc" ajouté à
 ACTIVE_MODEL_IDS (simulation_lab/settings.py:16, seule modif hors dossiers

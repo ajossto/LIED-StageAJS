@@ -7,7 +7,7 @@ intermédiaires).
 
 ## 1. Audit et implémentation (2026-07-30, matin)
 
-Lecture complète de M4.2 (`m4_2_credit_soc/m4_2/model.py`, `io.py`, tests,
+Lecture complète de M4.2 (`modeles/m4_2_credit_soc/m4_2/model.py`, `io.py`, tests,
 `scripts/lib_metrics.py`, `scripts/lib_screening.py`), de l'adaptateur
 Simulation Lab M4.2 et de sa batterie de 28 figures (`reporting.py`,
 générique, ne connaît pas le moteur). Découverte d'un outillage déjà

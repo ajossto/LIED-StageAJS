@@ -17,7 +17,7 @@ import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(ROOT.parent / "modeles-systeme-physicoeconomique" / "m4_3_credit_soc"))
+sys.path.insert(0, str(ROOT.parent / "adaptateurs" / "m4_3_credit_soc"))
 
 import reporting  # noqa: E402
 

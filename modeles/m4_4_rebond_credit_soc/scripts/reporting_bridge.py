@@ -45,10 +45,10 @@ from pathlib import Path
 
 import numpy as np
 
-M4_4_ROOT = Path("/home/anatole/jupyter/m4_4_rebond_credit_soc")
+M4_4_ROOT = Path("/home/anatole/jupyter/modeles/m4_4_rebond_credit_soc")
 FOLDER = M4_4_ROOT / "results/campaign/arms/free/control/seed0"
 REPORTING_PATH = Path(
-    "/home/anatole/jupyter/modeles-systeme-physicoeconomique/m4_3_credit_soc/reporting.py"
+    "/home/anatole/jupyter/modeles/adaptateurs/m4_3_credit_soc/reporting.py"
 )
 
 

@@ -1,6 +1,6 @@
 # Synthèse finale — réplication critique du modèle M2
 
-Workspace : `anciens_modeles/m2_fable/` (agent Fable, isolé de l'agent concurrent).
+Workspace : `modeles/anciens_modeles/m2_fable/` (agent Fable, isolé de l'agent concurrent).
 Date : 3 juillet 2026.
 Code : `src/m2/` (31 tests verts, `python3 tests/run_all.py`).
 Rapports LaTeX compilés : `reports/01…05/main.pdf`.

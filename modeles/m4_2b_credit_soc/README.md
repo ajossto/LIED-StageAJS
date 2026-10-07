@@ -56,7 +56,7 @@ JOURNAL.md             journal de recherche chronologique (avec les
 ## Démarrage rapide
 
 ```bash
-cd /home/anatole/jupyter/m4_2b_credit_soc
+cd /home/anatole/jupyter/modeles/m4_2b_credit_soc
 
 # Tests (moteur + parité + institution + outils statistiques)
 /home/anatole/jupyter/.venv/bin/python3 tests/test_engine.py
@@ -80,7 +80,7 @@ cd /home/anatole/jupyter/m4_2b_credit_soc
 ## Simulation Lab
 
 Modèle actif (`model_id = m4_2b_credit_soc`, adaptateur
-`modeles-systeme-physicoeconomique/m4_2b_credit_soc/`), avec les 28 figures
+`modeles/adaptateurs/m4_2b_credit_soc/`), avec les 28 figures
 M4.2/M4B réutilisées SANS MODIFICATION (`reporting.py` copié tel quel —
 générique, ne suppose jamais la cible géométrique). Validé par un run de
 fumée bout-en-bout (28 recettes → aucune erreur de figure).

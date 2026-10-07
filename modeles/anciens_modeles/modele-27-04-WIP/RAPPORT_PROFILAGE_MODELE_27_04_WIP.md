@@ -1,8 +1,8 @@
 # Rapport de profilage — modele-27-04-WIP
 
 **Date** : 2026-04-27
-**Version cible** : `anciens_modeles/modele-27-04-WIP/src/` (cloné depuis `anciens_modeles/Modèle_sans_banque/src/`)
-**Comparaison** : `anciens_modeles/Modèle_sans_banque/src/` (= `orig`) vs `anciens_modeles/modele-27-04-WIP/src/` (= `wip`)
+**Version cible** : `modeles/anciens_modeles/modele-27-04-WIP/src/` (cloné depuis `modeles/anciens_modeles/Modèle_sans_banque/src/`)
+**Comparaison** : `modeles/anciens_modeles/Modèle_sans_banque/src/` (= `orig`) vs `modeles/anciens_modeles/modele-27-04-WIP/src/` (= `wip`)
 **Plate-forme** : CPython 3.12.3, Linux x86_64
 **Politique** : optimisations strictement conservatrices ; tout résultat de simulation
 doit rester bit-pour-bit identique à seed et configuration constants.
@@ -87,16 +87,16 @@ lambda=2, n_candidats_pool=3`). Aucun paramètre par défaut n'a été modifié.
 
 ```bash
 # Bench WIP, toutes tailles × tous seeds
-/home/anatole/jupyter/.venv/bin/python3 anciens_modeles/modele-27-04-WIP/benchmarks/bench.py --target wip
+/home/anatole/jupyter/.venv/bin/python3 modeles/anciens_modeles/modele-27-04-WIP/benchmarks/bench.py --target wip
 
 # Bench original (référence) sur les mêmes paramètres
-/home/anatole/jupyter/.venv/bin/python3 anciens_modeles/modele-27-04-WIP/benchmarks/bench.py --target orig
+/home/anatole/jupyter/.venv/bin/python3 modeles/anciens_modeles/modele-27-04-WIP/benchmarks/bench.py --target orig
 
 # Test de non-régression strict (3 seeds × 400 pas)
-/home/anatole/jupyter/.venv/bin/python3 anciens_modeles/modele-27-04-WIP/tests/test_non_regression.py
+/home/anatole/jupyter/.venv/bin/python3 modeles/anciens_modeles/modele-27-04-WIP/tests/test_non_regression.py
 
 # Profilage cProfile
-/home/anatole/jupyter/.venv/bin/python3 anciens_modeles/modele-27-04-WIP/benchmarks/profile_run.py \
+/home/anatole/jupyter/.venv/bin/python3 modeles/anciens_modeles/modele-27-04-WIP/benchmarks/profile_run.py \
     --target wip --n-steps 1000 --seed 42 --top 30
 ```
 
@@ -190,8 +190,8 @@ changement.
 
 | Fichier | Sections modifiées |
 |---|---|
-| `anciens_modeles/modele-27-04-WIP/src/simulation.py` | `__init__` (caches/indexes), `active_entities`, `pay_interest_phase`, `pay_amortization_phase`, `_pay_single_interest`, `_ensure_payment_capacity`, `_revalue_loan`, `_transfer_claims_for_payment`, `_pay_single_amortization`, `_select_active_credit_entities`, `process_single_failure`, `create_loan`, `create_entity`, `_capture_system_state`, `_collect_light_stats`, helpers `_idx_add` / `_idx_remove` / `_idx_change_lender` |
-| `anciens_modeles/modele-27-04-WIP/src/statistics.py` | `_compute_indicators` (fusion des sommes) |
+| `modeles/anciens_modeles/modele-27-04-WIP/src/simulation.py` | `__init__` (caches/indexes), `active_entities`, `pay_interest_phase`, `pay_amortization_phase`, `_pay_single_interest`, `_ensure_payment_capacity`, `_revalue_loan`, `_transfer_claims_for_payment`, `_pay_single_amortization`, `_select_active_credit_entities`, `process_single_failure`, `create_loan`, `create_entity`, `_capture_system_state`, `_collect_light_stats`, helpers `_idx_add` / `_idx_remove` / `_idx_change_lender` |
+| `modeles/anciens_modeles/modele-27-04-WIP/src/statistics.py` | `_compute_indicators` (fusion des sommes) |
 
 ### Modules NON modifiés
 `config.py`, `models.py`, `output.py`, `analysis.py`, `main.py` — aucune
@@ -398,14 +398,14 @@ Pistes possibles, classées par risque scientifique croissant :
 
 ```bash
 # 1. Vérifier la non-régression (3 seeds × 400 pas)
-/home/anatole/jupyter/.venv/bin/python3 anciens_modeles/modele-27-04-WIP/tests/test_non_regression.py
+/home/anatole/jupyter/.venv/bin/python3 modeles/anciens_modeles/modele-27-04-WIP/tests/test_non_regression.py
 
 # 2. Benchmark des 3 tailles × 3 seeds
-/home/anatole/jupyter/.venv/bin/python3 anciens_modeles/modele-27-04-WIP/benchmarks/bench.py --target wip
-/home/anatole/jupyter/.venv/bin/python3 anciens_modeles/modele-27-04-WIP/benchmarks/bench.py --target orig
+/home/anatole/jupyter/.venv/bin/python3 modeles/anciens_modeles/modele-27-04-WIP/benchmarks/bench.py --target wip
+/home/anatole/jupyter/.venv/bin/python3 modeles/anciens_modeles/modele-27-04-WIP/benchmarks/bench.py --target orig
 
-# 3. Profil cProfile (dump dans anciens_modeles/modele-27-04-WIP/profiling/)
-/home/anatole/jupyter/.venv/bin/python3 anciens_modeles/modele-27-04-WIP/benchmarks/profile_run.py \
+# 3. Profil cProfile (dump dans modeles/anciens_modeles/modele-27-04-WIP/profiling/)
+/home/anatole/jupyter/.venv/bin/python3 modeles/anciens_modeles/modele-27-04-WIP/benchmarks/profile_run.py \
     --target wip --n-steps 1000 --seed 42 --top 30
 ```
 

@@ -34,8 +34,8 @@ import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-JUPYTER = ROOT.parent
-V1_ROOT = JUPYTER / "m4_3live_credit_soc"
+JUPYTER = ROOT.parent.parent
+V1_ROOT = JUPYTER / "modeles" / "m4_3live_credit_soc"
 
 ANALYSIS = ROOT / "results" / "analysis"
 FIGURES = ROOT / "report" / "figures"

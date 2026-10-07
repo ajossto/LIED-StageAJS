@@ -39,7 +39,7 @@ Toutes les citations du prompt M4.3 vérifiées comme exactes. Aucune
 divergence trouvée.
 
 **`results/` de M4.2B n'est PAS suivi par git** (`git ls-files
-m4_2b_credit_soc/results | wc -l` → 0) — pas de complication git pour le
+modeles/m4_2b_credit_soc/results | wc -l` → 0) — pas de complication git pour le
 nettoyage du point 6.
 
 ## 2. Interprétation de la consigne « attends une heure avant de considérer
@@ -52,7 +52,7 @@ poser un `ScheduleWakeup` sur une sémantique non confirmée (outil prévu pour
 machine, l'instruction signifie **ne pas lancer de calcul lourd immédiatement
 depuis un prompt collé en cours de tour, sans supervision** — pas rester
 inactif. Le prompt M4.3 lui-même impose de toute façon un blocage plus solide
-que l'heure : `m4_3_credit_soc/` ne contenait que `prompts/` au démarrage,
+que l'heure : `modeles/m4_3_credit_soc/` ne contenait que `prompts/` au démarrage,
 aucun des six garde-fous §7 n'existait, donc aucun lancement n'était de toute
 façon possible avant qu'ils soient écrits. §9 autorise explicitement, sans
 attendre de supervision : « choix d'implémentation, correctifs de bug,
@@ -144,7 +144,7 @@ ou `summary.json`) présents. Liste blanche stricte des fichiers supprimables
 
 **Résultat** : 132/132 runs éligibles (87 campaign + 45 confirmation, 0
 ignoré), **78,94 Go libérables**. Manifeste complet écrit dans
-`m4_2b_credit_soc/results/CLEANUP_MANIFEST.md` (chemins, tailles, date).
+`modeles/m4_2b_credit_soc/results/CLEANUP_MANIFEST.md` (chemins, tailles, date).
 
 **Exécuté le 2026-08-07**, après feu vert explicite de l'utilisateur
 ("sois autonome") au point d'étape ci-dessus, dry-run + manifeste déjà
@@ -174,7 +174,7 @@ figures et fichiers agrégés vérifiés intacts après coup (§5). Aucun run de
 simulation M4.3 lancé.
 
 **Pas encore fait** : port du moteur `m4_2b/model.py` (inchangé, §8) dans
-`m4_3_credit_soc/m4_3/` ; lanceur de pool (`campaign.py` équivalent)
+`modeles/m4_3_credit_soc/m4_3/` ; lanceur de pool (`campaign.py` équivalent)
 branchant les six garde-fous ; premier run pilote géométrique (§4) ; mesure
 du temps de relaxation sur la queue des intérêts (§3) ; choix et gel de la
 statistique de queue (§2).
@@ -284,9 +284,9 @@ Copié tel quel dans `scripts/` (§5/§8, aucune modification) :
 `lib_metrics.py`, `lib_screening.py`, `interest_income.py`, `renewal.py`,
 `renewal_relaxation_all_runs.py`, et leurs dépendances transitives
 (`families.py`, `pareto_convention.py`, `tail_test.py` — `families.py` lit
-`anciens_modeles/modele-27-04-WIP/src/analysis.py` par un chemin relatif à
+`modeles/anciens_modeles/modele-27-04-WIP/src/analysis.py` par un chemin relatif à
 sa propre profondeur dans le dépôt, fonctionne à l'identique depuis
-`m4_3_credit_soc/scripts/`, vérifié).
+`modeles/m4_3_credit_soc/scripts/`, vérifié).
 
 **`scripts/relaxation_pilot.py` (nouveau)** : étend la régression FOPDT de
 persistance du décile supérieur (déjà validée en M4.2B) au champ `int_in`
@@ -329,7 +329,7 @@ peu). À construire avant qu'un run coûte des heures, pas maintenant.
 `reporting.py` (les 28 figures Simulation Lab), jamais par
 `interest_income.py`/`renewal.py` (qui lisent les instantanés `.npz`) —
 et M4.2B ne générait les 28 figures que pour confirmation/cellules
-centrales, pas pour l'exploration (`m4_2_credit_soc/scripts/lib_lab.py`,
+centrales, pas pour l'exploration (`modeles/m4_2_credit_soc/scripts/lib_lab.py`,
 docstring). `run_pilot.py` prend maintenant `--individual-every` (défaut 0
 pour les runs pilote/exploration), avec le paramètre disponible si un run
 est promu au statut "confirmation". `PER_RUN_BYTES_ESTIMATE` remonté à
@@ -641,11 +641,11 @@ levier avant de conclure D2 dans son ensemble.
 ## 13. Cartographie D1 lancée (2026-08-07, 18h50)
 
 **`scripts/campaign_d1.py`** (nouveau) : pool multiprocessing (patron
-`m4_2b_credit_soc/scripts/campaign.py`, déjà validé sur 87+45 runs en
+`modeles/m4_2b_credit_soc/scripts/campaign.py`, déjà validé sur 87+45 runs en
 M4.2B, 0 crash après ses correctifs JOURNAL §10/§12/§15), 6 workers
 (§7.5), avec les six garde-fous §7 câblés :
 - `build_cells()` = copie exacte des paramètres de
-  `m4_2b_credit_soc/scripts/campaign.py` (28 cellules : baseline, K0×5,
+  `modeles/m4_2b_credit_soc/scripts/campaign.py` (28 cellules : baseline, K0×5,
   gamma×4, gamma_comp×4, beta×4, deltasigma×4, rho×5,
   control_geometric — SANS `t10000_baseline`, T géré séparément ici) —
   c'est « l'espace déjà couvert par M4.2B » du §1, paramètres INCHANGÉS.
@@ -1199,7 +1199,7 @@ pipeline d'analyse maison (dagum_c + b uniquement) et leur nettoyage
 post-analyse (`_cleanup_raw`) supprime `snapshots/` juste après l'analyse
 légère — donc AVANT toute génération de figures possible. Aucun
 adaptateur `m4_3_credit_soc` n'existait sous
-`modeles-systeme-physicoeconomique/`, et `simulation_lab_data/` n'avait
+`modeles/adaptateurs/`, et `simulation_lab_data/` n'avait
 aucune entrée M4.3.
 
 Proposition initiale (périmètre réduit : adaptateur + seulement 3
@@ -1243,7 +1243,7 @@ initialement redoutés. Pic transitoire pendant le traitement (6 workers
 × ~941 Mo avant nettoyage) ≈ 5,6 Go, trivial sur 91 Go libres.
 
 **Correctifs appliqués** :
-1. Adaptateur créé : `modeles-systeme-physicoeconomique/m4_3_credit_soc/{model.py,figures.py,reporting.py}`
+1. Adaptateur créé : `modeles/adaptateurs/m4_3_credit_soc/{model.py,figures.py,reporting.py}`
    (copie de m4_2b, `reporting.py`/`figures.py` inchangés — confirmés
    agnostiques au moteur par le test d'import ci-dessus ; `model.py`
    adapté : `model_id="m4_3_credit_soc"`, `ENGINE_ROOT`, description).
@@ -1298,7 +1298,7 @@ cascade_rank_size.pdf). To be fixed before generating : *_evolution And
 figures d'un run M4.2B (y compris les vies individuelles) et nettoyer le
 lourd ensuite.
 
-**Bug confirmé et corrigé (2 occurrences), `modeles-systeme-physicoeconomique/m4_3_credit_soc/reporting.py`** :
+**Bug confirmé et corrigé (2 occurrences), `modeles/adaptateurs/m4_3_credit_soc/reporting.py`** :
 1. `temporal_density()` (alimente `*_evolution.gif`/`*_temporal_mean.png`,
    7 champs × 2 sorties) : `np.logspace(min, max, bins=32)` — bins de
    LARGEUR fixe en log, pas adaptés à la densité réelle. Comparaison
@@ -1323,7 +1323,7 @@ grande dynamique) — laissés inchangés.
 
 **Ce fichier n'est donc plus une copie strictement identique de l'original
 M4.2B** (cf. docstring mise à jour) — correctif non reporté sur
-`m4_2b_credit_soc/reporting.py` (hors périmètre, CLAUDE.md : ne pas
+`modeles/m4_2b_credit_soc/reporting.py` (hors périmètre, CLAUDE.md : ne pas
 modifier un autre modèle sans accord explicite).
 
 **Conséquence sur la relance en cours (§24)** : le pool des 96 runs D1+D3
@@ -1381,7 +1381,7 @@ Deux causes distinctes, diagnostiquées séparément (pas supposées) :
 
 **(1) Runs invisibles.** Confirmé réel : `run_pilot.py`/
 `campaign_relaunch_figures.py` écrivent directement dans
-`m4_3_credit_soc/results/`, sans jamais passer par
+`modeles/m4_3_credit_soc/results/`, sans jamais passer par
 `RunStorage.create_run()`/`finalize_run()` — `simulation_lab_data/runs/`
 n'a donc aucune trace de ces runs. Le seul mécanisme de découverte
 externe existant (`RunStorage.list_external_runs()`, cherche un fichier
@@ -1392,7 +1392,7 @@ partagé (`storage.py`, hors périmètre M4.3).
 Correctif : `scripts/import_to_simulation_lab.py` (nouveau, idempotent) —
 pour chaque run M4.3 terminé (figures déjà générées), crée un SYMLINK
 `simulation_lab_data/runs/<id>` → dossier réel sous
-`m4_3_credit_soc/results/`, et y écrit un `run.json` au format managé
+`modeles/m4_3_credit_soc/results/`, et y écrit un `run.json` au format managé
 standard. Vérifié avant d'adopter le lien symbolique (pas une copie,
 zéro duplication disque) : `delete_run()`/`empty_trash()` opèrent par
 `shutil.move`/suppression au niveau du lien top-level, jamais de descente

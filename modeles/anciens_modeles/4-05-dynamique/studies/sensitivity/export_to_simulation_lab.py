@@ -29,7 +29,7 @@ STUDY_DIR = Path(__file__).resolve().parent
 RESULTS_DIR = STUDY_DIR / "results"
 REPORT_DIR = STUDY_DIR / "report"
 REPORT_FIGURES_DIR = REPORT_DIR / "figures"
-JUPYTER_DIR = STUDY_DIR.parents[3]
+JUPYTER_DIR = STUDY_DIR.parents[4]
 LAB_RUNS_DIR = JUPYTER_DIR / "simulation_lab_data" / "runs"
 
 MODEL_ID = "etude_sensibilite_27_04_wip"

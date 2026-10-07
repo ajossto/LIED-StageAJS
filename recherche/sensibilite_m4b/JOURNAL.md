@@ -1,6 +1,6 @@
 # Journal technique — étude de sensibilité M4B
 
-Campagne : `recherche/sensibilite_m4b/`. Moteur : `m4b_credit_soc_mini/m4b/`
+Campagne : `recherche/sensibilite_m4b/`. Moteur : `modeles/m4b_credit_soc_mini/m4b/`
 (lecture seule), version `m4b-mini-3`, condensat `f3a7ce02cd9185c7`
 (SHA-256 tronqué de model.py + io.py + __init__.py — le moteur n'est pas
 suivi par git, le condensat fait foi).

@@ -548,7 +548,7 @@ des renvois de section, vérifiés sur le PDF construit.
 ### Prompt de la v2
 
 Écrit à la demande de l'utilisateur, dans
-`m4_3live_v2_credit_soc/prompts/PROMPT_M4_3LIVE_V2.{md,tex,pdf}` (14 pages).
+`modeles/m4_3live_v2_credit_soc/prompts/PROMPT_M4_3LIVE_V2.{md,tex,pdf}` (14 pages).
 
 **Choix de structure** : le prompt de v1 était organisé par *sous-système*
 (institution, architecture en direct, IHM, intégration, protocole), parce

@@ -5,7 +5,7 @@ from pathlib import Path
 
 APP_NAME = "Simulation Lab"
 ROOT_DIR = Path(__file__).resolve().parent.parent
-MODELS_DIR = ROOT_DIR / "modeles-systeme-physicoeconomique"
+MODELS_DIR = ROOT_DIR / "modeles" / "adaptateurs"
 DATA_DIR = ROOT_DIR / "simulation_lab_data"
 RUNS_DIR = DATA_DIR / "runs"
 BASKET_DIR = DATA_DIR / "trash"
@@ -18,11 +18,11 @@ DEFAULT_PORT = 8777
 ACTIVE_MODEL_IDS = frozenset({"m4b_credit_soc_mini", "m4_2_credit_soc", "m4_2b_credit_soc", "m4_3_credit_soc", "m4_3live_credit_soc", "m4_3live_v2_credit_soc", "m4_4_rebond_credit_soc"})
 LEGACY_RESULT_SOURCES = {
     "modele_sans_banque_wip": [
-        ROOT_DIR / "anciens_modeles" / "Modèle_sans_banque" / "resultats",
-        ROOT_DIR / "anciens_modeles" / "Modèle_sans_banque" / "src" / "resultats",
+        ROOT_DIR / "modeles" / "anciens_modeles" / "Modèle_sans_banque" / "resultats",
+        ROOT_DIR / "modeles" / "anciens_modeles" / "Modèle_sans_banque" / "src" / "resultats",
     ],
     "claude3_v2": [
-        ROOT_DIR / "anciens_modeles" / "claude3-v2" / "src" / "resultats",
+        ROOT_DIR / "modeles" / "anciens_modeles" / "claude3-v2" / "src" / "resultats",
     ],
 }
 

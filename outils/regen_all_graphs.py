@@ -18,7 +18,7 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 
 JUPYTER_ROOT = Path(__file__).resolve().parent.parent
-LEGACY_ROOT = JUPYTER_ROOT / "anciens_modeles"
+LEGACY_ROOT = JUPYTER_ROOT / "modeles" / "anciens_modeles"
 MSB_SRC  = LEGACY_ROOT / "Modèle_sans_banque" / "src"
 WIP_SRC  = LEGACY_ROOT / "modele-27-04-WIP" / "src"
 CV2_SRC  = LEGACY_ROOT / "claude3-v2" / "src"

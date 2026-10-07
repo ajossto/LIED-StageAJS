@@ -7,8 +7,8 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D  # noqa
 from pathlib import Path
 
-RESULTS = Path("/home/anatole/jupyter/anciens_modeles/modele-27-04-WIP/studies/sensitivity/results")
-FIGURES = Path("/home/anatole/jupyter/anciens_modeles/modele-27-04-WIP/studies/sensitivity/report/figures")
+RESULTS = Path("/home/anatole/jupyter/modeles/anciens_modeles/modele-27-04-WIP/studies/sensitivity/results")
+FIGURES = Path("/home/anatole/jupyter/modeles/anciens_modeles/modele-27-04-WIP/studies/sensitivity/report/figures")
 
 
 def _surface_3d(ax, xs, ys, zs, ns, xlabel, ylabel, title):

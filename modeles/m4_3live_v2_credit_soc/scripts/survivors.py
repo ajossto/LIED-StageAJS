@@ -33,7 +33,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
-sys.path.insert(0, str(ROOT.parent))
+sys.path.insert(0, str(ROOT.parent.parent))
 
 from m4_3live_v2.live import load_snapshot  # noqa: E402
 from m4_3live_v2.model import Config, Intervention, net_worth  # noqa: E402

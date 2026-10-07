@@ -1,7 +1,7 @@
 # M4.4Rebond — où vit l'effet rebond dans la distribution
 
 Quatrième lignée de la série M4.3Live. **Fork indépendant** de
-`m4_3live_v2_credit_soc/` : aucun module de ce dossier n'importe le moteur
+`modeles/m4_3live_v2_credit_soc/` : aucun module de ce dossier n'importe le moteur
 d'une autre lignée (sauf en LECTURE, dans les tests d'équivalence). Le moteur
 v2 est gelé — 153 runs enregistrés et deux rapports publiés en dépendent.
 
@@ -37,7 +37,7 @@ Plus, côté exécution : un **checkpoint de fin de run**
 ## Arborescence
 
 ```
-m4_4_rebond_credit_soc/
+modeles/m4_4_rebond_credit_soc/
 ├── m4_4/                moteur (fork de m4_3live_v2)
 │   ├── model.py         Config / Population / LoanBook / Simulation, interventions
 │   ├── kernel.py        institution de principal : production jointe maximale
@@ -70,12 +70,12 @@ cd /home/anatole/jupyter
 #   http://127.0.0.1:8777/live3   M4.4Rebond
 
 # Tests (assertions Python simples, pas de pytest)
-/home/anatole/jupyter/.venv/bin/python3 m4_4_rebond_credit_soc/scripts/run_tests.py
+/home/anatole/jupyter/.venv/bin/python3 modeles/m4_4_rebond_credit_soc/scripts/run_tests.py
 # … et la parité complète, 8000 pas, ~25 min :
-/home/anatole/jupyter/.venv/bin/python3 m4_4_rebond_credit_soc/scripts/run_tests.py --full
+/home/anatole/jupyter/.venv/bin/python3 modeles/m4_4_rebond_credit_soc/scripts/run_tests.py --full
 
 # Mesurer le prix de l'instrumentation avant de fixer k (porte du lot A)
-/home/anatole/jupyter/.venv/bin/python3 m4_4_rebond_credit_soc/scripts/cost_panels.py
+/home/anatole/jupyter/.venv/bin/python3 modeles/m4_4_rebond_credit_soc/scripts/cost_panels.py
 
 # Refaire les nombres et les figures des rapports, puis compiler
 cd m4_4_rebond_credit_soc

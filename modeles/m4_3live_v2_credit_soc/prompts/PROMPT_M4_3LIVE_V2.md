@@ -7,13 +7,13 @@ ci-dessous ; les points explicitement laissés ouverts (§12) sont à trancher e
 documenter toi-même, pas à retourner à l'utilisateur avant d'avoir essayé.
 
 Version : 21 août 2026, révision 1. Lignée : succède à **M4.3Live**
-(`m4_3live_credit_soc/`), qui est un programme **terminé et publié** — deux
+(`modeles/m4_3live_credit_soc/`), qui est un programme **terminé et publié** — deux
 rapports PDF, 203 runs enregistrés, parité bit à bit avec M4.3 vérifiée sur
-8000 pas. Convention de dossier : `m4_3live_v2_credit_soc/`.
+8000 pas. Convention de dossier : `modeles/m4_3live_v2_credit_soc/`.
 
 **Provenance.** Ce document dérive de
-`m4_3live_v2_credit_soc/ROADMAP.md`, écrite à partir de 28 notes manuscrites
-portées par l'utilisateur sur `m4_3live_credit_soc/report/rapport_final.pdf`
+`modeles/m4_3live_v2_credit_soc/ROADMAP.md`, écrite à partir de 28 notes manuscrites
+portées par l'utilisateur sur `modeles/m4_3live_credit_soc/report/rapport_final.pdf`
 le 18 août 2026, puis complétée par quatre retours oraux du 21 août. La
 feuille de route explique le *pourquoi* de chaque chantier et cite sa note
 d'origine ; **ce prompt donne le *quoi* et l'*ordre***. Les deux se lisent
@@ -26,25 +26,25 @@ est à signaler.
 
 Avant d'écrire une ligne de code, lire dans cet ordre :
 
-- **`m4_3live_v2_credit_soc/ROADMAP.md`** — la feuille de route dont ce
+- **`modeles/m4_3live_v2_credit_soc/ROADMAP.md`** — la feuille de route dont ce
   prompt est l'exécution. Elle donne, chantier par chantier, la note
   d'utilisateur qui le motive et les conséquences à instrumenter.
-- **`m4_3live_credit_soc/m4_3live/model.py`** (~1000 lignes) — le moteur de
+- **`modeles/m4_3live_credit_soc/m4_3live/model.py`** (~1000 lignes) — le moteur de
   référence. C'est le fichier dont ce prompt cite les numéros de ligne ; si
   le fichier a changé depuis, revérifier les citations, ne pas les croire
   sur parole.
-- `m4_3live_credit_soc/m4_3live/kernel.py` — le noyau d'institution (table
+- `modeles/m4_3live_credit_soc/m4_3live/kernel.py` — le noyau d'institution (table
   de Hermite d'ordre 4, δ\* = h(C) − K_b). Validé, coût 1,3 % du pas : à
   reprendre tel quel.
-- `m4_3live_credit_soc/m4_3live/live.py` — session pilotable, journal
+- `modeles/m4_3live_credit_soc/m4_3live/live.py` — session pilotable, journal
   d'interventions, rejeu, snapshots. Testé, non remis en cause.
-- **`m4_3live_credit_soc/report/rapport_final.pdf`** (34 pages) — les
+- **`modeles/m4_3live_credit_soc/report/rapport_final.pdf`** (34 pages) — les
   résultats de v1. Lire au moins §5 (ablation K0), §6 (la tension et ses
   limites) et §7 (les deux groupes de covariance) : v2 en hérite comme
   acquis, et une bonne partie de son programme consiste à les prolonger.
-- **`m4_3live_credit_soc/report/conception_m4_3live.pdf`** (27 pages) — les
+- **`modeles/m4_3live_credit_soc/report/conception_m4_3live.pdf`** (27 pages) — les
   décisions d'architecture de v1 et leurs justifications.
-- `m4_3live_credit_soc/JOURNAL.md` — le journal de travail de v1, y compris
+- `modeles/m4_3live_credit_soc/JOURNAL.md` — le journal de travail de v1, y compris
   les pièges rencontrés et les inférences réfutées en cours de route.
 - `simulation_lab/contracts.py`, `simulation_lab/jobs.py`,
   `simulation_lab/web/app.py` — l'orchestration existante, dont v2 étend
@@ -53,9 +53,9 @@ Avant d'écrire une ligne de code, lire dans cet ordre :
 
 ### Deux passages de `CLAUDE.md` sont obsolètes et vont t'induire en erreur
 
-1. `CLAUDE.md` désigne `m4b_credit_soc_mini/` comme « moteur actif ».
+1. `CLAUDE.md` désigne `modeles/m4b_credit_soc_mini/` comme « moteur actif ».
    **Faux pour ce travail** : le moteur de référence est
-   `m4_3live_credit_soc/m4_3live/model.py`.
+   `modeles/m4_3live_credit_soc/m4_3live/model.py`.
 2. `CLAUDE.md` donne `random.Random(seed)` comme convention RNG. **Faux
    ici** : la lignée M4.3/M4.3Live utilise `numpy.random.default_rng(seed)`
    (`m4_3live/model.py:718`, `Simulation.__init__`). Reproduire cette convention
@@ -72,7 +72,7 @@ obligatoire dans les rapports (§10).
 
 ### La règle du fork : `m4_3live/` est en lecture seule, définitivement
 
-Le paquet `m4_3live_credit_soc/m4_3live/` **ne doit pas être modifié**, ni
+Le paquet `modeles/m4_3live_credit_soc/m4_3live/` **ne doit pas être modifié**, ni
 maintenant ni plus tard. Ce n'est pas une précaution de style : c'est le
 moteur qui a produit 203 runs enregistrés et deux rapports publiés, et toute
 modification invaliderait rétroactivement des résultats cités. L'utilisateur
@@ -80,10 +80,10 @@ a énoncé cette contrainte explicitement, en majuscules, pendant le travail de
 v1.
 
 v2 **forke** ce paquet dans son propre dossier
-(`m4_3live_v2_credit_soc/m4_3live_v2/`, nom à confirmer §12), par copie, pas
+(`modeles/m4_3live_v2_credit_soc/m4_3live_v2/`, nom à confirmer §12), par copie, pas
 par import. Le fork peut ensuite être modifié librement. Toute mesure
 nouvelle qu'on voudrait faire sur v1 doit rester un dérivé des séries déjà
-écrites (voir `m4_3live_credit_soc/scripts/tension.py`, qui reconstruit la
+écrites (voir `modeles/m4_3live_credit_soc/scripts/tension.py`, qui reconstruit la
 tension a posteriori sans toucher au moteur).
 
 ### Un trou connu dans la feuille de route
@@ -365,7 +365,7 @@ plutôt que de le réintroduire en silence.
 
 **Note [17], la demande la plus explicite de l'utilisateur** — « TRÈS
 IMPORTANT ». v1 l'a satisfaite *a posteriori*, par un dérivé des séries
-(`m4_3live_credit_soc/scripts/tension.py`), parce que le moteur était gelé.
+(`modeles/m4_3live_credit_soc/scripts/tension.py`), parce que le moteur était gelé.
 v2 n'a pas cette contrainte : **la tension doit être une colonne native**.
 
 Ce qui manque dans v1 et qu'il faut enregistrer : par technologie et par pas,
@@ -381,7 +381,7 @@ mesure devient exacte.
 Sorties attendues, pour **chaque** run et sans intervention manuelle :
 `tension.csv` (par pas), `tension_agg.csv` (agrégé) et une figure de
 tension dans `figures/`. Reprendre la structure de
-`m4_3live_credit_soc/scripts/tension_figures.py`, qui est branchée dans
+`modeles/m4_3live_credit_soc/scripts/tension_figures.py`, qui est branchée dans
 `driver/headless.py:write_outputs()`.
 
 ### 4.2 Amplitude exacte, enregistrée et non reconstruite
@@ -550,7 +550,7 @@ périmètre, §3.3.)*
 ## 9. Tests exigés
 
 Assertions Python simples, convention du dépôt (**pas de pytest**).
-Reprendre la suite de v1 (`m4_3live_credit_soc/tests/`) et l'étendre.
+Reprendre la suite de v1 (`modeles/m4_3live_credit_soc/tests/`) et l'étendre.
 
 ### Trois sémantiques de parité, à ne pas confondre
 
@@ -602,7 +602,7 @@ conception ; un journal de travail.** Ce qui suit n'est donc pas indicatif.
 
 ### Livrables
 
-- **Code complet et fonctionnel** dans `m4_3live_v2_credit_soc/` — un système
+- **Code complet et fonctionnel** dans `modeles/m4_3live_v2_credit_soc/` — un système
   qui tourne réellement, pas un squelette. Démarrer le serveur, piloter une
   session en direct dans un vrai navigateur, vérifier visuellement les
   graphiques et le panneau de contrôle avant de déclarer la tâche terminée.
@@ -617,11 +617,11 @@ conception ; un journal de travail.** Ce qui suit n'est donc pas indicatif.
 - **Rapport de résultats**, LaTeX compilé en PDF
   (`report/rapport_final.pdf`) : protocole, résultats, figures, verdict,
   limites. Même discipline que
-  `m4_3live_credit_soc/report/rapport_final.tex`, qui est le modèle à imiter.
+  `modeles/m4_3live_credit_soc/report/rapport_final.tex`, qui est le modèle à imiter.
 - **Compilation PDF vérifiée** — le `.tex` seul ne suffit pas. Trois passes
   `pdflatex` après suppression des `.aux`/`.toc`, aucun `!` dans le log,
   aucune référence non définie.
-- **`README.md`** et **`JOURNAL.md`** dans `m4_3live_v2_credit_soc/`. Le
+- **`README.md`** et **`JOURNAL.md`** dans `modeles/m4_3live_v2_credit_soc/`. Le
   journal est tenu **au fil de l'eau**, pas reconstitué à la fin : chaque
   session y consigne ses chiffres clés, ses décisions, et les inférences
   qu'elle a dû retirer.
@@ -698,7 +698,7 @@ dataient d'une version où le rapport avait deux figures de moins.
 ## 11. Arborescence attendue
 
 ```
-m4_3live_v2_credit_soc/
+modeles/m4_3live_v2_credit_soc/
 +-- ROADMAP.md                       (feuille de route, deja presente)
 +-- notes/                           (28 notes extraites du PDF v1, deja presentes)
 +-- prompts/PROMPT_M4_3LIVE_V2.md    (ce document)

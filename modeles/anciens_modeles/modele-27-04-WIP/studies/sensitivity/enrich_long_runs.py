@@ -24,7 +24,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 LEGACY_DIR = Path(__file__).resolve().parents[3]
-JUPYTER_DIR = LEGACY_DIR.parent
+JUPYTER_DIR = LEGACY_DIR.parent.parent
 SRC_DIR = LEGACY_DIR / "modele-27-04-WIP" / "src"
 LAB_RUNS_DIR = JUPYTER_DIR / "simulation_lab_data" / "runs"
 

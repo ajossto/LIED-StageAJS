@@ -24,7 +24,7 @@
   `02_technical_spec`, paquet `src/m2/`, quatre scripts sous `experiments/m2/`,
   tests sous `tests/`, `README.md`.
 - **Décision d'isolation** : tous les livrables ont été déplacés sous
-  `anciens_modeles/m2_codex/` à la demande de l'utilisateur, afin d'éviter les collisions avec
+  `modeles/anciens_modeles/m2_codex/` à la demande de l'utilisateur, afin d'éviter les collisions avec
   un autre agent.
 - **Résultats conceptuels** : le point fixe 400 du rapport est celui de l'ODE ;
   avec l'ordre extraction puis dépréciation, la carte discrète a pour point fixe

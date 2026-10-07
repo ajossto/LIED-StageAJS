@@ -34,8 +34,8 @@ proposé, pas établi) / **Incertitude** (non tranché).
 
 ## 1. Contexte : la question de M4.3 en deux phrases
 
-M4.3 est le successeur direct de M4.2B (`m4_2b_credit_soc/`, rapport final
-dans `m4_2b_credit_soc/report/rapport_final.md`, lecture préalable
+M4.3 est le successeur direct de M4.2B (`modeles/m4_2b_credit_soc/`, rapport final
+dans `modeles/m4_2b_credit_soc/report/rapport_final.md`, lecture préalable
 supposée). M4.2B a établi, sur les 37 cellules qu'il a explorées, que
 **l'épaisseur de la queue de revenus d'intérêt et la criticité des
 avalanches de faillites s'anti-corrèlent partout où il a regardé** :
@@ -109,7 +109,7 @@ fichiers identique avant/après).
 ### 2.3 Port du moteur, parité, profilage de coût (2026-08-07)
 
 `m4_3/model.py` et `m4_3/io.py` copiés OCTET POUR OCTET depuis
-`m4_2b_credit_soc/m4_2b/` (`diff` vide). Parité runtime vérifiée par
+`modeles/m4_2b_credit_soc/m4_2b/` (`diff` vide). Parité runtime vérifiée par
 égalité EXACTE (pas de tolérance) sur 6 combinaisons seed×target_rule
 (`tests/test_parity_m4_2b.py`). Profilage de coût avant tout engagement
 de campagne (`scripts/profile_cost.py`, λ∈{10,30,100}) : révèle que le
@@ -521,7 +521,7 @@ est la convention de toute la campagne M4.2B elle-même (pas une
 simplification propre à M4.3) ; `loan_events.csv.gz` (~65 % du poids d'un
 run) n'est utilisé par aucune des 28 figures. Seul `snapshots/` manquait
 réellement. Correctif : adaptateur créé
-(`modeles-systeme-physicoeconomique/m4_3_credit_soc/`, `model.py` +
+(`modeles/adaptateurs/m4_3_credit_soc/`, `model.py` +
 `reporting.py` + `figures.py`, `simulation_lab` mis à jour pour le
 reconnaître comme actif), et les 96 runs D1+D3 relancés avec génération
 de figures *avant* le nettoyage disque (au lieu d'après) — en cours au

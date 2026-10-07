@@ -1,6 +1,6 @@
 # M4.3Live-v2 — le sens du prêt libéré
 
-Fork de `m4_3live_credit_soc/` (**gelé**, jamais importé). Le changement
+Fork de `modeles/m4_3live_credit_soc/` (**gelé**, jamais importé). Le changement
 central : dans une paire, ce n'est plus la plus riche qui prête, c'est
 l'optimum de production jointe qui décide, et son signe est libre.
 
@@ -72,7 +72,7 @@ for t in tests/test_*.py; do $PY $t; done
 
 ## Règles permanentes de ce dossier
 
-- `m4_3live_credit_soc/m4_3live/` est **en lecture seule, définitivement**.
+- `modeles/m4_3live_credit_soc/m4_3live/` est **en lecture seule, définitivement**.
 - La parité bit à bit avec M4.3 en régime homogène est repassée après chaque
   changement du moteur.
 - `loan_direction="richest_lends"` doit reproduire le moteur v1 **bit à bit**,

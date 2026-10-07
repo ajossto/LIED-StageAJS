@@ -35,17 +35,17 @@ Travaille dans `/home/anatole/jupyter`. Utilise le Python du venv :
 Lis intégralement avant de figer le protocole :
 
 - guide Fable :
-  `/home/anatole/jupyter/m4_credit_soc/Prompting Claude Fable.md` ;
+  `/home/anatole/jupyter/modeles/m4_credit_soc/Prompting Claude Fable.md` ;
 - rapport scientifique M4 :
-  `/home/anatole/jupyter/m4_credit_soc_fable/reports/01_soc_final/main.pdf`
+  `/home/anatole/jupyter/modeles/m4_credit_soc_fable/reports/01_soc_final/main.pdf`
   et sa source `main.tex` ;
 - journal, configuration, moteur, statistiques et campagnes M4 :
-  `m4_credit_soc_fable/NOTES.md`, `src/m4/`, `experiments/m4/` et `tests/` ;
-- spécification M4B : `m4b_credit_soc_mini/README.md` et
-  `m4b_credit_soc_mini/report/mecanique_m4b.pdf` (source `.tex` disponible) ;
-- moteur et sorties M4B : `m4b_credit_soc_mini/m4b/`, `run.py` et `tests/` ;
+  `modeles/m4_credit_soc_fable/NOTES.md`, `src/m4/`, `experiments/m4/` et `tests/` ;
+- spécification M4B : `modeles/m4b_credit_soc_mini/README.md` et
+  `modeles/m4b_credit_soc_mini/report/mecanique_m4b.pdf` (source `.tex` disponible) ;
+- moteur et sorties M4B : `modeles/m4b_credit_soc_mini/m4b/`, `run.py` et `tests/` ;
 - intégration actuelle de M4B dans Simulation Lab :
-  `modeles-systeme-physicoeconomique/m4b_credit_soc_mini/` et
+  `modeles/adaptateurs/m4b_credit_soc_mini/` et
   `simulation_lab/`.
 
 Crée tous les scripts, résultats, figures, notes et rapports propres à cette
@@ -53,8 +53,8 @@ Crée tous les scripts, résultats, figures, notes et rapports propres à cette
 
 `/home/anatole/jupyter/recherche/sensibilite_m4_m4b/`
 
-Traite comme **sources en lecture seule** les moteurs `m4_credit_soc_fable/src/`
-et `m4b_credit_soc_mini/m4b/`, leurs tests, leurs rapports existants et tous
+Traite comme **sources en lecture seule** les moteurs `modeles/m4_credit_soc_fable/src/`
+et `modeles/m4b_credit_soc_mini/m4b/`, leurs tests, leurs rapports existants et tous
 les résultats antérieurs. Ne modifie pas la dynamique pour faciliter l'étude.
 Une lacune d'instrumentation doit être contournée dans les scripts de campagne
 ou signalée ; elle ne justifie pas silencieusement une nouvelle version du

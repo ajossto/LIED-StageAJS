@@ -1,12 +1,12 @@
 # Runtime dynamique controle
 
-Ce travail est fait uniquement dans `/home/anatole/jupyter/anciens_modeles/4-05-dynamique`.
-Le dossier original `/home/anatole/jupyter/anciens_modeles/modele-27-04-WIP` n'a pas ete modifie.
+Ce travail est fait uniquement dans `/home/anatole/jupyter/modeles/anciens_modeles/4-05-dynamique`.
+Le dossier original `/home/anatole/jupyter/modeles/anciens_modeles/modele-27-04-WIP` n'a pas ete modifie.
 
 ## Lancer le demonstrateur
 
 ```bash
-cd /home/anatole/jupyter/anciens_modeles/4-05-dynamique
+cd /home/anatole/jupyter/modeles/anciens_modeles/4-05-dynamique
 python examples/dynamic_demo.py --steps 80 --observe-every 10
 ```
 
@@ -17,7 +17,7 @@ milieu de la simulation. Le journal des modifications est affiche a la fin.
 ## Lancer le petit logiciel local
 
 ```bash
-cd /home/anatole/jupyter/anciens_modeles/4-05-dynamique
+cd /home/anatole/jupyter/modeles/anciens_modeles/4-05-dynamique
 /home/anatole/jupyter/.venv/bin/python3 scripts/dynamic_control_server.py --port 8765
 ```
 
@@ -30,7 +30,7 @@ http://127.0.0.1:8765/
 Raccourci equivalent :
 
 ```bash
-cd /home/anatole/jupyter/anciens_modeles/4-05-dynamique
+cd /home/anatole/jupyter/modeles/anciens_modeles/4-05-dynamique
 ./run_dynamic_app.sh 8766
 ```
 

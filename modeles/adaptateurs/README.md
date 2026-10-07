@@ -1,6 +1,6 @@
 # Modèles compatibles
 
-Chaque sous-dossier de `modeles-systeme-physicoeconomique/` doit contenir un `model.py`
+Chaque sous-dossier de `modeles/adaptateurs/` doit contenir un `model.py`
 exposant soit :
 
 - `MODEL`, instance de `BaseSimulationModel`
