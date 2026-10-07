@@ -6,7 +6,7 @@ from dataclasses import asdict
 from pathlib import Path
 
 
-ROOT = Path("/home/anatole/jupyter/codex_analysis_workspace/data/round3")
+ROOT = Path("/home/anatole/jupyter/archives/codex_analysis_workspace/data/round3")
 FIG_DIR = ROOT / "figures"
 SRC = Path("/home/anatole/jupyter/anciens_modeles/Modèle_sans_banque/src")
 ROOT.mkdir(parents=True, exist_ok=True)

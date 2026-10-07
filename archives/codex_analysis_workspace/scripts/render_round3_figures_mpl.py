@@ -5,7 +5,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 
 
-ROOT = Path("/home/anatole/jupyter/codex_analysis_workspace/data/round3")
+ROOT = Path("/home/anatole/jupyter/archives/codex_analysis_workspace/data/round3")
 FIG_DIR = ROOT / "figures"
 FIG_DIR.mkdir(parents=True, exist_ok=True)
 
