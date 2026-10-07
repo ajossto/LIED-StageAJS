@@ -49,7 +49,7 @@
   pdftitle={Rapport de stage — modélisation multi-agents de l'effet rebond},
   pdfauthor={Anatole Joseph-Stouls}}
 \setlist{nosep}
-\setcounter{tocdepth}{2}
+\setcounter{tocdepth}{1}
 
 \newcommand{\code}[1]{\texttt{#1}}
 %% Chemins longs : \texttt ne coupe pas, \path si — et sans échappement.
@@ -520,6 +520,9 @@ marché M4B sélectionne la plus riche et la plus pauvre d'un échantillon
 de taille $k$ ; les configurations récentes retiennent des paires et
 optimisent leur production jointe. Ce sont des règles de rencontre spécifiques.
 
+Le glossaire est regroupé en annexe~\ref{sec:definitions}, dans
+l’ordre d’introduction des notions du modèle et des méthodes.
+
 \figurine{m02_vue_macro}{1.0}{\textbf{Le système est borné, et il le reste.}
 Capital total, crédit nouveau, population et levier $\sum D / \sum K$ sur
 4000 pas. Sur cette réalisation, aucune dérive durable, extinction ou croissance
@@ -528,11 +531,6 @@ stationnarité stricte ; le contrôle quantitatif est donné en
 annexe~\ref{sec:stationnarite}. C'est le préalable à toute
 comparaison distributionnelle --- et le premier moteur du stage, lui, divergeait
 pour une partie de son espace de paramètres.}
-
-\clearpage
-
-Le glossaire est regroupé en annexe~\ref{sec:definitions}, dans
-l’ordre d’introduction des notions du modèle et des méthodes.
 
 \clearpage
 
@@ -1128,7 +1126,7 @@ référence, pas la loi tronquée complète. Les $R^2$ sont calculés sur les
 logarithmes des classes non vides, puis moyennés entre graines. Le panneau
 gauche représente le contrôle dont les exposants individuels sont repris
 à droite ; le panneau central représente l'autre série.
-\textsuperscript{1}Les barres trop longues pour l'échelle log sont tronquées
+Les barres trop longues pour l'échelle log sont tronquées
 à 95\,\% du niveau ; leurs valeurs intégrales restent dans les données.}
 
 Le modèle à coupure est ajusté par vraisemblance sur les tailles entières,
@@ -1603,7 +1601,10 @@ covariance universelle du logiciel.
 Dans l'intervention M4.4, seuls $A$ et la dotation des naissances futures
 sont modifiés ; les stocks et contrats présents ne sont pas rééchelonnés.
 L'élasticité mesurée $2{,}0029\pm0{,}0148$ est compatible avec 2,
-sans être exactement contrainte à cette valeur. Le contrôle de symétrie
+sans être exactement contrainte à cette valeur. La valeur $2{,}02$ de M4.3Live
+(tableau du verdict ci-dessus) est une mesure de même nature sur la lignée
+précédente : dans les deux cas, c'est un contrôle de symétrie d'échelle sur
+les naissances, non un rebond comportemental supérieur à 100~\%. Le contrôle de symétrie
 et la relaxation après intervention répondent à deux questions distinctes.
 
 \figurine{r03_covariance_echelle}{1.0}{\textbf{Contrôle historique de covariance d'échelle.}
@@ -2098,7 +2099,9 @@ nombre de points au-delà du seuil, de médiane $113$. Ici il vaut
 $\CouvertureInteretNTail$, et une campagne dédiée où le taux de naissance passe
 de 30 à 50 le porte à $365$ sur le revenu d'intérêt et $458$ sur la valeur
 nette. \textbf{Et l'exposant ne bouge pas} quand l'échantillon grandit :
-$3{,}898 \to 3{,}918$ et $2{,}761 \to 2{,}744$.
+$3{,}898 \to 3{,}918$ et $2{,}761 \to 2{,}744$ (sortie du pilote de couverture ;
+le tableau des trois échelles d'incertitude ci-dessous, moyenné sur douze
+graines, donne $\AlphaInteret$ pour le revenu d'intérêt).
 
 \figurine{f11_couverture}{1.0}{\textbf{La couverture n'est plus l'obstacle.} À
 gauche, les points au-delà du seuil optimal sous les deux taux de naissance,
@@ -2323,7 +2326,7 @@ $\TauxmarginalGiniNW$ sous la règle historique et $\TauxpZeroGiniNW$ sous
 l'altruisme --- \textbf{six \emph{dixièmes} de pour-cent d'étendue} sur tout le
 balayage, pendant que la population varie de soixante-huit pour-cent et le
 capital d'un facteur trois. Le Gini du capital, lui, passe de
-$\TauxmarginalGiniK$ à $\TauxpZeroGiniK$, soit quarante pour-cent de moins.
+$\TauxmarginalGiniK$ à $\TauxpZeroGiniK$, soit vingt-neuf pour-cent de moins.
 
 La figure~\ref{fig:art_institutions} montre simultanément la faible variation
 du Gini de valeur nette et la variation des niveaux ; la stabilité d'un Gini
@@ -2369,8 +2372,8 @@ Gini du bassin & $\RhoGiniBas$ & $\RhoGiniHaut$ &
 
 \fait{} \textbf{L'intensité de marché contrôle les deux exposants de queue et
 les deux estimateurs de branchement}, au sens strict ci-dessus. Le contraste
-avec les leviers du rebond est net : ceux-ci laissaient les exposants à quatre
-pour-cent près.
+avec les leviers du rebond est net : ceux-ci laissaient les exposants à cinq
+pour-cent près au plus.
 
 \figurine{art_rho}{0.95}{\textbf{Mesurer le pilotage sur des observables
 définies.} M4.4, cinq valeurs de $\rho$, douze graines,
@@ -2619,7 +2622,6 @@ sous conditions explicites et un programme de tests encore ouvert.
 \clearpage
 \appendix
 \input{definitions}
-\clearpage
 \input{methodes_actualisees}
 
 
@@ -2708,7 +2710,7 @@ campagne, avec les paramètres et le chemin où retrouver le détail run par run
 \incertitude{} Une figure qui agrège une campagne entière ne \emph{peut} pas
 porter un identifiant unique : elle porte celui de la campagne et renvoie à
 l'annexe engendrée de celle-ci, qui liste un \code{run\_id} par ligne ---
-693~lignes pour la campagne M4B, 372 pour M4.4. Fabriquer un faux identifiant
+595~lignes pour la campagne M4B (594 runs), 372 pour M4.4. Fabriquer un faux identifiant
 unique serait pire que de renvoyer.
 
 \input{tracabilite}
